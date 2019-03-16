@@ -4,6 +4,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+// User model - `users` table
 type User struct {
 	gorm.Model
 	Name  string `json:"Name"`

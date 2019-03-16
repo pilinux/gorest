@@ -5,11 +5,13 @@ import (
 	"os"
 )
 
+// Configuration - server and db configuration variables
 type Configuration struct {
 	Server   ServerConfig
 	Database DatabaseConfig
 }
 
+// ConfigMain - load the configurations from .env
 func ConfigMain() Configuration {
 	var configuration Configuration
 

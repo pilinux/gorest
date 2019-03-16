@@ -1,5 +1,6 @@
 package config
 
+// DatabaseConfig - database variables
 type DatabaseConfig struct {
 	DbDriver string
 	DbUser   string

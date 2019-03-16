@@ -16,7 +16,7 @@ var err error
 // User struct alias
 type User = model.User
 
-// GET /users/
+// GetUsers: GET /users
 func GetUsers(c *gin.Context) {
 	db = database.GetDB()
 	var users []User
@@ -37,7 +37,7 @@ func GetUsers(c *gin.Context) {
 	}
 }
 
-// GET /users/:id
+// GetUser: GET /users/:id
 func GetUser(c *gin.Context) {
 	db = database.GetDB()
 	id := c.Params.ByName("id")
@@ -55,7 +55,7 @@ func GetUser(c *gin.Context) {
 	}
 }
 
-// POST /users/
+// CreateUser: POST /users
 func CreateUser(c *gin.Context) {
 	db = database.GetDB()
 	var user User
@@ -73,7 +73,7 @@ func CreateUser(c *gin.Context) {
 	}
 }
 
-// PUT /users/:id
+// UpdateUser: PUT /users/:id
 func UpdateUser(c *gin.Context) {
 	db = database.GetDB()
 	var user User
@@ -97,7 +97,7 @@ func UpdateUser(c *gin.Context) {
 	}
 }
 
-// DELETE /users/:id
+// DeleteUser: DELETE /users/:id
 func DeleteUser(c *gin.Context) {
 	db = database.GetDB()
 	id := c.Params.ByName("id")

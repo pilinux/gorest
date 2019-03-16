@@ -5,12 +5,16 @@ import (
 	"github.com/GoREST/config"
 
 	"github.com/jinzhu/gorm"
+
+	// Import MySQL database driver
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
+// DB global variable to access gorm
 var DB *gorm.DB
 var err error
 
+// InitDB - function to initialize db
 func InitDB() *gorm.DB {
 	var db = DB
 
