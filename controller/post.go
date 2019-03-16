@@ -12,7 +12,7 @@ import (
 // Post struct alias
 type Post = model.Post
 
-// GetPosts: GET /posts
+// GetPosts - GET /posts
 func GetPosts(c *gin.Context) {
 	db = database.GetDB()
 	var posts []Post
@@ -25,7 +25,7 @@ func GetPosts(c *gin.Context) {
 	}
 }
 
-// GetPost: GET /posts/:id
+// GetPost - GET /posts/:id
 func GetPost(c *gin.Context) {
 	db = database.GetDB()
 	id := c.Params.ByName("id")
@@ -39,7 +39,7 @@ func GetPost(c *gin.Context) {
 	}
 }
 
-// CreatePost: POST /posts
+// CreatePost - POST /posts
 func CreatePost(c *gin.Context) {
 	db = database.GetDB()
 	var post Post
@@ -57,7 +57,7 @@ func CreatePost(c *gin.Context) {
 	}
 }
 
-// UpdatePost: PUT /posts/:id
+// UpdatePost - PUT /posts/:id
 func UpdatePost(c *gin.Context) {
 	db = database.GetDB()
 	var post Post
@@ -81,7 +81,7 @@ func UpdatePost(c *gin.Context) {
 	}
 }
 
-// DeletePost: DELETE /posts/:id
+// DeletePost - DELETE /posts/:id
 func DeletePost(c *gin.Context) {
 	db = database.GetDB()
 	id := c.Params.ByName("id")
