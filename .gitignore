@@ -1,4 +1,6 @@
-# Environment Configuration #
-#############################
+# Ignored files and directories #
+#################################
 
 .env
+dep
+vendor/
