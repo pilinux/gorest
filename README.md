@@ -309,18 +309,7 @@ v1 := router.Group()
 
 ## Contributing
 
-- Issues:
-	- Use the search tool before opening a new issue
-	- If you find any bug, please provide the source code, committed SHA and the steps to
-	generate the bug
-	- Review existing issues and provide feedback or react to them
-
-- Pull requests
-	- Open your pull request against the `master` branch
-	- One commit for each unique task (could be one file or a group of files in the same commit)
-	- Please only commit tested and validated codes and write proper documentation on how to test
-	your proposed codes (until any CI/CD is implemented)
-	- If your pull request contains a new feature, please document it in the `README.md` file
+Please see [CONTRIBUTING][61] to join this amazing project.
 
 
 
@@ -342,6 +331,7 @@ Released under the [MIT license][13]
 [32]: https://getpostman.com
 [41]: https://github.com/piLinux/HowtoCode/blob/master/Golang/1.Intro/Installation.md
 [51]: https://github.com/joho/godotenv
+[61]: https://github.com/piLinux/GoREST/blob/master/CONTRIBUTING.md
 
 
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FpiLinux%2FGoREST.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FpiLinux%2FGoREST?ref=badge_large)
