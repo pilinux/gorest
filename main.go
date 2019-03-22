@@ -3,10 +3,10 @@ package main
 import (
 	//"fmt"
 
-	"github.com/GoREST/config"
-	"github.com/GoREST/controller"
-	"github.com/GoREST/database"
-	"github.com/GoREST/lib/middleware"
+	"github.com/piLinux/GoREST/config"
+	"github.com/piLinux/GoREST/controller"
+	"github.com/piLinux/GoREST/database"
+	"github.com/piLinux/GoREST/lib/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"

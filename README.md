@@ -47,18 +47,20 @@ go get github.com/gin-gonic/gin
 go get github.com/jinzhu/gorm
 go get github.com/joho/godotenv
 ```
-- Clone this repository into `$GOPATH/src/github.com` directory
+- Clone this repository into `$GOPATH/src/github.com/piLinux` directory
 ```
-cd $GOPATH/src/github
+cd $GOPATH/src/github.com
+mkdir piLinux
+cd piLinux
 git clone https://github.com/piLinux/GoREST.git
 ```
-- Edit `.env.sample` file and save it as `.env` file at the root of your project `$GOPATH/src/github.com/GoREST`
-- Also edit the `.env.sample` file located at `$GOPATH/src/github/GoREST/database/migrate` and save it as `.env`
-- Inside `$GOPATH/src/github/GoREST/database/migrate`, run
+- Edit `.env.sample` file and save it as `.env` file at the root of your project `$GOPATH/src/github.com/piLinux/GoREST`
+- Also edit the `.env.sample` file located at `$GOPATH/src/github.com/piLinux/GoREST/database/migrate` and save it as `.env`
+- Inside `$GOPATH/src/github.com/piLinux/GoREST/database/migrate`, run
 ```
 go run autoMigrate.go
 ```
-- Now, from `$GOPATH/src/github/GoREST`, execute
+- Now, from `$GOPATH/src/github.com/piLinux/GoREST`, execute
 ```
 go build main.go
 ./main.go
@@ -275,7 +277,7 @@ GoREST
 ```
 
 ### Step 1
-- `model`: This package contains all necessary models (each file is responsible for one specific)
+- `model`: This package contains all necessary models. Each file is responsible for one specific
 table in the database. To add new tables and to create new relations in between those tables,
 create new models and place them in this directory. All newly created files should have the same
 package name.
@@ -325,7 +327,7 @@ v1 := router.Group()
 
 © Mahir Hasan - 2019
 
-Released under the [[MIT license][13]
+Released under the [MIT license][13]
 
 
 

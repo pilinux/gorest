@@ -5,8 +5,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/GoREST/database"
-	"github.com/GoREST/database/model"
+	"github.com/piLinux/GoREST/database"
+	"github.com/piLinux/GoREST/database/model"
 
 	"github.com/jinzhu/gorm"
 )

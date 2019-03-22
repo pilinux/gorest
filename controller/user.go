@@ -3,8 +3,8 @@ package controller
 import (
 	"fmt"
 
-	"github.com/GoREST/database"
-	"github.com/GoREST/database/model"
+	"github.com/piLinux/GoREST/database"
+	"github.com/piLinux/GoREST/database/model"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"

@@ -2,7 +2,7 @@ package database
 
 import (
 	"fmt"
-	"github.com/GoREST/config"
+	"github.com/piLinux/GoREST/config"
 
 	"github.com/jinzhu/gorm"
 
