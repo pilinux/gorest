@@ -313,6 +313,12 @@ Please see [CONTRIBUTING][61] to join this amazing project.
 
 
 
+## Code of conduct
+
+Please see [this][62] document.
+
+
+
 ## License
 
 © Mahir Hasan - 2019
@@ -332,6 +338,7 @@ Released under the [MIT license][13]
 [41]: https://github.com/piLinux/HowtoCode/blob/master/Golang/1.Intro/Installation.md
 [51]: https://github.com/joho/godotenv
 [61]: https://github.com/piLinux/GoREST/blob/master/CONTRIBUTING.md
+[62]: https://github.com/piLinux/GoREST/blob/master/CODE_OF_CONDUCT.md
 
 
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FpiLinux%2FGoREST.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FpiLinux%2FGoREST?ref=badge_large)
