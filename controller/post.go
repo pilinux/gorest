@@ -14,7 +14,7 @@ type Post = model.Post
 
 // GetPosts - GET /posts
 func GetPosts(c *gin.Context) {
-	db = database.GetDB()
+	db := database.GetDB()
 	var posts []Post
 
 	if err := db.Find(&posts).Error; err != nil {
@@ -27,7 +27,7 @@ func GetPosts(c *gin.Context) {
 
 // GetPost - GET /posts/:id
 func GetPost(c *gin.Context) {
-	db = database.GetDB()
+	db := database.GetDB()
 	id := c.Params.ByName("id")
 	var post Post
 
@@ -41,7 +41,7 @@ func GetPost(c *gin.Context) {
 
 // CreatePost - POST /posts
 func CreatePost(c *gin.Context) {
-	db = database.GetDB()
+	db := database.GetDB()
 	var post Post
 
 	c.BindJSON(&post)
@@ -59,7 +59,7 @@ func CreatePost(c *gin.Context) {
 
 // UpdatePost - PUT /posts/:id
 func UpdatePost(c *gin.Context) {
-	db = database.GetDB()
+	db := database.GetDB()
 	var post Post
 	id := c.Params.ByName("id")
 
@@ -83,7 +83,7 @@ func UpdatePost(c *gin.Context) {
 
 // DeletePost - DELETE /posts/:id
 func DeletePost(c *gin.Context) {
-	db = database.GetDB()
+	db := database.GetDB()
 	id := c.Params.ByName("id")
 	var post Post
 

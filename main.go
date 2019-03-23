@@ -9,11 +9,7 @@ import (
 	"github.com/piLinux/GoREST/lib/middleware"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
 )
-
-var db *gorm.DB
-var err error
 
 func main() {
 	configure := config.ConfigMain()

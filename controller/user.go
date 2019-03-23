@@ -7,18 +7,14 @@ import (
 	"github.com/piLinux/GoREST/database/model"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
 )
-
-var db *gorm.DB
-var err error
 
 // User struct alias
 type User = model.User
 
 // GetUsers - GET /users
 func GetUsers(c *gin.Context) {
-	db = database.GetDB()
+	db := database.GetDB()
 	var users []User
 	var posts []Post
 
@@ -39,7 +35,7 @@ func GetUsers(c *gin.Context) {
 
 // GetUser - GET /users/:id
 func GetUser(c *gin.Context) {
-	db = database.GetDB()
+	db := database.GetDB()
 	id := c.Params.ByName("id")
 	var user User
 	var posts []Post
@@ -57,7 +53,7 @@ func GetUser(c *gin.Context) {
 
 // CreateUser - POST /users
 func CreateUser(c *gin.Context) {
-	db = database.GetDB()
+	db := database.GetDB()
 	var user User
 
 	c.BindJSON(&user)
@@ -75,7 +71,7 @@ func CreateUser(c *gin.Context) {
 
 // UpdateUser - PUT /users/:id
 func UpdateUser(c *gin.Context) {
-	db = database.GetDB()
+	db := database.GetDB()
 	var user User
 	id := c.Params.ByName("id")
 
@@ -99,7 +95,7 @@ func UpdateUser(c *gin.Context) {
 
 // DeleteUser - DELETE /users/:id
 func DeleteUser(c *gin.Context) {
-	db = database.GetDB()
+	db := database.GetDB()
 	id := c.Params.ByName("id")
 	var user User
 	var posts []Post

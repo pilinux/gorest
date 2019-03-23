@@ -7,11 +7,7 @@ import (
 
 	"github.com/piLinux/GoREST/database"
 	"github.com/piLinux/GoREST/database/model"
-
-	"github.com/jinzhu/gorm"
 )
-
-var db *gorm.DB
 
 func main() {
 	db := database.InitDB()
