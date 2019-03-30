@@ -4,6 +4,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/piLinux/GoREST)][01]
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FpiLinux%2FGoREST.svg?type=shield)][02]
+[![codebeat badge](https://codebeat.co/badges/c92a8584-d6ba-4606-8d6f-3049630f92c6)][03]
 
 GoREST is a starter kit, written in [Golang][11] with [Gin framework][12], for rapid prototyping and developing a
 RESTful API. The source code is released under the [MIT license][13] and is free for any personal or commercial
@@ -329,6 +330,7 @@ Released under the [MIT license][13]
 
 [01]: https://goreportcard.com/report/github.com/piLinux/GoREST
 [02]: https://app.fossa.io/projects/git%2Bgithub.com%2FpiLinux%2FGoREST?ref=badge_shield
+[03]: https://codebeat.co/projects/github-com-pilinux-gorest-master
 [11]: https://github.com/golang/go
 [12]: https://github.com/gin-gonic/gin
 [13]: https://github.com/piLinux/GoREST/blob/master/LICENSE
