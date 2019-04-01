@@ -9,13 +9,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Post struct alias
-type Post = model.Post
-
 // GetPosts - GET /posts
 func GetPosts(c *gin.Context) {
 	db := database.GetDB()
-	var posts []Post
+	posts := []model.Post{}
 
 	if err := db.Find(&posts).Error; err != nil {
 		fmt.Println(err)
@@ -29,7 +26,7 @@ func GetPosts(c *gin.Context) {
 func GetPost(c *gin.Context) {
 	db := database.GetDB()
 	id := c.Params.ByName("id")
-	var post Post
+	post := model.Post{}
 
 	if err := db.Where("id = ? ", id).First(&post).Error; err != nil {
 		fmt.Println(err)
@@ -42,7 +39,7 @@ func GetPost(c *gin.Context) {
 // CreatePost - POST /posts
 func CreatePost(c *gin.Context) {
 	db := database.GetDB()
-	var post Post
+	post := model.Post{}
 
 	c.BindJSON(&post)
 
@@ -60,7 +57,7 @@ func CreatePost(c *gin.Context) {
 // UpdatePost - PUT /posts/:id
 func UpdatePost(c *gin.Context) {
 	db := database.GetDB()
-	var post Post
+	post := model.Post{}
 	id := c.Params.ByName("id")
 
 	if err := db.Where("id = ?", id).First(&post).Error; err != nil {
@@ -85,7 +82,7 @@ func UpdatePost(c *gin.Context) {
 func DeletePost(c *gin.Context) {
 	db := database.GetDB()
 	id := c.Params.ByName("id")
-	var post Post
+	post := model.Post{}
 
 	if err := db.Where("id = ? ", id).Find(&post).Error; err != nil {
 		fmt.Println(err)

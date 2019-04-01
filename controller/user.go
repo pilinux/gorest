@@ -9,14 +9,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// User struct alias
-type User = model.User
-
 // GetUsers - GET /users
 func GetUsers(c *gin.Context) {
 	db := database.GetDB()
-	var users []User
-	var posts []Post
+	users := []model.User{}
+	posts := []model.Post{}
 
 	if err := db.Find(&users).Error; err != nil {
 		fmt.Println(err)
@@ -37,8 +34,8 @@ func GetUsers(c *gin.Context) {
 func GetUser(c *gin.Context) {
 	db := database.GetDB()
 	id := c.Params.ByName("id")
-	var user User
-	var posts []Post
+	user := model.User{}
+	posts := []model.Post{}
 
 	if err := db.Where("id = ? ", id).First(&user).Error; err != nil {
 		fmt.Println(err)
@@ -54,7 +51,7 @@ func GetUser(c *gin.Context) {
 // CreateUser - POST /users
 func CreateUser(c *gin.Context) {
 	db := database.GetDB()
-	var user User
+	user := model.User{}
 
 	c.BindJSON(&user)
 
@@ -72,7 +69,7 @@ func CreateUser(c *gin.Context) {
 // UpdateUser - PUT /users/:id
 func UpdateUser(c *gin.Context) {
 	db := database.GetDB()
-	var user User
+	user := model.User{}
 	id := c.Params.ByName("id")
 
 	if err := db.Where("id = ?", id).First(&user).Error; err != nil {
@@ -97,8 +94,8 @@ func UpdateUser(c *gin.Context) {
 func DeleteUser(c *gin.Context) {
 	db := database.GetDB()
 	id := c.Params.ByName("id")
-	var user User
-	var posts []Post
+	user := model.User{}
+	posts := []model.Post{}
 
 	if err := db.Where("id = ? ", id).Find(&user).Error; err != nil {
 		fmt.Println(err)

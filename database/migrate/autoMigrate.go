@@ -5,12 +5,27 @@ package main
 import (
 	"fmt"
 
+	"github.com/jinzhu/gorm"
 	"github.com/piLinux/GoREST/database"
 	"github.com/piLinux/GoREST/database/model"
 )
 
+// Load all the models
+type user model.User
+type post model.Post
+type userPost model.UserPost
+
+var db *gorm.DB
+var errorState int
+
 func main() {
-	db := database.InitDB()
+	/*
+	** 0 = default/no error
+	** 1 = error
+	**/
+	errorState = 0
+
+	db = database.InitDB()
 	defer db.Close()
 
 	// Auto migration
@@ -20,24 +35,52 @@ func main() {
 		- Will not change/delete any existing columns and their types
 	*/
 
-	// Load all the models
-	type User = model.User
-	type Post = model.Post
-	type UserPost = model.UserPost
+	// Careful! It will drop all the tables!
+	dropAllTables()
 
-	// Craeful! It will drop all tables!
-	if err := db.DropTableIfExists(&UserPost{}, &User{}, &Post{}).Error; err != nil {
+	// Automatically migrate all the tables
+	migrateTables()
+
+	// Manually set foreign keys for MySQL DB
+	setPkFk()
+
+	if errorState == 0 {
+		fmt.Println("Auto migration is completed!")
+	} else {
+		fmt.Println("Auto migration failed!")
+	}
+}
+
+func dropAllTables() {
+	// Careful! It will drop all the tables!
+	if err := db.DropTableIfExists(&userPost{}, &user{}, &post{}).Error; err != nil {
+		errorState = 1
 		fmt.Println(err)
 	} else {
 		fmt.Println("Old tables are deleted!")
 	}
+}
 
+func migrateTables() {
 	// db.Set() --> add table suffix during auto migration
-	db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(&User{}, &Post{}, &UserPost{})
+	if err := db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(&user{},
+		&post{}, &userPost{}).Error; err != nil {
+		errorState = 1
+		fmt.Println(err)
+	} else {
+		fmt.Println("New tables are  migrated successfully!")
+	}
+}
 
+func setPkFk() {
 	// Manually set foreign key for MySQL DB
-	db.Model(&UserPost{}).AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE")
-	db.Model(&UserPost{}).AddForeignKey("post_id", "posts(id)", "CASCADE", "CASCADE")
+	if err := db.Model(&userPost{}).AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE").Error; err != nil {
+		errorState = 1
+		fmt.Println(err)
+	}
 
-	fmt.Println("Auto migration is completed!")
+	if err := db.Model(&userPost{}).AddForeignKey("post_id", "posts(id)", "CASCADE", "CASCADE").Error; err != nil {
+		errorState = 1
+		fmt.Println(err)
+	}
 }
