@@ -1,7 +1,10 @@
 package main
 
 import (
-	//"fmt"
+	// "fmt"
+	"io"
+	"os"
+	"time"
 
 	"github.com/piLinux/GoREST/config"
 	"github.com/piLinux/GoREST/controller"
@@ -27,8 +30,40 @@ func main() {
 		fmt.Println(configure.Database.DbPort)
 	*/
 
+	router := SetupRouter()
+	router.Run(":" + configure.Server.ServerPort)
+}
+
+func SetupRouter() *gin.Engine {
 	gin.SetMode(gin.ReleaseMode) // Omit this line to enable debug mode
+
+	// Write log file
+	// Console color is not required to write the logs to the file
+	//	gin.DisableConsoleColor()
+
+	// Create a log file with start time
+	dt := time.Now()
+	t := dt.Format(time.RFC3339)
+	file, _ := os.Create("start:" + t + ".log")
+	gin.DefaultWriter = io.MultiWriter(file)
+
+	// If it is required to write the logs to the file and the console
+	// at the same time
+	//	gin.DefaultWriter = io.MultiWriter(file, os.Stdout)
+
+	// Creates a router without any middleware by default
+	// router := gin.New()
+
+	// Logger middleware: gin.DefaultWriter = os.Stdout
+	// router.Use(gin.Logger())
+
+	// Recovery middleware recovers from any panics and writes a 500
+	// if there is one
+	// router.Use(gin.Recovery())
+
+	// gin.Default() = gin.New() + gin.Logger() + gin.Recovery()
 	router := gin.Default()
+
 	router.Use(middleware.CORS())
 
 	// API:v1.0
@@ -50,6 +85,5 @@ func main() {
 		v1.DELETE("posts/:id", controller.DeletePost)
 	}
 
-	router.Run(":" + configure.Server.ServerPort)
-
+	return router
 }
