@@ -2,6 +2,8 @@ package database
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/piLinux/GoREST/config"
 
 	"github.com/jinzhu/gorm"
@@ -27,16 +29,20 @@ func InitDB() *gorm.DB {
 	host := configureDB.Database.DbHost
 	port := configureDB.Database.DbPort
 
-	if driver == "mysql" {
+	switch driver {
+	case "mysql":
 		db, err = gorm.Open(driver, username+":"+password+"@tcp("+host+":"+port+")/"+database+"?charset=utf8&parseTime=True&loc=Local")
 		if err != nil {
-			fmt.Println("DB err: ", err)
+			// fmt.Println("DB err: ", err)
+			log.Fatalln(err)
 		}
 		// Only for debugging
 		if err == nil {
 			fmt.Println("DB connection successful!")
 		}
-
+		break
+	default:
+		log.Fatalln("The driver " + driver + " is not implemented yet")
 	}
 
 	DB = db
