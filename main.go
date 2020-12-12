@@ -14,8 +14,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var configure = config.ConfigMain()
+
 func main() {
-	configure := config.ConfigMain()
 	db := database.InitDB()
 	defer db.Close()
 
@@ -34,8 +35,11 @@ func main() {
 	router.Run(":" + configure.Server.ServerPort)
 }
 
+// SetupRouter ...
 func SetupRouter() *gin.Engine {
-	gin.SetMode(gin.ReleaseMode) // Omit this line to enable debug mode
+	if configure.Server.ServerEnv == "production" {
+		gin.SetMode(gin.ReleaseMode) // Omit this line to enable debug mode
+	}
 
 	// Write log file
 	// Console color is not required to write the logs to the file
@@ -44,7 +48,7 @@ func SetupRouter() *gin.Engine {
 	// Create a log file with start time
 	dt := time.Now()
 	t := dt.Format(time.RFC3339)
-	file, _ := os.Create("start:" + t + ".log")
+	file, _ := os.Create("./logs/start:" + t + ".log")
 	gin.DefaultWriter = io.MultiWriter(file)
 
 	// If it is required to write the logs to the file and the console

@@ -1,8 +1,9 @@
 package config
 
 import (
-	"github.com/joho/godotenv"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 // Configuration - server and db configuration variables
@@ -27,9 +28,11 @@ func ConfigMain() Configuration {
 	dbName := os.Getenv("DBNAME")
 	dbHost := os.Getenv("DBHOST")
 	dbport := os.Getenv("DBPORT")
-	serverport := os.Getenv("SERVERPORT")
+	serverport := os.Getenv("APP_PORT")
+	serverEnv := os.Getenv("APP_ENV")
 
 	configuration.Server.ServerPort = serverport
+	configuration.Server.ServerEnv = serverEnv
 	configuration.Database.DbDriver = dbDriver
 	configuration.Database.DbUser = dbUser
 	configuration.Database.DbPass = dbPass
