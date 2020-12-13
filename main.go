@@ -2,6 +2,7 @@ package main
 
 import (
 	// "fmt"
+
 	"io"
 	"os"
 	"time"
@@ -19,6 +20,8 @@ var configure = config.ConfigMain()
 func main() {
 	db := database.InitDB()
 	defer db.Close()
+
+	middleware.MySigningKey = []byte(configure.Server.ServerJWT.Key)
 
 	// Debugging - environment variables
 	/*
@@ -49,11 +52,11 @@ func SetupRouter() *gin.Engine {
 	dt := time.Now()
 	t := dt.Format(time.RFC3339)
 	file, _ := os.Create("./logs/start:" + t + ".log")
-	gin.DefaultWriter = io.MultiWriter(file)
+	// gin.DefaultWriter = io.MultiWriter(file)
 
 	// If it is required to write the logs to the file and the console
 	// at the same time
-	//	gin.DefaultWriter = io.MultiWriter(file, os.Stdout)
+	gin.DefaultWriter = io.MultiWriter(file, os.Stdout)
 
 	// Creates a router without any middleware by default
 	// router := gin.New()
@@ -74,19 +77,26 @@ func SetupRouter() *gin.Engine {
 	// Non-protected routes
 	v1 := router.Group("/api/v1/")
 	{
+		// login
+		v1.POST("login", controller.Login)
+
 		// User
-		v1.GET("users", controller.GetUsers)
-		v1.GET("users/:id", controller.GetUser)
-		v1.POST("users", controller.CreateUser)
-		v1.PUT("users/:id", controller.UpdateUser)
-		v1.DELETE("users/:id", controller.DeleteUser)
+		rUsers := v1.Group("users")
+		// rUsers.Use(middleware.JWT())
+		rUsers.GET("", controller.GetUsers)
+		rUsers.GET("/:id", controller.GetUser)
+		rUsers.POST("", controller.CreateUser)
+		rUsers.PUT("/:id", controller.UpdateUser)
+		rUsers.DELETE("/:id", controller.DeleteUser)
 
 		// Post
-		v1.GET("posts", controller.GetPosts)
-		v1.GET("posts/:id", controller.GetPost)
-		v1.POST("posts", controller.CreatePost)
-		v1.PUT("posts/:id", controller.UpdatePost)
-		v1.DELETE("posts/:id", controller.DeletePost)
+		rPosts := v1.Group("posts")
+		rPosts.Use(middleware.JWT())
+		rPosts.GET("", controller.GetPosts)
+		rPosts.GET("/:id", controller.GetPost)
+		rPosts.POST("", controller.CreatePost)
+		rPosts.PUT("/:id", controller.UpdatePost)
+		rPosts.DELETE("/:id", controller.DeletePost)
 	}
 
 	return router

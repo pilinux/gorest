@@ -31,6 +31,8 @@ func ConfigMain() Configuration {
 	serverport := os.Getenv("APP_PORT")
 	serverEnv := os.Getenv("APP_ENV")
 
+	mySigningKey := os.Getenv("MySigningKey")
+
 	configuration.Server.ServerPort = serverport
 	configuration.Server.ServerEnv = serverEnv
 	configuration.Database.DbDriver = dbDriver
@@ -39,6 +41,7 @@ func ConfigMain() Configuration {
 	configuration.Database.DbName = dbName
 	configuration.Database.DbHost = dbHost
 	configuration.Database.DbPort = dbport
+	configuration.Server.ServerJWT.Key = mySigningKey
 
 	return configuration
 }

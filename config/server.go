@@ -4,4 +4,7 @@ package config
 type ServerConfig struct {
 	ServerPort string
 	ServerEnv  string
+	ServerJWT  struct {
+		Key string
+	}
 }
