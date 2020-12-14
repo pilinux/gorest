@@ -71,7 +71,7 @@ func GetJWT(id uint, email string) (string, error) {
 		id,
 		email,
 		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Second * time.Duration(JWTExpireTime)).Unix(),
+			ExpiresAt: time.Now().Add(time.Hour * time.Duration(JWTExpireTime)).Unix(),
 			Issuer:    "GoRest API",
 		},
 	}
