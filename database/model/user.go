@@ -14,7 +14,7 @@ type User struct {
 	Name     string `json:"Name"`
 	Email    string `json:"Email"`
 	Password string `json:"password"`
-	Posts    []Post `gorm:"many2many:user_posts";"foreignkey:UserID";"association_foreignkey:ID"`
+	Posts    []Post `gorm:"many2many:user_posts;foreignkey:UserID;association_foreignkey:ID"`
 }
 
 // UnmarshalJSON ...
