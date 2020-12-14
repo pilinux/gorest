@@ -82,7 +82,7 @@ func SetupRouter() *gin.Engine {
 
 		// User
 		rUsers := v1.Group("users")
-		// rUsers.Use(middleware.JWT())
+		rUsers.Use(middleware.JWT())
 		rUsers.GET("", controller.GetUsers)
 		rUsers.GET("/:id", controller.GetUser)
 		rUsers.POST("", controller.CreateUser)

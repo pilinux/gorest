@@ -11,8 +11,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// MySigningKey ...
 var MySigningKey []byte
 
+// JWT ...
 func JWT() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		val := ctx.Request.Header.Get("Authorization")
@@ -42,6 +44,7 @@ func JWT() gin.HandlerFunc {
 	}
 }
 
+// validateJWT ...
 func validateJWT(token *jwt.Token) (interface{}, error) {
 	log.Println("try to pars the JWT")
 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -51,12 +54,14 @@ func validateJWT(token *jwt.Token) (interface{}, error) {
 	return MySigningKey, nil
 }
 
+// MyCustomClaims ...
 type MyCustomClaims struct {
 	ID    uint   `json:"id"`
 	Email string `json:"email"`
 	jwt.StandardClaims
 }
 
+// GetJWT ...
 func GetJWT(id uint, email string) (string, error) {
 	// Create the Claims
 	claims := MyCustomClaims{
@@ -64,7 +69,7 @@ func GetJWT(id uint, email string) (string, error) {
 		email,
 		jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * 2).Unix(),
-			Issuer:    "movie API",
+			Issuer:    "GoRest API",
 		},
 	}
 
