@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -32,6 +33,7 @@ func ConfigMain() Configuration {
 	serverEnv := os.Getenv("APP_ENV")
 
 	mySigningKey := os.Getenv("MySigningKey")
+	JWTExpireTime, _ := strconv.Atoi(os.Getenv("JWTExpireTime"))
 
 	configuration.Server.ServerPort = serverport
 	configuration.Server.ServerEnv = serverEnv
@@ -42,6 +44,7 @@ func ConfigMain() Configuration {
 	configuration.Database.DbHost = dbHost
 	configuration.Database.DbPort = dbport
 	configuration.Server.ServerJWT.Key = mySigningKey
+	configuration.Server.ServerJWT.Expire = JWTExpireTime
 
 	return configuration
 }

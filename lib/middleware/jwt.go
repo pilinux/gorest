@@ -14,6 +14,9 @@ import (
 // MySigningKey ...
 var MySigningKey []byte
 
+// JWTExpireTime ...
+var JWTExpireTime int
+
 // JWT ...
 func JWT() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -68,7 +71,7 @@ func GetJWT(id uint, email string) (string, error) {
 		id,
 		email,
 		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Hour * 2).Unix(),
+			ExpiresAt: time.Now().Add(time.Second * time.Duration(JWTExpireTime)).Unix(),
 			Issuer:    "GoRest API",
 		},
 	}

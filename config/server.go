@@ -5,6 +5,7 @@ type ServerConfig struct {
 	ServerPort string
 	ServerEnv  string
 	ServerJWT  struct {
-		Key string
+		Key    string
+		Expire int
 	}
 }

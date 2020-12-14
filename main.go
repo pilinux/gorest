@@ -22,6 +22,7 @@ func main() {
 	defer db.Close()
 
 	middleware.MySigningKey = []byte(configure.Server.ServerJWT.Key)
+	middleware.JWTExpireTime = configure.Server.ServerJWT.Expire
 
 	// Debugging - environment variables
 	/*
