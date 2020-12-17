@@ -13,18 +13,18 @@ type User struct {
 	gorm.Model
 	Name     string `json:"Name"`
 	Email    string `json:"Email"`
-	Password string `json:"password"`
+	Password string `json:"Password"`
 	Posts    []Post `gorm:"many2many:user_posts;foreignkey:UserID;association_foreignkey:ID"`
 }
 
 // UnmarshalJSON ...
 func (u *User) UnmarshalJSON(b []byte) error {
 	aux := struct {
-		ID       uint   `json:"id"`
+		ID       uint   `json:"Id"`
 		Name     string `json:"Name"`
-		Email    string `json:"email"`
-		Password string `json:"password"`
-		Posts    []Post `json:"posts"`
+		Email    string `json:"Email"`
+		Password string `json:"Password"`
+		Posts    []Post `json:"Posts"`
 	}{}
 	if err := json.Unmarshal(b, &aux); err != nil {
 		return err
@@ -48,10 +48,10 @@ func HashPass(pass string) string {
 // MarshalJSON ...
 func (u User) MarshalJSON() ([]byte, error) {
 	aux := struct {
-		ID    uint   `json:"id"`
+		ID    uint   `json:"Id"`
 		Name  string `json:"Name"`
-		Email string `json:"email"`
-		Posts []Post `json:"posts"`
+		Email string `json:"Email"`
+		Posts []Post `json:"Posts"`
 	}{
 		ID:    u.ID,
 		Name:  u.Name,

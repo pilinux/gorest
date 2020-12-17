@@ -49,7 +49,7 @@ func JWT() gin.HandlerFunc {
 
 // validateJWT ...
 func validateJWT(token *jwt.Token) (interface{}, error) {
-	log.Println("try to pars the JWT")
+	log.Println("try to parse the JWT")
 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 		log.Println("error parsing JWT")
 		return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
@@ -59,8 +59,8 @@ func validateJWT(token *jwt.Token) (interface{}, error) {
 
 // MyCustomClaims ...
 type MyCustomClaims struct {
-	ID    uint   `json:"id"`
-	Email string `json:"email"`
+	ID    uint   `json:"Id"`
+	Email string `json:"Email"`
 	jwt.StandardClaims
 }
 

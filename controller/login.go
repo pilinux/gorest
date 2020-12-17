@@ -4,18 +4,17 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/piLinux/GoREST/database"
 	"github.com/piLinux/GoREST/database/model"
 	"github.com/piLinux/GoREST/lib/middleware"
 	"github.com/piLinux/GoREST/service"
 )
 
-var db = database.GetDB()
+// var db = database.GetDB()
 
 // LoginPayload ...
 type LoginPayload struct {
-	Login string `json:"login"`
-	Pass  string `json:"pass"`
+	Email    string `json:"Email"`
+	Password string `json:"Password"`
 }
 
 // Login ...
@@ -25,13 +24,13 @@ func Login(ctx *gin.Context) {
 		ctx.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	u, err := service.GetUserByEmail(payload.Login)
+	u, err := service.GetUserByEmail(payload.Email)
 	if err != nil {
 		ctx.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	if u.Password != model.HashPass(payload.Pass) {
+	if u.Password != model.HashPass(payload.Password) {
 		ctx.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
