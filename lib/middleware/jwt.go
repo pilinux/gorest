@@ -24,6 +24,9 @@ type MyCustomClaims struct {
 	jwt.StandardClaims
 }
 
+// UserID - Access details
+var UserID uint
+
 // JWT ...
 func JWT() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -50,6 +53,7 @@ func JWT() gin.HandlerFunc {
 
 		if claims, ok := token.Claims.(*MyCustomClaims); ok && token.Valid {
 			fmt.Println(claims.ID, claims.Email)
+			UserID = claims.ID
 		}
 	}
 }
