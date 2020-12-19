@@ -48,6 +48,8 @@ in GoREST)
 for any Debian based OS)
 - Install `git`
 - Clone the project `go get -u github.com/piLinux/GoREST`
+- Checkout this specific commit `git checkout 136d9`. [Important: If you want to
+contribute to this project, please continue from the latest commit]
 - At the root of the cloned repository
 [`cd $GOPATH/src/github.com/piLinux/GoREST`], execute `go build` to fetch all
 the dependencies
@@ -330,7 +332,7 @@ Please see [this][62] document.
 
 ## License
 
-© Mahir Hasan - 2019
+© Mahir Hasan 2019 - 2020
 
 Released under the [MIT license][13]
 
