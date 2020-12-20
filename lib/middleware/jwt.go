@@ -24,22 +24,22 @@ type MyCustomClaims struct {
 	jwt.StandardClaims
 }
 
-// UserID - Access details
-var UserID uint
+// AuthID - Access details
+var AuthID uint
 
 // JWT ...
 func JWT() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		val := ctx.Request.Header.Get("Authorization")
+	return func(c *gin.Context) {
+		val := c.Request.Header.Get("Authorization")
 		if len(val) == 0 || !strings.Contains(val, "Bearer ") {
 			log.Println("no vals or no Bearer found")
-			ctx.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 		vals := strings.Split(val, " ")
 		if len(vals) != 2 {
 			log.Println("result split not valid")
-			ctx.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
@@ -47,13 +47,13 @@ func JWT() gin.HandlerFunc {
 
 		if err != nil {
 			log.Println("error parsing JWT", err)
-			ctx.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
 		if claims, ok := token.Claims.(*MyCustomClaims); ok && token.Valid {
-			fmt.Println(claims.ID, claims.Email)
-			UserID = claims.ID
+			//fmt.Println(claims.ID, claims.Email)
+			AuthID = claims.ID
 		}
 	}
 }
