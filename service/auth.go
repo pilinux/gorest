@@ -8,15 +8,15 @@ import (
 )
 
 // GetUserByEmail ...
-func GetUserByEmail(email string) (*model.User, error) {
+func GetUserByEmail(email string) (*model.Auth, error) {
 	db := database.GetDB()
 
-	var user model.User
+	var auth model.Auth
 
-	if err := db.Where("email = ? ", email).Find(&user).Error; err != nil {
+	if err := db.Where("email = ? ", email).Find(&auth).Error; err != nil {
 		fmt.Println(err)
 		return nil, err
 	}
 
-	return &user, nil
+	return &auth, nil
 }
