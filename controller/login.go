@@ -9,8 +9,6 @@ import (
 	"github.com/piLinux/GoREST/service"
 )
 
-// var db = database.GetDB()
-
 // LoginPayload ...
 type LoginPayload struct {
 	Email    string `json:"Email"`
@@ -18,28 +16,28 @@ type LoginPayload struct {
 }
 
 // Login ...
-func Login(ctx *gin.Context) {
+func Login(c *gin.Context) {
 	var payload LoginPayload
-	if err := ctx.BindJSON(&payload); err != nil {
-		ctx.AbortWithStatus(http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	u, err := service.GetUserByEmail(payload.Email)
+	v, err := service.GetUserByEmail(payload.Email)
 	if err != nil {
-		ctx.AbortWithStatus(http.StatusInternalServerError)
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	if u.Password != model.HashPass(payload.Password) {
-		ctx.AbortWithStatus(http.StatusUnauthorized)
+	if v.Password != model.HashPass(payload.Password) {
+		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
-	jwtValue, err := middleware.GetJWT(u.ID, u.Email)
+	jwtValue, err := middleware.GetJWT(v.AuthID, v.Email)
 	if err != nil {
-		ctx.AbortWithStatus(http.StatusInternalServerError)
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"jwt": jwtValue})
+	c.JSON(http.StatusOK, gin.H{"JWT": jwtValue})
 }
