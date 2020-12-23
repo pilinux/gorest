@@ -2,6 +2,6 @@ package model
 
 // UserHobby model - intermediate table `user_hobbies` (many to many relations)
 type UserHobby struct {
-	UserID  uint
-	HobbyID uint
+	IDUser  uint
+	IDHobby uint
 }
