@@ -1,63 +1,18 @@
 package model
 
 import (
-	"crypto/sha256"
-	"encoding/json"
-	"fmt"
-
-	"github.com/jinzhu/gorm"
+	"time"
 )
 
 // User model - `users` table
 type User struct {
-	gorm.Model
-	Name     string `json:"Name"`
-	Email    string `json:"Email"`
-	Password string `json:"Password"`
-	Posts    []Post `gorm:"many2many:user_posts";"foreignkey:UserID";"association_foreignkey:ID"`
-}
-
-// UnmarshalJSON ...
-func (u *User) UnmarshalJSON(b []byte) error {
-	aux := struct {
-		ID       uint   `json:"Id"`
-		Name     string `json:"Name"`
-		Email    string `json:"Email"`
-		Password string `json:"Password"`
-		Posts    []Post `json:"Posts"`
-	}{}
-	if err := json.Unmarshal(b, &aux); err != nil {
-		return err
-	}
-	u.ID = aux.ID
-	u.Name = aux.Name
-	u.Email = aux.Email
-	u.Posts = aux.Posts
-	u.Password = HashPass(aux.Password)
-
-	return nil
-}
-
-// HashPass ...
-func HashPass(pass string) string {
-	h := sha256.New()
-	h.Write([]byte(pass))
-	return fmt.Sprintf("%x", h.Sum(nil))
-}
-
-// MarshalJSON ...
-func (u User) MarshalJSON() ([]byte, error) {
-	aux := struct {
-		ID    uint   `json:"Id"`
-		Name  string `json:"Name"`
-		Email string `json:"Email"`
-		Posts []Post `json:"Posts"`
-	}{
-		ID:    u.ID,
-		Name:  u.Name,
-		Email: u.Email,
-		Posts: u.Posts,
-	}
-
-	return json.Marshal(aux)
+	UserID    uint `gorm:"primary_key"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt *time.Time `sql:"index"`
+	FirstName string     `json:"FirstName"`
+	LastName  string     `json:"LastName"`
+	IDAuth    uint
+	Posts     []Post  `gorm:"foreignkey:IDPost;association_foreignkey:UserID"`
+	Hobbies   []Hobby `gorm:"many2many:user_hobbies"`
 }
