@@ -24,7 +24,7 @@ func Login(c *gin.Context) {
 	}
 	v, err := service.GetUserByEmail(payload.Email)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
 
