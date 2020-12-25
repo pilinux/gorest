@@ -11,9 +11,11 @@ import (
 )
 
 // Load all the models
+type auth model.Auth
 type user model.User
 type post model.Post
-type userPost model.UserPost
+type hobby model.Hobby
+type userHobby model.UserHobby
 
 var db *gorm.DB
 var errorState int
@@ -53,7 +55,7 @@ func main() {
 
 func dropAllTables() {
 	// Careful! It will drop all the tables!
-	if err := db.DropTableIfExists(&userPost{}, &user{}, &post{}).Error; err != nil {
+	if err := db.DropTableIfExists(&userHobby{}, &hobby{}, &post{}, &user{}, &auth{}).Error; err != nil {
 		errorState = 1
 		fmt.Println(err)
 	} else {
@@ -63,8 +65,8 @@ func dropAllTables() {
 
 func migrateTables() {
 	// db.Set() --> add table suffix during auto migration
-	if err := db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(&user{},
-		&post{}, &userPost{}).Error; err != nil {
+	if err := db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(&auth{},
+		&user{}, &post{}, &hobby{}, &userHobby{}).Error; err != nil {
 		errorState = 1
 		fmt.Println(err)
 	} else {
@@ -74,12 +76,12 @@ func migrateTables() {
 
 func setPkFk() {
 	// Manually set foreign key for MySQL DB
-	if err := db.Model(&userPost{}).AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE").Error; err != nil {
+	if err := db.Model(&user{}).AddForeignKey("id_auth", "auths(auth_id)", "CASCADE", "CASCADE").Error; err != nil {
 		errorState = 1
 		fmt.Println(err)
 	}
 
-	if err := db.Model(&userPost{}).AddForeignKey("post_id", "posts(id)", "CASCADE", "CASCADE").Error; err != nil {
+	if err := db.Model(&post{}).AddForeignKey("id_user", "users(user_id)", "CASCADE", "CASCADE").Error; err != nil {
 		errorState = 1
 		fmt.Println(err)
 	}
