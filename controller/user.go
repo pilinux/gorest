@@ -2,9 +2,11 @@ package controller
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/piLinux/GoREST/database"
 	"github.com/piLinux/GoREST/database/model"
+	"github.com/piLinux/GoREST/lib/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,19 +16,24 @@ func GetUsers(c *gin.Context) {
 	db := database.GetDB()
 	users := []model.User{}
 	posts := []model.Post{}
+	hobbies := []model.Hobby{}
 
 	if err := db.Find(&users).Error; err != nil {
 		fmt.Println(err)
-		c.AbortWithStatus(404)
+		c.AbortWithStatus(http.StatusNotFound)
 	} else {
 		j := 0
 		for _, user := range users {
-			db.Table("posts").Joins("JOIN user_posts ON posts.id=user_posts.post_id").Joins("JOIN users ON users.id=user_posts.user_id").Where("users.id = ?", user.ID).Scan(&posts)
-			//db.Raw("SELECT * FROM posts p JOIN user_posts up ON p.id = up.post_id JOIN users u ON u.id = up.user_id WHERE u.id = ?", user.ID).Scan(&posts)
+			db.Model(&posts).Where("id_user = ?", user.UserID).Find(&posts)
 			users[j].Posts = posts
+			db.Model(&hobbies).Joins("JOIN user_hobbies ON user_hobbies.hobby_hobby_id=hobbies.hobby_id").
+				Joins("JOIN users ON users.user_id=user_hobbies.user_user_id").
+				Where("users.user_id = ?", user.UserID).
+				Find(&hobbies)
+			users[j].Hobbies = hobbies
 			j++
 		}
-		c.JSON(200, users)
+		c.JSON(http.StatusOK, users)
 	}
 }
 
@@ -36,15 +43,20 @@ func GetUser(c *gin.Context) {
 	id := c.Params.ByName("id")
 	user := model.User{}
 	posts := []model.Post{}
+	hobbies := []model.Hobby{}
 
-	if err := db.Where("id = ? ", id).First(&user).Error; err != nil {
+	if err := db.Where("user_id = ? ", id).First(&user).Error; err != nil {
 		fmt.Println(err)
-		c.AbortWithStatus(404)
+		c.AbortWithStatus(http.StatusNotFound)
 	} else {
-		db.Table("posts").Joins("JOIN user_posts ON posts.id=user_posts.post_id").Joins("JOIN users ON users.id=user_posts.user_id").Where("users.id = ?", id).Scan(&posts)
-		//db.Raw("SELECT * FROM posts p JOIN user_posts up ON p.id = up.post_id JOIN users u ON u.id = up.user_id WHERE u.id = ?", id).Scan(&posts)
+		db.Model(&posts).Where("id_user = ?", id).Find(&posts)
 		user.Posts = posts
-		c.JSON(200, user)
+		db.Model(&hobbies).Joins("JOIN user_hobbies ON user_hobbies.hobby_hobby_id=hobbies.hobby_id").
+			Joins("JOIN users ON users.user_id=user_hobbies.user_user_id").
+			Where("users.user_id = ?", user.UserID).
+			Find(&hobbies)
+		user.Hobbies = hobbies
+		c.JSON(http.StatusOK, user)
 	}
 }
 
@@ -52,77 +64,104 @@ func GetUser(c *gin.Context) {
 func CreateUser(c *gin.Context) {
 	db := database.GetDB()
 	user := model.User{}
+	createUser := 0 // default
 
-	c.BindJSON(&user)
+	user.IDAuth = middleware.AuthID
 
-	tx := db.Begin()
-	if err := tx.Create(&user).Error; err != nil {
-		tx.Rollback()
-		fmt.Println(err)
-		c.AbortWithStatus(404)
-	} else {
-		tx.Commit()
-		c.JSON(200, user)
+	if err := db.Where("id_auth = ?", user.IDAuth).First(&user).Error; err == nil {
+		createUser = 1 // user data already registered
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	if createUser == 0 {
+		c.ShouldBindJSON(&user)
+
+		tx := db.Begin()
+		if err := tx.Create(&user).Error; err != nil {
+			tx.Rollback()
+			fmt.Println(err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+		} else {
+			tx.Commit()
+			c.JSON(http.StatusCreated, user)
+		}
 	}
 }
 
-// UpdateUser - PUT /users/:id
+// UpdateUser - PUT /users
 func UpdateUser(c *gin.Context) {
 	db := database.GetDB()
 	user := model.User{}
-	id := c.Params.ByName("id")
+	updateUser := 0 // default
 
-	if err := db.Where("id = ?", id).First(&user).Error; err != nil {
-		fmt.Println(err)
-		c.AbortWithStatus(404)
+	user.IDAuth = middleware.AuthID
+
+	if err := db.Where("id_auth = ?", user.IDAuth).First(&user).Error; err != nil {
+		updateUser = 1 // user data is not registered, nothing can be updated
+		c.AbortWithStatus(http.StatusNotFound)
+		return
 	}
 
-	c.BindJSON(&user)
+	if updateUser == 0 {
+		c.ShouldBindJSON(&user)
+		fmt.Println(user.UserID)
 
-	tx := db.Begin()
-	if err := tx.Save(&user).Error; err != nil {
-		tx.Rollback()
-		fmt.Println(err)
-		c.AbortWithStatus(501)
-	} else {
-		tx.Commit()
-		c.JSON(200, user)
+		tx := db.Begin()
+		if err := tx.Save(&user).Error; err != nil {
+			tx.Rollback()
+			fmt.Println(err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+		} else {
+			tx.Commit()
+			c.JSON(http.StatusOK, user)
+		}
 	}
 }
 
-// DeleteUser - DELETE /users/:id
-func DeleteUser(c *gin.Context) {
+// AddHobby - PUT /users/hobbies
+func AddHobby(c *gin.Context) {
 	db := database.GetDB()
-	id := c.Params.ByName("id")
 	user := model.User{}
-	posts := []model.Post{}
+	hobby := model.Hobby{}
+	hobbyFound := 0 // default = 0, do not proceed = 1, create new hobby = 2
 
-	if err := db.Where("id = ? ", id).Find(&user).Error; err != nil {
-		fmt.Println(err)
-		c.AbortWithStatus(404)
-	} else {
-		if err := db.Table("posts").Joins("JOIN user_posts ON posts.id=user_posts.post_id").Joins("JOIN users ON users.id=user_posts.user_id").Where("users.id = ?", id).Scan(&posts).Error; err != nil {
+	user.IDAuth = middleware.AuthID
+
+	if err := db.Where("id_auth = ?", user.IDAuth).First(&user).Error; err != nil {
+		hobbyFound = 1 // user data is not registered, do not proceed
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	c.ShouldBindJSON(&hobby)
+
+	if err := db.First(&hobby, "hobby = ?", hobby.Hobby).Error; err != nil {
+		hobbyFound = 2 // create new hobby
+	}
+
+	if hobbyFound == 2 {
+		tx := db.Begin()
+		if err := tx.Create(&hobby).Error; err != nil {
+			tx.Rollback()
 			fmt.Println(err)
-			c.AbortWithStatus(404)
+			c.AbortWithStatus(http.StatusInternalServerError)
 		} else {
-			tx := db.Begin()
+			tx.Commit()
+			hobbyFound = 0
+		}
+	}
 
-			for _, post := range posts {
-				if err := tx.Delete(&post).Error; err != nil {
-					tx.Rollback()
-					fmt.Println(err)
-					c.AbortWithStatus(404)
-				}
-			}
-
-			if err := tx.Where("id = ? ", id).Delete(&user).Error; err != nil {
-				tx.Rollback()
-				fmt.Println(err)
-				c.AbortWithStatus(404)
-			} else {
-				tx.Commit()
-				c.JSON(200, gin.H{"id#" + id: "deleted"})
-			}
+	if hobbyFound == 0 {
+		user.Hobbies = append(user.Hobbies, hobby)
+		tx := db.Begin()
+		if err := tx.Save(&user).Error; err != nil {
+			tx.Rollback()
+			fmt.Println(err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+		} else {
+			tx.Commit()
+			c.JSON(http.StatusOK, user)
 		}
 	}
 }
