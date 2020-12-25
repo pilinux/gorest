@@ -75,29 +75,35 @@ func SetupRouter() *gin.Engine {
 	router.Use(middleware.CORS())
 
 	// API:v1.0
-	// Non-protected routes
 	v1 := router.Group("/api/v1/")
 	{
-		// login
+		// Register - no JWT required
+		v1.POST("register", controller.CreateUserAuth)
+
+		// Login - app issues JWT
 		v1.POST("login", controller.Login)
 
 		// User
 		rUsers := v1.Group("users")
+		rUsers.GET("", controller.GetUsers)    // Non-protected
+		rUsers.GET("/:id", controller.GetUser) // Non-protected
 		rUsers.Use(middleware.JWT())
-		rUsers.GET("", controller.GetUsers)
-		rUsers.GET("/:id", controller.GetUser)
-		rUsers.POST("", controller.CreateUser)
-		rUsers.PUT("/:id", controller.UpdateUser)
-		rUsers.DELETE("/:id", controller.DeleteUser)
+		rUsers.POST("", controller.CreateUser)      // Protected
+		rUsers.PUT("", controller.UpdateUser)       // Protected
+		rUsers.PUT("/hobbies", controller.AddHobby) // Protected
 
 		// Post
 		rPosts := v1.Group("posts")
+		rPosts.GET("", controller.GetPosts)    // Non-protected
+		rPosts.GET("/:id", controller.GetPost) // Non-protected
 		rPosts.Use(middleware.JWT())
-		rPosts.GET("", controller.GetPosts)
-		rPosts.GET("/:id", controller.GetPost)
-		rPosts.POST("", controller.CreatePost)
-		rPosts.PUT("/:id", controller.UpdatePost)
-		rPosts.DELETE("/:id", controller.DeletePost)
+		rPosts.POST("", controller.CreatePost)       // Protected
+		rPosts.PUT("/:id", controller.UpdatePost)    // Protected
+		rPosts.DELETE("/:id", controller.DeletePost) // Protected
+
+		// Hobby
+		rHobbies := v1.Group("hobbies")
+		rHobbies.GET("", controller.GetHobbies) // Non-protected
 	}
 
 	return router
