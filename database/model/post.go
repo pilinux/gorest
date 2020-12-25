@@ -10,7 +10,7 @@ type Post struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt *time.Time `sql:"index" json:"-"`
-	Title     string     `json:"Title"`
-	Body      string     `json:"Body"`
+	Title     string     `json:"Title,omitempty"`
+	Body      string     `json:"Body,omitempty"`
 	IDUser    uint       `json:"-"`
 }

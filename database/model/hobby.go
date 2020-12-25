@@ -10,6 +10,6 @@ type Hobby struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt *time.Time `sql:"index" json:"-"`
-	Hobby     string     `json:"Hobby"`
+	Hobby     string     `json:"Hobby,omitempty"`
 	Users     []User     `gorm:"many2many:user_hobbies" json:"-"`
 }
