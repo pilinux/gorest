@@ -12,13 +12,19 @@ under the [MIT license][13] and is free for any personal or commercial project.
 
 
 
+## Updates [Dec 26 - 2020]
+- [JWT][14] based authentication is implemented using [dgrijalva/jwt-go][15]
+- `One-to-one`, `one-to-many`, and `many-to-many` models are introduced
+
+
+
 ## Database Support
 
 GoREST uses [GORM][21] as its ORM. GORM supports **SQLite3**, **MySQL** and
 **PostgreSQL**.
 
 In GoREST, **MySQL** driver is included. **SQLite3** and **PostgreSQL** drivers
-will be included before releasing the first version of GoREST.
+will be included in future releases after thorough testing.
 
 
 
@@ -28,19 +34,20 @@ For demonstration, a test instance can be accessed [here][31] from a web
 browser. For API development, it is recommended to use [Postman][32] or any
 other similar tool.
 
-Endpoints:
+Accessible endpoints of the test instance:
 - https://goapi.pilinux.me/api/v1/users
 - https://goapi.pilinux.me/api/v1/users/:id
 - https://goapi.pilinux.me/api/v1/posts
 - https://goapi.pilinux.me/api/v1/posts/:id
+- https://goapi.pilinux.me/api/v1/hobbies
 
-To prevent abuse, only HTTP GET requests will be accepted by the demo server.
+To prevent abuse, only HTTP `GET` requests are accepted by the demo server.
 
-<img width="650px" src="https://cdn.pilinux.me/images/GoREST/screenshot/GoREST-goapiGET.PNG">
+<img width="650px" src="https://cdn.pilinux.me/images/GoREST/screenshot/GoREST.API.Demo.PNG">
 
 
 
-## Setup and start the first production-ready app
+## Setup and start the production-ready app
 
 - Install a relational database (at the moment, only MySQL driver is included
 in GoREST)
@@ -48,8 +55,6 @@ in GoREST)
 for any Debian based OS)
 - Install `git`
 - Clone the project `go get -u github.com/piLinux/GoREST`
-- Checkout this specific commit `git checkout 136d9`. [Important: If you want to
-contribute to this project, please continue from the latest commit]
 - At the root of the cloned repository
 [`cd $GOPATH/src/github.com/piLinux/GoREST`], execute `go build` to fetch all
 the dependencies
@@ -61,129 +66,76 @@ project `$GOPATH/src/github.com/piLinux/GoREST`
 `go run autoMigrate.go` to migrate the database
 - At `$GOPATH/src/github.com/piLinux/GoREST`, run `./GoREST` to launch the app
 
-To the following endpoints GET, POST, PUT and DELETE requests can be sent:
+To the following endpoints `GET`, `POST`, `PUT` and `DELETE` requests can be sent:
 
+- http://localhost:port/api/v1/register
+  - `POST` [create new account]
+```
+{
+    "Email":"...@example.com",
+    "Password":"..."
+}
+```
+- http://localhost:port/api/v1/login
+  - `POST` [generate new JWT]
+```
+{
+    "Email":"...@example.com",
+    "Password":"..."
+}
+```
 - http://localhost:port/api/v1/users
+  - `GET` [get list of all registered users along with their hobbies and posts]
+  - `POST` [add user info to the database, requires JWT for verification]
+```
+{
+    "FirstName": "...",
+    "LastName": "..."
+}
+```
+  - `PUT` [edit user info, requires JWT for verification]
+```
+{
+    "FirstName": "...",
+    "LastName": "..."
+}
+```
 - http://localhost:port/api/v1/users/:id
+  - `GET` [fetch hobbies and posts belonged to a specific user]
+- http://localhost:port/api/v1/users/hobbies
+  - `PUT` [add a new hobby, requires JWT for verification]
+```
+{
+    "Hobby": "..."
+}
+```
 - http://localhost:port/api/v1/posts
+  - `GET` [fetch all published posts]
+  - `POST` [create a new post, requires JWT for verification]
+```
+{
+    "Title": "...",
+    "Body": "... ..."
+}
+```
 - http://localhost:port/api/v1/posts/:id
-
-
-### GET query to read all the data from the database
-
-- http://localhost:port/api/v1/users (get all users and posts belong to each one of them)
-- http://localhost:port/api/v1/users/:id (get one specific user and posts belong to him)
-- http://localhost:port/api/v1/posts (get all posts)
-- http://localhost:port/api/v1/posts/:id (get one specific post)
-
-Received JSON structure for users:
-
+  - `GET` [fetch a specific post]
+  - `PUT` [edit a specific post, requires JWT for verification]
 ```
 {
-    "ID": "value",
-    "CreatedAt": "date",
-    "UpdatedAt": "date",
-    "DeletedAt": null,
-    "Name": "name",
-    "Email": "something@example.com",
-    "Posts": [
-        {
-            "ID": "value",
-            "CreatedAt": "date",
-            "UpdatedAt": "date",
-            "DeletedAt": null,
-            "Title": "title",
-            "Body": "message body"
-        }
-    ]
+    "Title": "...",
+    "Body": "... ..."
 }
 ```
-
-Received JSON structure for posts:
-
-```
-{
-    "ID": "value",
-    "CreatedAt": "date",
-    "UpdatedAt": "date",
-    "DeletedAt": null,
-    "Title": "title",
-    "Body": "message body"
-}
-```
-
-### POST query to create new data
-
-- http://localhost:port/api/v1/users (create a new user with no post/one post/many posts)
-- http://localhost:port/api/v1/posts (create a new post without any owner)
-
-JSON structure to create a new user with no post:
-
-```
-{
-    "Name": "name",
-    "Email": "something@example.com",
-}
-```
-
-JSON structure to create a new user with one post:
-
-```
-{
-    "Name": "name",
-    "Email": "something@example.com",
-    "Posts": [
-        {
-            "Title": "title",
-            "Body": "message body"
-        }
-    ]
-}
-```
-
-JSON structure to create a new user with many posts:
-
-```
-{
-    "Name": "name",
-    "Email": "something@example.com",
-    "Posts": [
-        {
-            "Title": "title",
-            "Body": "message body"
-        },
-        {
-            "Title": "title",
-            "Body": "message body"
-        },
-        {
-            "Title": "title",
-            "Body": "message body"
-        }
-    ]
-}
-```
-
-JSON structure to create a new post without any user:
-
-```
-{
-    "Title": "title",
-    "Body": "message body"
-}
-```
+  - `DELETE` [delete a specific post, requires JWT for verification]
+- http://localhost:port/api/v1/hobbies
+  - `GET` [fetch all hobbies created by all users]
 
 
-### PUT query to update any previously saved records
 
-- http://localhost:port/api/v1/users/:id (edit one specific user and posts belong to him)
-- http://localhost:port/api/v1/posts/:id (edit one specific post)
+## Flow diagram
 
-
-### DELETE query to delete an entry
-
-- http://localhost:port/api/v1/users/:id (delete one specific user and all posts belong to him)
-- http://localhost:port/api/v1/posts/:id (delete one specific post)
+![Flow.Diagram][05]
 
 
 
@@ -191,6 +143,7 @@ JSON structure to create a new post without any user:
 
 - GoREST uses [Gin][12] as the main framework, [GORM][21] as the ORM and
 [GoDotEnv][51] for environment configuration
+- [dgrijalva/jwt-go][15] is used for JWT authentication
 - All codes are written and organized following a straightforward and 
 easy-to-understand approach
 - For **Logger** and **Recovery**, Gin's in-built middlewares are used
@@ -205,16 +158,16 @@ router := gin.Default()
 router.Use(middleware.CORS())
 ```
 
-- A `many to many` relationship model is included in this project. In the
-future, more sample models will be published to ease the development phase
-for any novice developer.
+- Included relationship models are:
+  - `one to one`
+  - `one to many`
+  - `many to many`
 
 
 
-## Missing feature
+## Logical Database Model
 
-- It has already been planned to implement JWT authentication. At the moment,
-GoREST has no authentication system.
+![DB.Model.Logical][04]
 
 
 
@@ -225,9 +178,11 @@ GoREST has no authentication system.
 ```
 GoREST
 │---README.md
-│---LICENSE   
+│---LICENSE
 │---.gitignore
 │---.env.sample
+│---go.mod
+│---go.sum
 │---main.go
 │
 └───config
@@ -236,8 +191,11 @@ GoREST
 │    └---server.go
 │
 │───controller
-│    └---post.go
+│    └---auth.go
+│    └---login.go
 │    └---user.go
+│    └---post.go
+│    └---hobby.go
 │
 └───database
 │    │---dbConnect.go
@@ -247,13 +205,19 @@ GoREST
 │    │    └---.env.sample
 │    │
 │    └───model
-│        └---post.go
-│        └---user.go
-│        └---userPost.go
+│         └---auth.go
+│         └---user.go
+│         └---post.go
+│         └---hobby.go
+│         └---userHobby.go
 │
 └───lib
-    └───middleware
-        └---cors.go
+│    └───middleware
+│         └---cors.go
+│         └---jwt.go
+│
+└───service
+     └---auth.go
 ```
 
 For API development, one needs to focus only on the following files and directories:
@@ -263,8 +227,11 @@ GoREST
 │---main.go
 │
 │───controller
-│    └---post.go
+│    └---auth.go
+│    └---login.go
 │    └---user.go
+│    └---post.go
+│    └---hobby.go
 │
 └───database
 │    │
@@ -272,19 +239,26 @@ GoREST
 │    │    └---autoMigrate.go
 │    │
 │    └───model
-│        └---post.go
-│        └---user.go
-│        └---userPost.go
+│         └---auth.go
+│         └---user.go
+│         └---post.go
+│         └---hobby.go
+│         └---userHobby.go
 │
 └───lib
-    └───middleware
+│    └───middleware
+│         └---cors.go
+│         └---jwt.go
+│
+└───service
+     └---auth.go
 ```
 
 ### Step 1
 
 - `model`: This package contains all the necessary models. Each file is
 responsible for one specific table in the database. To add new tables and to
-create new relations between those tables, create new models and place them in
+create new relations between those tables, create new models, and place them in
 this directory. All newly created files should have the same package name.
 
 ### Step 2
@@ -341,16 +315,20 @@ Released under the [MIT license][13]
 [01]: https://goreportcard.com/report/github.com/piLinux/GoREST
 [02]: https://app.fossa.io/projects/git%2Bgithub.com%2FpiLinux%2FGoREST?ref=badge_shield
 [03]: https://codebeat.co/projects/github-com-pilinux-gorest-master
+[04]: https://cdn.pilinux.me/images/GoREST/models/dbModelv1.0.svg
+[05]: https://cdn.pilinux.me/images/GoREST/flowchart/flow.diagram.v1.0.svg
 [11]: https://github.com/golang/go
 [12]: https://github.com/gin-gonic/gin
-[13]: https://github.com/piLinux/GoREST/blob/master/LICENSE
+[13]: LICENSE
+[14]: https://jwt.io/introduction
+[15]: https://github.com/dgrijalva/jwt-go
 [21]: https://github.com/jinzhu/gorm
 [31]: https://goapi.pilinux.me/api/v1/users
 [32]: https://getpostman.com
 [41]: https://github.com/piLinux/HowtoCode/blob/master/Golang/1.Intro/Installation.md
 [51]: https://github.com/joho/godotenv
-[61]: https://github.com/piLinux/GoREST/blob/master/CONTRIBUTING.md
-[62]: https://github.com/piLinux/GoREST/blob/master/CODE_OF_CONDUCT.md
+[61]: CONTRIBUTING.md
+[62]: CODE_OF_CONDUCT.md
 
 
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FpiLinux%2FGoREST.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FpiLinux%2FGoREST?ref=badge_large)
