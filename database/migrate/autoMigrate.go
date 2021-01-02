@@ -69,8 +69,7 @@ func migrateTables() {
 	configureDB := config.ConfigMain()
 	driver := configureDB.Database.DbDriver
 
-	switch driver {
-	case "mysql":
+	if driver == "mysql" {
 		// db.Set() --> add table suffix during auto migration
 		if err := db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(&auth{},
 			&user{}, &post{}, &hobby{}, &userHobby{}).Error; err != nil {
@@ -79,8 +78,7 @@ func migrateTables() {
 		} else {
 			fmt.Println("New tables are  migrated successfully!")
 		}
-		break
-	case "postgres":
+	} else {
 		if err := db.AutoMigrate(&auth{},
 			&user{}, &post{}, &hobby{}, &userHobby{}).Error; err != nil {
 			errorState = 1
@@ -88,9 +86,6 @@ func migrateTables() {
 		} else {
 			fmt.Println("New tables are  migrated successfully!")
 		}
-		break
-	default:
-		fmt.Println("Check the .env config for db driver setup.")
 	}
 }
 

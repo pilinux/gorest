@@ -13,6 +13,9 @@ import (
 
 	// Import PostgreSQL database driver
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+
+	// Import SQLite3 database driver
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
 // DB global variable to access gorm
@@ -46,6 +49,17 @@ func InitDB() *gorm.DB {
 		break
 	case "postgres":
 		db, err = gorm.Open(driver, "host="+host+" port="+port+" user="+username+" dbname="+database+" password="+password)
+		if err != nil {
+			// fmt.Println("DB err: ", err)
+			log.Fatalln(err)
+		}
+		// Only for debugging
+		if err == nil {
+			fmt.Println("DB connection successful!")
+		}
+		break
+	case "sqlite3":
+		db, err = gorm.Open(driver, database)
 		if err != nil {
 			// fmt.Println("DB err: ", err)
 			log.Fatalln(err)
