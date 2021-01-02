@@ -31,7 +31,7 @@ func InitDB() *gorm.DB {
 
 	switch driver {
 	case "mysql":
-		db, err = gorm.Open(driver, username+":"+password+"@tcp("+host+":"+port+")/"+database+"?charset=utf8&parseTime=True&loc=Local")
+		db, err = gorm.Open(driver, username+":"+password+"@tcp("+host+":"+port+")/"+database+"?charset=utf8mb4&parseTime=True&loc=Local")
 		if err != nil {
 			// fmt.Println("DB err: ", err)
 			log.Fatalln(err)
