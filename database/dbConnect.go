@@ -10,6 +10,9 @@ import (
 
 	// Import MySQL database driver
 	_ "github.com/jinzhu/gorm/dialects/mysql"
+
+	// Import PostgreSQL database driver
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
 // DB global variable to access gorm
@@ -32,6 +35,17 @@ func InitDB() *gorm.DB {
 	switch driver {
 	case "mysql":
 		db, err = gorm.Open(driver, username+":"+password+"@tcp("+host+":"+port+")/"+database+"?charset=utf8mb4&parseTime=True&loc=Local")
+		if err != nil {
+			// fmt.Println("DB err: ", err)
+			log.Fatalln(err)
+		}
+		// Only for debugging
+		if err == nil {
+			fmt.Println("DB connection successful!")
+		}
+		break
+	case "postgres":
+		db, err = gorm.Open(driver, "host="+host+" port="+port+" user="+username+" dbname="+database+" password="+password)
 		if err != nil {
 			// fmt.Println("DB err: ", err)
 			log.Fatalln(err)

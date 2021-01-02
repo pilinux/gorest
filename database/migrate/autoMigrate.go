@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/jinzhu/gorm"
+
+	"github.com/piLinux/GoREST/config"
 	"github.com/piLinux/GoREST/database"
 	"github.com/piLinux/GoREST/database/model"
 )
@@ -64,13 +66,31 @@ func dropAllTables() {
 }
 
 func migrateTables() {
-	// db.Set() --> add table suffix during auto migration
-	if err := db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(&auth{},
-		&user{}, &post{}, &hobby{}, &userHobby{}).Error; err != nil {
-		errorState = 1
-		fmt.Println(err)
-	} else {
-		fmt.Println("New tables are  migrated successfully!")
+	configureDB := config.ConfigMain()
+	driver := configureDB.Database.DbDriver
+
+	switch driver {
+	case "mysql":
+		// db.Set() --> add table suffix during auto migration
+		if err := db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(&auth{},
+			&user{}, &post{}, &hobby{}, &userHobby{}).Error; err != nil {
+			errorState = 1
+			fmt.Println(err)
+		} else {
+			fmt.Println("New tables are  migrated successfully!")
+		}
+		break
+	case "postgres":
+		if err := db.AutoMigrate(&auth{},
+			&user{}, &post{}, &hobby{}, &userHobby{}).Error; err != nil {
+			errorState = 1
+			fmt.Println(err)
+		} else {
+			fmt.Println("New tables are  migrated successfully!")
+		}
+		break
+	default:
+		fmt.Println("Check the .env config for db driver setup.")
 	}
 }
 
