@@ -75,8 +75,8 @@ project `$GOPATH/src/github.com/piLinux/GoREST`
   - Comment the line `setPkFk()` in `autoMigrate.go` file if the driver is not **MySQL**
 - At `$GOPATH/src/github.com/piLinux/GoREST`, run `./GoREST` to launch the app
 
-**Note:**
-- For SQLite3, `DBUSER`, `DBPASS`, `DBHOST` and `DBPORT` environment variables
+**Note For SQLite3:**
+- `DBUSER`, `DBPASS`, `DBHOST` and `DBPORT` environment variables
 should be left unchanged.
 - `DBNAME` must contain the full path and the database file name; i.e,
 ```
