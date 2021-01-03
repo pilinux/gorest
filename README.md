@@ -12,7 +12,14 @@ under the [MIT license][13] and is free for any personal or commercial project.
 
 
 
-## Updates [Dec 26 - 2020]
+## Updates 
+
+v1.1 [Jan 03 - 2021]
+- **PostgreSQL** and **SQLite3** drivers are included
+- `charset` updated from `utf8` to `utf8mb4` in order to fully support UTF-8
+encoding for MySQL database
+
+v1.0 [Dec 26 - 2020]
 - [JWT][14] based authentication is implemented using [dgrijalva/jwt-go][15]
 - `One-to-one`, `one-to-many`, and `many-to-many` models are introduced
 
@@ -20,11 +27,12 @@ under the [MIT license][13] and is free for any personal or commercial project.
 
 ## Database Support
 
-GoREST uses [GORM][21] as its ORM. GORM supports **SQLite3**, **MySQL** and
-**PostgreSQL**.
+GoREST uses [GORM][21] as its ORM. GORM supports **SQLite3**, **MySQL**,
+**PostgreSQL** and **Microsoft SQL Server**.
 
-In GoREST, **MySQL** driver is included. **SQLite3** and **PostgreSQL** drivers
-will be included in future releases after thorough testing.
+In GoREST, **MySQL**, **PostgreSQL** and **SQLite3** drivers are included.
+Anyone experienced in **Microsoft SQL Server** is welcome to contribute to the
+project by including **SQL Server** driver and testing all the features of GoREST.
 
 
 
@@ -64,7 +72,16 @@ project `$GOPATH/src/github.com/piLinux/GoREST`
 `$GOPATH/src/github.com/piLinux/GoREST/database/migrate` and save it as `.env`
 - Inside `$GOPATH/src/github.com/piLinux/GoREST/database/migrate`, run
 `go run autoMigrate.go` to migrate the database
+  - Comment the line `setPkFk()` in `autoMigrate.go` file if the driver is not **MySQL**
 - At `$GOPATH/src/github.com/piLinux/GoREST`, run `./GoREST` to launch the app
+
+**Note:**
+- For SQLite3, `DBUSER`, `DBPASS`, `DBHOST` and `DBPORT` environment variables
+should be left unchanged.
+- `DBNAME` must contain the full path and the database file name; i.e,
+```
+/user/location/database.db
+```
 
 To the following endpoints `GET`, `POST`, `PUT` and `DELETE` requests can be sent:
 
