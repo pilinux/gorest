@@ -13,6 +13,6 @@ type User struct {
 	FirstName string     `json:"FirstName,omitempty"`
 	LastName  string     `json:"LastName,omitempty"`
 	IDAuth    uint       `json:"-"`
-	Posts     []Post     `gorm:"foreignkey:IDPost;association_foreignkey:UserID" json:",omitempty"`
+	Posts     []Post     `gorm:"foreignkey:IDUser;association_foreignkey:UserID" json:",omitempty"`
 	Hobbies   []Hobby    `gorm:"many2many:user_hobbies" json:",omitempty"`
 }
