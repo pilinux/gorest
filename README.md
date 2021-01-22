@@ -57,8 +57,7 @@ To prevent abuse, only HTTP `GET` requests are accepted by the demo server.
 
 ## Setup and start the production-ready app
 
-- Install a relational database (at the moment, only MySQL driver is included
-in GoREST)
+- Install a relational database (MySQL or PostgreSQL)
 - Set up an environment to compile the Go codes (a [quick tutorial][41]
 for any Debian based OS)
 - Install `git`
