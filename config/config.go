@@ -13,8 +13,8 @@ type Configuration struct {
 	Database DatabaseConfig
 }
 
-// ConfigMain - load the configurations from .env
-func ConfigMain() Configuration {
+// Config - load the configurations from .env
+func Config() Configuration {
 	var configuration Configuration
 
 	// Load environment variables

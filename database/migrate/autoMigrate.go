@@ -66,7 +66,7 @@ func dropAllTables() {
 }
 
 func migrateTables() {
-	configureDB := config.ConfigMain()
+	configureDB := config.Config()
 	driver := configureDB.Database.DbDriver
 
 	if driver == "mysql" {

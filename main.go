@@ -15,7 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var configure = config.ConfigMain()
+var configure = config.Config()
 
 func main() {
 	db := database.InitDB()

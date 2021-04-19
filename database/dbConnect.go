@@ -26,7 +26,7 @@ var err error
 func InitDB() *gorm.DB {
 	var db = DB
 
-	configureDB := config.ConfigMain()
+	configureDB := config.Config()
 
 	driver := configureDB.Database.DbDriver
 	username := configureDB.Database.DbUser
