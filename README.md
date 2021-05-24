@@ -61,18 +61,18 @@ To prevent abuse, only HTTP `GET` requests are accepted by the demo server.
 - Set up an environment to compile the Go codes (a [quick tutorial][41]
 for any Debian based OS)
 - Install `git`
-- Clone the project `go get -u github.com/piLinux/GoREST`
+- Clone the project `go get -u github.com/pilinux/gorest`
 - At the root of the cloned repository
-[`cd $GOPATH/src/github.com/piLinux/GoREST`], execute `go build` to fetch all
+[`cd $GOPATH/src/github.com/pilinux/gorest`], execute `go build` to fetch all
 the dependencies
 - Edit `.env.sample` file and save it as `.env` file at the root of the
-project `$GOPATH/src/github.com/piLinux/GoREST`
+project `$GOPATH/src/github.com/pilinux/gorest`
 - Edit the `.env.sample` file located at
-`$GOPATH/src/github.com/piLinux/GoREST/database/migrate` and save it as `.env`
-- Inside `$GOPATH/src/github.com/piLinux/GoREST/database/migrate`, run
+`$GOPATH/src/github.com/pilinux/gorest/database/migrate` and save it as `.env`
+- Inside `$GOPATH/src/github.com/pilinux/gorest/database/migrate`, run
 `go run autoMigrate.go` to migrate the database
   - Comment the line `setPkFk()` in `autoMigrate.go` file if the driver is not **MySQL**
-- At `$GOPATH/src/github.com/piLinux/GoREST`, run `./GoREST` to launch the app
+- At `$GOPATH/src/github.com/pilinux/gorest`, run `./gorest` to launch the app
 
 **Note For SQLite3:**
 - `DBUSER`, `DBPASS`, `DBHOST` and `DBPORT` environment variables
@@ -192,7 +192,7 @@ router.Use(middleware.CORS())
 ### List of files
 
 ```
-GoREST
+gorest
 │---README.md
 │---LICENSE
 │---.gitignore
@@ -239,7 +239,7 @@ GoREST
 For API development, one needs to focus only on the following files and directories:
 
 ```
-GoREST
+gorest
 │---main.go
 │
 │───controller

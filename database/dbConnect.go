@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/piLinux/GoREST/config"
+	"github.com/pilinux/gorest/config"
 
 	"github.com/jinzhu/gorm"
 

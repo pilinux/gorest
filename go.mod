@@ -1,4 +1,4 @@
-module github.com/piLinux/GoREST
+module github.com/pilinux/gorest
 
 go 1.15
 

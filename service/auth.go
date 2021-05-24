@@ -3,8 +3,8 @@ package service
 import (
 	"fmt"
 
-	"github.com/piLinux/GoREST/database"
-	"github.com/piLinux/GoREST/database/model"
+	"github.com/pilinux/gorest/database"
+	"github.com/pilinux/gorest/database/model"
 )
 
 // GetUserByEmail ...

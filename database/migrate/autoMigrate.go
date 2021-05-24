@@ -7,9 +7,9 @@ import (
 
 	"github.com/jinzhu/gorm"
 
-	"github.com/piLinux/GoREST/config"
-	"github.com/piLinux/GoREST/database"
-	"github.com/piLinux/GoREST/database/model"
+	"github.com/pilinux/gorest/config"
+	"github.com/pilinux/gorest/database"
+	"github.com/pilinux/gorest/database/model"
 )
 
 // Load all the models

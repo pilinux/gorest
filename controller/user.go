@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/piLinux/GoREST/database"
-	"github.com/piLinux/GoREST/database/model"
-	"github.com/piLinux/GoREST/lib/middleware"
+	"github.com/pilinux/gorest/database"
+	"github.com/pilinux/gorest/database/model"
+	"github.com/pilinux/gorest/lib/middleware"
 
 	"github.com/gin-gonic/gin"
 )

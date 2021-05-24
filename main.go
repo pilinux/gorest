@@ -7,10 +7,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/piLinux/GoREST/config"
-	"github.com/piLinux/GoREST/controller"
-	"github.com/piLinux/GoREST/database"
-	"github.com/piLinux/GoREST/lib/middleware"
+	"github.com/pilinux/gorest/config"
+	"github.com/pilinux/gorest/controller"
+	"github.com/pilinux/gorest/database"
+	"github.com/pilinux/gorest/lib/middleware"
 
 	"github.com/gin-gonic/gin"
 )

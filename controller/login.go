@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/piLinux/GoREST/database/model"
-	"github.com/piLinux/GoREST/lib/middleware"
-	"github.com/piLinux/GoREST/service"
+	"github.com/pilinux/gorest/database/model"
+	"github.com/pilinux/gorest/lib/middleware"
+	"github.com/pilinux/gorest/service"
 )
 
 // LoginPayload ...
