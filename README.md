@@ -14,7 +14,7 @@ under the [MIT license][13] and is free for any personal or commercial project.
 
 ## Updates
 
-v2.0.0 [Jun 17 - 2021]
+v1.2.0 [Jun 17 - 2021]
 - `GORM` updated from `v1` to `v2`
 
 Projects developed based on `GORM v1` must checkout at `v1.1.3`
