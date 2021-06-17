@@ -1,5 +1,7 @@
 package config
 
+import "time"
+
 // DatabaseConfig - database variables
 type DatabaseConfig struct {
 	DbDriver string
@@ -8,4 +10,12 @@ type DatabaseConfig struct {
 	DbName   string
 	DbHost   string
 	DbPort   string
+
+	DbSslmode  string
+	DbTimeZone string
+
+	DbMaxIdleConns    int
+	DbMaxOpenConns    int
+	DbConnMaxLifetime time.Duration
+	DbLogLevel        int
 }

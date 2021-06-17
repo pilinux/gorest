@@ -2,17 +2,19 @@ package model
 
 import (
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // User model - `users` table
 type User struct {
-	UserID    uint `gorm:"primary_key"`
+	UserID    uint64 `gorm:"primaryKey"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	DeletedAt *time.Time `sql:"index" json:"-"`
-	FirstName string     `json:"FirstName,omitempty"`
-	LastName  string     `json:"LastName,omitempty"`
-	IDAuth    uint       `json:"-"`
-	Posts     []Post     `gorm:"foreignkey:IDUser;association_foreignkey:UserID" json:",omitempty"`
-	Hobbies   []Hobby    `gorm:"many2many:user_hobbies" json:",omitempty"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	FirstName string         `json:"FirstName,omitempty"`
+	LastName  string         `json:"LastName,omitempty"`
+	IDAuth    uint64         `json:"-"`
+	Posts     []Post         `gorm:"foreignkey:IDUser;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:",omitempty"`
+	Hobbies   []Hobby        `gorm:"many2many:user_hobbies" json:",omitempty"`
 }

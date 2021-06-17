@@ -3,6 +3,7 @@ package main
 import (
 	// "fmt"
 
+	"fmt"
 	"io"
 	"os"
 	"time"
@@ -18,9 +19,11 @@ import (
 var configure = config.Config()
 
 func main() {
-	db := database.InitDB()
-	defer db.Close()
+	if err := database.InitDB().Error; err != nil {
+		fmt.Println(err)
+	}
 
+	// JWT
 	middleware.MySigningKey = []byte(configure.Server.ServerJWT.Key)
 	middleware.JWTExpireTime = configure.Server.ServerJWT.Expire
 

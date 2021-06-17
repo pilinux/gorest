@@ -5,23 +5,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // Auth model - `auths` table
 type Auth struct {
-	AuthID    uint `gorm:"primary_key"`
+	AuthID    uint64 `gorm:"primaryKey"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	DeletedAt *time.Time `sql:"index"`
-	Email     string     `json:"Email"`
-	Password  string     `json:"Password"`
-	User      User       `gorm:"foreignkey:IDAuth;association_foreignkey:AuthID"`
+	DeletedAt gorm.DeletedAt `gorm:"index"`
+	Email     string         `json:"Email"`
+	Password  string         `json:"Password"`
+	Users     User           `gorm:"foreignkey:IDAuth;references:AuthID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
 // UnmarshalJSON ...
 func (v *Auth) UnmarshalJSON(b []byte) error {
 	aux := struct {
-		AuthID   uint   `json:"AuthID"`
+		AuthID   uint64 `json:"AuthID"`
 		Email    string `json:"Email"`
 		Password string `json:"Password"`
 	}{}
@@ -45,7 +47,7 @@ func HashPass(pass string) string {
 // MarshalJSON ...
 func (v Auth) MarshalJSON() ([]byte, error) {
 	aux := struct {
-		AuthID uint   `json:"AuthId"`
+		AuthID uint64 `json:"AuthId"`
 		Email  string `json:"Email"`
 	}{
 		AuthID: v.AuthID,

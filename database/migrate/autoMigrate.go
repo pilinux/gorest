@@ -5,7 +5,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 
 	"github.com/pilinux/gorest/config"
 	"github.com/pilinux/gorest/database"
@@ -23,6 +23,9 @@ var db *gorm.DB
 var errorState int
 
 func main() {
+	configureDB := config.Config()
+	driver := configureDB.Database.DbDriver
+
 	/*
 	** 0 = default/no error
 	** 1 = error
@@ -30,7 +33,6 @@ func main() {
 	errorState = 0
 
 	db = database.InitDB()
-	defer db.Close()
 
 	// Auto migration
 	/*
@@ -45,8 +47,10 @@ func main() {
 	// Automatically migrate all the tables
 	migrateTables()
 
-	// Manually set foreign keys for MySQL DB
-	setPkFk()
+	// Manually set foreign keys for MySQL and PostgreSQL
+	if driver != "sqlite3" {
+		setPkFk()
+	}
 
 	if errorState == 0 {
 		fmt.Println("Auto migration is completed!")
@@ -57,7 +61,7 @@ func main() {
 
 func dropAllTables() {
 	// Careful! It will drop all the tables!
-	if err := db.DropTableIfExists(&userHobby{}, &hobby{}, &post{}, &user{}, &auth{}).Error; err != nil {
+	if err := db.Migrator().DropTable(&userHobby{}, &hobby{}, &post{}, &user{}, &auth{}); err != nil {
 		errorState = 1
 		fmt.Println(err)
 	} else {
@@ -72,7 +76,7 @@ func migrateTables() {
 	if driver == "mysql" {
 		// db.Set() --> add table suffix during auto migration
 		if err := db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(&auth{},
-			&user{}, &post{}, &hobby{}, &userHobby{}).Error; err != nil {
+			&user{}, &post{}, &hobby{}); err != nil {
 			errorState = 1
 			fmt.Println(err)
 		} else {
@@ -80,7 +84,7 @@ func migrateTables() {
 		}
 	} else {
 		if err := db.AutoMigrate(&auth{},
-			&user{}, &post{}, &hobby{}, &userHobby{}).Error; err != nil {
+			&user{}, &post{}, &hobby{}); err != nil {
 			errorState = 1
 			fmt.Println(err)
 		} else {
@@ -90,13 +94,13 @@ func migrateTables() {
 }
 
 func setPkFk() {
-	// Manually set foreign key for MySQL DB
-	if err := db.Model(&user{}).AddForeignKey("id_auth", "auths(auth_id)", "CASCADE", "CASCADE").Error; err != nil {
+	// Manually set foreign key for MySQL and PostgreSQL
+	if err := db.Migrator().CreateConstraint(&auth{}, "Users"); err != nil {
 		errorState = 1
 		fmt.Println(err)
 	}
 
-	if err := db.Model(&post{}).AddForeignKey("id_user", "users(user_id)", "CASCADE", "CASCADE").Error; err != nil {
+	if err := db.Migrator().CreateConstraint(&user{}, "Posts"); err != nil {
 		errorState = 1
 		fmt.Println(err)
 	}

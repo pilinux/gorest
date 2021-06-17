@@ -19,13 +19,13 @@ var JWTExpireTime int
 
 // MyCustomClaims ...
 type MyCustomClaims struct {
-	ID    uint   `json:"Id"`
+	ID    uint64 `json:"Id"`
 	Email string `json:"Email"`
 	jwt.StandardClaims
 }
 
 // AuthID - Access details
-var AuthID uint
+var AuthID uint64
 
 // JWT ...
 func JWT() gin.HandlerFunc {
@@ -69,7 +69,7 @@ func validateJWT(token *jwt.Token) (interface{}, error) {
 }
 
 // GetJWT ...
-func GetJWT(id uint, email string) (string, error) {
+func GetJWT(id uint64, email string) (string, error) {
 	// Create the Claims
 	claims := MyCustomClaims{
 		id,

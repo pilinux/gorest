@@ -12,7 +12,12 @@ under the [MIT license][13] and is free for any personal or commercial project.
 
 
 
-## Updates 
+## Updates
+
+v2.0.0 [Jun 17 - 2021]
+- `GORM` updated from `v1` to `v2`
+
+Projects developed based on `GORM v1` must checkout at `v1.1.3`
 
 v1.1 [Jan 03 - 2021]
 - **PostgreSQL** and **SQLite3** drivers are included

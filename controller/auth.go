@@ -23,7 +23,7 @@ func CreateUserAuth(c *gin.Context) {
 
 	c.ShouldBindJSON(&auth)
 
-	if isEmailValid(auth.Email) == false {
+	if !isEmailValid(auth.Email) {
 		createAuth = 1 // invalid email
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
