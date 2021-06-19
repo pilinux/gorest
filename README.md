@@ -14,6 +14,9 @@ under the [MIT license][13] and is free for any personal or commercial project.
 
 ## Updates
 
+v1.2.1 [Jun 19 - 2021]
+- `SHA-256` is replaced by `Argon2id` for password hashing
+
 v1.2.0 [Jun 17 - 2021]
 - `GORM` updated from `v1` to `v2`
 

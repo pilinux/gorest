@@ -1,12 +1,15 @@
 package model
 
 import (
-	"crypto/sha256"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
+
+	"github.com/alexedwards/argon2id"
+
+	"github.com/pilinux/gorest/config"
 )
 
 // Auth model - `auths` table
@@ -32,16 +35,28 @@ func (v *Auth) UnmarshalJSON(b []byte) error {
 	}
 	v.AuthID = aux.AuthID
 	v.Email = aux.Email
-	v.Password = HashPass(aux.Password)
+	if v.Password = HashPass(aux.Password); v.Password == "error" {
+		return errors.New("HashPass failed")
+	}
 
 	return nil
 }
 
 // HashPass ...
 func HashPass(pass string) string {
-	h := sha256.New()
-	h.Write([]byte(pass))
-	return fmt.Sprintf("%x", h.Sum(nil))
+	configure := config.Config()
+	params := &argon2id.Params{
+		Memory:      configure.Server.ServerHashPass.Memory * 1024, // the amount of memory used by the Argon2 algorithm (in kibibytes)
+		Iterations:  configure.Server.ServerHashPass.Iterations,    // the number of iterations (or passes) over the memory
+		Parallelism: configure.Server.ServerHashPass.Parallelism,   // the number of threads (or lanes) used by the algorithm
+		SaltLength:  configure.Server.ServerHashPass.SaltLength,    // length of the random salt. 16 bytes is recommended for password hashing
+		KeyLength:   configure.Server.ServerHashPass.KeyLength,     // length of the generated key (or password hash). 16 bytes or more is recommended
+	}
+	h, err := argon2id.CreateHash(pass, params)
+	if err != nil {
+		return "error"
+	}
+	return h
 }
 
 // MarshalJSON ...

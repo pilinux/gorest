@@ -3,8 +3,8 @@ package controller
 import (
 	"net/http"
 
+	"github.com/alexedwards/argon2id"
 	"github.com/gin-gonic/gin"
-	"github.com/pilinux/gorest/database/model"
 	"github.com/pilinux/gorest/lib/middleware"
 	"github.com/pilinux/gorest/service"
 )
@@ -28,7 +28,12 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	if v.Password != model.HashPass(payload.Password) {
+	verifyPass, err := argon2id.ComparePasswordAndHash(payload.Password, v.Password)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	if !verifyPass {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}

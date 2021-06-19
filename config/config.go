@@ -41,7 +41,36 @@ func Config() Configuration {
 	serverEnv := os.Getenv("APP_ENV")
 
 	mySigningKey := os.Getenv("MySigningKey")
-	JWTExpireTime, _ := strconv.Atoi(os.Getenv("JWTExpireTime"))
+	JWTExpireTime, err := strconv.Atoi(os.Getenv("JWTExpireTime"))
+	if err != nil {
+		panic(err)
+	}
+
+	hashPassMemory64, err := strconv.ParseUint((os.Getenv("HASHPASSMEMORY")), 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	hashPassIterations64, err := strconv.ParseUint((os.Getenv("HASHPASSITERATIONS")), 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	hashPassParallelism64, err := strconv.ParseUint((os.Getenv("HASHPASSPARALLELISM")), 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	hashPassSaltLength64, err := strconv.ParseUint((os.Getenv("HASHPASSSALTLENGTH")), 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	hashPassKeyLength64, err := strconv.ParseUint((os.Getenv("HASHPASSKEYLENGTH")), 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	hashPassMemory := uint32(hashPassMemory64)
+	hashPassIterations := uint32(hashPassIterations64)
+	hashPassParallelism := uint8(hashPassParallelism64)
+	hashPassSaltLength := uint32(hashPassSaltLength64)
+	hashPassKeyLength := uint32(hashPassKeyLength64)
 
 	configuration.Server.ServerPort = serverport
 	configuration.Server.ServerEnv = serverEnv
@@ -74,6 +103,12 @@ func Config() Configuration {
 
 	configuration.Server.ServerJWT.Key = mySigningKey
 	configuration.Server.ServerJWT.Expire = JWTExpireTime
+
+	configuration.Server.ServerHashPass.Memory = hashPassMemory
+	configuration.Server.ServerHashPass.Iterations = hashPassIterations
+	configuration.Server.ServerHashPass.Parallelism = hashPassParallelism
+	configuration.Server.ServerHashPass.SaltLength = hashPassSaltLength
+	configuration.Server.ServerHashPass.KeyLength = hashPassKeyLength
 
 	return configuration
 }
