@@ -14,6 +14,14 @@ under the [MIT license][13] and is free for any personal or commercial project.
 
 ## Updates
 
+v1.2.2 [Jul 29 - 2021]
+- Replaced `github.com/dgrijalva/jwt-go` with `github.com/golang-jwt/jwt`
+
+Package `github.com/dgrijalva/jwt-go <= v3.2.0` allows attackers to bypass
+intended access restrictions in situations with []string{} for m["aud"]
+(which is allowed by the specification).
+More on this: https://github.com/advisories/GHSA-w73w-5m7g-f7qc
+
 v1.2.1 [Jun 19 - 2021]
 - `SHA-256` is replaced by `Argon2id` for password hashing
 
