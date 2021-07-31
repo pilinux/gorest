@@ -1,6 +1,6 @@
 # GoREST | RESTful API Starter kit
 
-<img align="right" width="350px" src="https://cdn.pilinux.me/images/GoREST/logo/GoREST-Logo.png">
+<img align="right" width="350px" src="https://cdn.pilinux.workers.dev/images/GoREST/logo/GoREST-Logo.png">
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/piLinux/GoREST)][01]
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FpiLinux%2FGoREST.svg?type=shield)][02]
@@ -67,7 +67,7 @@ Accessible endpoints of the test instance:
 
 To prevent abuse, only HTTP `GET` requests are accepted by the demo server.
 
-<img width="650px" src="https://cdn.pilinux.me/images/GoREST/screenshot/GoREST.API.Demo.PNG">
+<img width="650px" src="https://cdn.pilinux.workers.dev/images/GoREST/screenshot/GoREST.API.Demo.PNG">
 
 
 
@@ -347,8 +347,8 @@ Released under the [MIT license][13]
 [01]: https://goreportcard.com/report/github.com/piLinux/GoREST
 [02]: https://app.fossa.io/projects/git%2Bgithub.com%2FpiLinux%2FGoREST?ref=badge_shield
 [03]: https://codebeat.co/projects/github-com-pilinux-gorest-master
-[04]: https://cdn.pilinux.me/images/GoREST/models/dbModelv1.0.svg
-[05]: https://cdn.pilinux.me/images/GoREST/flowchart/flow.diagram.v1.0.svg
+[04]: https://cdn.pilinux.workers.dev/images/GoREST/models/dbModelv1.0.svg
+[05]: https://cdn.pilinux.workers.dev/images/GoREST/flowchart/flow.diagram.v1.0.svg
 [11]: https://github.com/golang/go
 [12]: https://github.com/gin-gonic/gin
 [13]: LICENSE
