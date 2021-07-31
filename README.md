@@ -14,6 +14,9 @@ under the [MIT license][13] and is free for any personal or commercial project.
 
 ## Updates
 
+v1.2.3 [Jul 31 - 2021]
+- Route handlers modified to meet the requirements of doing unit test
+
 v1.2.2 [Jul 29 - 2021]
 - Replaced `github.com/dgrijalva/jwt-go` with `github.com/golang-jwt/jwt`
 

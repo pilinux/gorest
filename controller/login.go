@@ -19,30 +19,30 @@ type LoginPayload struct {
 func Login(c *gin.Context) {
 	var payload LoginPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
 		return
 	}
 	v, err := service.GetUserByEmail(payload.Email)
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
 		return
 	}
 
 	verifyPass, err := argon2id.ComparePasswordAndHash(payload.Password, v.Password)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		return
 	}
 	if !verifyPass {
-		c.AbortWithStatus(http.StatusUnauthorized)
+		render(c, gin.H{"msg": "wrong credentials"}, http.StatusUnauthorized)
 		return
 	}
 
 	jwtValue, err := middleware.GetJWT(v.AuthID, v.Email)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"JWT": jwtValue})
+	render(c, gin.H{"JWT": jwtValue}, http.StatusOK)
 }

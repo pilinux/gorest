@@ -20,7 +20,7 @@ func GetUsers(c *gin.Context) {
 
 	if err := db.Find(&users).Error; err != nil {
 		fmt.Println(err)
-		c.AbortWithStatus(http.StatusNotFound)
+		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
 	} else {
 		j := 0
 		for _, user := range users {
@@ -33,7 +33,7 @@ func GetUsers(c *gin.Context) {
 			users[j].Hobbies = hobbies
 			j++
 		}
-		c.JSON(http.StatusOK, users)
+		render(c, users, http.StatusOK)
 	}
 }
 
@@ -47,7 +47,7 @@ func GetUser(c *gin.Context) {
 
 	if err := db.Where("user_id = ? ", id).First(&user).Error; err != nil {
 		fmt.Println(err)
-		c.AbortWithStatus(http.StatusNotFound)
+		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
 	} else {
 		db.Model(&posts).Where("id_user = ?", id).Find(&posts)
 		user.Posts = posts
@@ -56,7 +56,7 @@ func GetUser(c *gin.Context) {
 			Where("users.user_id = ?", user.UserID).
 			Find(&hobbies)
 		user.Hobbies = hobbies
-		c.JSON(http.StatusOK, user)
+		render(c, user, http.StatusOK)
 	}
 }
 
@@ -70,7 +70,7 @@ func CreateUser(c *gin.Context) {
 
 	if err := db.Where("id_auth = ?", user.IDAuth).First(&user).Error; err == nil {
 		createUser = 1 // user data already registered
-		c.AbortWithStatus(http.StatusBadRequest)
+		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
 		return
 	}
 
@@ -81,10 +81,10 @@ func CreateUser(c *gin.Context) {
 		if err := tx.Create(&user).Error; err != nil {
 			tx.Rollback()
 			fmt.Println(err)
-			c.AbortWithStatus(http.StatusInternalServerError)
+			render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		} else {
 			tx.Commit()
-			c.JSON(http.StatusCreated, user)
+			render(c, user, http.StatusCreated)
 		}
 	}
 }
@@ -99,7 +99,7 @@ func UpdateUser(c *gin.Context) {
 
 	if err := db.Where("id_auth = ?", user.IDAuth).First(&user).Error; err != nil {
 		updateUser = 1 // user data is not registered, nothing can be updated
-		c.AbortWithStatus(http.StatusNotFound)
+		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
 		return
 	}
 
@@ -111,10 +111,10 @@ func UpdateUser(c *gin.Context) {
 		if err := tx.Save(&user).Error; err != nil {
 			tx.Rollback()
 			fmt.Println(err)
-			c.AbortWithStatus(http.StatusInternalServerError)
+			render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		} else {
 			tx.Commit()
-			c.JSON(http.StatusOK, user)
+			render(c, user, http.StatusOK)
 		}
 	}
 }
@@ -130,7 +130,7 @@ func AddHobby(c *gin.Context) {
 
 	if err := db.Where("id_auth = ?", user.IDAuth).First(&user).Error; err != nil {
 		hobbyFound = 1 // user data is not registered, do not proceed
-		c.AbortWithStatus(http.StatusNotFound)
+		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
 		return
 	}
 
@@ -145,7 +145,7 @@ func AddHobby(c *gin.Context) {
 		if err := tx.Create(&hobby).Error; err != nil {
 			tx.Rollback()
 			fmt.Println(err)
-			c.AbortWithStatus(http.StatusInternalServerError)
+			render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		} else {
 			tx.Commit()
 			hobbyFound = 0
@@ -158,10 +158,10 @@ func AddHobby(c *gin.Context) {
 		if err := tx.Save(&user).Error; err != nil {
 			tx.Rollback()
 			fmt.Println(err)
-			c.AbortWithStatus(http.StatusInternalServerError)
+			render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		} else {
 			tx.Commit()
-			c.JSON(http.StatusOK, user)
+			render(c, user, http.StatusOK)
 		}
 	}
 }

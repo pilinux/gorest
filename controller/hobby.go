@@ -17,8 +17,8 @@ func GetHobbies(c *gin.Context) {
 
 	if err := db.Find(&hobbies).Error; err != nil {
 		fmt.Println(err)
-		c.AbortWithStatus(http.StatusNotFound)
+		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
 	} else {
-		c.JSON(http.StatusOK, hobbies)
+		render(c, hobbies, http.StatusOK)
 	}
 }

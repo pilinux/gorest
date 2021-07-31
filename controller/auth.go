@@ -25,13 +25,13 @@ func CreateUserAuth(c *gin.Context) {
 
 	if !isEmailValid(auth.Email) {
 		createAuth = 1 // invalid email
-		c.AbortWithStatus(http.StatusBadRequest)
+		render(c, gin.H{"msg": "wrong email address"}, http.StatusBadRequest)
 		return
 	}
 
 	if err := db.Where("email = ?", auth.Email).First(&auth).Error; err == nil {
 		createAuth = 2 // email is already registered
-		c.AbortWithStatus(http.StatusBadRequest)
+		render(c, gin.H{"msg": "email already registered"}, http.StatusBadRequest)
 		return
 	}
 
@@ -41,10 +41,10 @@ func CreateUserAuth(c *gin.Context) {
 		if err := tx.Create(&auth).Error; err != nil {
 			tx.Rollback()
 			fmt.Println(err)
-			c.AbortWithStatus(http.StatusInternalServerError)
+			render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		} else {
 			tx.Commit()
-			c.JSON(http.StatusCreated, auth)
+			render(c, auth, http.StatusCreated)
 		}
 	}
 }
