@@ -63,7 +63,7 @@ func validateJWT(token *jwt.Token) (interface{}, error) {
 	log.Println("try to parse the JWT")
 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 		log.Println("error parsing JWT")
-		return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 	}
 	return MySigningKey, nil
 }
