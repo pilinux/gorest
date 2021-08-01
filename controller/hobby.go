@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/pilinux/gorest/database"
@@ -16,7 +15,6 @@ func GetHobbies(c *gin.Context) {
 	hobbies := []model.Hobby{}
 
 	if err := db.Find(&hobbies).Error; err != nil {
-		fmt.Println(err)
 		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
 	} else {
 		render(c, hobbies, http.StatusOK)

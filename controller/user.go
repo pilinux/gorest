@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/pilinux/gorest/database"
@@ -9,6 +8,7 @@ import (
 	"github.com/pilinux/gorest/lib/middleware"
 
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
 // GetUsers - GET /users
@@ -19,7 +19,6 @@ func GetUsers(c *gin.Context) {
 	hobbies := []model.Hobby{}
 
 	if err := db.Find(&users).Error; err != nil {
-		fmt.Println(err)
 		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
 	} else {
 		j := 0
@@ -46,7 +45,6 @@ func GetUser(c *gin.Context) {
 	hobbies := []model.Hobby{}
 
 	if err := db.Where("user_id = ? ", id).First(&user).Error; err != nil {
-		fmt.Println(err)
 		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
 	} else {
 		db.Model(&posts).Where("id_user = ?", id).Find(&posts)
@@ -80,7 +78,7 @@ func CreateUser(c *gin.Context) {
 		tx := db.Begin()
 		if err := tx.Create(&user).Error; err != nil {
 			tx.Rollback()
-			fmt.Println(err)
+			log.WithError(err).Error("error code: 1101")
 			render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		} else {
 			tx.Commit()
@@ -105,12 +103,11 @@ func UpdateUser(c *gin.Context) {
 
 	if updateUser == 0 {
 		c.ShouldBindJSON(&user)
-		fmt.Println(user.UserID)
 
 		tx := db.Begin()
 		if err := tx.Save(&user).Error; err != nil {
 			tx.Rollback()
-			fmt.Println(err)
+			log.WithError(err).Error("error code: 1111")
 			render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		} else {
 			tx.Commit()
@@ -144,7 +141,7 @@ func AddHobby(c *gin.Context) {
 		tx := db.Begin()
 		if err := tx.Create(&hobby).Error; err != nil {
 			tx.Rollback()
-			fmt.Println(err)
+			log.WithError(err).Error("error code: 1121")
 			render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		} else {
 			tx.Commit()
@@ -157,7 +154,7 @@ func AddHobby(c *gin.Context) {
 		tx := db.Begin()
 		if err := tx.Save(&user).Error; err != nil {
 			tx.Rollback()
-			fmt.Println(err)
+			log.WithError(err).Error("error code: 1131")
 			render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		} else {
 			tx.Commit()

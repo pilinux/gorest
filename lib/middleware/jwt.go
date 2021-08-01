@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -32,13 +31,13 @@ func JWT() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		val := c.Request.Header.Get("Authorization")
 		if len(val) == 0 || !strings.Contains(val, "Bearer ") {
-			log.Println("no vals or no Bearer found")
+			// log.Println("no vals or no Bearer found")
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 		vals := strings.Split(val, " ")
 		if len(vals) != 2 {
-			log.Println("result split not valid")
+			// log.Println("result split not valid")
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
@@ -46,13 +45,13 @@ func JWT() gin.HandlerFunc {
 		token, err := jwt.ParseWithClaims(vals[1], &MyCustomClaims{}, validateJWT)
 
 		if err != nil {
-			log.Println("error parsing JWT", err)
+			// log.Println("error parsing JWT", err)
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
 		if claims, ok := token.Claims.(*MyCustomClaims); ok && token.Valid {
-			//fmt.Println(claims.ID, claims.Email)
+			// fmt.Println(claims.ID, claims.Email)
 			AuthID = claims.ID
 		}
 	}
@@ -60,9 +59,9 @@ func JWT() gin.HandlerFunc {
 
 // validateJWT ...
 func validateJWT(token *jwt.Token) (interface{}, error) {
-	log.Println("try to parse the JWT")
+	// log.Println("try to parse the JWT")
 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-		log.Println("error parsing JWT")
+		// log.Println("error parsing JWT")
 		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 	}
 	return MySigningKey, nil

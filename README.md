@@ -14,6 +14,9 @@ under the [MIT license][13] and is free for any personal or commercial project.
 
 ## Updates
 
+v1.2.4 [Aug 02 - 2021]
+- middleware added: `logrus` + `sentry.io`
+
 v1.2.3 [Jul 31 - 2021]
 - Route handlers modified to meet the requirements of doing unit test
 

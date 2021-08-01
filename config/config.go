@@ -6,12 +6,14 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	log "github.com/sirupsen/logrus"
 )
 
 // Configuration - server and db configuration variables
 type Configuration struct {
 	Server   ServerConfig
 	Database DatabaseConfig
+	Logger   LoggerConfig
 }
 
 // Config - load the configurations from .env
@@ -21,7 +23,7 @@ func Config() Configuration {
 	// Load environment variables
 	err := godotenv.Load()
 	if err != nil {
-		panic(err)
+		log.WithError(err).Panic("panic code: 101")
 	}
 
 	dbDriver := os.Getenv("DBDRIVER")
@@ -40,31 +42,33 @@ func Config() Configuration {
 	serverport := os.Getenv("APP_PORT")
 	serverEnv := os.Getenv("APP_ENV")
 
+	loggerSentryDsn := os.Getenv("SentryDSN")
+
 	mySigningKey := os.Getenv("MySigningKey")
 	JWTExpireTime, err := strconv.Atoi(os.Getenv("JWTExpireTime"))
 	if err != nil {
-		panic(err)
+		log.WithError(err).Panic("panic code: 111")
 	}
 
 	hashPassMemory64, err := strconv.ParseUint((os.Getenv("HASHPASSMEMORY")), 10, 64)
 	if err != nil {
-		panic(err)
+		log.WithError(err).Panic("panic code: 121")
 	}
 	hashPassIterations64, err := strconv.ParseUint((os.Getenv("HASHPASSITERATIONS")), 10, 64)
 	if err != nil {
-		panic(err)
+		log.WithError(err).Panic("panic code: 122")
 	}
 	hashPassParallelism64, err := strconv.ParseUint((os.Getenv("HASHPASSPARALLELISM")), 10, 64)
 	if err != nil {
-		panic(err)
+		log.WithError(err).Panic("panic code: 123")
 	}
 	hashPassSaltLength64, err := strconv.ParseUint((os.Getenv("HASHPASSSALTLENGTH")), 10, 64)
 	if err != nil {
-		panic(err)
+		log.WithError(err).Panic("panic code: 124")
 	}
 	hashPassKeyLength64, err := strconv.ParseUint((os.Getenv("HASHPASSKEYLENGTH")), 10, 64)
 	if err != nil {
-		panic(err)
+		log.WithError(err).Panic("panic code: 125")
 	}
 	hashPassMemory := uint32(hashPassMemory64)
 	hashPassIterations := uint32(hashPassIterations64)
@@ -86,20 +90,22 @@ func Config() Configuration {
 
 	configuration.Database.DbMaxIdleConns, err = strconv.Atoi(dbMaxIdleConns)
 	if err != nil {
-		panic(err)
+		log.WithError(err).Panic("panic code: 131")
 	}
 	configuration.Database.DbMaxOpenConns, err = strconv.Atoi(dbMaxOpenConns)
 	if err != nil {
-		panic(err)
+		log.WithError(err).Panic("panic code: 132")
 	}
 	configuration.Database.DbConnMaxLifetime, err = time.ParseDuration(dbConnMaxLifetime)
 	if err != nil {
-		panic(err)
+		log.WithError(err).Panic("panic code: 133")
 	}
 	configuration.Database.DbLogLevel, err = strconv.Atoi(dbLogLevel)
 	if err != nil {
-		panic(err)
+		log.WithError(err).Panic("panic code: 134")
 	}
+
+	configuration.Logger.SentryDsn = loggerSentryDsn
 
 	configuration.Server.ServerJWT.Key = mySigningKey
 	configuration.Server.ServerJWT.Expire = JWTExpireTime

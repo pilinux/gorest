@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"net"
 	"net/http"
 	"regexp"
@@ -11,6 +10,7 @@ import (
 	"github.com/pilinux/gorest/database/model"
 
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
 var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
@@ -40,7 +40,7 @@ func CreateUserAuth(c *gin.Context) {
 		tx := db.Begin()
 		if err := tx.Create(&auth).Error; err != nil {
 			tx.Rollback()
-			fmt.Println(err)
+			log.WithError(err).Error("error code: 1001")
 			render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		} else {
 			tx.Commit()

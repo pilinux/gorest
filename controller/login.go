@@ -3,10 +3,12 @@ package controller
 import (
 	"net/http"
 
-	"github.com/alexedwards/argon2id"
-	"github.com/gin-gonic/gin"
 	"github.com/pilinux/gorest/lib/middleware"
 	"github.com/pilinux/gorest/service"
+
+	"github.com/alexedwards/argon2id"
+	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
 // LoginPayload ...
@@ -30,6 +32,7 @@ func Login(c *gin.Context) {
 
 	verifyPass, err := argon2id.ComparePasswordAndHash(payload.Password, v.Password)
 	if err != nil {
+		log.WithError(err).Error("error code: 1011")
 		render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		return
 	}
@@ -40,6 +43,7 @@ func Login(c *gin.Context) {
 
 	jwtValue, err := middleware.GetJWT(v.AuthID, v.Email)
 	if err != nil {
+		log.WithError(err).Error("error code: 1012")
 		render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		return
 	}

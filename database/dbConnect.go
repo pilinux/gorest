@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"log"
 
 	"github.com/pilinux/gorest/config"
 
@@ -21,6 +20,8 @@ import (
 	// Import SQLite3 database driver
 	// _ "github.com/jinzhu/gorm/dialects/sqlite"
 	"gorm.io/driver/sqlite"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // DB global variable to access gorm
@@ -53,7 +54,7 @@ func InitDB() *gorm.DB {
 		dsn := username + ":" + password + "@tcp(" + host + ":" + port + ")/" + database + "?charset=utf8mb4&parseTime=True&loc=Local"
 		sqlDB, err = sql.Open(driver, dsn)
 		if err != nil {
-			log.Fatalln(err)
+			log.WithError(err).Panic("panic code: 151")
 		}
 		sqlDB.SetMaxIdleConns(maxIdleConns)       // max number of connections in the idle connection pool
 		sqlDB.SetMaxOpenConns(maxOpenConns)       // max number of open connections in the database
@@ -65,7 +66,7 @@ func InitDB() *gorm.DB {
 			Logger: logger.Default.LogMode(logger.LogLevel(logLevel)),
 		})
 		if err != nil {
-			log.Fatalln(err)
+			log.WithError(err).Panic("panic code: 152")
 		}
 		// Only for debugging
 		if err == nil {
@@ -76,7 +77,7 @@ func InitDB() *gorm.DB {
 		dsn := "host=" + host + " port=" + port + " user=" + username + " dbname=" + database + " password=" + password + " sslmode=" + sslmode + " TimeZone=" + timeZone
 		sqlDB, err = sql.Open(driver, dsn)
 		if err != nil {
-			log.Fatalln(err)
+			log.WithError(err).Panic("panic code: 153")
 		}
 		sqlDB.SetMaxIdleConns(maxIdleConns)       // max number of connections in the idle connection pool
 		sqlDB.SetMaxOpenConns(maxOpenConns)       // max number of open connections in the database
@@ -88,7 +89,7 @@ func InitDB() *gorm.DB {
 			Logger: logger.Default.LogMode(logger.LogLevel(logLevel)),
 		})
 		if err != nil {
-			log.Fatalln(err)
+			log.WithError(err).Panic("panic code: 154")
 		}
 		// Only for debugging
 		if err == nil {
@@ -101,7 +102,7 @@ func InitDB() *gorm.DB {
 			DisableForeignKeyConstraintWhenMigrating: true,
 		})
 		if err != nil {
-			log.Fatalln(err)
+			log.WithError(err).Panic("panic code: 155")
 		}
 		// Only for debugging
 		if err == nil {
@@ -109,7 +110,7 @@ func InitDB() *gorm.DB {
 		}
 
 	default:
-		log.Fatalln("The driver " + driver + " is not implemented yet")
+		log.Fatal("The driver " + driver + " is not implemented yet")
 	}
 
 	DB = db

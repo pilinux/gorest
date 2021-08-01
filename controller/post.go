@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/pilinux/gorest/database"
@@ -9,6 +8,7 @@ import (
 	"github.com/pilinux/gorest/lib/middleware"
 
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
 // GetPosts - GET /posts
@@ -17,7 +17,6 @@ func GetPosts(c *gin.Context) {
 	posts := []model.Post{}
 
 	if err := db.Find(&posts).Error; err != nil {
-		fmt.Println(err)
 		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
 	} else {
 		render(c, posts, http.StatusOK)
@@ -31,7 +30,6 @@ func GetPost(c *gin.Context) {
 	id := c.Params.ByName("id")
 
 	if err := db.Where("post_id = ? ", id).First(&post).Error; err != nil {
-		fmt.Println(err)
 		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
 	} else {
 		render(c, post, http.StatusOK)
@@ -60,7 +58,7 @@ func CreatePost(c *gin.Context) {
 		tx := db.Begin()
 		if err := tx.Create(&post).Error; err != nil {
 			tx.Rollback()
-			fmt.Println(err)
+			log.WithError(err).Error("error code: 1201")
 			render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		} else {
 			tx.Commit()
@@ -99,7 +97,7 @@ func UpdatePost(c *gin.Context) {
 		tx := db.Begin()
 		if err := tx.Save(&post).Error; err != nil {
 			tx.Rollback()
-			fmt.Println(err)
+			log.WithError(err).Error("error code: 1211")
 			render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		} else {
 			tx.Commit()
@@ -138,7 +136,7 @@ func DeletePost(c *gin.Context) {
 		tx := db.Begin()
 		if err := tx.Delete(&post).Error; err != nil {
 			tx.Rollback()
-			fmt.Println(err)
+			log.WithError(err).Error("error code: 1221")
 			render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		} else {
 			tx.Commit()

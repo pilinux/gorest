@@ -1,8 +1,6 @@
 package service
 
 import (
-	"fmt"
-
 	"github.com/pilinux/gorest/database"
 	"github.com/pilinux/gorest/database/model"
 )
@@ -14,7 +12,6 @@ func GetUserByEmail(email string) (*model.Auth, error) {
 	var auth model.Auth
 
 	if err := db.Where("email = ? ", email).Find(&auth).Error; err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 

@@ -76,6 +76,7 @@ func SetupRouter() *gin.Engine {
 	router := gin.Default()
 
 	router.Use(middleware.CORS())
+	router.Use(middleware.SentryCapture(configure.Logger.SentryDsn))
 
 	// API:v1.0
 	v1 := router.Group("/api/v1/")
