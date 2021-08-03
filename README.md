@@ -4,6 +4,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/piLinux/GoREST)][01]
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FpiLinux%2FGoREST.svg?type=shield)][02]
+[![CodeFactor](https://www.codefactor.io/repository/github/pilinux/gorest/badge)][06]
 [![codebeat badge](https://codebeat.co/badges/c92a8584-d6ba-4606-8d6f-3049630f92c6)][03]
 
 GoREST is a starter kit, written in [Golang][11] with [Gin framework][12],
@@ -93,7 +94,8 @@ project `$GOPATH/src/github.com/pilinux/gorest`
 `$GOPATH/src/github.com/pilinux/gorest/database/migrate` and save it as `.env`
 - Inside `$GOPATH/src/github.com/pilinux/gorest/database/migrate`, run
 `go run autoMigrate.go` to migrate the database
-  - Comment the line `setPkFk()` in `autoMigrate.go` file if the driver is not **MySQL**
+  - Comment the line `setPkFk()` in `autoMigrate.go` file if the driver is not **MySQL**.
+  [Check issue: 7][42]
 - At `$GOPATH/src/github.com/pilinux/gorest`, run `./gorest` to launch the app
 
 **Note For SQLite3:**
@@ -181,7 +183,15 @@ To the following endpoints `GET`, `POST`, `PUT` and `DELETE` requests can be sen
 
 - GoREST uses [Gin][12] as the main framework, [GORM][21] as the ORM and
 [GoDotEnv][51] for environment configuration
-- [dgrijalva/jwt-go][15] is used for JWT authentication
+- [golang-jwt/jwt][16] is used for JWT authentication
+- [sentry.io][17] error tracker and performance monitor is enabled by default
+as a hook inside `logrus`. They are included as middleware which can be
+disabled by omitting
+
+```
+router.Use(middleware.SentryCapture(configure.Logger.SentryDsn))
+```
+
 - All codes are written and organized following a straightforward and 
 easy-to-understand approach
 - For **Logger** and **Recovery**, Gin's in-built middlewares are used
@@ -217,6 +227,8 @@ router.Use(middleware.CORS())
 gorest
 │---README.md
 │---LICENSE
+│---CONTRIBUTING.md
+│---CODE_OF_CONDUCT.md
 │---.gitignore
 │---.env.sample
 │---go.mod
@@ -224,11 +236,13 @@ gorest
 │---main.go
 │
 └───config
-│    └---configMain.go
+│    └---config.go
 │    └---database.go
+│    └---logger.go
 │    └---server.go
 │
 │───controller
+│    └---render.go
 │    └---auth.go
 │    └---login.go
 │    └---user.go
@@ -253,12 +267,16 @@ gorest
 │    └───middleware
 │         └---cors.go
 │         └---jwt.go
+│         └---sentry.go
+│
+└───logs
+│    └---README.md
 │
 └───service
      └---auth.go
 ```
 
-For API development, one needs to focus only on the following files and directories:
+For API development, one needs to focus mainly on the following files and directories:
 
 ```
 gorest
@@ -282,11 +300,6 @@ gorest
 │         └---post.go
 │         └---hobby.go
 │         └---userHobby.go
-│
-└───lib
-│    └───middleware
-│         └---cors.go
-│         └---jwt.go
 │
 └───service
      └---auth.go
@@ -355,15 +368,19 @@ Released under the [MIT license][13]
 [03]: https://codebeat.co/projects/github-com-pilinux-gorest-master
 [04]: https://cdn.pilinux.workers.dev/images/GoREST/models/dbModelv1.0.svg
 [05]: https://cdn.pilinux.workers.dev/images/GoREST/flowchart/flow.diagram.v1.0.svg
+[06]: https://www.codefactor.io/repository/github/pilinux/gorest
 [11]: https://github.com/golang/go
 [12]: https://github.com/gin-gonic/gin
 [13]: LICENSE
 [14]: https://jwt.io/introduction
 [15]: https://github.com/dgrijalva/jwt-go
-[21]: https://github.com/jinzhu/gorm
+[16]: https://github.com/golang-jwt/jwt
+[17]: https://sentry.io/
+[21]: https://gorm.io
 [31]: https://goapi.pilinux.me/api/v1/users
 [32]: https://getpostman.com
 [41]: https://github.com/piLinux/HowtoCode/blob/master/Golang/1.Intro/Installation.md
+[42]: https://github.com/piLinux/GoREST/issues/7
 [51]: https://github.com/joho/godotenv
 [61]: CONTRIBUTING.md
 [62]: CODE_OF_CONDUCT.md
