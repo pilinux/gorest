@@ -24,8 +24,10 @@ func main() {
 	}
 
 	// JWT
-	middleware.MySigningKey = []byte(configure.Server.ServerJWT.Key)
-	middleware.JWTExpireTime = configure.Server.ServerJWT.Expire
+	middleware.AccessKey = []byte(configure.Server.ServerJWT.AccessKey)
+	middleware.AccessKeyTTL = configure.Server.ServerJWT.AccessKeyTTL
+	middleware.RefreshKey = []byte(configure.Server.ServerJWT.RefreshKey)
+	middleware.RefreshKeyTTL = configure.Server.ServerJWT.RefreshKeyTTL
 
 	// Debugging - environment variables
 	/*
@@ -75,6 +77,15 @@ func SetupRouter() *gin.Engine {
 	// gin.Default() = gin.New() + gin.Logger() + gin.Recovery()
 	router := gin.Default()
 
+	// Which proxy to trust
+	if configure.Server.ServerTrustedIP == "nil" {
+		router.SetTrustedProxies(nil)
+	} else {
+		if configure.Server.ServerTrustedIP != "" {
+			router.SetTrustedProxies([]string{configure.Server.ServerTrustedIP})
+		}
+	}
+
 	router.Use(middleware.CORS())
 	router.Use(middleware.SentryCapture(configure.Logger.SentryDsn))
 
@@ -86,6 +97,11 @@ func SetupRouter() *gin.Engine {
 
 		// Login - app issues JWT
 		v1.POST("login", controller.Login)
+
+		// Refresh - app issues new JWT
+		rJWT := v1.Group("refresh")
+		rJWT.Use(middleware.RefreshJWT())
+		rJWT.POST("", controller.Refresh)
 
 		// User
 		rUsers := v1.Group("users")

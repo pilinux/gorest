@@ -24,6 +24,12 @@ func Login(c *gin.Context) {
 		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
 		return
 	}
+
+	if !service.IsEmailValid(payload.Email) {
+		render(c, gin.H{"msg": "wrong email address"}, http.StatusBadRequest)
+		return
+	}
+
 	v, err := service.GetUserByEmail(payload.Email)
 	if err != nil {
 		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
@@ -41,12 +47,56 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	jwtValue, err := middleware.GetJWT(v.AuthID, v.Email)
+	accessJWT, err := middleware.GetJWT(v.AuthID, v.Email, "access")
 	if err != nil {
 		log.WithError(err).Error("error code: 1012")
 		render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		return
 	}
+	refreshJWT, err := middleware.GetJWT(v.AuthID, v.Email, "refresh")
+	if err != nil {
+		log.WithError(err).Error("error code: 1013")
+		render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		return
+	}
 
-	render(c, gin.H{"JWT": jwtValue}, http.StatusOK)
+	jwtPayload := middleware.JWTPayload{}
+	jwtPayload.AccessJWT = accessJWT
+	jwtPayload.RefreshJWT = refreshJWT
+	render(c, jwtPayload, http.StatusOK)
+}
+
+// Refresh ...
+func Refresh(c *gin.Context) {
+	authID := middleware.AuthID
+	email := middleware.Email
+
+	// check validity
+	if authID == 0 {
+		render(c, gin.H{"msg": "access denied"}, http.StatusUnauthorized)
+		return
+	}
+	if email == "" {
+		render(c, gin.H{"msg": "access denied"}, http.StatusUnauthorized)
+		return
+	}
+
+	// issue new tokens
+	accessJWT, err := middleware.GetJWT(authID, email, "access")
+	if err != nil {
+		log.WithError(err).Error("error code: 1021")
+		render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		return
+	}
+	refreshJWT, err := middleware.GetJWT(authID, email, "refresh")
+	if err != nil {
+		log.WithError(err).Error("error code: 1022")
+		render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		return
+	}
+
+	jwtPayload := middleware.JWTPayload{}
+	jwtPayload.AccessJWT = accessJWT
+	jwtPayload.RefreshJWT = refreshJWT
+	render(c, jwtPayload, http.StatusOK)
 }

@@ -41,13 +41,19 @@ func Config() Configuration {
 
 	serverport := os.Getenv("APP_PORT")
 	serverEnv := os.Getenv("APP_ENV")
+	serverTrustedIP := os.Getenv("TRUSTED_IP")
 
 	loggerSentryDsn := os.Getenv("SentryDSN")
 
-	mySigningKey := os.Getenv("MySigningKey")
-	JWTExpireTime, err := strconv.Atoi(os.Getenv("JWTExpireTime"))
+	accessKey := os.Getenv("ACCESS_KEY")
+	accessKeyTTL, err := strconv.Atoi(os.Getenv("ACCESS_KEY_TTL"))
 	if err != nil {
 		log.WithError(err).Panic("panic code: 111")
+	}
+	refreshKey := os.Getenv("REFRESH_KEY")
+	refreshKeyTTL, err := strconv.Atoi(os.Getenv("REFRESH_KEY_TTL"))
+	if err != nil {
+		log.WithError(err).Panic("panic code: 112")
 	}
 
 	hashPassMemory64, err := strconv.ParseUint((os.Getenv("HASHPASSMEMORY")), 10, 64)
@@ -78,6 +84,7 @@ func Config() Configuration {
 
 	configuration.Server.ServerPort = serverport
 	configuration.Server.ServerEnv = serverEnv
+	configuration.Server.ServerTrustedIP = serverTrustedIP
 
 	configuration.Database.DbDriver = dbDriver
 	configuration.Database.DbUser = dbUser
@@ -107,8 +114,10 @@ func Config() Configuration {
 
 	configuration.Logger.SentryDsn = loggerSentryDsn
 
-	configuration.Server.ServerJWT.Key = mySigningKey
-	configuration.Server.ServerJWT.Expire = JWTExpireTime
+	configuration.Server.ServerJWT.AccessKey = accessKey
+	configuration.Server.ServerJWT.AccessKeyTTL = accessKeyTTL
+	configuration.Server.ServerJWT.RefreshKey = refreshKey
+	configuration.Server.ServerJWT.RefreshKeyTTL = refreshKeyTTL
 
 	configuration.Server.ServerHashPass.Memory = hashPassMemory
 	configuration.Server.ServerHashPass.Iterations = hashPassIterations

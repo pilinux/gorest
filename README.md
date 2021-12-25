@@ -15,6 +15,9 @@ under the [MIT license][13] and is free for any personal or commercial project.
 
 ## Updates
 
+v1.2.5 [Dec 25 - 2021]
+- new endpoint added for refreshing JWT tokens
+
 v1.2.4 [Aug 02 - 2021]
 - middleware added: `logrus` + `sentry.io`
 
@@ -84,7 +87,7 @@ To prevent abuse, only HTTP `GET` requests are accepted by the demo server.
 - Set up an environment to compile the Go codes (a [quick tutorial][41]
 for any Debian based OS)
 - Install `git`
-- Clone the project `go get -u github.com/pilinux/gorest`
+- Clone the project `git clone https://github.com/piLinux/GoREST.git`
 - At the root of the cloned repository
 [`cd $GOPATH/src/github.com/pilinux/gorest`], execute `go build` to fetch all
 the dependencies
@@ -122,6 +125,13 @@ To the following endpoints `GET`, `POST`, `PUT` and `DELETE` requests can be sen
 {
     "Email":"...@example.com",
     "Password":"..."
+}
+```
+- http://localhost:port/api/v1/refresh
+  - `POST` [generate new JWT]
+```
+{
+    "RefreshJWT":"use_existing_valid_refresh_token"
 }
 ```
 - http://localhost:port/api/v1/users
@@ -274,6 +284,7 @@ gorest
 │
 └───service
      └---auth.go
+     └---common.go
 ```
 
 For API development, one needs to focus mainly on the following files and directories:
@@ -303,6 +314,7 @@ gorest
 │
 └───service
      └---auth.go
+     └---common.go
 ```
 
 ### Step 1
@@ -357,7 +369,7 @@ Please see [this][62] document.
 
 ## License
 
-© Mahir Hasan 2019 - 2020
+© Mahir Hasan 2019 - 2022
 
 Released under the [MIT license][13]
 

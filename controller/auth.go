@@ -1,19 +1,15 @@
 package controller
 
 import (
-	"net"
 	"net/http"
-	"regexp"
-	"strings"
 
 	"github.com/pilinux/gorest/database"
 	"github.com/pilinux/gorest/database/model"
+	"github.com/pilinux/gorest/service"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
-
-var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
 // CreateUserAuth - POST /register
 func CreateUserAuth(c *gin.Context) {
@@ -23,7 +19,7 @@ func CreateUserAuth(c *gin.Context) {
 
 	c.ShouldBindJSON(&auth)
 
-	if !isEmailValid(auth.Email) {
+	if !service.IsEmailValid(auth.Email) {
 		createAuth = 1 // invalid email
 		render(c, gin.H{"msg": "wrong email address"}, http.StatusBadRequest)
 		return
@@ -47,25 +43,4 @@ func CreateUserAuth(c *gin.Context) {
 			render(c, auth, http.StatusCreated)
 		}
 	}
-}
-
-// isEmailValid checks if the email provided passes the required structure
-// and length test. It also checks the domain has a valid MX record.
-// Credit: Edd Turtle
-func isEmailValid(e string) bool {
-	if len(e) < 3 || len(e) > 254 {
-		return false
-	}
-
-	if !emailRegex.MatchString(e) {
-		return false
-	}
-
-	parts := strings.Split(e, "@")
-	mx, err := net.LookupMX(parts[1])
-	if err != nil || len(mx) == 0 {
-		return false
-	}
-
-	return true
 }
