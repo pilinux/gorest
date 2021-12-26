@@ -3,9 +3,9 @@
 <img align="right" width="350px" src="https://cdn.pilinux.workers.dev/images/GoREST/logo/GoREST-Logo.png">
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/piLinux/GoREST)][01]
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FpiLinux%2FGoREST.svg?type=shield)][02]
 [![CodeFactor](https://www.codefactor.io/repository/github/pilinux/gorest/badge)][06]
 [![codebeat badge](https://codebeat.co/badges/c92a8584-d6ba-4606-8d6f-3049630f92c6)][03]
+[![MIT license](https://img.shields.io/badge/license-MIT-brightgreen.svg)][13]
 
 GoREST is a starter kit, written in [Golang][11] with [Gin framework][12],
 for rapid prototyping and developing a RESTful API. The source code is released
@@ -376,7 +376,6 @@ Released under the [MIT license][13]
 
 
 [01]: https://goreportcard.com/report/github.com/piLinux/GoREST
-[02]: https://app.fossa.io/projects/git%2Bgithub.com%2FpiLinux%2FGoREST?ref=badge_shield
 [03]: https://codebeat.co/projects/github-com-pilinux-gorest-master
 [04]: https://cdn.pilinux.workers.dev/images/GoREST/models/dbModelv1.0.svg
 [05]: https://cdn.pilinux.workers.dev/images/GoREST/flowchart/flow.diagram.v1.0.svg
@@ -396,6 +395,3 @@ Released under the [MIT license][13]
 [51]: https://github.com/joho/godotenv
 [61]: CONTRIBUTING.md
 [62]: CODE_OF_CONDUCT.md
-
-
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FpiLinux%2FGoREST.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FpiLinux%2FGoREST?ref=badge_large)
