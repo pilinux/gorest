@@ -56,23 +56,23 @@ func Config() Configuration {
 		log.WithError(err).Panic("panic code: 112")
 	}
 
-	hashPassMemory64, err := strconv.ParseUint((os.Getenv("HASHPASSMEMORY")), 10, 64)
+	hashPassMemory64, err := strconv.ParseUint((os.Getenv("HASHPASSMEMORY")), 10, 32)
 	if err != nil {
 		log.WithError(err).Panic("panic code: 121")
 	}
-	hashPassIterations64, err := strconv.ParseUint((os.Getenv("HASHPASSITERATIONS")), 10, 64)
+	hashPassIterations64, err := strconv.ParseUint((os.Getenv("HASHPASSITERATIONS")), 10, 32)
 	if err != nil {
 		log.WithError(err).Panic("panic code: 122")
 	}
-	hashPassParallelism64, err := strconv.ParseUint((os.Getenv("HASHPASSPARALLELISM")), 10, 64)
+	hashPassParallelism64, err := strconv.ParseUint((os.Getenv("HASHPASSPARALLELISM")), 10, 8)
 	if err != nil {
 		log.WithError(err).Panic("panic code: 123")
 	}
-	hashPassSaltLength64, err := strconv.ParseUint((os.Getenv("HASHPASSSALTLENGTH")), 10, 64)
+	hashPassSaltLength64, err := strconv.ParseUint((os.Getenv("HASHPASSSALTLENGTH")), 10, 32)
 	if err != nil {
 		log.WithError(err).Panic("panic code: 124")
 	}
-	hashPassKeyLength64, err := strconv.ParseUint((os.Getenv("HASHPASSKEYLENGTH")), 10, 64)
+	hashPassKeyLength64, err := strconv.ParseUint((os.Getenv("HASHPASSKEYLENGTH")), 10, 32)
 	if err != nil {
 		log.WithError(err).Panic("panic code: 125")
 	}

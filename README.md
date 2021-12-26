@@ -15,6 +15,9 @@ under the [MIT license][13] and is free for any personal or commercial project.
 
 ## Updates
 
+v1.2.6 [Dec 26 - 2021]
+- fixed security vulnerability [CWE-190][71] and [CWE-681][72]
+
 v1.2.5 [Dec 25 - 2021]
 - new endpoint added for refreshing JWT tokens
 
@@ -395,3 +398,5 @@ Released under the [MIT license][13]
 [51]: https://github.com/joho/godotenv
 [61]: CONTRIBUTING.md
 [62]: CODE_OF_CONDUCT.md
+[71]: https://cwe.mitre.org/data/definitions/190.html
+[72]: https://cwe.mitre.org/data/definitions/681.html
