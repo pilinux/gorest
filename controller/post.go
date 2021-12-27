@@ -49,7 +49,11 @@ func CreatePost(c *gin.Context) {
 		return
 	}
 
-	c.ShouldBindJSON(&post)
+	if err := c.ShouldBindJSON(&post); err != nil {
+		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
+		return
+	}
+
 	post.IDUser = user.UserID
 
 	tx := db.Begin()
@@ -82,7 +86,10 @@ func UpdatePost(c *gin.Context) {
 		return
 	}
 
-	c.ShouldBindJSON(&post)
+	if err := c.ShouldBindJSON(&post); err != nil {
+		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
+		return
+	}
 
 	tx := db.Begin()
 	if err := tx.Save(&post).Error; err != nil {
@@ -114,7 +121,10 @@ func DeletePost(c *gin.Context) {
 		return
 	}
 
-	c.ShouldBindJSON(&post)
+	if err := c.ShouldBindJSON(&post); err != nil {
+		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
+		return
+	}
 
 	tx := db.Begin()
 	if err := tx.Delete(&post).Error; err != nil {

@@ -70,7 +70,10 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	c.ShouldBindJSON(&user)
+	if err := c.ShouldBindJSON(&user); err != nil {
+		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
+		return
+	}
 
 	tx := db.Begin()
 	if err := tx.Create(&user).Error; err != nil {
@@ -95,7 +98,10 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	c.ShouldBindJSON(&user)
+	if err := c.ShouldBindJSON(&user); err != nil {
+		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
+		return
+	}
 
 	tx := db.Begin()
 	if err := tx.Save(&user).Error; err != nil {
@@ -122,7 +128,10 @@ func AddHobby(c *gin.Context) {
 		return
 	}
 
-	c.ShouldBindJSON(&hobby)
+	if err := c.ShouldBindJSON(&hobby); err != nil {
+		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
+		return
+	}
 
 	if err := db.First(&hobby, "hobby = ?", hobby.Hobby).Error; err != nil {
 		hobbyFound = 1 // create new hobby
