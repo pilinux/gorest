@@ -15,6 +15,11 @@ under the [MIT license][13] and is free for any personal or commercial project.
 
 ## Updates
 
+v1.2.7 [Dec 27 - 2021]
+- REDIS database driver and test endpoints added
+- removed ineffectual assignments
+- check errors during binding of incoming JSON
+
 v1.2.6 [Dec 26 - 2021]
 - fixed security vulnerability [CWE-190][71] and [CWE-681][72]
 
@@ -185,6 +190,61 @@ To the following endpoints `GET`, `POST`, `PUT` and `DELETE` requests can be sen
   - `GET` [fetch all hobbies created by all users]
 
 
+### For REDIS
+
+- Set environment variable `ACTIVATE_REDIS=yes`
+- Set `key:value` pair
+  - `POST` http://localhost:port/api/v1/playground/redis_create
+```
+{
+    "Key": "test1",
+    "Value": "v1"
+}
+```
+- Fetch `key:value` pair
+  - `GET` http://localhost:port/api/v1/playground/redis_read
+```
+{
+    "Key": "test1"
+}
+```
+- Delete `key:value` pair
+  - `DELETE` http://localhost:port/api/v1/playground/redis_delete
+```
+{
+    "Key": "test1"
+}
+```
+- Set hashes with key
+  - `POST` http://localhost:port/api/v1/playground/redis_create_hash
+```
+{
+    "Key": "test2",
+    "Value":
+        {
+            "Value1": "v1",
+            "Value2": "v2",
+            "Value3": "v3",
+            "Value4": "v4"
+        }
+}
+```
+- Fetch hashes by key
+  - `GET` http://localhost:port/api/v1/playground/redis_read_hash
+```
+{
+    "Key": "test2"
+}
+```
+- Delete a key
+  - `DELETE` http://localhost:port/api/v1/playground/redis_delete_hash
+```
+{
+    "Key": "test2"
+}
+```
+
+
 
 ## Flow diagram
 
@@ -261,6 +321,7 @@ gorest
 │    └---user.go
 │    └---post.go
 │    └---hobby.go
+│    └---playground.go
 │
 └───database
 │    │---dbConnect.go
@@ -302,6 +363,7 @@ gorest
 │    └---user.go
 │    └---post.go
 │    └---hobby.go
+│    └---playground.go
 │
 └───database
 │    │
