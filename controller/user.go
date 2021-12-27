@@ -62,28 +62,24 @@ func GetUser(c *gin.Context) {
 func CreateUser(c *gin.Context) {
 	db := database.GetDB()
 	user := model.User{}
-	createUser := 0 // default
 
 	user.IDAuth = middleware.AuthID
 
 	if err := db.Where("id_auth = ?", user.IDAuth).First(&user).Error; err == nil {
-		createUser = 1 // user data already registered
 		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
 		return
 	}
 
-	if createUser == 0 {
-		c.ShouldBindJSON(&user)
+	c.ShouldBindJSON(&user)
 
-		tx := db.Begin()
-		if err := tx.Create(&user).Error; err != nil {
-			tx.Rollback()
-			log.WithError(err).Error("error code: 1101")
-			render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
-		} else {
-			tx.Commit()
-			render(c, user, http.StatusCreated)
-		}
+	tx := db.Begin()
+	if err := tx.Create(&user).Error; err != nil {
+		tx.Rollback()
+		log.WithError(err).Error("error code: 1101")
+		render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+	} else {
+		tx.Commit()
+		render(c, user, http.StatusCreated)
 	}
 }
 
@@ -91,28 +87,24 @@ func CreateUser(c *gin.Context) {
 func UpdateUser(c *gin.Context) {
 	db := database.GetDB()
 	user := model.User{}
-	updateUser := 0 // default
 
 	user.IDAuth = middleware.AuthID
 
 	if err := db.Where("id_auth = ?", user.IDAuth).First(&user).Error; err != nil {
-		updateUser = 1 // user data is not registered, nothing can be updated
 		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
 		return
 	}
 
-	if updateUser == 0 {
-		c.ShouldBindJSON(&user)
+	c.ShouldBindJSON(&user)
 
-		tx := db.Begin()
-		if err := tx.Save(&user).Error; err != nil {
-			tx.Rollback()
-			log.WithError(err).Error("error code: 1111")
-			render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
-		} else {
-			tx.Commit()
-			render(c, user, http.StatusOK)
-		}
+	tx := db.Begin()
+	if err := tx.Save(&user).Error; err != nil {
+		tx.Rollback()
+		log.WithError(err).Error("error code: 1111")
+		render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+	} else {
+		tx.Commit()
+		render(c, user, http.StatusOK)
 	}
 }
 
@@ -121,12 +113,11 @@ func AddHobby(c *gin.Context) {
 	db := database.GetDB()
 	user := model.User{}
 	hobby := model.Hobby{}
-	hobbyFound := 0 // default = 0, do not proceed = 1, create new hobby = 2
+	hobbyFound := 0 // default (do not create new hobby) = 0, create new hobby = 1
 
 	user.IDAuth = middleware.AuthID
 
 	if err := db.Where("id_auth = ?", user.IDAuth).First(&user).Error; err != nil {
-		hobbyFound = 1 // user data is not registered, do not proceed
 		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
 		return
 	}
@@ -134,10 +125,10 @@ func AddHobby(c *gin.Context) {
 	c.ShouldBindJSON(&hobby)
 
 	if err := db.First(&hobby, "hobby = ?", hobby.Hobby).Error; err != nil {
-		hobbyFound = 2 // create new hobby
+		hobbyFound = 1 // create new hobby
 	}
 
-	if hobbyFound == 2 {
+	if hobbyFound == 1 {
 		tx := db.Begin()
 		if err := tx.Create(&hobby).Error; err != nil {
 			tx.Rollback()
