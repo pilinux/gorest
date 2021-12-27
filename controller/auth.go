@@ -17,7 +17,10 @@ func CreateUserAuth(c *gin.Context) {
 	auth := model.Auth{}
 	createAuth := 0 // default value
 
-	c.ShouldBindJSON(&auth)
+	if err := c.ShouldBindJSON(&auth); err != nil {
+		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
+		return
+	}
 
 	if !service.IsEmailValid(auth.Email) {
 		createAuth = 1 // invalid email
