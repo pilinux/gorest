@@ -23,6 +23,11 @@ func main() {
 		fmt.Println(err)
 	}
 
+	if configure.Database.ActivateRedis == "yes" {
+		// Initialize REDIS client
+		database.InitRedis()
+	}
+
 	// JWT
 	middleware.AccessKey = []byte(configure.Server.ServerJWT.AccessKey)
 	middleware.AccessKeyTTL = configure.Server.ServerJWT.AccessKeyTTL
@@ -124,6 +129,18 @@ func SetupRouter() *gin.Engine {
 		// Hobby
 		rHobbies := v1.Group("hobbies")
 		rHobbies.GET("", controller.GetHobbies) // Non-protected
+
+		// Playground
+		if configure.Database.ActivateRedis == "yes" {
+			rPlayground := v1.Group("playground")
+			rPlayground.GET("/redis_read", controller.RedisRead)        // Non-protected
+			rPlayground.POST("/redis_create", controller.RedisCreate)   // Non-protected
+			rPlayground.DELETE("/redis_delete", controller.RedisDelete) // Non-protected
+
+			rPlayground.GET("/redis_read_hash", controller.RedisReadHash)        // Non-protected
+			rPlayground.POST("/redis_create_hash", controller.RedisCreateHash)   // Non-protected
+			rPlayground.DELETE("/redis_delete_hash", controller.RedisDeleteHash) // Non-protected
+		}
 	}
 
 	return router

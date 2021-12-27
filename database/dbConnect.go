@@ -1,8 +1,10 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/pilinux/gorest/config"
 
@@ -21,6 +23,9 @@ import (
 	// _ "github.com/jinzhu/gorm/dialects/sqlite"
 	"gorm.io/driver/sqlite"
 
+	// Import Redis Driver
+	"github.com/mediocregopher/radix/v4"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -29,6 +34,12 @@ var DB *gorm.DB
 
 var sqlDB *sql.DB
 var err error
+
+// RedisClient global variable to access the redis client
+var RedisClient radix.Client
+
+// RedisConnTTL - context deadline in second
+var RedisConnTTL int
 
 // InitDB - function to initialize db
 func InitDB() *gorm.DB {
@@ -121,4 +132,36 @@ func InitDB() *gorm.DB {
 // GetDB - get a connection
 func GetDB() *gorm.DB {
 	return DB
+}
+
+// InitRedis - function to initialize redis client
+func InitRedis() radix.Client {
+	configureRedis := config.Config()
+	RedisConnTTL = configureRedis.Database.ConnTTL
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(RedisConnTTL)*time.Second)
+	defer cancel()
+
+	rClient, err := (radix.PoolConfig{
+		Size: configureRedis.Database.PoolSize,
+	}).New(ctx, "tcp", fmt.Sprintf("%v:%v",
+		configureRedis.Database.RedisHost,
+		configureRedis.Database.RedisPort))
+	if err != nil {
+		log.WithError(err).Panic("panic code: 161")
+		fmt.Println(err)
+	}
+	// Only for debugging
+	if err == nil {
+		fmt.Println("REDIS pool connection successful!")
+	}
+
+	RedisClient = rClient
+
+	return RedisClient
+}
+
+// GetRedis - get a connection
+func GetRedis() radix.Client {
+	return RedisClient
 }

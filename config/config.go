@@ -39,6 +39,8 @@ func Config() Configuration {
 	dbConnMaxLifetime := os.Getenv("DBCONNMAXLIFETIME")
 	dbLogLevel := os.Getenv("DBLOGLEVEL")
 
+	activateRedis := os.Getenv("ACTIVATE_REDIS")
+
 	serverport := os.Getenv("APP_PORT")
 	serverEnv := os.Getenv("APP_ENV")
 	serverTrustedIP := os.Getenv("TRUSTED_IP")
@@ -110,6 +112,25 @@ func Config() Configuration {
 	configuration.Database.DbLogLevel, err = strconv.Atoi(dbLogLevel)
 	if err != nil {
 		log.WithError(err).Panic("panic code: 134")
+	}
+
+	configuration.Database.ActivateRedis = activateRedis
+	if activateRedis == "yes" {
+		redisHost := os.Getenv("REDISHOST")
+		redisPort := os.Getenv("REDISPORT")
+		poolSize, err := strconv.Atoi(os.Getenv("POOLSIZE"))
+		if err != nil {
+			log.WithError(err).Panic("panic code: 135")
+		}
+		connTTL, err := strconv.Atoi(os.Getenv("CONNTTL"))
+		if err != nil {
+			log.WithError(err).Panic("panic code: 136")
+		}
+
+		configuration.Database.RedisHost = redisHost
+		configuration.Database.RedisPort = redisPort
+		configuration.Database.PoolSize = poolSize
+		configuration.Database.ConnTTL = connTTL
 	}
 
 	configuration.Logger.SentryDsn = loggerSentryDsn

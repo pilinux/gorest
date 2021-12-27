@@ -18,4 +18,11 @@ type DatabaseConfig struct {
 	DbMaxOpenConns    int
 	DbConnMaxLifetime time.Duration
 	DbLogLevel        int
+
+	// For REDIS DB
+	ActivateRedis string
+	RedisHost     string
+	RedisPort     string
+	PoolSize      int
+	ConnTTL       int
 }
