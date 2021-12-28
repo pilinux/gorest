@@ -23,16 +23,16 @@ func main() {
 		fmt.Println(err)
 	}
 
-	if configure.Database.ActivateRedis == "yes" {
+	if configure.Database.REDIS.Activate == "yes" {
 		// Initialize REDIS client
 		database.InitRedis()
 	}
 
 	// JWT
-	middleware.AccessKey = []byte(configure.Server.ServerJWT.AccessKey)
-	middleware.AccessKeyTTL = configure.Server.ServerJWT.AccessKeyTTL
-	middleware.RefreshKey = []byte(configure.Server.ServerJWT.RefreshKey)
-	middleware.RefreshKeyTTL = configure.Server.ServerJWT.RefreshKeyTTL
+	middleware.AccessKey = []byte(configure.Security.JWT.AccessKey)
+	middleware.AccessKeyTTL = configure.Security.JWT.AccessKeyTTL
+	middleware.RefreshKey = []byte(configure.Security.JWT.RefreshKey)
+	middleware.RefreshKeyTTL = configure.Security.JWT.RefreshKeyTTL
 
 	// Debugging - environment variables
 	/*
@@ -83,11 +83,11 @@ func SetupRouter() *gin.Engine {
 	router := gin.Default()
 
 	// Which proxy to trust
-	if configure.Server.ServerTrustedIP == "nil" {
+	if configure.Security.TrustedIP == "nil" {
 		router.SetTrustedProxies(nil)
 	} else {
-		if configure.Server.ServerTrustedIP != "" {
-			router.SetTrustedProxies([]string{configure.Server.ServerTrustedIP})
+		if configure.Security.TrustedIP != "" {
+			router.SetTrustedProxies([]string{configure.Security.TrustedIP})
 		}
 	}
 
@@ -131,7 +131,7 @@ func SetupRouter() *gin.Engine {
 		rHobbies.GET("", controller.GetHobbies) // Non-protected
 
 		// Playground
-		if configure.Database.ActivateRedis == "yes" {
+		if configure.Database.REDIS.Activate == "yes" {
 			rPlayground := v1.Group("playground")
 			rPlayground.GET("/redis_read", controller.RedisRead)        // Non-protected
 			rPlayground.POST("/redis_create", controller.RedisCreate)   // Non-protected

@@ -15,6 +15,10 @@ under the [MIT license][13] and is free for any personal or commercial project.
 
 ## Updates
 
+v1.3.0 [Dec 28 - 2021]
+- refactored config files to reduce cyclomatic complexity
+- organized instance variables
+
 v1.2.7 [Dec 27 - 2021]
 - REDIS database driver and test endpoints added
 - removed ineffectual assignments
@@ -312,6 +316,7 @@ gorest
 │    └---config.go
 │    └---database.go
 │    └---logger.go
+│    └---security.go
 │    └---server.go
 │
 │───controller

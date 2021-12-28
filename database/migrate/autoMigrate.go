@@ -23,8 +23,8 @@ var db *gorm.DB
 var errorState int
 
 func main() {
-	configureDB := config.Config()
-	driver := configureDB.Database.DbDriver
+	configureDB := config.Database().RDBMS
+	driver := configureDB.Env.Driver
 
 	/*
 	** 0 = default/no error
@@ -70,8 +70,8 @@ func dropAllTables() {
 }
 
 func migrateTables() {
-	configureDB := config.Config()
-	driver := configureDB.Database.DbDriver
+	configureDB := config.Database().RDBMS
+	driver := configureDB.Env.Driver
 
 	if driver == "mysql" {
 		// db.Set() --> add table suffix during auto migration

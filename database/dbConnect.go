@@ -45,20 +45,20 @@ var RedisConnTTL int
 func InitDB() *gorm.DB {
 	var db = DB
 
-	configureDB := config.Config()
+	configureDB := config.Database().RDBMS
 
-	driver := configureDB.Database.DbDriver
-	username := configureDB.Database.DbUser
-	password := configureDB.Database.DbPass
-	database := configureDB.Database.DbName
-	host := configureDB.Database.DbHost
-	port := configureDB.Database.DbPort
-	sslmode := configureDB.Database.DbSslmode
-	timeZone := configureDB.Database.DbTimeZone
-	maxIdleConns := configureDB.Database.DbMaxIdleConns
-	maxOpenConns := configureDB.Database.DbMaxOpenConns
-	connMaxLifetime := configureDB.Database.DbConnMaxLifetime
-	logLevel := configureDB.Database.DbLogLevel
+	driver := configureDB.Env.Driver
+	username := configureDB.Access.User
+	password := configureDB.Access.Pass
+	database := configureDB.Access.DbName
+	host := configureDB.Env.Host
+	port := configureDB.Env.Port
+	sslmode := configureDB.Ssl.Sslmode
+	timeZone := configureDB.Env.TimeZone
+	maxIdleConns := configureDB.Conn.MaxIdleConns
+	maxOpenConns := configureDB.Conn.MaxOpenConns
+	connMaxLifetime := configureDB.Conn.ConnMaxLifetime
+	logLevel := configureDB.Log.LogLevel
 
 	switch driver {
 	case "mysql":
@@ -136,17 +136,17 @@ func GetDB() *gorm.DB {
 
 // InitRedis - function to initialize redis client
 func InitRedis() radix.Client {
-	configureRedis := config.Config()
-	RedisConnTTL = configureRedis.Database.ConnTTL
+	configureRedis := config.Database().REDIS
+	RedisConnTTL = configureRedis.Conn.ConnTTL
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(RedisConnTTL)*time.Second)
 	defer cancel()
 
 	rClient, err := (radix.PoolConfig{
-		Size: configureRedis.Database.PoolSize,
+		Size: configureRedis.Conn.PoolSize,
 	}).New(ctx, "tcp", fmt.Sprintf("%v:%v",
-		configureRedis.Database.RedisHost,
-		configureRedis.Database.RedisPort))
+		configureRedis.Env.Host,
+		configureRedis.Env.Port))
 	if err != nil {
 		log.WithError(err).Panic("panic code: 161")
 		fmt.Println(err)

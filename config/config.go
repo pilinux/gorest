@@ -11,41 +11,117 @@ import (
 
 // Configuration - server and db configuration variables
 type Configuration struct {
-	Server   ServerConfig
 	Database DatabaseConfig
 	Logger   LoggerConfig
+	Server   ServerConfig
+	Security SecurityConfig
 }
 
-// Config - load the configurations from .env
-func Config() Configuration {
-	var configuration Configuration
-
+// env - load the configurations from .env
+func env() {
 	// Load environment variables
 	err := godotenv.Load()
 	if err != nil {
 		log.WithError(err).Panic("panic code: 101")
 	}
+}
 
-	dbDriver := os.Getenv("DBDRIVER")
-	dbUser := os.Getenv("DBUSER")
-	dbPass := os.Getenv("DBPASS")
-	dbName := os.Getenv("DBNAME")
-	dbHost := os.Getenv("DBHOST")
-	dbport := os.Getenv("DBPORT")
-	dbSslmode := os.Getenv("DBSSLMODE")
-	dbTimeZone := os.Getenv("DBTIMEZONE")
+// Config - load all the configurations
+func Config() Configuration {
+	var configuration Configuration
+
+	configuration.Database = Database()
+	configuration.Logger = Logger()
+	configuration.Security = Security()
+	configuration.Server = Server()
+
+	return configuration
+}
+
+// Database - all DB variables
+func Database() DatabaseConfig {
+	var databaseConfig DatabaseConfig
+	var err error
+
+	// Load environment variables
+	env()
+
+	// RDBMS
+	// Env
+	databaseConfig.RDBMS.Env.Driver = os.Getenv("DBDRIVER")
+	databaseConfig.RDBMS.Env.Host = os.Getenv("DBHOST")
+	databaseConfig.RDBMS.Env.Port = os.Getenv("DBPORT")
+	databaseConfig.RDBMS.Env.TimeZone = os.Getenv("DBTIMEZONE")
+	// Access
+	databaseConfig.RDBMS.Access.DbName = os.Getenv("DBNAME")
+	databaseConfig.RDBMS.Access.User = os.Getenv("DBUSER")
+	databaseConfig.RDBMS.Access.Pass = os.Getenv("DBPASS")
+	// SSL
+	databaseConfig.RDBMS.Ssl.Sslmode = os.Getenv("DBSSLMODE")
+	// Conn
 	dbMaxIdleConns := os.Getenv("DBMAXIDLECONNS")
 	dbMaxOpenConns := os.Getenv("DBMAXOPENCONNS")
 	dbConnMaxLifetime := os.Getenv("DBCONNMAXLIFETIME")
+	databaseConfig.RDBMS.Conn.MaxIdleConns, err = strconv.Atoi(dbMaxIdleConns)
+	if err != nil {
+		log.WithError(err).Panic("panic code: 131")
+	}
+	databaseConfig.RDBMS.Conn.MaxOpenConns, err = strconv.Atoi(dbMaxOpenConns)
+	if err != nil {
+		log.WithError(err).Panic("panic code: 132")
+	}
+	databaseConfig.RDBMS.Conn.ConnMaxLifetime, err = time.ParseDuration(dbConnMaxLifetime)
+	if err != nil {
+		log.WithError(err).Panic("panic code: 133")
+	}
+	// Logger
 	dbLogLevel := os.Getenv("DBLOGLEVEL")
+	databaseConfig.RDBMS.Log.LogLevel, err = strconv.Atoi(dbLogLevel)
+	if err != nil {
+		log.WithError(err).Panic("panic code: 134")
+	}
 
+	// REDIS
 	activateRedis := os.Getenv("ACTIVATE_REDIS")
+	databaseConfig.REDIS.Activate = activateRedis
+	if activateRedis == "yes" {
+		poolSize, err := strconv.Atoi(os.Getenv("POOLSIZE"))
+		if err != nil {
+			log.WithError(err).Panic("panic code: 135")
+		}
+		connTTL, err := strconv.Atoi(os.Getenv("CONNTTL"))
+		if err != nil {
+			log.WithError(err).Panic("panic code: 136")
+		}
 
-	serverport := os.Getenv("APP_PORT")
-	serverEnv := os.Getenv("APP_ENV")
-	serverTrustedIP := os.Getenv("TRUSTED_IP")
+		databaseConfig.REDIS.Env.Host = os.Getenv("REDISHOST")
+		databaseConfig.REDIS.Env.Port = os.Getenv("REDISPORT")
+		databaseConfig.REDIS.Conn.PoolSize = poolSize
+		databaseConfig.REDIS.Conn.ConnTTL = connTTL
+	}
+
+	return databaseConfig
+}
+
+// Logger ...
+func Logger() LoggerConfig {
+	var loggerConfig LoggerConfig
+
+	// Load environment variables
+	env()
 
 	loggerSentryDsn := os.Getenv("SentryDSN")
+	loggerConfig.SentryDsn = loggerSentryDsn
+
+	return loggerConfig
+}
+
+// Security - configs for generating tokens and hashes
+func Security() SecurityConfig {
+	var securityConfig SecurityConfig
+
+	// Load environment variables
+	env()
 
 	accessKey := os.Getenv("ACCESS_KEY")
 	accessKeyTTL, err := strconv.Atoi(os.Getenv("ACCESS_KEY_TTL"))
@@ -84,67 +160,31 @@ func Config() Configuration {
 	hashPassSaltLength := uint32(hashPassSaltLength64)
 	hashPassKeyLength := uint32(hashPassKeyLength64)
 
-	configuration.Server.ServerPort = serverport
-	configuration.Server.ServerEnv = serverEnv
-	configuration.Server.ServerTrustedIP = serverTrustedIP
+	securityConfig.JWT.AccessKey = accessKey
+	securityConfig.JWT.AccessKeyTTL = accessKeyTTL
+	securityConfig.JWT.RefreshKey = refreshKey
+	securityConfig.JWT.RefreshKeyTTL = refreshKeyTTL
 
-	configuration.Database.DbDriver = dbDriver
-	configuration.Database.DbUser = dbUser
-	configuration.Database.DbPass = dbPass
-	configuration.Database.DbName = dbName
-	configuration.Database.DbHost = dbHost
-	configuration.Database.DbPort = dbport
-	configuration.Database.DbSslmode = dbSslmode
-	configuration.Database.DbTimeZone = dbTimeZone
+	securityConfig.HashPass.Memory = hashPassMemory
+	securityConfig.HashPass.Iterations = hashPassIterations
+	securityConfig.HashPass.Parallelism = hashPassParallelism
+	securityConfig.HashPass.SaltLength = hashPassSaltLength
+	securityConfig.HashPass.KeyLength = hashPassKeyLength
 
-	configuration.Database.DbMaxIdleConns, err = strconv.Atoi(dbMaxIdleConns)
-	if err != nil {
-		log.WithError(err).Panic("panic code: 131")
-	}
-	configuration.Database.DbMaxOpenConns, err = strconv.Atoi(dbMaxOpenConns)
-	if err != nil {
-		log.WithError(err).Panic("panic code: 132")
-	}
-	configuration.Database.DbConnMaxLifetime, err = time.ParseDuration(dbConnMaxLifetime)
-	if err != nil {
-		log.WithError(err).Panic("panic code: 133")
-	}
-	configuration.Database.DbLogLevel, err = strconv.Atoi(dbLogLevel)
-	if err != nil {
-		log.WithError(err).Panic("panic code: 134")
-	}
+	securityConfig.TrustedIP = os.Getenv("TRUSTED_IP")
 
-	configuration.Database.ActivateRedis = activateRedis
-	if activateRedis == "yes" {
-		redisHost := os.Getenv("REDISHOST")
-		redisPort := os.Getenv("REDISPORT")
-		poolSize, err := strconv.Atoi(os.Getenv("POOLSIZE"))
-		if err != nil {
-			log.WithError(err).Panic("panic code: 135")
-		}
-		connTTL, err := strconv.Atoi(os.Getenv("CONNTTL"))
-		if err != nil {
-			log.WithError(err).Panic("panic code: 136")
-		}
+	return securityConfig
+}
 
-		configuration.Database.RedisHost = redisHost
-		configuration.Database.RedisPort = redisPort
-		configuration.Database.PoolSize = poolSize
-		configuration.Database.ConnTTL = connTTL
-	}
+// Server - port and env
+func Server() ServerConfig {
+	var serverConfig ServerConfig
 
-	configuration.Logger.SentryDsn = loggerSentryDsn
+	// Load environment variables
+	env()
 
-	configuration.Server.ServerJWT.AccessKey = accessKey
-	configuration.Server.ServerJWT.AccessKeyTTL = accessKeyTTL
-	configuration.Server.ServerJWT.RefreshKey = refreshKey
-	configuration.Server.ServerJWT.RefreshKeyTTL = refreshKeyTTL
+	serverConfig.ServerPort = os.Getenv("APP_PORT")
+	serverConfig.ServerEnv = os.Getenv("APP_ENV")
 
-	configuration.Server.ServerHashPass.Memory = hashPassMemory
-	configuration.Server.ServerHashPass.Iterations = hashPassIterations
-	configuration.Server.ServerHashPass.Parallelism = hashPassParallelism
-	configuration.Server.ServerHashPass.SaltLength = hashPassSaltLength
-	configuration.Server.ServerHashPass.KeyLength = hashPassKeyLength
-
-	return configuration
+	return serverConfig
 }
