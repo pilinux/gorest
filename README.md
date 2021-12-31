@@ -2,7 +2,7 @@
 
 <img align="right" width="350px" src="https://cdn.pilinux.workers.dev/images/GoREST/logo/GoREST-Logo.png">
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/piLinux/GoREST)][01]
+[![Go Report Card](https://goreportcard.com/badge/github.com/pilinux/gorest)][01]
 [![CodeFactor](https://www.codefactor.io/repository/github/pilinux/gorest/badge)][06]
 [![codebeat badge](https://codebeat.co/badges/c92a8584-d6ba-4606-8d6f-3049630f92c6)][03]
 [![MIT license](https://img.shields.io/badge/license-MIT-brightgreen.svg)][13]
