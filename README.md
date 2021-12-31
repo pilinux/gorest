@@ -495,7 +495,7 @@ Please see [this][62] document.
 
 Released under the [MIT license][13]
 
-[01]: https://goreportcard.com/report/github.com/piLinux/GoREST
+[01]: https://goreportcard.com/report/github.com/pilinux/gorest
 [03]: https://codebeat.co/projects/github-com-pilinux-gorest-master
 [04]: https://cdn.pilinux.workers.dev/images/GoREST/models/dbModelv1.0.svg
 [05]: https://cdn.pilinux.workers.dev/images/GoREST/flowchart/flow.diagram.v1.0.svg
