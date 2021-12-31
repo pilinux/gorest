@@ -11,7 +11,7 @@ func GetUserByEmail(email string) (*model.Auth, error) {
 
 	var auth model.Auth
 
-	if err := db.Where("email = ? ", email).Find(&auth).Error; err != nil {
+	if err := db.Where("email = ? ", email).First(&auth).Error; err != nil {
 		return nil, err
 	}
 

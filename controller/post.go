@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/pilinux/gorest/database"
 	"github.com/pilinux/gorest/database/model"
@@ -41,29 +42,35 @@ func CreatePost(c *gin.Context) {
 	db := database.GetDB()
 	user := model.User{}
 	post := model.Post{}
+	postFinal := model.Post{}
 
-	user.IDAuth = middleware.AuthID
+	userIDAuth := middleware.AuthID
 
-	if err := db.Where("id_auth = ?", user.IDAuth).First(&user).Error; err != nil {
-		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
+	// does the user have an existing profile
+	if err := db.Where("id_auth = ?", userIDAuth).First(&user).Error; err != nil {
+		render(c, gin.H{"msg": "no user profile found"}, http.StatusForbidden)
 		return
 	}
 
+	// bind JSON
 	if err := c.ShouldBindJSON(&post); err != nil {
 		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
 		return
 	}
 
-	post.IDUser = user.UserID
+	// user must not be able to manipulate all fields
+	postFinal.Title = post.Title
+	postFinal.Body = post.Body
+	postFinal.IDUser = user.UserID
 
 	tx := db.Begin()
-	if err := tx.Create(&post).Error; err != nil {
+	if err := tx.Create(&postFinal).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Error("error code: 1201")
 		render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 	} else {
 		tx.Commit()
-		render(c, post, http.StatusCreated)
+		render(c, postFinal, http.StatusCreated)
 	}
 }
 
@@ -72,33 +79,42 @@ func UpdatePost(c *gin.Context) {
 	db := database.GetDB()
 	user := model.User{}
 	post := model.Post{}
+	postFinal := model.Post{}
 	id := c.Params.ByName("id")
 
-	user.IDAuth = middleware.AuthID
+	userIDAuth := middleware.AuthID
 
-	if err := db.Where("id_auth = ?", user.IDAuth).First(&user).Error; err != nil {
-		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
+	// does the user have an existing profile
+	if err := db.Where("id_auth = ?", userIDAuth).First(&user).Error; err != nil {
+		render(c, gin.H{"msg": "no user profile found"}, http.StatusForbidden)
 		return
 	}
 
-	if err := db.Where("post_id = ?", id).Where("id_user = ?", user.UserID).First(&post).Error; err != nil {
-		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
+	// does the post exist + does user have right to modify this post
+	if err := db.Where("post_id = ?", id).Where("id_user = ?", user.UserID).First(&postFinal).Error; err != nil {
+		render(c, gin.H{"msg": "operation not possible"}, http.StatusForbidden)
 		return
 	}
 
+	// bind JSON
 	if err := c.ShouldBindJSON(&post); err != nil {
 		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
 		return
 	}
 
+	// user must not be able to manipulate all fields
+	postFinal.UpdatedAt = time.Now()
+	postFinal.Title = post.Title
+	postFinal.Body = post.Body
+
 	tx := db.Begin()
-	if err := tx.Save(&post).Error; err != nil {
+	if err := tx.Save(&postFinal).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Error("error code: 1211")
 		render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 	} else {
 		tx.Commit()
-		render(c, post, http.StatusOK)
+		render(c, postFinal, http.StatusOK)
 	}
 }
 
@@ -109,20 +125,17 @@ func DeletePost(c *gin.Context) {
 	post := model.Post{}
 	id := c.Params.ByName("id")
 
-	user.IDAuth = middleware.AuthID
+	userIDAuth := middleware.AuthID
 
-	if err := db.Where("id_auth = ?", user.IDAuth).First(&user).Error; err != nil {
-		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
+	// does the user have an existing profile
+	if err := db.Where("id_auth = ?", userIDAuth).First(&user).Error; err != nil {
+		render(c, gin.H{"msg": "no user profile found"}, http.StatusForbidden)
 		return
 	}
 
+	// does the post exist + does user have right to delete this post
 	if err := db.Where("post_id = ?", id).Where("id_user = ?", user.UserID).First(&post).Error; err != nil {
-		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
-		return
-	}
-
-	if err := c.ShouldBindJSON(&post); err != nil {
-		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
+		render(c, gin.H{"msg": "operation not possible"}, http.StatusForbidden)
 		return
 	}
 

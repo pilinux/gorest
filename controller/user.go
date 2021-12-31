@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/pilinux/gorest/database"
 	"github.com/pilinux/gorest/database/model"
@@ -62,27 +63,35 @@ func GetUser(c *gin.Context) {
 func CreateUser(c *gin.Context) {
 	db := database.GetDB()
 	user := model.User{}
+	userFinal := model.User{}
 
-	user.IDAuth = middleware.AuthID
+	userIDAuth := middleware.AuthID
 
-	if err := db.Where("id_auth = ?", user.IDAuth).First(&user).Error; err == nil {
-		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
+	// does the user have an existing profile
+	if err := db.Where("id_auth = ?", userIDAuth).First(&userFinal).Error; err == nil {
+		render(c, gin.H{"msg": "user profile found, no need to create a new one"}, http.StatusForbidden)
 		return
 	}
 
+	// bind JSON
 	if err := c.ShouldBindJSON(&user); err != nil {
 		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
 		return
 	}
 
+	// user must not be able to manipulate all fields
+	userFinal.FirstName = user.FirstName
+	userFinal.LastName = user.LastName
+	userFinal.IDAuth = userIDAuth
+
 	tx := db.Begin()
-	if err := tx.Create(&user).Error; err != nil {
+	if err := tx.Create(&userFinal).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Error("error code: 1101")
 		render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 	} else {
 		tx.Commit()
-		render(c, user, http.StatusCreated)
+		render(c, userFinal, http.StatusCreated)
 	}
 }
 
@@ -90,27 +99,35 @@ func CreateUser(c *gin.Context) {
 func UpdateUser(c *gin.Context) {
 	db := database.GetDB()
 	user := model.User{}
+	userFinal := model.User{}
 
-	user.IDAuth = middleware.AuthID
+	userIDAuth := middleware.AuthID
 
-	if err := db.Where("id_auth = ?", user.IDAuth).First(&user).Error; err != nil {
-		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
+	// does the user have an existing profile
+	if err := db.Where("id_auth = ?", userIDAuth).First(&userFinal).Error; err != nil {
+		render(c, gin.H{"msg": "no user profile found"}, http.StatusNotFound)
 		return
 	}
 
+	// bind JSON
 	if err := c.ShouldBindJSON(&user); err != nil {
 		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
 		return
 	}
 
+	// user must not be able to manipulate all fields
+	userFinal.UpdatedAt = time.Now()
+	userFinal.FirstName = user.FirstName
+	userFinal.LastName = user.LastName
+
 	tx := db.Begin()
-	if err := tx.Save(&user).Error; err != nil {
+	if err := tx.Save(&userFinal).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Error("error code: 1111")
 		render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 	} else {
 		tx.Commit()
-		render(c, user, http.StatusOK)
+		render(c, userFinal, http.StatusOK)
 	}
 }
 
@@ -119,27 +136,31 @@ func AddHobby(c *gin.Context) {
 	db := database.GetDB()
 	user := model.User{}
 	hobby := model.Hobby{}
+	hobbyNew := model.Hobby{}
 	hobbyFound := 0 // default (do not create new hobby) = 0, create new hobby = 1
 
-	user.IDAuth = middleware.AuthID
+	userIDAuth := middleware.AuthID
 
-	if err := db.Where("id_auth = ?", user.IDAuth).First(&user).Error; err != nil {
-		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
+	// does the user have an existing profile
+	if err := db.Where("id_auth = ?", userIDAuth).First(&user).Error; err != nil {
+		render(c, gin.H{"msg": "no user profile found"}, http.StatusForbidden)
 		return
 	}
 
+	// bind JSON
 	if err := c.ShouldBindJSON(&hobby); err != nil {
 		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
 		return
 	}
 
-	if err := db.First(&hobby, "hobby = ?", hobby.Hobby).Error; err != nil {
+	if err := db.Where("hobby = ?", hobby.Hobby).First(&hobbyNew).Error; err != nil {
 		hobbyFound = 1 // create new hobby
 	}
 
 	if hobbyFound == 1 {
+		hobbyNew.Hobby = hobby.Hobby
 		tx := db.Begin()
-		if err := tx.Create(&hobby).Error; err != nil {
+		if err := tx.Create(&hobbyNew).Error; err != nil {
 			tx.Rollback()
 			log.WithError(err).Error("error code: 1121")
 			render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
@@ -150,7 +171,7 @@ func AddHobby(c *gin.Context) {
 	}
 
 	if hobbyFound == 0 {
-		user.Hobbies = append(user.Hobbies, hobby)
+		user.Hobbies = append(user.Hobbies, hobbyNew)
 		tx := db.Begin()
 		if err := tx.Save(&user).Error; err != nil {
 			tx.Rollback()

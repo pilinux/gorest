@@ -20,7 +20,7 @@ type Auth struct {
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 	Email     string         `json:"Email"`
 	Password  string         `json:"Password"`
-	Users     User           `gorm:"foreignkey:IDAuth;references:AuthID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	User      User           `gorm:"foreignkey:IDAuth;references:AuthID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
 // UnmarshalJSON ...
@@ -33,6 +33,14 @@ func (v *Auth) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &aux); err != nil {
 		return err
 	}
+
+	// check password length
+	// if more checks are required i.e. password pattern,
+	// add all conditions here
+	if len(aux.Password) < 6 {
+		return errors.New("short password")
+	}
+
 	v.AuthID = aux.AuthID
 	v.Email = aux.Email
 	if v.Password = HashPass(aux.Password); v.Password == "error" {

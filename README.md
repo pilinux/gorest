@@ -11,32 +11,44 @@ GoREST is a starter kit, written in [Golang][11] with [Gin framework][12],
 for rapid prototyping and developing a RESTful API. The source code is released
 under the [MIT license][13] and is free for any personal or commercial project.
 
-
-
 ## Updates
 
+v1.3.1 [Dec 31 - 2021]
+
+- During the login process, if the provided email is not found,
+  API should handle it properly
+- A user must not be able to modify resources related to other users
+  (controllers have been updated)
+
 v1.3.0 [Dec 28 - 2021]
+
 - refactored config files to reduce cyclomatic complexity
 - organized instance variables
 
 v1.2.7 [Dec 27 - 2021]
+
 - REDIS database driver and test endpoints added
 - removed ineffectual assignments
 - check errors during binding of incoming JSON
 
 v1.2.6 [Dec 26 - 2021]
+
 - fixed security vulnerability [CWE-190][71] and [CWE-681][72]
 
 v1.2.5 [Dec 25 - 2021]
+
 - new endpoint added for refreshing JWT tokens
 
 v1.2.4 [Aug 02 - 2021]
+
 - middleware added: `logrus` + `sentry.io`
 
 v1.2.3 [Jul 31 - 2021]
+
 - Route handlers modified to meet the requirements of doing unit test
 
 v1.2.2 [Jul 29 - 2021]
+
 - Replaced `github.com/dgrijalva/jwt-go` with `github.com/golang-jwt/jwt`
 
 Package `github.com/dgrijalva/jwt-go <= v3.2.0` allows attackers to bypass
@@ -45,23 +57,25 @@ intended access restrictions in situations with []string{} for m["aud"]
 More on this: https://github.com/advisories/GHSA-w73w-5m7g-f7qc
 
 v1.2.1 [Jun 19 - 2021]
+
 - `SHA-256` is replaced by `Argon2id` for password hashing
 
 v1.2.0 [Jun 17 - 2021]
+
 - `GORM` updated from `v1` to `v2`
 
 Projects developed based on `GORM v1` must checkout at `v1.1.3`
 
 v1.1 [Jan 03 - 2021]
+
 - **PostgreSQL** and **SQLite3** drivers are included
 - `charset` updated from `utf8` to `utf8mb4` in order to fully support UTF-8
-encoding for MySQL database
+  encoding for MySQL database
 
 v1.0 [Dec 26 - 2020]
+
 - [JWT][14] based authentication is implemented using [dgrijalva/jwt-go][15]
 - `One-to-one`, `one-to-many`, and `many-to-many` models are introduced
-
-
 
 ## Database Support
 
@@ -72,8 +86,6 @@ In GoREST, **MySQL**, **PostgreSQL** and **SQLite3** drivers are included.
 Anyone experienced in **Microsoft SQL Server** is welcome to contribute to the
 project by including **SQL Server** driver and testing all the features of GoREST.
 
-
-
 ## Demo
 
 For demonstration, a test instance can be accessed [here][31] from a web
@@ -81,6 +93,7 @@ browser. For API development, it is recommended to use [Postman][32] or any
 other similar tool.
 
 Accessible endpoints of the test instance:
+
 - https://goapi.pilinux.me/api/v1/users
 - https://goapi.pilinux.me/api/v1/users/:id
 - https://goapi.pilinux.me/api/v1/posts
@@ -91,136 +104,185 @@ To prevent abuse, only HTTP `GET` requests are accepted by the demo server.
 
 <img width="650px" src="https://cdn.pilinux.workers.dev/images/GoREST/screenshot/GoREST.API.Demo.PNG">
 
-
-
 ## Setup and start the production-ready app
 
 - Install a relational database (MySQL or PostgreSQL)
 - Set up an environment to compile the Go codes (a [quick tutorial][41]
-for any Debian based OS)
+  for any Debian based OS)
 - Install `git`
 - Clone the project `git clone https://github.com/piLinux/GoREST.git`
 - At the root of the cloned repository
-[`cd $GOPATH/src/github.com/pilinux/gorest`], execute `go build` to fetch all
-the dependencies
+  [`cd $GOPATH/src/github.com/pilinux/gorest`], execute `go build` to fetch all
+  the dependencies
 - Edit `.env.sample` file and save it as `.env` file at the root of the
-project `$GOPATH/src/github.com/pilinux/gorest`
+  project `$GOPATH/src/github.com/pilinux/gorest`
 - Edit the `.env.sample` file located at
-`$GOPATH/src/github.com/pilinux/gorest/database/migrate` and save it as `.env`
+  `$GOPATH/src/github.com/pilinux/gorest/database/migrate` and save it as `.env`
 - Inside `$GOPATH/src/github.com/pilinux/gorest/database/migrate`, run
-`go run autoMigrate.go` to migrate the database
+  `go run autoMigrate.go` to migrate the database
   - Comment the line `setPkFk()` in `autoMigrate.go` file if the driver is not **MySQL**.
-  [Check issue: 7][42]
+    [Check issue: 7][42]
 - At `$GOPATH/src/github.com/pilinux/gorest`, run `./gorest` to launch the app
 
 **Note For SQLite3:**
+
 - `DBUSER`, `DBPASS`, `DBHOST` and `DBPORT` environment variables
-should be left unchanged.
+  should be left unchanged.
 - `DBNAME` must contain the full path and the database file name; i.e,
+
 ```
 /user/location/database.db
 ```
 
 To the following endpoints `GET`, `POST`, `PUT` and `DELETE` requests can be sent:
 
-- http://localhost:port/api/v1/register
-  - `POST` [create new account]
+### Register
+
+http://localhost:port/api/v1/register
+
+- `POST` [create new account]
+
 ```
 {
     "Email":"...@example.com",
     "Password":"..."
 }
 ```
-- http://localhost:port/api/v1/login
-  - `POST` [generate new JWT]
+
+### Login
+
+http://localhost:port/api/v1/login
+
+- `POST` [generate new JWT]
+
 ```
 {
     "Email":"...@example.com",
     "Password":"..."
 }
 ```
-- http://localhost:port/api/v1/refresh
-  - `POST` [generate new JWT]
+
+### Refresh JWT
+
+http://localhost:port/api/v1/refresh
+
+- `POST` [generate new JWT]
+
 ```
 {
     "RefreshJWT":"use_existing_valid_refresh_token"
 }
 ```
-- http://localhost:port/api/v1/users
-  - `GET` [get list of all registered users along with their hobbies and posts]
-  - `POST` [add user info to the database, requires JWT for verification]
+
+### User profile
+
+http://localhost:port/api/v1/users
+
+- `GET` [get list of all registered users along with their hobbies and posts]
+- `POST` [add user info to the database, requires JWT for verification]
+
 ```
 {
     "FirstName": "...",
     "LastName": "..."
 }
 ```
-  - `PUT` [edit user info, requires JWT for verification]
+
+- `PUT` [edit user info, requires JWT for verification]
+
 ```
 {
     "FirstName": "...",
     "LastName": "..."
 }
 ```
-- http://localhost:port/api/v1/users/:id
-  - `GET` [fetch hobbies and posts belonged to a specific user]
-- http://localhost:port/api/v1/users/hobbies
-  - `PUT` [add a new hobby, requires JWT for verification]
+
+### Hobbies of a user
+
+http://localhost:port/api/v1/users/:id
+
+- `GET` [fetch hobbies and posts belonged to a specific user]
+
+http://localhost:port/api/v1/users/hobbies
+
+- `PUT` [add a new hobby, requires JWT for verification]
+
 ```
 {
     "Hobby": "..."
 }
 ```
-- http://localhost:port/api/v1/posts
-  - `GET` [fetch all published posts]
-  - `POST` [create a new post, requires JWT for verification]
+
+### Posts
+
+http://localhost:port/api/v1/posts
+
+- `GET` [fetch all published posts]
+- `POST` [create a new post, requires JWT for verification]
+
 ```
 {
     "Title": "...",
     "Body": "... ..."
 }
 ```
-- http://localhost:port/api/v1/posts/:id
-  - `GET` [fetch a specific post]
-  - `PUT` [edit a specific post, requires JWT for verification]
+
+##### Any specific post
+
+http://localhost:port/api/v1/posts/:id
+
+- `GET` [fetch a specific post]
+- `PUT` [edit a specific post, requires JWT for verification]
+
 ```
 {
     "Title": "...",
     "Body": "... ..."
 }
 ```
-  - `DELETE` [delete a specific post, requires JWT for verification]
-- http://localhost:port/api/v1/hobbies
-  - `GET` [fetch all hobbies created by all users]
 
+- `DELETE` [delete a specific post, requires JWT for verification]
 
-### For REDIS
+### List of hobbies available in the database
+
+http://localhost:port/api/v1/hobbies
+
+- `GET` [fetch all hobbies created by all users]
+
+## For REDIS
 
 - Set environment variable `ACTIVATE_REDIS=yes`
 - Set `key:value` pair
   - `POST` http://localhost:port/api/v1/playground/redis_create
+
 ```
 {
     "Key": "test1",
     "Value": "v1"
 }
 ```
+
 - Fetch `key:value` pair
   - `GET` http://localhost:port/api/v1/playground/redis_read
+
 ```
 {
     "Key": "test1"
 }
 ```
+
 - Delete `key:value` pair
   - `DELETE` http://localhost:port/api/v1/playground/redis_delete
+
 ```
 {
     "Key": "test1"
 }
 ```
+
 - Set hashes with key
   - `POST` http://localhost:port/api/v1/playground/redis_create_hash
+
 ```
 {
     "Key": "test2",
@@ -233,44 +295,44 @@ To the following endpoints `GET`, `POST`, `PUT` and `DELETE` requests can be sen
         }
 }
 ```
+
 - Fetch hashes by key
   - `GET` http://localhost:port/api/v1/playground/redis_read_hash
+
 ```
 {
     "Key": "test2"
 }
 ```
+
 - Delete a key
   - `DELETE` http://localhost:port/api/v1/playground/redis_delete_hash
+
 ```
 {
     "Key": "test2"
 }
 ```
-
-
 
 ## Flow diagram
 
 ![Flow.Diagram][05]
 
-
-
 ## Features
 
 - GoREST uses [Gin][12] as the main framework, [GORM][21] as the ORM and
-[GoDotEnv][51] for environment configuration
+  [GoDotEnv][51] for environment configuration
 - [golang-jwt/jwt][16] is used for JWT authentication
 - [sentry.io][17] error tracker and performance monitor is enabled by default
-as a hook inside `logrus`. They are included as middleware which can be
-disabled by omitting
+  as a hook inside `logrus`. They are included as middleware which can be
+  disabled by omitting
 
 ```
 router.Use(middleware.SentryCapture(configure.Logger.SentryDsn))
 ```
 
-- All codes are written and organized following a straightforward and 
-easy-to-understand approach
+- All codes are written and organized following a straightforward and
+  easy-to-understand approach
 - For **Logger** and **Recovery**, Gin's in-built middlewares are used
 
 ```
@@ -288,13 +350,9 @@ router.Use(middleware.CORS())
   - `one to many`
   - `many to many`
 
-
-
 ## Logical Database Model
 
 ![DB.Model.Logical][04]
-
-
 
 ## Architecture
 
@@ -390,22 +448,22 @@ gorest
 ### Step 1
 
 - `model`: This package contains all the necessary models. Each file is
-responsible for one specific table in the database. To add new tables and to
-create new relations between those tables, create new models, and place them in
-this directory. All newly created files should have the same package name.
+  responsible for one specific table in the database. To add new tables and to
+  create new relations between those tables, create new models, and place them in
+  this directory. All newly created files should have the same package name.
 
 ### Step 2
 
 - `controller`: This package contains all functions to process all related
-incoming HTTP requests.
+  incoming HTTP requests.
 
 ### Step 3
 
 - `autoMigrate.go`: Names of all newly added models should first be included
-in this file to automatically create the complete database. It also contains
-the function to delete the previous data and tables. When only newly created
-tables or columns need to be migrated, first disable `db.DropTableIfExists()`
-function before executing the file.
+  in this file to automatically create the complete database. It also contains
+  the function to delete the previous data and tables. When only newly created
+  tables or columns need to be migrated, first disable `db.DropTableIfExists()`
+  function before executing the file.
 
 ### Step 4
 
@@ -423,27 +481,19 @@ v1 := router.Group()
 }
 ```
 
-
-
 ## Contributing
 
 Please see [CONTRIBUTING][61] to join this amazing project.
 
-
-
 ## Code of conduct
 
 Please see [this][62] document.
-
-
 
 ## License
 
 © Mahir Hasan 2019 - 2022
 
 Released under the [MIT license][13]
-
-
 
 [01]: https://goreportcard.com/report/github.com/piLinux/GoREST
 [03]: https://codebeat.co/projects/github-com-pilinux-gorest-master
