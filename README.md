@@ -13,6 +13,17 @@ under the [MIT license][13] and is free for any personal or commercial project.
 
 ## Updates
 
+Development branch: v1.4.0-alpha0 [Jan 02 - 2022]
+
+Safety: Zero-logs policy for the test server (demo live API)
+
+- If the client is a web browser, or when the client requests to
+  serve HTML pages, the API will serve HTML page instead of JSON
+- Template files are located at `templates` directory
+- Template engine: `Pongo2` - similar syntax like Django
+- Templates developed for:
+  - `GET` - `/api/v1/posts/:id`: [live demo] https://goapi.pilinux.me/api/v1/posts/1
+
 v1.3.1 [Dec 31 - 2021]
 
 - During the login process, if the provided email is not found,

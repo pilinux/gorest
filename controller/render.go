@@ -1,9 +1,25 @@
 package controller
 
-import "github.com/gin-gonic/gin"
+import (
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/pilinux/structs"
+)
 
 // render - render response
-func render(c *gin.Context, data interface{}, statusCode int) {
+func render(c *gin.Context, data interface{}, statusCode int, htmlTpl ...string) {
+	if len(htmlTpl) > 0 {
+		reqType := c.Request.Header.Get("Accept")
+
+		// Server HTML
+		if strings.Contains(reqType, "text/html") {
+			c.Set("template", htmlTpl[0])
+			c.Set("data", structs.Map(data))
+			return
+		}
+	}
+
 	if statusCode >= 400 {
 		c.AbortWithStatusJSON(statusCode, data)
 		return
@@ -11,19 +27,4 @@ func render(c *gin.Context, data interface{}, statusCode int) {
 
 	// Respond with JSON
 	c.JSON(statusCode, data)
-
-	/*
-		// Reference: to implement other formats
-		switch c.Request.Header.Get("Accept") {
-		case "application/json":
-			// Respond with JSON
-			c.JSON(statusCode, data)
-		case "application/xml":
-			// Respond with XML
-			c.XML(statusCode, data)
-		default:
-			// Respond with ...
-			c...
-		}
-	*/
 }

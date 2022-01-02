@@ -4,12 +4,14 @@ go 1.17
 
 require (
 	github.com/alexedwards/argon2id v0.0.0-20211130144151-3585854a6387
+	github.com/flosch/pongo2 v0.0.0-20200913210552-0d938eb266f3
 	github.com/gin-gonic/gin v1.7.7
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/jinzhu/gorm v1.9.16
 	github.com/joho/godotenv v1.4.0
 	github.com/mediocregopher/radix/v4 v4.0.0
 	github.com/onrik/logrus v0.9.0
+	github.com/pilinux/structs v1.1.1
 	github.com/sirupsen/logrus v1.8.1
 	gorm.io/driver/mysql v1.2.2
 	gorm.io/driver/postgres v1.2.3

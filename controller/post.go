@@ -29,11 +29,14 @@ func GetPost(c *gin.Context) {
 	db := database.GetDB()
 	post := model.Post{}
 	id := c.Params.ByName("id")
+	errorMsg := model.ErrorMsg{}
 
 	if err := db.Where("post_id = ? ", id).First(&post).Error; err != nil {
-		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
+		errorMsg.HTTPCode = http.StatusNotFound
+		errorMsg.Message = "not found"
+		render(c, errorMsg, http.StatusNotFound, "error.html")
 	} else {
-		render(c, post, http.StatusOK)
+		render(c, post, http.StatusOK, "read-article.html")
 	}
 }
 
