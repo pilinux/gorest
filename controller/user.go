@@ -6,6 +6,7 @@ import (
 
 	"github.com/pilinux/gorest/database"
 	"github.com/pilinux/gorest/database/model"
+	"github.com/pilinux/gorest/lib"
 	"github.com/pilinux/gorest/lib/middleware"
 
 	"github.com/gin-gonic/gin"
@@ -20,7 +21,7 @@ func GetUsers(c *gin.Context) {
 	hobbies := []model.Hobby{}
 
 	if err := db.Find(&users).Error; err != nil {
-		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
+		lib.Render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
 	} else {
 		j := 0
 		for _, user := range users {
@@ -33,7 +34,7 @@ func GetUsers(c *gin.Context) {
 			users[j].Hobbies = hobbies
 			j++
 		}
-		render(c, users, http.StatusOK)
+		lib.Render(c, users, http.StatusOK)
 	}
 }
 
@@ -46,7 +47,7 @@ func GetUser(c *gin.Context) {
 	hobbies := []model.Hobby{}
 
 	if err := db.Where("user_id = ? ", id).First(&user).Error; err != nil {
-		render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
+		lib.Render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
 	} else {
 		db.Model(&posts).Where("id_user = ?", id).Find(&posts)
 		user.Posts = posts
@@ -55,7 +56,7 @@ func GetUser(c *gin.Context) {
 			Where("users.user_id = ?", user.UserID).
 			Find(&hobbies)
 		user.Hobbies = hobbies
-		render(c, user, http.StatusOK)
+		lib.Render(c, user, http.StatusOK)
 	}
 }
 
@@ -69,13 +70,13 @@ func CreateUser(c *gin.Context) {
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&userFinal).Error; err == nil {
-		render(c, gin.H{"msg": "user profile found, no need to create a new one"}, http.StatusForbidden)
+		lib.Render(c, gin.H{"msg": "user profile found, no need to create a new one"}, http.StatusForbidden)
 		return
 	}
 
 	// bind JSON
 	if err := c.ShouldBindJSON(&user); err != nil {
-		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
+		lib.Render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
 		return
 	}
 
@@ -88,10 +89,10 @@ func CreateUser(c *gin.Context) {
 	if err := tx.Create(&userFinal).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Error("error code: 1101")
-		render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		lib.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 	} else {
 		tx.Commit()
-		render(c, userFinal, http.StatusCreated)
+		lib.Render(c, userFinal, http.StatusCreated)
 	}
 }
 
@@ -105,13 +106,13 @@ func UpdateUser(c *gin.Context) {
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&userFinal).Error; err != nil {
-		render(c, gin.H{"msg": "no user profile found"}, http.StatusNotFound)
+		lib.Render(c, gin.H{"msg": "no user profile found"}, http.StatusNotFound)
 		return
 	}
 
 	// bind JSON
 	if err := c.ShouldBindJSON(&user); err != nil {
-		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
+		lib.Render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
 		return
 	}
 
@@ -124,10 +125,10 @@ func UpdateUser(c *gin.Context) {
 	if err := tx.Save(&userFinal).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Error("error code: 1111")
-		render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		lib.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 	} else {
 		tx.Commit()
-		render(c, userFinal, http.StatusOK)
+		lib.Render(c, userFinal, http.StatusOK)
 	}
 }
 
@@ -143,13 +144,13 @@ func AddHobby(c *gin.Context) {
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&user).Error; err != nil {
-		render(c, gin.H{"msg": "no user profile found"}, http.StatusForbidden)
+		lib.Render(c, gin.H{"msg": "no user profile found"}, http.StatusForbidden)
 		return
 	}
 
 	// bind JSON
 	if err := c.ShouldBindJSON(&hobby); err != nil {
-		render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
+		lib.Render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
 		return
 	}
 
@@ -163,7 +164,7 @@ func AddHobby(c *gin.Context) {
 		if err := tx.Create(&hobbyNew).Error; err != nil {
 			tx.Rollback()
 			log.WithError(err).Error("error code: 1121")
-			render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+			lib.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		} else {
 			tx.Commit()
 			hobbyFound = 0
@@ -176,10 +177,10 @@ func AddHobby(c *gin.Context) {
 		if err := tx.Save(&user).Error; err != nil {
 			tx.Rollback()
 			log.WithError(err).Error("error code: 1131")
-			render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+			lib.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		} else {
 			tx.Commit()
-			render(c, user, http.StatusOK)
+			lib.Render(c, user, http.StatusOK)
 		}
 	}
 }

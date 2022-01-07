@@ -24,6 +24,10 @@ Safety: Zero-logs policy for the test server (demo live API)
 - Templates developed for:
   - `GET` - `/api/v1/posts/:id`: [live demo] https://goapi.pilinux.me/api/v1/posts/1
 
+[Jan 07 - 2022]
+
+- `Render` is now an exported function placed in `lib` package
+
 v1.3.1 [Dec 31 - 2021]
 
 - During the login process, if the provided email is not found,
