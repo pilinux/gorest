@@ -31,6 +31,10 @@ Safety: Zero-logs policy for the test server (demo live API)
 - Config modified for `Basic Auth`
 - Demo router added - how to implement `Basic Auth`
   - `GET` - `/api/v1/access_resources`: [live demo] https://goapi.pilinux.me/api/v1/access_resources
+- App firewall added
+  - to allow all IPs, set `IP=*`
+  - to allow one or several IPs, set `LISTTYPE=whitelist` and `IP=[IPv4 addresses]`
+  - to block one or several IPs, set `LISTTYPE=blacklist` and `IP=[IPv4 addresses]`
 
 v1.3.1 [Dec 31 - 2021]
 

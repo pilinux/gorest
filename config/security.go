@@ -19,5 +19,9 @@ type SecurityConfig struct {
 		SaltLength  uint32
 		KeyLength   uint32
 	}
+	Firewall struct {
+		ListType string
+		IP       string
+	}
 	TrustedIP string
 }

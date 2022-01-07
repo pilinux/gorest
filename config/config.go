@@ -163,6 +163,9 @@ func Security() SecurityConfig {
 	hashPassSaltLength := uint32(hashPassSaltLength64)
 	hashPassKeyLength := uint32(hashPassKeyLength64)
 
+	listType := os.Getenv("LISTTYPE")
+	ip := os.Getenv("IP")
+
 	securityConfig.BasicAuth.Username = username
 	securityConfig.BasicAuth.Password = password
 
@@ -176,6 +179,9 @@ func Security() SecurityConfig {
 	securityConfig.HashPass.Parallelism = hashPassParallelism
 	securityConfig.HashPass.SaltLength = hashPassSaltLength
 	securityConfig.HashPass.KeyLength = hashPassKeyLength
+
+	securityConfig.Firewall.ListType = listType
+	securityConfig.Firewall.IP = ip
 
 	securityConfig.TrustedIP = os.Getenv("TRUSTED_IP")
 

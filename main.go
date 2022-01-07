@@ -93,6 +93,10 @@ func SetupRouter() *gin.Engine {
 
 	router.Use(middleware.CORS())
 	router.Use(middleware.SentryCapture(configure.Logger.SentryDsn))
+	router.Use(middleware.Firewall(
+		configure.Security.Firewall.ListType,
+		configure.Security.Firewall.IP,
+	))
 
 	// Render HTML
 	router.Use(middleware.Pongo2())
