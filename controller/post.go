@@ -6,8 +6,8 @@ import (
 
 	"github.com/pilinux/gorest/database"
 	"github.com/pilinux/gorest/database/model"
-	"github.com/pilinux/gorest/lib"
 	"github.com/pilinux/gorest/lib/middleware"
+	"github.com/pilinux/gorest/lib/renderer"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -19,9 +19,9 @@ func GetPosts(c *gin.Context) {
 	posts := []model.Post{}
 
 	if err := db.Find(&posts).Error; err != nil {
-		lib.Render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
+		renderer.Render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
 	} else {
-		lib.Render(c, posts, http.StatusOK)
+		renderer.Render(c, posts, http.StatusOK)
 	}
 }
 
@@ -35,9 +35,9 @@ func GetPost(c *gin.Context) {
 	if err := db.Where("post_id = ? ", id).First(&post).Error; err != nil {
 		errorMsg.HTTPCode = http.StatusNotFound
 		errorMsg.Message = "not found"
-		lib.Render(c, errorMsg, http.StatusNotFound, "error.html")
+		renderer.Render(c, errorMsg, http.StatusNotFound, "error.html")
 	} else {
-		lib.Render(c, post, http.StatusOK, "read-article.html")
+		renderer.Render(c, post, http.StatusOK, "read-article.html")
 	}
 }
 
@@ -52,13 +52,13 @@ func CreatePost(c *gin.Context) {
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&user).Error; err != nil {
-		lib.Render(c, gin.H{"msg": "no user profile found"}, http.StatusForbidden)
+		renderer.Render(c, gin.H{"msg": "no user profile found"}, http.StatusForbidden)
 		return
 	}
 
 	// bind JSON
 	if err := c.ShouldBindJSON(&post); err != nil {
-		lib.Render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
+		renderer.Render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
 		return
 	}
 
@@ -71,10 +71,10 @@ func CreatePost(c *gin.Context) {
 	if err := tx.Create(&postFinal).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Error("error code: 1201")
-		lib.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 	} else {
 		tx.Commit()
-		lib.Render(c, postFinal, http.StatusCreated)
+		renderer.Render(c, postFinal, http.StatusCreated)
 	}
 }
 
@@ -90,19 +90,19 @@ func UpdatePost(c *gin.Context) {
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&user).Error; err != nil {
-		lib.Render(c, gin.H{"msg": "no user profile found"}, http.StatusForbidden)
+		renderer.Render(c, gin.H{"msg": "no user profile found"}, http.StatusForbidden)
 		return
 	}
 
 	// does the post exist + does user have right to modify this post
 	if err := db.Where("post_id = ?", id).Where("id_user = ?", user.UserID).First(&postFinal).Error; err != nil {
-		lib.Render(c, gin.H{"msg": "operation not possible"}, http.StatusForbidden)
+		renderer.Render(c, gin.H{"msg": "operation not possible"}, http.StatusForbidden)
 		return
 	}
 
 	// bind JSON
 	if err := c.ShouldBindJSON(&post); err != nil {
-		lib.Render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
+		renderer.Render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
 		return
 	}
 
@@ -115,10 +115,10 @@ func UpdatePost(c *gin.Context) {
 	if err := tx.Save(&postFinal).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Error("error code: 1211")
-		lib.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 	} else {
 		tx.Commit()
-		lib.Render(c, postFinal, http.StatusOK)
+		renderer.Render(c, postFinal, http.StatusOK)
 	}
 }
 
@@ -133,13 +133,13 @@ func DeletePost(c *gin.Context) {
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&user).Error; err != nil {
-		lib.Render(c, gin.H{"msg": "no user profile found"}, http.StatusForbidden)
+		renderer.Render(c, gin.H{"msg": "no user profile found"}, http.StatusForbidden)
 		return
 	}
 
 	// does the post exist + does user have right to delete this post
 	if err := db.Where("post_id = ?", id).Where("id_user = ?", user.UserID).First(&post).Error; err != nil {
-		lib.Render(c, gin.H{"msg": "operation not possible"}, http.StatusForbidden)
+		renderer.Render(c, gin.H{"msg": "operation not possible"}, http.StatusForbidden)
 		return
 	}
 
@@ -147,9 +147,9 @@ func DeletePost(c *gin.Context) {
 	if err := tx.Delete(&post).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Error("error code: 1221")
-		lib.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 	} else {
 		tx.Commit()
-		lib.Render(c, gin.H{"Post ID# " + id: "Deleted!"}, http.StatusOK)
+		renderer.Render(c, gin.H{"Post ID# " + id: "Deleted!"}, http.StatusOK)
 	}
 }

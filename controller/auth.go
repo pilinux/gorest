@@ -5,7 +5,7 @@ import (
 
 	"github.com/pilinux/gorest/database"
 	"github.com/pilinux/gorest/database/model"
-	"github.com/pilinux/gorest/lib"
+	"github.com/pilinux/gorest/lib/renderer"
 	"github.com/pilinux/gorest/service"
 
 	"github.com/gin-gonic/gin"
@@ -20,19 +20,19 @@ func CreateUserAuth(c *gin.Context) {
 
 	// bind JSON
 	if err := c.ShouldBindJSON(&auth); err != nil {
-		lib.Render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
+		renderer.Render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
 		return
 	}
 
 	// email validation
 	if !service.IsEmailValid(auth.Email) {
-		lib.Render(c, gin.H{"msg": "wrong email address"}, http.StatusBadRequest)
+		renderer.Render(c, gin.H{"msg": "wrong email address"}, http.StatusBadRequest)
 		return
 	}
 
 	// email must be unique
 	if err := db.Where("email = ?", auth.Email).First(&auth).Error; err == nil {
-		lib.Render(c, gin.H{"msg": "email already registered"}, http.StatusForbidden)
+		renderer.Render(c, gin.H{"msg": "email already registered"}, http.StatusForbidden)
 		return
 	}
 
@@ -45,9 +45,9 @@ func CreateUserAuth(c *gin.Context) {
 	if err := tx.Create(&authFinal).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Error("error code: 1001")
-		lib.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 	} else {
 		tx.Commit()
-		lib.Render(c, authFinal, http.StatusCreated)
+		renderer.Render(c, authFinal, http.StatusCreated)
 	}
 }

@@ -27,6 +27,7 @@ Safety: Zero-logs policy for the test server (demo live API)
 [Jan 07 - 2022]
 
 - `Render` is now an exported function placed in `lib` package
+- `Render` moved from `lib` to `renderer` package
 - Config modified for `Basic Auth`
 - Demo router added - how to implement `Basic Auth`
   - `GET` - `/api/v1/access_resources`: [live demo] https://goapi.pilinux.me/api/v1/access_resources

@@ -5,7 +5,7 @@ import (
 
 	"github.com/pilinux/gorest/database"
 	"github.com/pilinux/gorest/database/model"
-	"github.com/pilinux/gorest/lib"
+	"github.com/pilinux/gorest/lib/renderer"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,8 +16,8 @@ func GetHobbies(c *gin.Context) {
 	hobbies := []model.Hobby{}
 
 	if err := db.Find(&hobbies).Error; err != nil {
-		lib.Render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
+		renderer.Render(c, gin.H{"msg": "not found"}, http.StatusNotFound)
 	} else {
-		lib.Render(c, hobbies, http.StatusOK)
+		renderer.Render(c, hobbies, http.StatusOK)
 	}
 }
