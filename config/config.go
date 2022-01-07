@@ -123,6 +123,9 @@ func Security() SecurityConfig {
 	// Load environment variables
 	env()
 
+	username := os.Getenv("USERNAME")
+	password := os.Getenv("PASSWORD")
+
 	accessKey := os.Getenv("ACCESS_KEY")
 	accessKeyTTL, err := strconv.Atoi(os.Getenv("ACCESS_KEY_TTL"))
 	if err != nil {
@@ -159,6 +162,9 @@ func Security() SecurityConfig {
 	hashPassParallelism := uint8(hashPassParallelism64)
 	hashPassSaltLength := uint32(hashPassSaltLength64)
 	hashPassKeyLength := uint32(hashPassKeyLength64)
+
+	securityConfig.BasicAuth.Username = username
+	securityConfig.BasicAuth.Password = password
 
 	securityConfig.JWT.AccessKey = accessKey
 	securityConfig.JWT.AccessKeyTTL = accessKeyTTL

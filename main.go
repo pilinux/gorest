@@ -133,7 +133,7 @@ func SetupRouter() *gin.Engine {
 		rHobbies := v1.Group("hobbies")
 		rHobbies.GET("", controller.GetHobbies) // Non-protected
 
-		// Playground
+		// REDIS Playground
 		if configure.Database.REDIS.Activate == "yes" {
 			rPlayground := v1.Group("playground")
 			rPlayground.GET("/redis_read", controller.RedisRead)        // Non-protected
@@ -144,6 +144,15 @@ func SetupRouter() *gin.Engine {
 			rPlayground.POST("/redis_create_hash", controller.RedisCreateHash)   // Non-protected
 			rPlayground.DELETE("/redis_delete_hash", controller.RedisDeleteHash) // Non-protected
 		}
+
+		// Basic Auth demo
+		user := configure.Security.BasicAuth.Username
+		pass := configure.Security.BasicAuth.Password
+		rBasicAuth := v1.Group("access_resources")
+		rBasicAuth.Use(gin.BasicAuth(gin.Accounts{
+			user: pass,
+		}))
+		rBasicAuth.GET("", controller.AccessResource) // Protected
 	}
 
 	return router

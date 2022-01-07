@@ -2,6 +2,10 @@ package config
 
 // SecurityConfig ...
 type SecurityConfig struct {
+	BasicAuth struct {
+		Username string
+		Password string
+	}
 	JWT struct {
 		AccessKey     string
 		RefreshKey    string

@@ -210,3 +210,8 @@ func RedisDeleteHash(c *gin.Context) {
 
 	lib.Render(c, gin.H{"msg": "key is deleted"}, http.StatusOK)
 }
+
+// AccessResource - can be accessed by basic auth
+func AccessResource(c *gin.Context) {
+	lib.Render(c, gin.H{"msg": "access granted!"}, http.StatusOK)
+}
