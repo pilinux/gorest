@@ -13,13 +13,25 @@ under the [MIT license][13] and is free for any personal or commercial project.
 
 ## Updates
 
+### v1.4.0 [Jan 07 - 2022]
+
+**Breaking changes!!** If your application is built on one of the previous releases, you need to
+do some adjustments to your codes before switching to v1.4.
+
+- Features from development branch `v1.4.0-alpha0` are merged into v1.4
+- To build a new RESTful application, you do not need to clone this full repository anymore. It is
+  recommended to add the required packages as dependencies
+- v1.4 is now pretty solid for any future RESTful application development
+- In the upcoming days a full tutorial will be published on how to use `GoREST` packages as
+  dependency to build any simple or complex applications within the shortest possible time
+
 Development branch: v1.4.0-alpha0 [Jan 02 - 2022]
 
 Safety: Zero-logs policy for the test server (demo live API)
 
 - If the client is a web browser, or when the client requests to
   serve HTML pages, the API will serve HTML page instead of JSON
-- Template files are located at `templates` directory
+- Template files are located in `templates` directory
 - Template engine: `Pongo2` - similar syntax like Django
 - Templates developed for:
   - `GET` - `/api/v1/posts/:id`: [live demo] https://goapi.pilinux.me/api/v1/posts/1
@@ -31,46 +43,47 @@ Safety: Zero-logs policy for the test server (demo live API)
 - Config modified for `Basic Auth`
 - Demo router added - how to implement `Basic Auth`
   - `GET` - `/api/v1/access_resources`: [live demo] https://goapi.pilinux.me/api/v1/access_resources
+    with `USERNAME=test_username` and `PASSWORD=secret_password`
 - App firewall added
   - to allow all IPs, set `IP=*`
   - to allow one or several IPs, set `LISTTYPE=whitelist` and `IP=[IPv4 addresses]`
   - to block one or several IPs, set `LISTTYPE=blacklist` and `IP=[IPv4 addresses]`
 
-v1.3.1 [Dec 31 - 2021]
+### v1.3.1 [Dec 31 - 2021]
 
 - During the login process, if the provided email is not found,
   API should handle it properly
 - A user must not be able to modify resources related to other users
   (controllers have been updated)
 
-v1.3.0 [Dec 28 - 2021]
+### v1.3.0 [Dec 28 - 2021]
 
 - refactored config files to reduce cyclomatic complexity
 - organized instance variables
 
-v1.2.7 [Dec 27 - 2021]
+### v1.2.7 [Dec 27 - 2021]
 
 - REDIS database driver and test endpoints added
 - removed ineffectual assignments
 - check errors during binding of incoming JSON
 
-v1.2.6 [Dec 26 - 2021]
+### v1.2.6 [Dec 26 - 2021]
 
 - fixed security vulnerability [CWE-190][71] and [CWE-681][72]
 
-v1.2.5 [Dec 25 - 2021]
+### v1.2.5 [Dec 25 - 2021]
 
 - new endpoint added for refreshing JWT tokens
 
-v1.2.4 [Aug 02 - 2021]
+### v1.2.4 [Aug 02 - 2021]
 
 - middleware added: `logrus` + `sentry.io`
 
-v1.2.3 [Jul 31 - 2021]
+### v1.2.3 [Jul 31 - 2021]
 
 - Route handlers modified to meet the requirements of doing unit test
 
-v1.2.2 [Jul 29 - 2021]
+### v1.2.2 [Jul 29 - 2021]
 
 - Replaced `github.com/dgrijalva/jwt-go` with `github.com/golang-jwt/jwt`
 
@@ -79,23 +92,23 @@ intended access restrictions in situations with []string{} for m["aud"]
 (which is allowed by the specification).
 More on this: https://github.com/advisories/GHSA-w73w-5m7g-f7qc
 
-v1.2.1 [Jun 19 - 2021]
+### v1.2.1 [Jun 19 - 2021]
 
 - `SHA-256` is replaced by `Argon2id` for password hashing
 
-v1.2.0 [Jun 17 - 2021]
+### v1.2.0 [Jun 17 - 2021]
 
 - `GORM` updated from `v1` to `v2`
 
 Projects developed based on `GORM v1` must checkout at `v1.1.3`
 
-v1.1 [Jan 03 - 2021]
+### v1.1 [Jan 03 - 2021]
 
 - **PostgreSQL** and **SQLite3** drivers are included
 - `charset` updated from `utf8` to `utf8mb4` in order to fully support UTF-8
   encoding for MySQL database
 
-v1.0 [Dec 26 - 2020]
+### v1.0 [Dec 26 - 2020]
 
 - [JWT][14] based authentication is implemented using [dgrijalva/jwt-go][15]
 - `One-to-one`, `one-to-many`, and `many-to-many` models are introduced
@@ -127,7 +140,7 @@ To prevent abuse, only HTTP `GET` requests are accepted by the demo server.
 
 <img width="650px" src="https://cdn.pilinux.workers.dev/images/GoREST/screenshot/GoREST.API.Demo.PNG">
 
-## Setup and start the production-ready app
+## Setup and start the production-ready app (old procedure)
 
 - Install a relational database (MySQL or PostgreSQL)
 - Set up an environment to compile the Go codes (a [quick tutorial][41]
@@ -146,6 +159,8 @@ To prevent abuse, only HTTP `GET` requests are accepted by the demo server.
   - Comment the line `setPkFk()` in `autoMigrate.go` file if the driver is not **MySQL**.
     [Check issue: 7][42]
 - At `$GOPATH/src/github.com/pilinux/gorest`, run `./gorest` to launch the app
+
+A new guideline will be published in the following days.
 
 **Note For SQLite3:**
 
@@ -401,7 +416,6 @@ gorest
 │    └---server.go
 │
 │───controller
-│    └---render.go
 │    └---auth.go
 │    └---login.go
 │    └---user.go
@@ -418,6 +432,7 @@ gorest
 │    │
 │    └───model
 │         └---auth.go
+│         └---errorMsg.go
 │         └---user.go
 │         └---post.go
 │         └---hobby.go
@@ -425,9 +440,13 @@ gorest
 │
 └───lib
 │    └───middleware
-│         └---cors.go
-│         └---jwt.go
-│         └---sentry.go
+│    │    └---cors.go
+│    │    └---firewall.go
+│    │    └---ginpongo2.go
+│    │    └---jwt.go
+│    │    └---sentry.go
+│    └───renderer
+│         └---render.go
 │
 └───logs
 │    └---README.md
@@ -435,6 +454,10 @@ gorest
 └───service
      └---auth.go
      └---common.go
+│
+└───templates
+     └---error.html
+     └---read-article.html
 ```
 
 For API development, one needs to focus mainly on the following files and directories:
@@ -467,6 +490,9 @@ gorest
      └---auth.go
      └---common.go
 ```
+
+To render and serve HTML pages, the template files must be present in the
+`templates` directory
 
 ### Step 1
 
