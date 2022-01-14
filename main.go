@@ -21,6 +21,7 @@ var configure = config.Config()
 func main() {
 	if err := database.InitDB().Error; err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	if configure.Database.REDIS.Activate == "yes" {
@@ -45,12 +46,20 @@ func main() {
 		fmt.Println(configure.Database.DbPort)
 	*/
 
-	router := SetupRouter()
-	router.Run(":" + configure.Server.ServerPort)
+	router, err := SetupRouter()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	err = router.Run(":" + configure.Server.ServerPort)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
 
 // SetupRouter ...
-func SetupRouter() *gin.Engine {
+func SetupRouter() (*gin.Engine, error) {
 	if configure.Server.ServerEnv == "production" {
 		gin.SetMode(gin.ReleaseMode) // Omit this line to enable debug mode
 	}
@@ -62,7 +71,10 @@ func SetupRouter() *gin.Engine {
 	// Create a log file with start time
 	dt := time.Now()
 	t := dt.Format(time.RFC3339)
-	file, _ := os.Create("./logs/start:" + t + ".log")
+	file, err := os.Create("./logs/start:" + t + ".log")
+	if err != nil {
+		return nil, err
+	}
 	// gin.DefaultWriter = io.MultiWriter(file)
 
 	// If it is required to write the logs to the file and the console
@@ -84,10 +96,16 @@ func SetupRouter() *gin.Engine {
 
 	// Which proxy to trust
 	if configure.Security.TrustedIP == "nil" {
-		router.SetTrustedProxies(nil)
+		err := router.SetTrustedProxies(nil)
+		if err != nil {
+			return router, err
+		}
 	} else {
 		if configure.Security.TrustedIP != "" {
-			router.SetTrustedProxies([]string{configure.Security.TrustedIP})
+			err := router.SetTrustedProxies([]string{configure.Security.TrustedIP})
+			if err != nil {
+				return router, err
+			}
 		}
 	}
 
@@ -159,5 +177,5 @@ func SetupRouter() *gin.Engine {
 		rBasicAuth.GET("", controller.AccessResource) // Protected
 	}
 
-	return router
+	return router, nil
 }
