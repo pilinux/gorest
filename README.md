@@ -14,6 +14,20 @@ GoREST is a starter kit, written in [Golang][11] with [Gin framework][12],
 for rapid prototyping and developing a RESTful API. The source code is released
 under the [MIT license][13] and is free for any personal or commercial project.
 
+## Start building
+
+- convention over configuration
+
+```go
+import (
+  "github.com/pilinux/gorest/config"
+  "github.com/pilinux/gorest/database"
+  "github.com/pilinux/gorest/lib/middleware"
+)
+```
+
+For inspiration, take a look at a small but real-life project built in one night: [repo][09]
+
 ## Updates
 
 ### v1.4.0 [Jan 07 - 2022]
@@ -555,6 +569,7 @@ Released under the [MIT license][13]
 [06]: https://www.codefactor.io/repository/github/pilinux/gorest
 [07]: https://github.com/pilinux/gorest/actions/workflows/go.yml/badge.svg
 [08]: https://github.com/pilinux/gorest/actions/workflows/golangci-lint.yml/badge.svg
+[09]: https://github.com/pilinux/postmark
 [11]: https://github.com/golang/go
 [12]: https://github.com/gin-gonic/gin
 [13]: LICENSE
