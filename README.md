@@ -2,6 +2,9 @@
 
 <img align="right" width="350px" src="https://cdn.pilinux.workers.dev/images/GoREST/logo/GoREST-Logo.png">
 
+![CodeQL][02]
+![Go][07]
+![Linter][08]
 [![Go Report Card](https://goreportcard.com/badge/github.com/pilinux/gorest)][01]
 [![CodeFactor](https://www.codefactor.io/repository/github/pilinux/gorest/badge)][06]
 [![codebeat badge](https://codebeat.co/badges/c92a8584-d6ba-4606-8d6f-3049630f92c6)][03]
@@ -545,10 +548,13 @@ Please see [this][62] document.
 Released under the [MIT license][13]
 
 [01]: https://goreportcard.com/report/github.com/pilinux/gorest
+[02]: https://github.com/pilinux/gorest/actions/workflows/codeql-analysis.yml/badge.svg
 [03]: https://codebeat.co/projects/github-com-pilinux-gorest-master
 [04]: https://cdn.pilinux.workers.dev/images/GoREST/models/dbModelv1.0.svg
 [05]: https://cdn.pilinux.workers.dev/images/GoREST/flowchart/flow.diagram.v1.0.svg
 [06]: https://www.codefactor.io/repository/github/pilinux/gorest
+[07]: https://github.com/pilinux/gorest/actions/workflows/go.yml/badge.svg
+[08]: https://github.com/pilinux/gorest/actions/workflows/golangci-lint.yml/badge.svg
 [11]: https://github.com/golang/go
 [12]: https://github.com/gin-gonic/gin
 [13]: LICENSE
