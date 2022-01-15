@@ -14,6 +14,18 @@ GoREST is a starter kit, written in [Golang][11] with [Gin framework][12],
 for rapid prototyping and developing a RESTful API. The source code is released
 under the [MIT license][13] and is free for any personal or commercial project.
 
+## Important!
+
+The default branch has been renamed from `master` to `main`. If you have a local
+clone, please rename the branch name:
+
+```bash
+git branch -m master main
+git fetch origin
+git branch -u origin/main main
+git remote set-head origin -a
+```
+
 ## Start building
 
 - convention over configuration
