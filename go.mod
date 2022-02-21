@@ -15,8 +15,8 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	gorm.io/driver/mysql v1.2.3
 	gorm.io/driver/postgres v1.2.3
-	gorm.io/driver/sqlite v1.2.6
-	gorm.io/gorm v1.22.5
+	gorm.io/driver/sqlite v1.3.1
+	gorm.io/gorm v1.23.1
 )
 
 require (
