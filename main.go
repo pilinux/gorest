@@ -19,9 +19,12 @@ import (
 var configure = config.Config()
 
 func main() {
-	if err := database.InitDB().Error; err != nil {
-		fmt.Println(err)
-		return
+	if configure.Database.RDBMS.Activate == "yes" {
+		// Initialize RDBMS client
+		if err := database.InitDB().Error; err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 
 	if configure.Database.REDIS.Activate == "yes" {
@@ -133,38 +136,41 @@ func SetupRouter() (*gin.Engine, error) {
 	// API:v1.0
 	v1 := router.Group("/api/v1/")
 	{
-		// Register - no JWT required
-		v1.POST("register", controller.CreateUserAuth)
+		// RDBMS
+		if configure.Database.RDBMS.Activate == "yes" {
+			// Register - no JWT required
+			v1.POST("register", controller.CreateUserAuth)
 
-		// Login - app issues JWT
-		v1.POST("login", controller.Login)
+			// Login - app issues JWT
+			v1.POST("login", controller.Login)
 
-		// Refresh - app issues new JWT
-		rJWT := v1.Group("refresh")
-		rJWT.Use(middleware.RefreshJWT())
-		rJWT.POST("", controller.Refresh)
+			// Refresh - app issues new JWT
+			rJWT := v1.Group("refresh")
+			rJWT.Use(middleware.RefreshJWT())
+			rJWT.POST("", controller.Refresh)
 
-		// User
-		rUsers := v1.Group("users")
-		rUsers.GET("", controller.GetUsers)    // Non-protected
-		rUsers.GET("/:id", controller.GetUser) // Non-protected
-		rUsers.Use(middleware.JWT())
-		rUsers.POST("", controller.CreateUser)      // Protected
-		rUsers.PUT("", controller.UpdateUser)       // Protected
-		rUsers.PUT("/hobbies", controller.AddHobby) // Protected
+			// User
+			rUsers := v1.Group("users")
+			rUsers.GET("", controller.GetUsers)    // Non-protected
+			rUsers.GET("/:id", controller.GetUser) // Non-protected
+			rUsers.Use(middleware.JWT())
+			rUsers.POST("", controller.CreateUser)      // Protected
+			rUsers.PUT("", controller.UpdateUser)       // Protected
+			rUsers.PUT("/hobbies", controller.AddHobby) // Protected
 
-		// Post
-		rPosts := v1.Group("posts")
-		rPosts.GET("", controller.GetPosts)    // Non-protected
-		rPosts.GET("/:id", controller.GetPost) // Non-protected
-		rPosts.Use(middleware.JWT())
-		rPosts.POST("", controller.CreatePost)       // Protected
-		rPosts.PUT("/:id", controller.UpdatePost)    // Protected
-		rPosts.DELETE("/:id", controller.DeletePost) // Protected
+			// Post
+			rPosts := v1.Group("posts")
+			rPosts.GET("", controller.GetPosts)    // Non-protected
+			rPosts.GET("/:id", controller.GetPost) // Non-protected
+			rPosts.Use(middleware.JWT())
+			rPosts.POST("", controller.CreatePost)       // Protected
+			rPosts.PUT("/:id", controller.UpdatePost)    // Protected
+			rPosts.DELETE("/:id", controller.DeletePost) // Protected
 
-		// Hobby
-		rHobbies := v1.Group("hobbies")
-		rHobbies.GET("", controller.GetHobbies) // Non-protected
+			// Hobby
+			rHobbies := v1.Group("hobbies")
+			rHobbies.GET("", controller.GetHobbies) // Non-protected
+		}
 
 		// REDIS Playground
 		if configure.Database.REDIS.Activate == "yes" {

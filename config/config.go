@@ -47,33 +47,38 @@ func Database() DatabaseConfig {
 	env()
 
 	// RDBMS
-	// Env
-	databaseConfig.RDBMS.Env.Driver = os.Getenv("DBDRIVER")
-	databaseConfig.RDBMS.Env.Host = os.Getenv("DBHOST")
-	databaseConfig.RDBMS.Env.Port = os.Getenv("DBPORT")
-	databaseConfig.RDBMS.Env.TimeZone = os.Getenv("DBTIMEZONE")
-	// Access
-	databaseConfig.RDBMS.Access.DbName = os.Getenv("DBNAME")
-	databaseConfig.RDBMS.Access.User = os.Getenv("DBUSER")
-	databaseConfig.RDBMS.Access.Pass = os.Getenv("DBPASS")
-	// SSL
-	databaseConfig.RDBMS.Ssl.Sslmode = os.Getenv("DBSSLMODE")
-	// Conn
-	dbMaxIdleConns := os.Getenv("DBMAXIDLECONNS")
-	dbMaxOpenConns := os.Getenv("DBMAXOPENCONNS")
-	dbConnMaxLifetime := os.Getenv("DBCONNMAXLIFETIME")
-	databaseConfig.RDBMS.Conn.MaxIdleConns, err = strconv.Atoi(dbMaxIdleConns)
-	if err != nil {
-		log.WithError(err).Panic("panic code: 131")
+	activateRDBMS := os.Getenv("ACTIVATE_RDBMS")
+	databaseConfig.RDBMS.Activate = activateRDBMS
+	if activateRDBMS == "yes" {
+		// Env
+		databaseConfig.RDBMS.Env.Driver = os.Getenv("DBDRIVER")
+		databaseConfig.RDBMS.Env.Host = os.Getenv("DBHOST")
+		databaseConfig.RDBMS.Env.Port = os.Getenv("DBPORT")
+		databaseConfig.RDBMS.Env.TimeZone = os.Getenv("DBTIMEZONE")
+		// Access
+		databaseConfig.RDBMS.Access.DbName = os.Getenv("DBNAME")
+		databaseConfig.RDBMS.Access.User = os.Getenv("DBUSER")
+		databaseConfig.RDBMS.Access.Pass = os.Getenv("DBPASS")
+		// SSL
+		databaseConfig.RDBMS.Ssl.Sslmode = os.Getenv("DBSSLMODE")
+		// Conn
+		dbMaxIdleConns := os.Getenv("DBMAXIDLECONNS")
+		dbMaxOpenConns := os.Getenv("DBMAXOPENCONNS")
+		dbConnMaxLifetime := os.Getenv("DBCONNMAXLIFETIME")
+		databaseConfig.RDBMS.Conn.MaxIdleConns, err = strconv.Atoi(dbMaxIdleConns)
+		if err != nil {
+			log.WithError(err).Panic("panic code: 131")
+		}
+		databaseConfig.RDBMS.Conn.MaxOpenConns, err = strconv.Atoi(dbMaxOpenConns)
+		if err != nil {
+			log.WithError(err).Panic("panic code: 132")
+		}
+		databaseConfig.RDBMS.Conn.ConnMaxLifetime, err = time.ParseDuration(dbConnMaxLifetime)
+		if err != nil {
+			log.WithError(err).Panic("panic code: 133")
+		}
 	}
-	databaseConfig.RDBMS.Conn.MaxOpenConns, err = strconv.Atoi(dbMaxOpenConns)
-	if err != nil {
-		log.WithError(err).Panic("panic code: 132")
-	}
-	databaseConfig.RDBMS.Conn.ConnMaxLifetime, err = time.ParseDuration(dbConnMaxLifetime)
-	if err != nil {
-		log.WithError(err).Panic("panic code: 133")
-	}
+
 	// Logger
 	dbLogLevel := os.Getenv("DBLOGLEVEL")
 	databaseConfig.RDBMS.Log.LogLevel, err = strconv.Atoi(dbLogLevel)

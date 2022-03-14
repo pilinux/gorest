@@ -8,7 +8,8 @@ import (
 type DatabaseConfig struct {
 	// relational database
 	RDBMS struct {
-		Env struct {
+		Activate string
+		Env      struct {
 			Driver   string
 			Host     string
 			Port     string
