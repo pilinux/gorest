@@ -142,7 +142,7 @@ func GetDB() *gorm.DB {
 }
 
 // InitRedis - function to initialize redis client
-func InitRedis() radix.Client {
+func InitRedis() (radix.Client, error) {
 	configureRedis := config.Database().REDIS
 	RedisConnTTL = configureRedis.Conn.ConnTTL
 
@@ -156,7 +156,7 @@ func InitRedis() radix.Client {
 		configureRedis.Env.Port))
 	if err != nil {
 		log.WithError(err).Panic("panic code: 161")
-		fmt.Println(err)
+		return rClient, err
 	}
 	// Only for debugging
 	if err == nil {
@@ -165,7 +165,7 @@ func InitRedis() radix.Client {
 
 	RedisClient = rClient
 
-	return RedisClient
+	return RedisClient, nil
 }
 
 // GetRedis - get a connection

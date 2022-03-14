@@ -26,7 +26,10 @@ func main() {
 
 	if configure.Database.REDIS.Activate == "yes" {
 		// Initialize REDIS client
-		database.InitRedis()
+		if _, err := database.InitRedis(); err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 
 	if configure.Database.MongoDB.Activate == "yes" {
