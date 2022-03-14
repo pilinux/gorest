@@ -100,6 +100,24 @@ func Database() DatabaseConfig {
 		databaseConfig.REDIS.Conn.ConnTTL = connTTL
 	}
 
+	// MongoDB
+	activateMongo := os.Getenv("ACTIVATE_MONGO")
+	databaseConfig.MongoDB.Activate = activateMongo
+	if activateMongo == "yes" {
+		poolSize, err := strconv.ParseUint(os.Getenv("MONGO_POOLSIZE"), 10, 64)
+		if err != nil {
+			log.WithError(err).Panic("panic code: 137")
+		}
+		connTTL, err := strconv.Atoi(os.Getenv("MONGO_CONNTTL"))
+		if err != nil {
+			log.WithError(err).Panic("panic code: 138")
+		}
+
+		databaseConfig.MongoDB.Env.URI = os.Getenv("MONGO_URI")
+		databaseConfig.MongoDB.Env.PoolSize = poolSize
+		databaseConfig.MongoDB.Env.ConnTTL = connTTL
+	}
+
 	return databaseConfig
 }
 

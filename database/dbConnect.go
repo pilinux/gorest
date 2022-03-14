@@ -26,6 +26,10 @@ import (
 	// Import Redis Driver
 	"github.com/mediocregopher/radix/v4"
 
+	// Import Mongo driver
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -40,6 +44,9 @@ var RedisClient radix.Client
 
 // RedisConnTTL - context deadline in second
 var RedisConnTTL int
+
+// MongoClient instance
+var MongoClient *mongo.Client
 
 // InitDB - function to initialize db
 func InitDB() *gorm.DB {
@@ -164,4 +171,48 @@ func InitRedis() radix.Client {
 // GetRedis - get a connection
 func GetRedis() radix.Client {
 	return RedisClient
+}
+
+// InitMongo - function to initialize mongo client
+func InitMongo() (*mongo.Client, error) {
+	configureMongo := config.Database().MongoDB
+
+	// Connect to the database or cluster
+	URI := configureMongo.Env.URI
+
+	serverAPIOptions := options.ServerAPI(options.ServerAPIVersion1)
+	clientOptions := options.Client().
+		ApplyURI(URI).
+		SetServerAPIOptions(serverAPIOptions).
+		SetMaxPoolSize(configureMongo.Env.PoolSize)
+
+	client, err := mongo.NewClient(clientOptions)
+	if err != nil {
+		return client, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(configureMongo.Env.ConnTTL)*time.Second)
+	defer cancel()
+
+	err = client.Connect(ctx)
+	if err != nil {
+		return client, err
+	}
+
+	// Check the connection
+	err = client.Ping(ctx, nil)
+	if err != nil {
+		return client, err
+	}
+
+	fmt.Println("MongoDB pool connection successful!")
+
+	MongoClient = client
+
+	return MongoClient, nil
+}
+
+// GetMongo - get a connection
+func GetMongo() *mongo.Client {
+	return MongoClient
 }

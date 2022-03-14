@@ -44,4 +44,14 @@ type DatabaseConfig struct {
 			ConnTTL  int
 		}
 	}
+
+	// mongo database
+	MongoDB struct {
+		Activate string
+		Env      struct {
+			URI      string
+			PoolSize uint64
+			ConnTTL  int
+		}
+	}
 }

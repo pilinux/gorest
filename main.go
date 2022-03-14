@@ -29,6 +29,14 @@ func main() {
 		database.InitRedis()
 	}
 
+	if configure.Database.MongoDB.Activate == "yes" {
+		// Initialize MONGO client
+		if _, err := database.InitMongo(); err != nil {
+			fmt.Println(err)
+			return
+		}
+	}
+
 	// JWT
 	middleware.AccessKey = []byte(configure.Security.JWT.AccessKey)
 	middleware.AccessKeyTTL = configure.Security.JWT.AccessKeyTTL
@@ -165,6 +173,19 @@ func SetupRouter() (*gin.Engine, error) {
 			rPlayground.GET("/redis_read_hash", controller.RedisReadHash)        // Non-protected
 			rPlayground.POST("/redis_create_hash", controller.RedisCreateHash)   // Non-protected
 			rPlayground.DELETE("/redis_delete_hash", controller.RedisDeleteHash) // Non-protected
+		}
+
+		// Mongo Playground
+		if configure.Database.MongoDB.Activate == "yes" {
+			rPlaygroundMongo := v1.Group("playground-mongo")
+			rPlaygroundMongo.POST("/mongo_create_one", controller.MongoCreateOne)                 // Non-protected
+			rPlaygroundMongo.GET("/mongo_list_db", controller.MongoListDB)                        // Non-protected
+			rPlaygroundMongo.GET("/mongo_get_all", controller.MongoGetAll)                        // Non-protected
+			rPlaygroundMongo.GET("/mongo_get_by_id/:id", controller.MongoGetByID)                 // Non-protected
+			rPlaygroundMongo.POST("/mongo_get_by_filter", controller.MongoGetByFilter)            // Non-protected
+			rPlaygroundMongo.PUT("/mongo_update_by_id", controller.MongoUpdateByID)               // Non-protected
+			rPlaygroundMongo.DELETE("/mongo_delete_field_by_id", controller.MongoDeleteFieldByID) // Non-protected
+			rPlaygroundMongo.DELETE("/mongo_delete_by_id/:id", controller.MongoDeleteByID)        // Non-protected
 		}
 
 		// Basic Auth demo
