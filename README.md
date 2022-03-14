@@ -42,6 +42,28 @@ For inspiration, take a look at a small but real-life project built in one night
 
 ## Updates
 
+### v1.4.2 [Mar 14 - 2022]
+
+Link: https://github.com/pilinux/gorest/releases/tag/v1.4.2
+
+&#9889; MongoDB driver added
+
+&#9889; Bump to gorm 1.23.2
+
+&#9889; Error checks during initialization of redis
+
+&#9889; Option to enable/disable RDBMS
+
+### v1.4.1 [Jan 15 - 2022]
+
+Link: https://github.com/pilinux/gorest/releases/tag/v1.4.1
+
+&#9889; Bump to gorm 1.22.5
+
+&#9889; More error checks during gin engine setup
+
+&#9889; New action workflows added to examine, build, and static analysis of the code
+
 ### v1.4.0 [Jan 07 - 2022]
 
 **Breaking changes!!** If your application is built on one of the previous releases, you need to
@@ -150,6 +172,8 @@ GoREST uses [GORM][21] as its ORM. GORM supports **SQLite3**, **MySQL**,
 In GoREST, **MySQL**, **PostgreSQL** and **SQLite3** drivers are included.
 Anyone experienced in **Microsoft SQL Server** is welcome to contribute to the
 project by including **SQL Server** driver and testing all the features of GoREST.
+
+Newly added drivers: **Redis**, **MongoDB**
 
 ## Demo
 
@@ -338,6 +362,14 @@ http://localhost:port/api/v1/hobbies
 }
 ```
 
+Demo endpoint [`GET`]: https://goapi.pilinux.me/api/v1/playground/redis_read
+
+```
+{
+    "Key": "goapi-testKey1"
+}
+```
+
 - Delete `key:value` pair
   - `DELETE` http://localhost:port/api/v1/playground/redis_delete
 
@@ -372,6 +404,14 @@ http://localhost:port/api/v1/hobbies
 }
 ```
 
+Demo endpoint [`GET`]: https://goapi.pilinux.me/api/v1/playground/redis_read_hash
+
+```
+{
+    "Key": "goapi-testKey2"
+}
+```
+
 - Delete a key
   - `DELETE` http://localhost:port/api/v1/playground/redis_delete_hash
 
@@ -380,6 +420,45 @@ http://localhost:port/api/v1/hobbies
     "Key": "test2"
 }
 ```
+
+## For MongoDB
+
+- Set environment variable `ACTIVATE_MONGO=yes`
+- Set environment variable `MONGO_URI`
+
+- Controller examples
+  - List all available Mongo databases `controller.MongoListDB`
+  - Create a new document `controller.MongoCreateOne`
+  - Fetch all documents from a collection `controller.MongoGetAll`
+    - demo endpoint [`GET`]: https://goapi.pilinux.me/api/v1/playground-mongo/mongo_get_all
+  - Fetch one document by its ID from a collection `controller.MongoGetByID`
+    - demo endpoint [`GET`]: https://goapi.pilinux.me/api/v1/playground-mongo/mongo_get_by_id/622f25573fd9e40a1dbf63b0
+  - Fetch all documents from a collection using filters `controller.MongoGetByFilter`
+    - demo endpoint [`POST`]: https://goapi.pilinux.me/api/v1/playground-mongo/mongo_get_by_filter
+    - In `JSON` payload, one or a combination of the following fields can be used for the filter
+    ```
+    {
+      "id": "622f25573fd9e40a1dbf63b0",
+      "formatted_address": "221B Baker St, London NW1 6XE, UK",
+      "street_name": "Baker Street",
+      "house_number": "221B",
+      "postal_code": "NW1 6XE",
+      "county": "Greater London",
+      "state": "England",
+      "state_code": "England",
+      "country": "United Kingdom",
+      "country_code": "GB"
+    }
+    ```
+    - Following filter will fetch all addresses located in the United Kingdom [in the database, only two addresses are saved]
+    ```
+    {
+      "country": "United Kingdom"
+    }
+    ```
+  - Update one specific document `controller.MongoUpdateByID`
+  - Delete a field from a document `controller.MongoDeleteFieldByID`
+  - Delete a document by its ID from a collection `controller.MongoDeleteByID`
 
 ## Flow diagram
 
@@ -451,6 +530,7 @@ gorest
 │    └---post.go
 │    └---hobby.go
 │    └---playground.go
+│    └---playgroundMongo.go
 │
 └───database
 │    │---dbConnect.go
@@ -502,6 +582,7 @@ gorest
 │    └---post.go
 │    └---hobby.go
 │    └---playground.go
+│    └---playgroundMongo.go
 │
 └───database
 │    │
