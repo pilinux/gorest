@@ -388,38 +388,38 @@ func MongoFilter(geocoding Geocoding, addDocIDInFilter bool) bson.M {
 
 	if addDocIDInFilter {
 		if !geocoding.ID.IsZero() {
-			filter["_id"] = geocoding.ID
+			filter["_id"] = bson.M{"$eq": geocoding.ID}
 		}
 	}
 	if geocoding.FormattedAddress != "" {
-		filter["formatted_address"] = geocoding.FormattedAddress
+		filter["formatted_address"] = bson.M{"$eq": geocoding.FormattedAddress}
 	}
 	if geocoding.StreetName != "" {
-		filter["street_name"] = geocoding.StreetName
+		filter["street_name"] = bson.M{"$eq": geocoding.StreetName}
 	}
 	if geocoding.HouseNumber != "" {
-		filter["house_number"] = geocoding.HouseNumber
+		filter["house_number"] = bson.M{"$eq": geocoding.HouseNumber}
 	}
 	if geocoding.PostalCode != "" {
-		filter["postal_code"] = geocoding.PostalCode
+		filter["postal_code"] = bson.M{"$eq": geocoding.PostalCode}
 	}
 	if geocoding.County != "" {
-		filter["county"] = geocoding.County
+		filter["county"] = bson.M{"$eq": geocoding.County}
 	}
 	if geocoding.City != "" {
-		filter["city"] = geocoding.City
+		filter["city"] = bson.M{"$eq": geocoding.City}
 	}
 	if geocoding.State != "" {
-		filter["state"] = geocoding.State
+		filter["state"] = bson.M{"$eq": geocoding.State}
 	}
 	if geocoding.StateCode != "" {
-		filter["state_code"] = geocoding.StateCode
+		filter["state_code"] = bson.M{"$eq": geocoding.StateCode}
 	}
 	if geocoding.Country != "" {
-		filter["country"] = geocoding.Country
+		filter["country"] = bson.M{"$eq": geocoding.Country}
 	}
 	if geocoding.CountryCode != "" {
-		filter["country_code"] = geocoding.CountryCode
+		filter["country_code"] = bson.M{"$eq": geocoding.CountryCode}
 	}
 
 	return filter
