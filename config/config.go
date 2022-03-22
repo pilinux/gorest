@@ -119,7 +119,9 @@ func Database() DatabaseConfig {
 		}
 
 		databaseConfig.MongoDB.Env.URI = os.Getenv("MONGO_URI")
+		databaseConfig.MongoDB.Env.AppName = os.Getenv("MONGO_APP")
 		databaseConfig.MongoDB.Env.PoolSize = poolSize
+		databaseConfig.MongoDB.Env.PoolMon = os.Getenv("MONGO_MONITOR_POOL")
 		databaseConfig.MongoDB.Env.ConnTTL = connTTL
 	}
 

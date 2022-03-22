@@ -427,7 +427,6 @@ Demo endpoint [`GET`]: https://goapi.pilinux.me/api/v1/playground/redis_read_has
 - Set environment variable `MONGO_URI`
 
 - Controller examples
-  - List all available Mongo databases `controller.MongoListDB`
   - Create a new document `controller.MongoCreateOne`
   - Fetch all documents from a collection `controller.MongoGetAll`
     - demo endpoint [`GET`]: https://goapi.pilinux.me/api/v1/playground-mongo/mongo_get_all

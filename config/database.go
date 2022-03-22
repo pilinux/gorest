@@ -50,8 +50,10 @@ type DatabaseConfig struct {
 	MongoDB struct {
 		Activate string
 		Env      struct {
+			AppName  string
 			URI      string
 			PoolSize uint64
+			PoolMon  string
 			ConnTTL  int
 		}
 	}

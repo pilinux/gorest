@@ -188,13 +188,12 @@ func SetupRouter() (*gin.Engine, error) {
 		if configure.Database.MongoDB.Activate == "yes" {
 			rPlaygroundMongo := v1.Group("playground-mongo")
 			rPlaygroundMongo.POST("/mongo_create_one", controller.MongoCreateOne)                 // Non-protected
-			rPlaygroundMongo.GET("/mongo_list_db", controller.MongoListDB)                        // Non-protected
 			rPlaygroundMongo.GET("/mongo_get_all", controller.MongoGetAll)                        // Non-protected
 			rPlaygroundMongo.GET("/mongo_get_by_id/:id", controller.MongoGetByID)                 // Non-protected
 			rPlaygroundMongo.POST("/mongo_get_by_filter", controller.MongoGetByFilter)            // Non-protected
 			rPlaygroundMongo.PUT("/mongo_update_by_id", controller.MongoUpdateByID)               // Non-protected
 			rPlaygroundMongo.DELETE("/mongo_delete_field_by_id", controller.MongoDeleteFieldByID) // Non-protected
-			rPlaygroundMongo.DELETE("/mongo_delete_by_id/:id", controller.MongoDeleteByID)        // Non-protected
+			rPlaygroundMongo.DELETE("/mongo_delete_doc_by_id/:id", controller.MongoDeleteByID)    // Non-protected
 		}
 
 		// Basic Auth demo

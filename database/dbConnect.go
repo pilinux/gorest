@@ -27,8 +27,10 @@ import (
 	"github.com/mediocregopher/radix/v4"
 
 	// Import Mongo driver
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"github.com/qiniu/qmgo"
+	"github.com/qiniu/qmgo/options"
+	"go.mongodb.org/mongo-driver/event"
+	opts "go.mongodb.org/mongo-driver/mongo/options"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -46,7 +48,7 @@ var RedisClient radix.Client
 var RedisConnTTL int
 
 // MongoClient instance
-var MongoClient *mongo.Client
+var MongoClient *qmgo.Client
 
 // InitDB - function to initialize db
 func InitDB() *gorm.DB {
@@ -174,37 +176,45 @@ func GetRedis() radix.Client {
 }
 
 // InitMongo - function to initialize mongo client
-func InitMongo() (*mongo.Client, error) {
+func InitMongo() (*qmgo.Client, error) {
 	configureMongo := config.Database().MongoDB
 
 	// Connect to the database or cluster
 	URI := configureMongo.Env.URI
 
-	serverAPIOptions := options.ServerAPI(options.ServerAPIVersion1)
-	clientOptions := options.Client().
-		ApplyURI(URI).
-		SetServerAPIOptions(serverAPIOptions).
-		SetMaxPoolSize(configureMongo.Env.PoolSize)
-
-	client, err := mongo.NewClient(clientOptions)
-	if err != nil {
-		return client, err
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(configureMongo.Env.ConnTTL)*time.Second)
 	defer cancel()
 
-	err = client.Connect(ctx)
+	clientConfig := &qmgo.Config{
+		Uri:         URI,
+		MaxPoolSize: &configureMongo.Env.PoolSize,
+	}
+	serverAPIOptions := opts.ServerAPI(opts.ServerAPIVersion1)
+
+	opt := opts.Client().SetAppName(configureMongo.Env.AppName)
+	opt.SetServerAPIOptions(serverAPIOptions)
+
+	// for monitoring pool
+	if configureMongo.Env.PoolMon == "yes" {
+		poolMonitor := &event.PoolMonitor{
+			Event: func(evt *event.PoolEvent) {
+				switch evt.Type {
+				case event.GetSucceeded:
+					fmt.Println("GetSucceeded")
+				case event.ConnectionReturned:
+					fmt.Println("ConnectionReturned")
+				}
+			},
+		}
+		opt.SetPoolMonitor(poolMonitor)
+	}
+
+	client, err := qmgo.NewClient(ctx, clientConfig, options.ClientOptions{ClientOptions: opt})
 	if err != nil {
 		return client, err
 	}
 
-	// Check the connection
-	err = client.Ping(ctx, nil)
-	if err != nil {
-		return client, err
-	}
-
+	// Only for debugging
 	fmt.Println("MongoDB pool connection successful!")
 
 	MongoClient = client
@@ -213,6 +223,6 @@ func InitMongo() (*mongo.Client, error) {
 }
 
 // GetMongo - get a connection
-func GetMongo() *mongo.Client {
+func GetMongo() *qmgo.Client {
 	return MongoClient
 }
