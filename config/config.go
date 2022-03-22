@@ -41,42 +41,68 @@ func Config() Configuration {
 // Database - all DB variables
 func Database() DatabaseConfig {
 	var databaseConfig DatabaseConfig
-	var err error
 
 	// Load environment variables
 	env()
 
 	// RDBMS
 	activateRDBMS := os.Getenv("ACTIVATE_RDBMS")
-	databaseConfig.RDBMS.Activate = activateRDBMS
 	if activateRDBMS == "yes" {
-		// Env
-		databaseConfig.RDBMS.Env.Driver = os.Getenv("DBDRIVER")
-		databaseConfig.RDBMS.Env.Host = os.Getenv("DBHOST")
-		databaseConfig.RDBMS.Env.Port = os.Getenv("DBPORT")
-		databaseConfig.RDBMS.Env.TimeZone = os.Getenv("DBTIMEZONE")
-		// Access
-		databaseConfig.RDBMS.Access.DbName = os.Getenv("DBNAME")
-		databaseConfig.RDBMS.Access.User = os.Getenv("DBUSER")
-		databaseConfig.RDBMS.Access.Pass = os.Getenv("DBPASS")
-		// SSL
-		databaseConfig.RDBMS.Ssl.Sslmode = os.Getenv("DBSSLMODE")
-		// Conn
-		dbMaxIdleConns := os.Getenv("DBMAXIDLECONNS")
-		dbMaxOpenConns := os.Getenv("DBMAXOPENCONNS")
-		dbConnMaxLifetime := os.Getenv("DBCONNMAXLIFETIME")
-		databaseConfig.RDBMS.Conn.MaxIdleConns, err = strconv.Atoi(dbMaxIdleConns)
-		if err != nil {
-			log.WithError(err).Panic("panic code: 131")
-		}
-		databaseConfig.RDBMS.Conn.MaxOpenConns, err = strconv.Atoi(dbMaxOpenConns)
-		if err != nil {
-			log.WithError(err).Panic("panic code: 132")
-		}
-		databaseConfig.RDBMS.Conn.ConnMaxLifetime, err = time.ParseDuration(dbConnMaxLifetime)
-		if err != nil {
-			log.WithError(err).Panic("panic code: 133")
-		}
+		databaseConfig.RDBMS = DatabaseRDBMS().RDBMS
+	}
+	databaseConfig.RDBMS.Activate = activateRDBMS
+
+	// REDIS
+	activateRedis := os.Getenv("ACTIVATE_REDIS")
+	if activateRedis == "yes" {
+		databaseConfig.REDIS = DatabaseRedis().REDIS
+	}
+	databaseConfig.REDIS.Activate = activateRedis
+
+	// MongoDB
+	activateMongo := os.Getenv("ACTIVATE_MONGO")
+	if activateMongo == "yes" {
+		databaseConfig.MongoDB = DatabaseMongo().MongoDB
+	}
+	databaseConfig.MongoDB.Activate = activateMongo
+
+	return databaseConfig
+}
+
+// DatabaseRDBMS - all RDBMS variables
+func DatabaseRDBMS() DatabaseConfig {
+	var databaseConfig DatabaseConfig
+	var err error
+
+	// Load environment variables
+	env()
+
+	// Env
+	databaseConfig.RDBMS.Env.Driver = os.Getenv("DBDRIVER")
+	databaseConfig.RDBMS.Env.Host = os.Getenv("DBHOST")
+	databaseConfig.RDBMS.Env.Port = os.Getenv("DBPORT")
+	databaseConfig.RDBMS.Env.TimeZone = os.Getenv("DBTIMEZONE")
+	// Access
+	databaseConfig.RDBMS.Access.DbName = os.Getenv("DBNAME")
+	databaseConfig.RDBMS.Access.User = os.Getenv("DBUSER")
+	databaseConfig.RDBMS.Access.Pass = os.Getenv("DBPASS")
+	// SSL
+	databaseConfig.RDBMS.Ssl.Sslmode = os.Getenv("DBSSLMODE")
+	// Conn
+	dbMaxIdleConns := os.Getenv("DBMAXIDLECONNS")
+	dbMaxOpenConns := os.Getenv("DBMAXOPENCONNS")
+	dbConnMaxLifetime := os.Getenv("DBCONNMAXLIFETIME")
+	databaseConfig.RDBMS.Conn.MaxIdleConns, err = strconv.Atoi(dbMaxIdleConns)
+	if err != nil {
+		log.WithError(err).Panic("panic code: 131")
+	}
+	databaseConfig.RDBMS.Conn.MaxOpenConns, err = strconv.Atoi(dbMaxOpenConns)
+	if err != nil {
+		log.WithError(err).Panic("panic code: 132")
+	}
+	databaseConfig.RDBMS.Conn.ConnMaxLifetime, err = time.ParseDuration(dbConnMaxLifetime)
+	if err != nil {
+		log.WithError(err).Panic("panic code: 133")
 	}
 
 	// Logger
@@ -86,44 +112,56 @@ func Database() DatabaseConfig {
 		log.WithError(err).Panic("panic code: 134")
 	}
 
-	// REDIS
-	activateRedis := os.Getenv("ACTIVATE_REDIS")
-	databaseConfig.REDIS.Activate = activateRedis
-	if activateRedis == "yes" {
-		poolSize, err := strconv.Atoi(os.Getenv("POOLSIZE"))
-		if err != nil {
-			log.WithError(err).Panic("panic code: 135")
-		}
-		connTTL, err := strconv.Atoi(os.Getenv("CONNTTL"))
-		if err != nil {
-			log.WithError(err).Panic("panic code: 136")
-		}
+	return databaseConfig
+}
 
-		databaseConfig.REDIS.Env.Host = os.Getenv("REDISHOST")
-		databaseConfig.REDIS.Env.Port = os.Getenv("REDISPORT")
-		databaseConfig.REDIS.Conn.PoolSize = poolSize
-		databaseConfig.REDIS.Conn.ConnTTL = connTTL
+// DatabaseRedis - all REDIS DB variables
+func DatabaseRedis() DatabaseConfig {
+	var databaseConfig DatabaseConfig
+
+	// Load environment variables
+	env()
+
+	// REDIS
+	poolSize, err := strconv.Atoi(os.Getenv("POOLSIZE"))
+	if err != nil {
+		log.WithError(err).Panic("panic code: 135")
 	}
+	connTTL, err := strconv.Atoi(os.Getenv("CONNTTL"))
+	if err != nil {
+		log.WithError(err).Panic("panic code: 136")
+	}
+
+	databaseConfig.REDIS.Env.Host = os.Getenv("REDISHOST")
+	databaseConfig.REDIS.Env.Port = os.Getenv("REDISPORT")
+	databaseConfig.REDIS.Conn.PoolSize = poolSize
+	databaseConfig.REDIS.Conn.ConnTTL = connTTL
+
+	return databaseConfig
+}
+
+// DatabaseMongo - all MongoDB variables
+func DatabaseMongo() DatabaseConfig {
+	var databaseConfig DatabaseConfig
+
+	// Load environment variables
+	env()
 
 	// MongoDB
-	activateMongo := os.Getenv("ACTIVATE_MONGO")
-	databaseConfig.MongoDB.Activate = activateMongo
-	if activateMongo == "yes" {
-		poolSize, err := strconv.ParseUint(os.Getenv("MONGO_POOLSIZE"), 10, 64)
-		if err != nil {
-			log.WithError(err).Panic("panic code: 137")
-		}
-		connTTL, err := strconv.Atoi(os.Getenv("MONGO_CONNTTL"))
-		if err != nil {
-			log.WithError(err).Panic("panic code: 138")
-		}
-
-		databaseConfig.MongoDB.Env.URI = os.Getenv("MONGO_URI")
-		databaseConfig.MongoDB.Env.AppName = os.Getenv("MONGO_APP")
-		databaseConfig.MongoDB.Env.PoolSize = poolSize
-		databaseConfig.MongoDB.Env.PoolMon = os.Getenv("MONGO_MONITOR_POOL")
-		databaseConfig.MongoDB.Env.ConnTTL = connTTL
+	poolSize, err := strconv.ParseUint(os.Getenv("MONGO_POOLSIZE"), 10, 64)
+	if err != nil {
+		log.WithError(err).Panic("panic code: 137")
 	}
+	connTTL, err := strconv.Atoi(os.Getenv("MONGO_CONNTTL"))
+	if err != nil {
+		log.WithError(err).Panic("panic code: 138")
+	}
+
+	databaseConfig.MongoDB.Env.URI = os.Getenv("MONGO_URI")
+	databaseConfig.MongoDB.Env.AppName = os.Getenv("MONGO_APP")
+	databaseConfig.MongoDB.Env.PoolSize = poolSize
+	databaseConfig.MongoDB.Env.PoolMon = os.Getenv("MONGO_MONITOR_POOL")
+	databaseConfig.MongoDB.Env.ConnTTL = connTTL
 
 	return databaseConfig
 }
