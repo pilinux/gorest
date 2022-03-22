@@ -42,6 +42,18 @@ For inspiration, take a look at a small but real-life project built in one night
 
 ## Updates
 
+### v1.4.3 [Mar 22 - 2022]
+
+Link: https://github.com/pilinux/gorest/releases/tag/v1.4.3
+
+&#9889; MongoDB driver switched to `Qmgo`
+
+&#9889; Controller examples for MongoDB updated
+
+&#9889; Critical security issues (CWE-089, CWE-943) fixed in controller examples
+
+&#9889; Code refactored in database config files
+
 ### v1.4.2 [Mar 14 - 2022]
 
 Link: https://github.com/pilinux/gorest/releases/tag/v1.4.2
