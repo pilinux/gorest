@@ -12,9 +12,9 @@ require (
 	github.com/mediocregopher/radix/v4 v4.0.0
 	github.com/onrik/logrus v0.9.0
 	github.com/pilinux/structs v1.1.1
-	github.com/qiniu/qmgo v1.0.7
+	github.com/qiniu/qmgo v1.1.0
 	github.com/sirupsen/logrus v1.8.1
-	go.mongodb.org/mongo-driver v1.8.4
+	go.mongodb.org/mongo-driver v1.9.0
 	gorm.io/driver/mysql v1.3.2
 	gorm.io/driver/postgres v1.3.1
 	gorm.io/driver/sqlite v1.3.1
