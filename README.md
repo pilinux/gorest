@@ -49,9 +49,13 @@ _Quick tutorial:_ [Wiki][10] + this README.md file
 Link: https://github.com/pilinux/gorest/releases/tag/v1.4.4
 
 &#9889; gorm `postgres` driver updated to 1.3.7
+
 &#9889; gorm `mysql` driver updated to 1.3.4
+
 &#9889; gorm `mongo` driver updated to 1.9.1
+
 &#9889; `gorm` updated to 1.23.5
+
 &#9889; `Qmgo` updated to 1.1.0
 
 ### v1.4.3 [Mar 22 - 2022]
