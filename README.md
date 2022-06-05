@@ -40,7 +40,19 @@ import (
 
 For inspiration, take a look at a small but real-life project built in one night: [repo][09]
 
+_Quick tutorial:_ [Wiki][10] + this README.md file
+
 ## Updates
+
+### v1.4.4 [Jun 05 - 2022]
+
+Link: https://github.com/pilinux/gorest/releases/tag/v1.4.4
+
+&#9889; gorm `postgres` driver updated to 1.3.7
+&#9889; gorm `mysql` driver updated to 1.3.4
+&#9889; gorm `mongo` driver updated to 1.9.1
+&#9889; `gorm` updated to 1.23.5
+&#9889; `Qmgo` updated to 1.1.0
 
 ### v1.4.3 [Mar 22 - 2022]
 
@@ -205,27 +217,16 @@ To prevent abuse, only HTTP `GET` requests are accepted by the demo server.
 
 <img width="650px" src="https://cdn.pilinux.workers.dev/images/GoREST/screenshot/GoREST.API.Demo.PNG">
 
-## Setup and start the production-ready app (old procedure)
+## Setup and start a production-ready app
 
-- Install a relational database (MySQL or PostgreSQL)
+- Install a relational (SQLite3, MySQL or PostgreSQL), Redis or Mongo database
 - Set up an environment to compile the Go codes (a [quick tutorial][41]
   for any Debian based OS)
 - Install `git`
-- Clone the project `git clone https://github.com/piLinux/GoREST.git`
-- At the root of the cloned repository
-  [`cd $GOPATH/src/github.com/pilinux/gorest`], execute `go build` to fetch all
-  the dependencies
-- Edit `.env.sample` file and save it as `.env` file at the root of the
-  project `$GOPATH/src/github.com/pilinux/gorest`
-- Edit the `.env.sample` file located at
-  `$GOPATH/src/github.com/pilinux/gorest/database/migrate` and save it as `.env`
-- Inside `$GOPATH/src/github.com/pilinux/gorest/database/migrate`, run
-  `go run autoMigrate.go` to migrate the database
-  - Comment the line `setPkFk()` in `autoMigrate.go` file if the driver is not **MySQL**.
-    [Check issue: 7][42]
-- At `$GOPATH/src/github.com/pilinux/gorest`, run `./gorest` to launch the app
+- Check the [Wiki][10] + this README.md file to build an application efficiently
 
-A new guideline will be published in the following days.
+_Note:_ Omit the line `setPkFk()` in `autoMigrate.go` file if the driver is not **MySQL**.
+[Check issue: 7][42]
 
 **Note For SQLite3:**
 
@@ -674,6 +675,7 @@ Released under the [MIT license][13]
 [07]: https://github.com/pilinux/gorest/actions/workflows/go.yml/badge.svg
 [08]: https://github.com/pilinux/gorest/actions/workflows/golangci-lint.yml/badge.svg
 [09]: https://github.com/pilinux/postmark
+[10]: https://github.com/pilinux/gorest/wiki
 [11]: https://github.com/golang/go
 [12]: https://github.com/gin-gonic/gin
 [13]: LICENSE
