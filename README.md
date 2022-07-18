@@ -44,6 +44,24 @@ _Quick tutorial:_ [Wiki][10] + this README.md file
 
 ## Updates
 
+### v1.4.5 [Jul 18 - 2022]
+
+Link: https://github.com/pilinux/gorest/releases/tag/v1.4.5
+
+&#9889; `gin` updated to 1.8.1
+
+&#9889; `gorm` updated to 1.23.8
+
+&#9889; gorm `mysql` driver updated to 1.3.5
+
+&#9889; gorm `sqlite` driver updated to 1.3.6
+
+&#9889; mongodb `mongo` driver updated to 1.10.0
+
+&#9889; `Qmgo` updated to 1.1.1
+
+&#9889; `radix` driver updated to 4.1.0
+
 ### v1.4.4 [Jun 05 - 2022]
 
 Link: https://github.com/pilinux/gorest/releases/tag/v1.4.4
