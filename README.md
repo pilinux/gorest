@@ -9,6 +9,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/pilinux/gorest/badge)][06]
 [![codebeat badge](https://codebeat.co/badges/3e3573cc-2e9d-48bc-a8c5-4f054bfdfcf7)][03]
 [![MIT license](https://img.shields.io/badge/license-MIT-brightgreen.svg)][13]
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)][62]
 
 GoREST is a starter kit, written in [Golang][11] with [Gin framework][12],
 for rapid prototyping and developing a RESTful API. The source code is released
@@ -26,6 +27,10 @@ git branch -u origin/main main
 git remote set-head origin -a
 ```
 
+_Note:_ For version `<= 1.4.5`: https://github.com/pilinux/gorest/tree/v1.4.5
+
+For new projects, it is recommended to use `v1.5.x`
+
 ## Start building
 
 - convention over configuration
@@ -34,15 +39,25 @@ git remote set-head origin -a
 import (
   "github.com/pilinux/gorest/config"
   "github.com/pilinux/gorest/database"
-  "github.com/pilinux/gorest/lib/middleware"
+  "github.com/pilinux/gorestlib/middleware"
+
+  "github.com/gin-gonic/gin"
 )
 ```
-
-For inspiration, take a look at a small but real-life project built in one night: [repo][09]
 
 _Quick tutorial:_ [Wiki][10] + this README.md file
 
 ## Updates
+
+### v1.5.0 [Jul 23 - 2022]
+
+Link: https://github.com/pilinux/gorest/releases/tag/v1.5.0
+
+&#9889; middleware, renderer and commonly used functions moved to a separate repo `github.com/pilinux/gorestlib`
+
+&#9889; `logrus` updated to 1.9.0
+
+&#9889; `postgres` updated to 1.3.8
 
 ### v1.4.5 [Jul 18 - 2022]
 
@@ -241,7 +256,7 @@ To prevent abuse, only HTTP `GET` requests are accepted by the demo server.
 
 ## Setup and start a production-ready app
 
-- Install a relational (SQLite3, MySQL or PostgreSQL), Redis or Mongo database
+- Install a relational (SQLite3, MySQL or PostgreSQL), Redis, or Mongo database
 - Set up an environment to compile the Go codes (a [quick tutorial][41]
   for any Debian based OS)
 - Install `git`
@@ -544,6 +559,7 @@ gorest
 │---LICENSE
 │---CONTRIBUTING.md
 │---CODE_OF_CONDUCT.md
+│---.gitattributes
 │---.gitignore
 │---.env.sample
 │---go.mod
@@ -556,6 +572,7 @@ gorest
 │    └---logger.go
 │    └---security.go
 │    └---server.go
+│    └---view.go
 │
 │───controller
 │    └---auth.go
@@ -581,22 +598,11 @@ gorest
 │         └---hobby.go
 │         └---userHobby.go
 │
-└───lib
-│    └───middleware
-│    │    └---cors.go
-│    │    └---firewall.go
-│    │    └---ginpongo2.go
-│    │    └---jwt.go
-│    │    └---sentry.go
-│    └───renderer
-│         └---render.go
-│
 └───logs
 │    └---README.md
 │
 └───service
      └---auth.go
-     └---common.go
 │
 └───templates
      └---error.html
@@ -632,11 +638,9 @@ gorest
 │
 └───service
      └---auth.go
-     └---common.go
 ```
 
-To render and serve HTML pages, the template files must be present in the
-`templates` directory
+Default path to the HTML template files: `templates/`
 
 ### Step 1
 
@@ -660,7 +664,7 @@ To render and serve HTML pages, the template files must be present in the
 
 ### Step 4
 
-- `middleware`: All middlewares should belong to this package.
+- `middleware`: Import from `github.com/pilinux/gorestlib/middleware`
 
 ### Step 5 (final step)
 
