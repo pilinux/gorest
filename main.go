@@ -126,7 +126,7 @@ func SetupRouter() (*gin.Engine, error) {
 	}
 
 	router.Use(middleware.CORS(
-		configure.Security.CORS.Headers,
+		configure.Security.CORS.Origin,
 		configure.Security.CORS.Credentials,
 		configure.Security.CORS.Headers,
 		configure.Security.CORS.Methods,
