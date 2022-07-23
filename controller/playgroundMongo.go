@@ -14,7 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/pilinux/gorest/database"
-	"github.com/pilinux/gorestlib/renderer"
+	"github.com/pilinux/gorest/lib/renderer"
 )
 
 // Geocoding - struct for address

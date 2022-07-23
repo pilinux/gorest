@@ -1,5 +1,9 @@
 package config
 
+import (
+	"github.com/pilinux/gorest/lib"
+)
+
 // SecurityConfig ...
 type SecurityConfig struct {
 	BasicAuth struct {
@@ -18,13 +22,7 @@ type SecurityConfig struct {
 		RefNbf   int
 		Subject  string
 	}
-	HashPass struct {
-		Memory      uint32
-		Iterations  uint32
-		Parallelism uint8
-		SaltLength  uint32
-		KeyLength   uint32
-	}
+	HashPass lib.HashPassConfig
 	Firewall struct {
 		ListType string
 		IP       string

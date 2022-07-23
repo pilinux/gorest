@@ -6,8 +6,8 @@ import (
 
 	"github.com/pilinux/gorest/database"
 	"github.com/pilinux/gorest/database/model"
-	"github.com/pilinux/gorestlib/middleware"
-	"github.com/pilinux/gorestlib/renderer"
+	"github.com/pilinux/gorest/lib/middleware"
+	"github.com/pilinux/gorest/lib/renderer"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"

@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/pilinux/gorest/config"
-	"github.com/pilinux/gorestlib"
+	"github.com/pilinux/gorest/lib"
 )
 
 // Auth model - `auths` table
@@ -43,14 +43,14 @@ func (v *Auth) UnmarshalJSON(b []byte) error {
 	v.AuthID = aux.AuthID
 	v.Email = aux.Email
 
-	config := gorestlib.HashPassConfig{
+	config := lib.HashPassConfig{
 		Memory:      config.Security().HashPass.Memory,
 		Iterations:  config.Security().HashPass.Iterations,
 		Parallelism: config.Security().HashPass.Parallelism,
 		SaltLength:  config.Security().HashPass.SaltLength,
 		KeyLength:   config.Security().HashPass.KeyLength,
 	}
-	pass, err := gorestlib.HashPass(config, aux.Password)
+	pass, err := lib.HashPass(config, aux.Password)
 	if err != nil {
 		return err
 	}

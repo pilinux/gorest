@@ -8,7 +8,7 @@ import (
 	"github.com/pilinux/gorest/config"
 	"github.com/pilinux/gorest/controller"
 	"github.com/pilinux/gorest/database"
-	"github.com/pilinux/gorestlib/middleware"
+	"github.com/pilinux/gorest/lib/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -50,17 +50,6 @@ func main() {
 	middleware.AccNbf = configure.Security.JWT.AccNbf
 	middleware.RefNbf = configure.Security.JWT.RefNbf
 	middleware.Subject = configure.Security.JWT.Subject
-
-	// Debugging - environment variables
-	/*
-		fmt.Println(configure.Server.ServerPort)
-		fmt.Println(configure.Database.DbDriver)
-		fmt.Println(configure.Database.DbUser)
-		fmt.Println(configure.Database.DbPass)
-		fmt.Println(configure.Database.DbName)
-		fmt.Println(configure.Database.DbHost)
-		fmt.Println(configure.Database.DbPort)
-	*/
 
 	router, err := SetupRouter()
 	if err != nil {

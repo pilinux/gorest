@@ -29,7 +29,7 @@ git remote set-head origin -a
 
 _Note:_ For version `<= 1.4.5`: https://github.com/pilinux/gorest/tree/v1.4.5
 
-For new projects, it is recommended to use `v1.5.x`
+For new projects, it is recommended to use `>= v1.5.1`
 
 ## Start building
 
@@ -39,7 +39,7 @@ For new projects, it is recommended to use `v1.5.x`
 import (
   "github.com/pilinux/gorest/config"
   "github.com/pilinux/gorest/database"
-  "github.com/pilinux/gorestlib/middleware"
+  "github.com/pilinux/gorest/lib/middleware"
 
   "github.com/gin-gonic/gin"
 )
@@ -49,9 +49,19 @@ _Quick tutorial:_ [Wiki][10] + this README.md file
 
 ## Updates
 
-### v1.5.0 [Jul 23 - 2022]
+### v1.5.1 [Jul 23 - 2022]
 
-Link: https://github.com/pilinux/gorest/releases/tag/v1.5.0
+Link: https://github.com/pilinux/gorest/releases/tag/v1.5.1
+
+&#9889; middleware, renderer and commonly used functions merged here
+
+After hours of testing, it felt more intuitive
+to have all middleware inside `gorest`.
+There is no need to import anything from `gorestlib` anymore.
+
+### v1.5.0 [Jul 23 - 2022] [_Do not use this version_]
+
+- Release and tag removed from github to avoid import
 
 &#9889; middleware, renderer and commonly used functions moved to a separate repo `github.com/pilinux/gorestlib`
 
@@ -250,7 +260,26 @@ Accessible endpoints of the test instance:
 - https://goapi.pilinux.me/api/v1/posts/:id
 - https://goapi.pilinux.me/api/v1/hobbies
 
-To prevent abuse, only HTTP `GET` requests are accepted by the demo server.
+To prevent abuse, HTTP `GET` requests are accepted by the demo server.
+
+Only the following endpoints accept HTTP `POST` requests to test JWT:
+
+- https://goapi.pilinux.me/api/v1/login
+
+```
+{
+    "Email": "killua@example.com",
+    "Password": "1234.."
+}
+```
+
+- https://goapi.pilinux.me/api/v1/refresh
+
+```
+{
+    "RefreshJWT": "",
+}
+```
 
 <img width="650px" src="https://cdn.pilinux.workers.dev/images/GoREST/screenshot/GoREST.API.Demo.PNG">
 
@@ -559,6 +588,7 @@ gorest
 │---LICENSE
 │---CONTRIBUTING.md
 │---CODE_OF_CONDUCT.md
+│---SECURITY.md
 │---.gitattributes
 │---.gitignore
 │---.env.sample
@@ -574,7 +604,7 @@ gorest
 │    └---server.go
 │    └---view.go
 │
-│───controller
+└───controller
 │    └---auth.go
 │    └---login.go
 │    └---user.go
@@ -597,6 +627,21 @@ gorest
 │         └---post.go
 │         └---hobby.go
 │         └---userHobby.go
+│
+└───lib
+│    └---hashing.go
+│    └---validateEmail.go
+│    └---removeAllSpace.go
+│    │
+│    └───middleware
+│    │    └---cors.go
+│    │    └---firewall.go
+│    │    └---ginpongo2.go
+│    │    └---jwt.go
+│    │    └---sentry.go
+│    │
+│    └───renderer
+│         └---render.go
 │
 └───logs
 │    └---README.md
@@ -664,7 +709,7 @@ Default path to the HTML template files: `templates/`
 
 ### Step 4
 
-- `middleware`: Import from `github.com/pilinux/gorestlib/middleware`
+- `middleware`: All middleware should belong to this package.
 
 ### Step 5 (final step)
 

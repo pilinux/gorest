@@ -3,10 +3,10 @@ package controller
 import (
 	"net/http"
 
+	"github.com/pilinux/gorest/lib"
+	"github.com/pilinux/gorest/lib/middleware"
+	"github.com/pilinux/gorest/lib/renderer"
 	"github.com/pilinux/gorest/service"
-	"github.com/pilinux/gorestlib"
-	"github.com/pilinux/gorestlib/middleware"
-	"github.com/pilinux/gorestlib/renderer"
 
 	"github.com/alexedwards/argon2id"
 	"github.com/gin-gonic/gin"
@@ -27,7 +27,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	if !gorestlib.ValidateEmail(payload.Email) {
+	if !lib.ValidateEmail(payload.Email) {
 		renderer.Render(c, gin.H{"msg": "wrong email address"}, http.StatusBadRequest)
 		return
 	}

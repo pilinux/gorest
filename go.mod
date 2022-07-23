@@ -4,11 +4,15 @@ go 1.17
 
 require (
 	github.com/alexedwards/argon2id v0.0.0-20211130144151-3585854a6387
+	github.com/flosch/pongo2 v0.0.0-20200913210552-0d938eb266f3
 	github.com/gin-gonic/gin v1.8.1
+	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/google/uuid v1.3.0
 	github.com/jinzhu/gorm v1.9.16
 	github.com/joho/godotenv v1.4.0
 	github.com/mediocregopher/radix/v4 v4.1.0
-	github.com/pilinux/gorestlib v0.0.10
+	github.com/onrik/logrus v0.9.0
+	github.com/pilinux/structs v1.1.1
 	github.com/qiniu/qmgo v1.1.1
 	github.com/sirupsen/logrus v1.9.0
 	go.mongodb.org/mongo-driver v1.10.0
@@ -18,8 +22,9 @@ require (
 	gorm.io/gorm v1.23.8
 )
 
+retract v1.5.0
+
 require (
-	github.com/flosch/pongo2 v0.0.0-20200913210552-0d938eb266f3 // indirect
 	github.com/getsentry/sentry-go v0.13.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
@@ -27,9 +32,7 @@ require (
 	github.com/go-playground/validator/v10 v10.10.0 // indirect
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/goccy/go-json v0.9.7 // indirect
-	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/snappy v0.0.1 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.12.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
@@ -49,9 +52,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
-	github.com/onrik/logrus v0.9.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.1 // indirect
-	github.com/pilinux/structs v1.1.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/tilinna/clock v1.0.2 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
