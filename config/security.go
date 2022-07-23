@@ -11,6 +11,12 @@ type SecurityConfig struct {
 		RefreshKey    string
 		AccessKeyTTL  int
 		RefreshKeyTTL int
+
+		Audience string
+		Issuer   string
+		AccNbf   int
+		RefNbf   int
+		Subject  string
 	}
 	HashPass struct {
 		Memory      uint32
@@ -22,6 +28,13 @@ type SecurityConfig struct {
 	Firewall struct {
 		ListType string
 		IP       string
+	}
+	CORS struct {
+		Origin      string
+		Credentials string
+		Headers     string
+		Methods     string
+		MaxAge      string
 	}
 	TrustedIP string
 }

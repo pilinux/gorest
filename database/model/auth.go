@@ -7,9 +7,8 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/alexedwards/argon2id"
-
 	"github.com/pilinux/gorest/config"
+	"github.com/pilinux/gorestlib"
 )
 
 // Auth model - `auths` table
@@ -43,28 +42,21 @@ func (v *Auth) UnmarshalJSON(b []byte) error {
 
 	v.AuthID = aux.AuthID
 	v.Email = aux.Email
-	if v.Password = HashPass(aux.Password); v.Password == "error" {
-		return errors.New("HashPass failed")
+
+	config := gorestlib.HashPassConfig{
+		Memory:      config.Security().HashPass.Memory,
+		Iterations:  config.Security().HashPass.Iterations,
+		Parallelism: config.Security().HashPass.Parallelism,
+		SaltLength:  config.Security().HashPass.SaltLength,
+		KeyLength:   config.Security().HashPass.KeyLength,
 	}
+	pass, err := gorestlib.HashPass(config, aux.Password)
+	if err != nil {
+		return err
+	}
+	v.Password = pass
 
 	return nil
-}
-
-// HashPass ...
-func HashPass(pass string) string {
-	configureHash := config.Security().HashPass
-	params := &argon2id.Params{
-		Memory:      configureHash.Memory * 1024, // the amount of memory used by the Argon2 algorithm (in kibibytes)
-		Iterations:  configureHash.Iterations,    // the number of iterations (or passes) over the memory
-		Parallelism: configureHash.Parallelism,   // the number of threads (or lanes) used by the algorithm
-		SaltLength:  configureHash.SaltLength,    // length of the random salt. 16 bytes is recommended for password hashing
-		KeyLength:   configureHash.KeyLength,     // length of the generated key (or password hash). 16 bytes or more is recommended
-	}
-	h, err := argon2id.CreateHash(pass, params)
-	if err != nil {
-		return "error"
-	}
-	return h
 }
 
 // MarshalJSON ...

@@ -5,8 +5,8 @@ import (
 
 	"github.com/pilinux/gorest/database"
 	"github.com/pilinux/gorest/database/model"
-	"github.com/pilinux/gorest/lib/renderer"
-	"github.com/pilinux/gorest/service"
+	"github.com/pilinux/gorestlib"
+	"github.com/pilinux/gorestlib/renderer"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -25,7 +25,7 @@ func CreateUserAuth(c *gin.Context) {
 	}
 
 	// email validation
-	if !service.IsEmailValid(auth.Email) {
+	if !gorestlib.ValidateEmail(auth.Email) {
 		renderer.Render(c, gin.H{"msg": "wrong email address"}, http.StatusBadRequest)
 		return
 	}

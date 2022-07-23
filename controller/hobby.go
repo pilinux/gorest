@@ -5,7 +5,7 @@ import (
 
 	"github.com/pilinux/gorest/database"
 	"github.com/pilinux/gorest/database/model"
-	"github.com/pilinux/gorest/lib/renderer"
+	"github.com/pilinux/gorestlib/renderer"
 
 	"github.com/gin-gonic/gin"
 )

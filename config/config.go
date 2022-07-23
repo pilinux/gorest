@@ -11,10 +11,11 @@ import (
 
 // Configuration - server and db configuration variables
 type Configuration struct {
-	Database DatabaseConfig
-	Logger   LoggerConfig
-	Server   ServerConfig
-	Security SecurityConfig
+	Database   DatabaseConfig
+	Logger     LoggerConfig
+	Server     ServerConfig
+	Security   SecurityConfig
+	ViewConfig ViewConfig
 }
 
 // env - load the configurations from .env
@@ -34,6 +35,7 @@ func Config() Configuration {
 	configuration.Logger = Logger()
 	configuration.Security = Security()
 	configuration.Server = Server()
+	configuration.ViewConfig = View()
 
 	return configuration
 }
@@ -199,6 +201,14 @@ func Security() SecurityConfig {
 	if err != nil {
 		log.WithError(err).Panic("panic code: 112")
 	}
+	notBeforeAcc, err := strconv.Atoi(os.Getenv("NOT_BEFORE_ACC"))
+	if err != nil {
+		log.WithError(err).Panic("panic code: 113")
+	}
+	notBeforeRef, err := strconv.Atoi(os.Getenv("NOT_BEFORE_REF"))
+	if err != nil {
+		log.WithError(err).Panic("panic code: 114")
+	}
 
 	hashPassMemory64, err := strconv.ParseUint((os.Getenv("HASHPASSMEMORY")), 10, 32)
 	if err != nil {
@@ -236,6 +246,11 @@ func Security() SecurityConfig {
 	securityConfig.JWT.AccessKeyTTL = accessKeyTTL
 	securityConfig.JWT.RefreshKey = refreshKey
 	securityConfig.JWT.RefreshKeyTTL = refreshKeyTTL
+	securityConfig.JWT.Audience = os.Getenv("AUDIENCE")
+	securityConfig.JWT.Issuer = os.Getenv("ISSUER")
+	securityConfig.JWT.AccNbf = notBeforeAcc
+	securityConfig.JWT.RefNbf = notBeforeRef
+	securityConfig.JWT.Subject = os.Getenv("SUBJECT")
 
 	securityConfig.HashPass.Memory = hashPassMemory
 	securityConfig.HashPass.Iterations = hashPassIterations
@@ -245,6 +260,12 @@ func Security() SecurityConfig {
 
 	securityConfig.Firewall.ListType = listType
 	securityConfig.Firewall.IP = ip
+
+	securityConfig.CORS.Origin = os.Getenv("CORS_ORIGIN")
+	securityConfig.CORS.Credentials = os.Getenv("CORS_CREDENTIALS")
+	securityConfig.CORS.Headers = os.Getenv("CORS_HEADERS")
+	securityConfig.CORS.Methods = os.Getenv("CORS_METHODS")
+	securityConfig.CORS.MaxAge = os.Getenv("CORS_MAXAGE")
 
 	securityConfig.TrustedIP = os.Getenv("TRUSTED_IP")
 
@@ -262,4 +283,16 @@ func Server() ServerConfig {
 	serverConfig.ServerEnv = os.Getenv("APP_ENV")
 
 	return serverConfig
+}
+
+// View - HTML renderer
+func View() ViewConfig {
+	var viewConfig ViewConfig
+
+	// Load environment variables
+	env()
+
+	viewConfig.Dir = os.Getenv("TEMPLATE_DIR")
+
+	return viewConfig
 }

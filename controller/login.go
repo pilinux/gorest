@@ -3,9 +3,10 @@ package controller
 import (
 	"net/http"
 
-	"github.com/pilinux/gorest/lib/middleware"
-	"github.com/pilinux/gorest/lib/renderer"
 	"github.com/pilinux/gorest/service"
+	"github.com/pilinux/gorestlib"
+	"github.com/pilinux/gorestlib/middleware"
+	"github.com/pilinux/gorestlib/renderer"
 
 	"github.com/alexedwards/argon2id"
 	"github.com/gin-gonic/gin"
@@ -26,7 +27,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	if !service.IsEmailValid(payload.Email) {
+	if !gorestlib.ValidateEmail(payload.Email) {
 		renderer.Render(c, gin.H{"msg": "wrong email address"}, http.StatusBadRequest)
 		return
 	}
@@ -48,13 +49,13 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	accessJWT, err := middleware.GetJWT(v.AuthID, v.Email, "access")
+	accessJWT, _, err := middleware.GetJWT(v.AuthID, v.Email, "", "", "en", "", "", "access")
 	if err != nil {
 		log.WithError(err).Error("error code: 1012")
 		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		return
 	}
-	refreshJWT, err := middleware.GetJWT(v.AuthID, v.Email, "refresh")
+	refreshJWT, _, err := middleware.GetJWT(v.AuthID, v.Email, "", "", "", "", "", "refresh")
 	if err != nil {
 		log.WithError(err).Error("error code: 1013")
 		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
@@ -83,13 +84,13 @@ func Refresh(c *gin.Context) {
 	}
 
 	// issue new tokens
-	accessJWT, err := middleware.GetJWT(authID, email, "access")
+	accessJWT, _, err := middleware.GetJWT(authID, email, "", "", "en", "", "", "access")
 	if err != nil {
 		log.WithError(err).Error("error code: 1021")
 		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		return
 	}
-	refreshJWT, err := middleware.GetJWT(authID, email, "refresh")
+	refreshJWT, _, err := middleware.GetJWT(authID, email, "", "", "", "", "", "refresh")
 	if err != nil {
 		log.WithError(err).Error("error code: 1022")
 		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)

@@ -4,14 +4,11 @@ import (
 	// "fmt"
 
 	"fmt"
-	"io"
-	"os"
-	"time"
 
 	"github.com/pilinux/gorest/config"
 	"github.com/pilinux/gorest/controller"
 	"github.com/pilinux/gorest/database"
-	"github.com/pilinux/gorest/lib/middleware"
+	"github.com/pilinux/gorestlib/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -48,6 +45,11 @@ func main() {
 	middleware.AccessKeyTTL = configure.Security.JWT.AccessKeyTTL
 	middleware.RefreshKey = []byte(configure.Security.JWT.RefreshKey)
 	middleware.RefreshKeyTTL = configure.Security.JWT.RefreshKeyTTL
+	middleware.Audience = configure.Security.JWT.Audience
+	middleware.Issuer = configure.Security.JWT.Issuer
+	middleware.AccNbf = configure.Security.JWT.AccNbf
+	middleware.RefNbf = configure.Security.JWT.RefNbf
+	middleware.Subject = configure.Security.JWT.Subject
 
 	// Debugging - environment variables
 	/*
@@ -83,17 +85,17 @@ func SetupRouter() (*gin.Engine, error) {
 	//	gin.DisableConsoleColor()
 
 	// Create a log file with start time
-	dt := time.Now()
-	t := dt.Format(time.RFC3339)
-	file, err := os.Create("./logs/start:" + t + ".log")
-	if err != nil {
-		return nil, err
-	}
+	// dt := time.Now()
+	// t := dt.Format(time.RFC3339)
+	// file, err := os.Create("./logs/start:" + t + ".log")
+	// if err != nil {
+	//	 return nil, err
+	// }
 	// gin.DefaultWriter = io.MultiWriter(file)
 
 	// If it is required to write the logs to the file and the console
 	// at the same time
-	gin.DefaultWriter = io.MultiWriter(file, os.Stdout)
+	// gin.DefaultWriter = io.MultiWriter(file, os.Stdout)
 
 	// Creates a router without any middleware by default
 	// router := gin.New()
@@ -123,7 +125,13 @@ func SetupRouter() (*gin.Engine, error) {
 		}
 	}
 
-	router.Use(middleware.CORS())
+	router.Use(middleware.CORS(
+		configure.Security.CORS.Headers,
+		configure.Security.CORS.Credentials,
+		configure.Security.CORS.Headers,
+		configure.Security.CORS.Methods,
+		configure.Security.CORS.MaxAge,
+	))
 	router.Use(middleware.SentryCapture(configure.Logger.SentryDsn))
 	router.Use(middleware.Firewall(
 		configure.Security.Firewall.ListType,
@@ -131,7 +139,7 @@ func SetupRouter() (*gin.Engine, error) {
 	))
 
 	// Render HTML
-	router.Use(middleware.Pongo2())
+	router.Use(middleware.Pongo2(configure.ViewConfig.Dir))
 
 	// API:v1.0
 	v1 := router.Group("/api/v1/")
