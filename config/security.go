@@ -2,7 +2,11 @@ package config
 
 import (
 	"github.com/pilinux/gorest/lib"
+	"github.com/pilinux/gorest/lib/middleware"
 )
+
+// SecurityConfigAll - exported variables
+var SecurityConfigAll SecurityConfig
 
 // SecurityConfig ...
 type SecurityConfig struct {
@@ -10,23 +14,16 @@ type SecurityConfig struct {
 		Username string
 		Password string
 	}
-	JWT struct {
-		AccessKey     string
-		RefreshKey    string
-		AccessKeyTTL  int
-		RefreshKeyTTL int
 
-		Audience string
-		Issuer   string
-		AccNbf   int
-		RefNbf   int
-		Subject  string
-	}
+	MustJWT string
+	JWT     middleware.JWTParameters
+
 	HashPass lib.HashPassConfig
 	Firewall struct {
 		ListType string
 		IP       string
 	}
+
 	CORS struct {
 		Origin      string
 		Credentials string
@@ -34,5 +31,6 @@ type SecurityConfig struct {
 		Methods     string
 		MaxAge      string
 	}
+
 	TrustedPlatform string
 }

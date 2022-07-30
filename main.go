@@ -40,17 +40,6 @@ func main() {
 		}
 	}
 
-	// JWT
-	middleware.AccessKey = []byte(configure.Security.JWT.AccessKey)
-	middleware.AccessKeyTTL = configure.Security.JWT.AccessKeyTTL
-	middleware.RefreshKey = []byte(configure.Security.JWT.RefreshKey)
-	middleware.RefreshKeyTTL = configure.Security.JWT.RefreshKeyTTL
-	middleware.Audience = configure.Security.JWT.Audience
-	middleware.Issuer = configure.Security.JWT.Issuer
-	middleware.AccNbf = configure.Security.JWT.AccNbf
-	middleware.RefNbf = configure.Security.JWT.RefNbf
-	middleware.Subject = configure.Security.JWT.Subject
-
 	router, err := SetupRouter()
 	if err != nil {
 		fmt.Println(err)

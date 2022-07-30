@@ -49,13 +49,24 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	accessJWT, _, err := middleware.GetJWT(v.AuthID, v.Email, "", "", "en", "", "", "access")
+	// issue new tokens
+	claims := middleware.MyCustomClaims{
+		AuthID:  v.AuthID,
+		Email:   v.Email,
+		Role:    "",
+		Scope:   "",
+		TwoFA:   "",
+		SiteLan: "en",
+		Custom1: "",
+		Custom2: "",
+	}
+	accessJWT, _, err := middleware.GetJWT(claims, "access")
 	if err != nil {
 		log.WithError(err).Error("error code: 1012")
 		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		return
 	}
-	refreshJWT, _, err := middleware.GetJWT(v.AuthID, v.Email, "", "", "", "", "", "refresh")
+	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
 	if err != nil {
 		log.WithError(err).Error("error code: 1013")
 		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
@@ -70,8 +81,8 @@ func Login(c *gin.Context) {
 
 // Refresh ...
 func Refresh(c *gin.Context) {
-	authID := middleware.AuthID
-	email := middleware.Email
+	authID := middleware.CustomClaims.AuthID
+	email := middleware.CustomClaims.Email
 
 	// check validity
 	if authID == 0 {
@@ -84,13 +95,23 @@ func Refresh(c *gin.Context) {
 	}
 
 	// issue new tokens
-	accessJWT, _, err := middleware.GetJWT(authID, email, "", "", "en", "", "", "access")
+	claims := middleware.MyCustomClaims{
+		AuthID:  authID,
+		Email:   email,
+		Role:    "",
+		Scope:   "",
+		TwoFA:   "",
+		SiteLan: "en",
+		Custom1: "",
+		Custom2: "",
+	}
+	accessJWT, _, err := middleware.GetJWT(claims, "access")
 	if err != nil {
 		log.WithError(err).Error("error code: 1021")
 		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		return
 	}
-	refreshJWT, _, err := middleware.GetJWT(authID, email, "", "", "", "", "", "refresh")
+	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
 	if err != nil {
 		log.WithError(err).Error("error code: 1022")
 		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)

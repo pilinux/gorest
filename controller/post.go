@@ -48,7 +48,7 @@ func CreatePost(c *gin.Context) {
 	post := model.Post{}
 	postFinal := model.Post{}
 
-	userIDAuth := middleware.AuthID
+	userIDAuth := middleware.CustomClaims.AuthID
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&user).Error; err != nil {
@@ -86,7 +86,7 @@ func UpdatePost(c *gin.Context) {
 	postFinal := model.Post{}
 	id := c.Params.ByName("id")
 
-	userIDAuth := middleware.AuthID
+	userIDAuth := middleware.CustomClaims.AuthID
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&user).Error; err != nil {
@@ -129,7 +129,7 @@ func DeletePost(c *gin.Context) {
 	post := model.Post{}
 	id := c.Params.ByName("id")
 
-	userIDAuth := middleware.AuthID
+	userIDAuth := middleware.CustomClaims.AuthID
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&user).Error; err != nil {

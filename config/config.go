@@ -6,8 +6,12 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/pilinux/gorest/lib/middleware"
 	log "github.com/sirupsen/logrus"
 )
+
+// Activated - "yes" keyword to activate a service
+const Activated string = "yes"
 
 // Configuration - server and db configuration variables
 type Configuration struct {
@@ -191,23 +195,13 @@ func Security() SecurityConfig {
 	username := os.Getenv("USERNAME")
 	password := os.Getenv("PASSWORD")
 
-	accessKey := os.Getenv("ACCESS_KEY")
-	accessKeyTTL, err := strconv.Atoi(os.Getenv("ACCESS_KEY_TTL"))
-	if err != nil {
-		log.WithError(err).Panic("panic code: 111")
-	}
-	refreshKey := os.Getenv("REFRESH_KEY")
-	refreshKeyTTL, err := strconv.Atoi(os.Getenv("REFRESH_KEY_TTL"))
-	if err != nil {
-		log.WithError(err).Panic("panic code: 112")
-	}
-	notBeforeAcc, err := strconv.Atoi(os.Getenv("NOT_BEFORE_ACC"))
-	if err != nil {
-		log.WithError(err).Panic("panic code: 113")
-	}
-	notBeforeRef, err := strconv.Atoi(os.Getenv("NOT_BEFORE_REF"))
-	if err != nil {
-		log.WithError(err).Panic("panic code: 114")
+	// JWT
+	SecurityConfigAll.MustJWT = os.Getenv("ACTIVATE_JWT")
+	if SecurityConfigAll.MustJWT == Activated {
+		securityConfig.JWT = readEnvJWT()
+
+		// set params globally
+		setParamsJWT(securityConfig.JWT)
 	}
 
 	hashPassMemory64, err := strconv.ParseUint((os.Getenv("HASHPASSMEMORY")), 10, 32)
@@ -241,16 +235,6 @@ func Security() SecurityConfig {
 
 	securityConfig.BasicAuth.Username = username
 	securityConfig.BasicAuth.Password = password
-
-	securityConfig.JWT.AccessKey = accessKey
-	securityConfig.JWT.AccessKeyTTL = accessKeyTTL
-	securityConfig.JWT.RefreshKey = refreshKey
-	securityConfig.JWT.RefreshKeyTTL = refreshKeyTTL
-	securityConfig.JWT.Audience = os.Getenv("AUDIENCE")
-	securityConfig.JWT.Issuer = os.Getenv("ISSUER")
-	securityConfig.JWT.AccNbf = notBeforeAcc
-	securityConfig.JWT.RefNbf = notBeforeRef
-	securityConfig.JWT.Subject = os.Getenv("SUBJECT")
 
 	securityConfig.HashPass.Memory = hashPassMemory
 	securityConfig.HashPass.Iterations = hashPassIterations
@@ -295,4 +279,49 @@ func View() ViewConfig {
 	viewConfig.Dir = os.Getenv("TEMPLATE_DIR")
 
 	return viewConfig
+}
+
+// readEnvJWT - read parameters from env
+func readEnvJWT() middleware.JWTParameters {
+	env()
+
+	params := middleware.JWTParameters{}
+	var err error
+
+	params.AccessKey = []byte(os.Getenv("ACCESS_KEY"))
+	params.AccessKeyTTL, err = strconv.Atoi(os.Getenv("ACCESS_KEY_TTL"))
+	if err != nil {
+		log.WithError(err).Panic("panic code: 111")
+	}
+	params.RefreshKey = []byte(os.Getenv("REFRESH_KEY"))
+	params.RefreshKeyTTL, err = strconv.Atoi(os.Getenv("REFRESH_KEY_TTL"))
+	if err != nil {
+		log.WithError(err).Panic("panic code: 112")
+	}
+	params.Audience = os.Getenv("AUDIENCE")
+	params.Issuer = os.Getenv("ISSUER")
+	params.AccNbf, err = strconv.Atoi(os.Getenv("NOT_BEFORE_ACC"))
+	if err != nil {
+		log.WithError(err).Panic("panic code: 113")
+	}
+	params.RefNbf, err = strconv.Atoi(os.Getenv("NOT_BEFORE_REF"))
+	if err != nil {
+		log.WithError(err).Panic("panic code: 114")
+	}
+	params.Subject = os.Getenv("SUBJECT")
+
+	return params
+}
+
+// setParamsJWT - set parameters for JWT
+func setParamsJWT(c middleware.JWTParameters) {
+	middleware.JWTParams.AccessKey = c.AccessKey
+	middleware.JWTParams.AccessKeyTTL = c.AccessKeyTTL
+	middleware.JWTParams.RefreshKey = c.RefreshKey
+	middleware.JWTParams.RefreshKeyTTL = c.RefreshKeyTTL
+	middleware.JWTParams.Audience = c.Audience
+	middleware.JWTParams.Issuer = c.Issuer
+	middleware.JWTParams.AccNbf = c.AccNbf
+	middleware.JWTParams.RefNbf = c.RefNbf
+	middleware.JWTParams.Subject = c.Subject
 }

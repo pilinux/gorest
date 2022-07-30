@@ -66,7 +66,7 @@ func CreateUser(c *gin.Context) {
 	user := model.User{}
 	userFinal := model.User{}
 
-	userIDAuth := middleware.AuthID
+	userIDAuth := middleware.CustomClaims.AuthID
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&userFinal).Error; err == nil {
@@ -102,7 +102,7 @@ func UpdateUser(c *gin.Context) {
 	user := model.User{}
 	userFinal := model.User{}
 
-	userIDAuth := middleware.AuthID
+	userIDAuth := middleware.CustomClaims.AuthID
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&userFinal).Error; err != nil {
@@ -140,7 +140,7 @@ func AddHobby(c *gin.Context) {
 	hobbyNew := model.Hobby{}
 	hobbyFound := 0 // default (do not create new hobby) = 0, create new hobby = 1
 
-	userIDAuth := middleware.AuthID
+	userIDAuth := middleware.CustomClaims.AuthID
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&user).Error; err != nil {
