@@ -53,23 +53,35 @@ func Database() DatabaseConfig {
 
 	// RDBMS
 	activateRDBMS := os.Getenv("ACTIVATE_RDBMS")
-	if activateRDBMS == "yes" {
+	if activateRDBMS == Activated {
 		databaseConfig.RDBMS = DatabaseRDBMS().RDBMS
+
+		// set params globally
+		setParamsDatabaseRDBMS(databaseConfig.RDBMS)
 	}
+	DBConfigAll.RDBMS.Activate = activateRDBMS
 	databaseConfig.RDBMS.Activate = activateRDBMS
 
 	// REDIS
 	activateRedis := os.Getenv("ACTIVATE_REDIS")
-	if activateRedis == "yes" {
+	if activateRedis == Activated {
 		databaseConfig.REDIS = DatabaseRedis().REDIS
+
+		// set params globally
+		setParamsDatabaseRedis(databaseConfig.REDIS)
 	}
+	DBConfigAll.REDIS.Activate = activateRedis
 	databaseConfig.REDIS.Activate = activateRedis
 
 	// MongoDB
 	activateMongo := os.Getenv("ACTIVATE_MONGO")
-	if activateMongo == "yes" {
+	if activateMongo == Activated {
 		databaseConfig.MongoDB = DatabaseMongo().MongoDB
+
+		// set params globally
+		setParamsDatabaseMongo(databaseConfig.MongoDB)
 	}
+	DBConfigAll.MongoDB.Activate = activateMongo
 	databaseConfig.MongoDB.Activate = activateMongo
 
 	return databaseConfig
@@ -279,6 +291,44 @@ func View() ViewConfig {
 	viewConfig.Dir = os.Getenv("TEMPLATE_DIR")
 
 	return viewConfig
+}
+
+// setParamsDatabaseRDBMS - set parameters for RDBMS
+func setParamsDatabaseRDBMS(c RDBMS) {
+	DBConfigAll.RDBMS.Env.Driver = c.Env.Driver
+	DBConfigAll.RDBMS.Env.Host = c.Env.Host
+	DBConfigAll.RDBMS.Env.Port = c.Env.Port
+	DBConfigAll.RDBMS.Env.TimeZone = c.Env.TimeZone
+
+	DBConfigAll.RDBMS.Access.DbName = c.Access.DbName
+	DBConfigAll.RDBMS.Access.User = c.Access.User
+	DBConfigAll.RDBMS.Access.Pass = c.Access.Pass
+
+	DBConfigAll.RDBMS.Ssl.Sslmode = c.Ssl.Sslmode
+
+	DBConfigAll.RDBMS.Conn.MaxIdleConns = c.Conn.MaxIdleConns
+	DBConfigAll.RDBMS.Conn.MaxOpenConns = c.Conn.MaxOpenConns
+	DBConfigAll.RDBMS.Conn.ConnMaxLifetime = c.Conn.ConnMaxLifetime
+
+	DBConfigAll.RDBMS.Log.LogLevel = c.Log.LogLevel
+}
+
+// setParamsDatabaseRedis - set parameters for Redis
+func setParamsDatabaseRedis(c REDIS) {
+	DBConfigAll.REDIS.Env.Host = c.Env.Host
+	DBConfigAll.REDIS.Env.Port = c.Env.Port
+
+	DBConfigAll.REDIS.Conn.PoolSize = c.Conn.PoolSize
+	DBConfigAll.REDIS.Conn.ConnTTL = c.Conn.ConnTTL
+}
+
+// setParamsDatabaseMongo - set parameters for MongoDB
+func setParamsDatabaseMongo(c MongoDB) {
+	DBConfigAll.MongoDB.Env.AppName = c.Env.AppName
+	DBConfigAll.MongoDB.Env.URI = c.Env.URI
+	DBConfigAll.MongoDB.Env.PoolSize = c.Env.PoolSize
+	DBConfigAll.MongoDB.Env.PoolMon = c.Env.PoolMon
+	DBConfigAll.MongoDB.Env.ConnTTL = c.Env.ConnTTL
 }
 
 // readEnvJWT - read parameters from env

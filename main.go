@@ -16,7 +16,7 @@ import (
 var configure = config.Config()
 
 func main() {
-	if configure.Database.RDBMS.Activate == "yes" {
+	if configure.Database.RDBMS.Activate == config.Activated {
 		// Initialize RDBMS client
 		if err := database.InitDB().Error; err != nil {
 			fmt.Println(err)
@@ -24,7 +24,7 @@ func main() {
 		}
 	}
 
-	if configure.Database.REDIS.Activate == "yes" {
+	if configure.Database.REDIS.Activate == config.Activated {
 		// Initialize REDIS client
 		if _, err := database.InitRedis(); err != nil {
 			fmt.Println(err)
@@ -32,7 +32,7 @@ func main() {
 		}
 	}
 
-	if configure.Database.MongoDB.Activate == "yes" {
+	if configure.Database.MongoDB.Activate == config.Activated {
 		// Initialize MONGO client
 		if _, err := database.InitMongo(); err != nil {
 			fmt.Println(err)
@@ -123,7 +123,6 @@ func SetupRouter() (*gin.Engine, error) {
 		trustedPlatform = gin.PlatformGoogleAppEngine
 	}
 	router.TrustedPlatform = trustedPlatform
-	fmt.Println(trustedPlatform)
 
 	// CORS
 	router.Use(middleware.CORS(

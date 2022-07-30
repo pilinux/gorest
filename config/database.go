@@ -4,6 +4,9 @@ import (
 	"time"
 )
 
+// DBConfigAll - exported variables
+var DBConfigAll DatabaseConfig
+
 // DatabaseConfig - all database variables
 type DatabaseConfig struct {
 	// relational database

@@ -54,7 +54,7 @@ var MongoClient *qmgo.Client
 func InitDB() *gorm.DB {
 	var db = DB
 
-	configureDB := config.Database().RDBMS
+	configureDB := config.DBConfigAll.RDBMS
 
 	driver := configureDB.Env.Driver
 	username := configureDB.Access.User
@@ -145,9 +145,9 @@ func GetDB() *gorm.DB {
 
 // InitRedis - function to initialize redis client
 func InitRedis() (radix.Client, error) {
-	configureRedis := config.Database().REDIS
-	RedisConnTTL = configureRedis.Conn.ConnTTL
+	configureRedis := config.DBConfigAll.REDIS
 
+	RedisConnTTL = configureRedis.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(RedisConnTTL)*time.Second)
 	defer cancel()
 
@@ -177,7 +177,7 @@ func GetRedis() radix.Client {
 
 // InitMongo - function to initialize mongo client
 func InitMongo() (*qmgo.Client, error) {
-	configureMongo := config.Database().MongoDB
+	configureMongo := config.DBConfigAll.MongoDB
 
 	// Connect to the database or cluster
 	URI := configureMongo.Env.URI
