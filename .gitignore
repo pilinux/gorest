@@ -3,3 +3,5 @@
 *.log
 .env
 vendor/
+crosscompile.sh
+gorest

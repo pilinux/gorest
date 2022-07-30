@@ -99,21 +99,44 @@ func SetupRouter() (*gin.Engine, error) {
 	// gin.Default() = gin.New() + gin.Logger() + gin.Recovery()
 	router := gin.Default()
 
-	// Which proxy to trust
-	if configure.Security.TrustedIP == "nil" {
-		err := router.SetTrustedProxies(nil)
-		if err != nil {
-			return router, err
-		}
-	} else {
-		if configure.Security.TrustedIP != "" {
-			err := router.SetTrustedProxies([]string{configure.Security.TrustedIP})
-			if err != nil {
-				return router, err
-			}
-		}
+	// Which proxy to trust:
+	// disable this feature as it still fails
+	// to provide the real client IP in
+	// different scenarios
+	err := router.SetTrustedProxies(nil)
+	if err != nil {
+		return router, err
 	}
 
+	// when using Cloudflare's CDN:
+	// router.TrustedPlatform = gin.PlatformCloudflare
+	//
+	// when running on Google App Engine:
+	// router.TrustedPlatform = gin.PlatformGoogleAppEngine
+	//
+	/*
+		when using apache or nginx reverse proxy
+		without Cloudflare's CDN or Google App Engine
+
+		config for nginx:
+		=================
+		proxy_set_header X-Real-IP       $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+	*/
+	// router.TrustedPlatform = "X-Real-Ip"
+	//
+	// set TrustedPlatform to get the real client IP
+	trustedPlatform := configure.Security.TrustedPlatform
+	if trustedPlatform == "cf" {
+		trustedPlatform = gin.PlatformCloudflare
+	}
+	if trustedPlatform == "google" {
+		trustedPlatform = gin.PlatformGoogleAppEngine
+	}
+	router.TrustedPlatform = trustedPlatform
+	fmt.Println(trustedPlatform)
+
+	// CORS
 	router.Use(middleware.CORS(
 		configure.Security.CORS.Origin,
 		configure.Security.CORS.Credentials,
@@ -121,7 +144,11 @@ func SetupRouter() (*gin.Engine, error) {
 		configure.Security.CORS.Methods,
 		configure.Security.CORS.MaxAge,
 	))
+
+	// Sentry.io
 	router.Use(middleware.SentryCapture(configure.Logger.SentryDsn))
+
+	// WAF
 	router.Use(middleware.Firewall(
 		configure.Security.Firewall.ListType,
 		configure.Security.Firewall.IP,

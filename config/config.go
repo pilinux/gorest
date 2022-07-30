@@ -267,7 +267,7 @@ func Security() SecurityConfig {
 	securityConfig.CORS.Methods = os.Getenv("CORS_METHODS")
 	securityConfig.CORS.MaxAge = os.Getenv("CORS_MAXAGE")
 
-	securityConfig.TrustedIP = os.Getenv("TRUSTED_IP")
+	securityConfig.TrustedPlatform = os.Getenv("TRUSTED_PLATFORM")
 
 	return securityConfig
 }

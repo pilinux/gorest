@@ -34,5 +34,5 @@ type SecurityConfig struct {
 		Methods     string
 		MaxAge      string
 	}
-	TrustedIP string
+	TrustedPlatform string
 }
