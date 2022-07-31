@@ -125,31 +125,39 @@ func SetupRouter() (*gin.Engine, error) {
 	router.TrustedPlatform = trustedPlatform
 
 	// CORS
-	router.Use(middleware.CORS(
-		configure.Security.CORS.Origin,
-		configure.Security.CORS.Credentials,
-		configure.Security.CORS.Headers,
-		configure.Security.CORS.Methods,
-		configure.Security.CORS.MaxAge,
-	))
+	if configure.Security.MustCORS == config.Activated {
+		router.Use(middleware.CORS(
+			configure.Security.CORS.Origin,
+			configure.Security.CORS.Credentials,
+			configure.Security.CORS.Headers,
+			configure.Security.CORS.Methods,
+			configure.Security.CORS.MaxAge,
+		))
+	}
 
 	// Sentry.io
-	router.Use(middleware.SentryCapture(configure.Logger.SentryDsn))
+	if configure.Logger.Activate == config.Activated {
+		router.Use(middleware.SentryCapture(configure.Logger.SentryDsn))
+	}
 
 	// WAF
-	router.Use(middleware.Firewall(
-		configure.Security.Firewall.ListType,
-		configure.Security.Firewall.IP,
-	))
+	if configure.Security.MustFW == config.Activated {
+		router.Use(middleware.Firewall(
+			configure.Security.Firewall.ListType,
+			configure.Security.Firewall.IP,
+		))
+	}
 
 	// Render HTML
-	router.Use(middleware.Pongo2(configure.ViewConfig.Dir))
+	if configure.ViewConfig.Activate == config.Activated {
+		router.Use(middleware.Pongo2(configure.ViewConfig.Directory))
+	}
 
 	// API:v1.0
 	v1 := router.Group("/api/v1/")
 	{
 		// RDBMS
-		if configure.Database.RDBMS.Activate == "yes" {
+		if configure.Database.RDBMS.Activate == config.Activated {
 			// Register - no JWT required
 			v1.POST("register", controller.CreateUserAuth)
 
@@ -185,7 +193,7 @@ func SetupRouter() (*gin.Engine, error) {
 		}
 
 		// REDIS Playground
-		if configure.Database.REDIS.Activate == "yes" {
+		if configure.Database.REDIS.Activate == config.Activated {
 			rPlayground := v1.Group("playground")
 			rPlayground.GET("/redis_read", controller.RedisRead)        // Non-protected
 			rPlayground.POST("/redis_create", controller.RedisCreate)   // Non-protected
@@ -197,7 +205,7 @@ func SetupRouter() (*gin.Engine, error) {
 		}
 
 		// Mongo Playground
-		if configure.Database.MongoDB.Activate == "yes" {
+		if configure.Database.MongoDB.Activate == config.Activated {
 			rPlaygroundMongo := v1.Group("playground-mongo")
 			rPlaygroundMongo.POST("/mongo_create_one", controller.MongoCreateOne)                 // Non-protected
 			rPlaygroundMongo.GET("/mongo_get_all", controller.MongoGetAll)                        // Non-protected
@@ -209,13 +217,16 @@ func SetupRouter() (*gin.Engine, error) {
 		}
 
 		// Basic Auth demo
-		user := configure.Security.BasicAuth.Username
-		pass := configure.Security.BasicAuth.Password
-		rBasicAuth := v1.Group("access_resources")
-		rBasicAuth.Use(gin.BasicAuth(gin.Accounts{
-			user: pass,
-		}))
-		rBasicAuth.GET("", controller.AccessResource) // Protected
+		if configure.Security.MustBasicAuth == config.Activated {
+			user := configure.Security.BasicAuth.Username
+			pass := configure.Security.BasicAuth.Password
+			rBasicAuth := v1.Group("access_resources")
+			rBasicAuth.Use(gin.BasicAuth(gin.Accounts{
+				user: pass,
+			}))
+			rBasicAuth.GET("", controller.AccessResource) // Protected
+		}
+
 	}
 
 	return router, nil

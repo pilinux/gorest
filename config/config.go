@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/pilinux/gorest/lib"
 	"github.com/pilinux/gorest/lib/middleware"
 	log "github.com/sirupsen/logrus"
 )
@@ -191,8 +192,10 @@ func Logger() LoggerConfig {
 	// Load environment variables
 	env()
 
-	loggerSentryDsn := os.Getenv("SentryDSN")
-	loggerConfig.SentryDsn = loggerSentryDsn
+	loggerConfig.Activate = os.Getenv("ACTIVATE_SENTRY")
+	if loggerConfig.Activate == Activated {
+		loggerConfig.SentryDsn = os.Getenv("SentryDSN")
+	}
 
 	return loggerConfig
 }
@@ -204,65 +207,66 @@ func Security() SecurityConfig {
 	// Load environment variables
 	env()
 
-	username := os.Getenv("USERNAME")
-	password := os.Getenv("PASSWORD")
+	// Basic auth
+	SecurityConfigAll.MustBasicAuth = os.Getenv("ACTIVATE_BASIC_AUTH")
+	if SecurityConfigAll.MustBasicAuth == Activated {
+		username := os.Getenv("USERNAME")
+		password := os.Getenv("PASSWORD")
+
+		SecurityConfigAll.BasicAuth.Username = username
+		SecurityConfigAll.BasicAuth.Password = password
+
+		securityConfig.BasicAuth.Username = username
+		securityConfig.BasicAuth.Password = password
+	}
+	securityConfig.MustBasicAuth = SecurityConfigAll.MustBasicAuth
 
 	// JWT
 	SecurityConfigAll.MustJWT = os.Getenv("ACTIVATE_JWT")
 	if SecurityConfigAll.MustJWT == Activated {
-		securityConfig.JWT = readEnvJWT()
+		securityConfig.JWT = getParamsJWT()
 
 		// set params globally
 		setParamsJWT(securityConfig.JWT)
 	}
+	securityConfig.MustJWT = SecurityConfigAll.MustJWT
 
-	hashPassMemory64, err := strconv.ParseUint((os.Getenv("HASHPASSMEMORY")), 10, 32)
-	if err != nil {
-		log.WithError(err).Panic("panic code: 121")
+	// Hashing passwords
+	SecurityConfigAll.MustHash = os.Getenv("ACTIVATE_HASHING")
+	if SecurityConfigAll.MustHash == Activated {
+		securityConfig.HashPass = getParamsHash()
+
+		// set params globally
+		setParamsHash(securityConfig.HashPass)
 	}
-	hashPassIterations64, err := strconv.ParseUint((os.Getenv("HASHPASSITERATIONS")), 10, 32)
-	if err != nil {
-		log.WithError(err).Panic("panic code: 122")
+	securityConfig.MustHash = SecurityConfigAll.MustHash
+
+	// App firewall
+	SecurityConfigAll.MustFW = os.Getenv("ACTIVATE_FIREWALL")
+	if SecurityConfigAll.MustFW == Activated {
+		listType := os.Getenv("LISTTYPE")
+		ip := os.Getenv("IP")
+
+		SecurityConfigAll.Firewall.ListType = listType
+		SecurityConfigAll.Firewall.IP = ip
+
+		securityConfig.Firewall.ListType = listType
+		securityConfig.Firewall.IP = ip
 	}
-	hashPassParallelism64, err := strconv.ParseUint((os.Getenv("HASHPASSPARALLELISM")), 10, 8)
-	if err != nil {
-		log.WithError(err).Panic("panic code: 123")
+	securityConfig.MustFW = SecurityConfigAll.MustFW
+
+	// CORS
+	SecurityConfigAll.MustCORS = os.Getenv("ACTIVATE_CORS")
+	if SecurityConfigAll.MustCORS == Activated {
+		securityConfig.CORS.Origin = os.Getenv("CORS_ORIGIN")
+		securityConfig.CORS.Credentials = os.Getenv("CORS_CREDENTIALS")
+		securityConfig.CORS.Headers = os.Getenv("CORS_HEADERS")
+		securityConfig.CORS.Methods = os.Getenv("CORS_METHODS")
+		securityConfig.CORS.MaxAge = os.Getenv("CORS_MAXAGE")
 	}
-	hashPassSaltLength64, err := strconv.ParseUint((os.Getenv("HASHPASSSALTLENGTH")), 10, 32)
-	if err != nil {
-		log.WithError(err).Panic("panic code: 124")
-	}
-	hashPassKeyLength64, err := strconv.ParseUint((os.Getenv("HASHPASSKEYLENGTH")), 10, 32)
-	if err != nil {
-		log.WithError(err).Panic("panic code: 125")
-	}
-	hashPassMemory := uint32(hashPassMemory64)
-	hashPassIterations := uint32(hashPassIterations64)
-	hashPassParallelism := uint8(hashPassParallelism64)
-	hashPassSaltLength := uint32(hashPassSaltLength64)
-	hashPassKeyLength := uint32(hashPassKeyLength64)
+	securityConfig.MustCORS = SecurityConfigAll.MustCORS
 
-	listType := os.Getenv("LISTTYPE")
-	ip := os.Getenv("IP")
-
-	securityConfig.BasicAuth.Username = username
-	securityConfig.BasicAuth.Password = password
-
-	securityConfig.HashPass.Memory = hashPassMemory
-	securityConfig.HashPass.Iterations = hashPassIterations
-	securityConfig.HashPass.Parallelism = hashPassParallelism
-	securityConfig.HashPass.SaltLength = hashPassSaltLength
-	securityConfig.HashPass.KeyLength = hashPassKeyLength
-
-	securityConfig.Firewall.ListType = listType
-	securityConfig.Firewall.IP = ip
-
-	securityConfig.CORS.Origin = os.Getenv("CORS_ORIGIN")
-	securityConfig.CORS.Credentials = os.Getenv("CORS_CREDENTIALS")
-	securityConfig.CORS.Headers = os.Getenv("CORS_HEADERS")
-	securityConfig.CORS.Methods = os.Getenv("CORS_METHODS")
-	securityConfig.CORS.MaxAge = os.Getenv("CORS_MAXAGE")
-
+	// Important for getting real client IP
 	securityConfig.TrustedPlatform = os.Getenv("TRUSTED_PLATFORM")
 
 	return securityConfig
@@ -288,7 +292,10 @@ func View() ViewConfig {
 	// Load environment variables
 	env()
 
-	viewConfig.Dir = os.Getenv("TEMPLATE_DIR")
+	viewConfig.Activate = os.Getenv("ACTIVATE_VIEW")
+	if viewConfig.Activate == Activated {
+		viewConfig.Directory = os.Getenv("TEMPLATE_DIR")
+	}
 
 	return viewConfig
 }
@@ -331,8 +338,8 @@ func setParamsDatabaseMongo(c MongoDB) {
 	DBConfigAll.MongoDB.Env.ConnTTL = c.Env.ConnTTL
 }
 
-// readEnvJWT - read parameters from env
-func readEnvJWT() middleware.JWTParameters {
+// getParamsJWT - read parameters from env
+func getParamsJWT() middleware.JWTParameters {
 	env()
 
 	params := middleware.JWTParameters{}
@@ -374,4 +381,50 @@ func setParamsJWT(c middleware.JWTParameters) {
 	middleware.JWTParams.AccNbf = c.AccNbf
 	middleware.JWTParams.RefNbf = c.RefNbf
 	middleware.JWTParams.Subject = c.Subject
+}
+
+// getParamsHash - read parameters from env
+func getParamsHash() lib.HashPassConfig {
+	env()
+
+	params := lib.HashPassConfig{}
+	var err error
+
+	hashPassMemory64, err := strconv.ParseUint((os.Getenv("HASHPASSMEMORY")), 10, 32)
+	if err != nil {
+		log.WithError(err).Panic("panic code: 121")
+	}
+	hashPassIterations64, err := strconv.ParseUint((os.Getenv("HASHPASSITERATIONS")), 10, 32)
+	if err != nil {
+		log.WithError(err).Panic("panic code: 122")
+	}
+	hashPassParallelism64, err := strconv.ParseUint((os.Getenv("HASHPASSPARALLELISM")), 10, 8)
+	if err != nil {
+		log.WithError(err).Panic("panic code: 123")
+	}
+	hashPassSaltLength64, err := strconv.ParseUint((os.Getenv("HASHPASSSALTLENGTH")), 10, 32)
+	if err != nil {
+		log.WithError(err).Panic("panic code: 124")
+	}
+	hashPassKeyLength64, err := strconv.ParseUint((os.Getenv("HASHPASSKEYLENGTH")), 10, 32)
+	if err != nil {
+		log.WithError(err).Panic("panic code: 125")
+	}
+
+	params.Memory = uint32(hashPassMemory64)
+	params.Iterations = uint32(hashPassIterations64)
+	params.Parallelism = uint8(hashPassParallelism64)
+	params.SaltLength = uint32(hashPassSaltLength64)
+	params.KeyLength = uint32(hashPassKeyLength64)
+
+	return params
+}
+
+// setParamsHash - set parameters for hashing
+func setParamsHash(c lib.HashPassConfig) {
+	SecurityConfigAll.HashPass.Memory = c.Memory
+	SecurityConfigAll.HashPass.Iterations = c.Iterations
+	SecurityConfigAll.HashPass.Parallelism = c.Parallelism
+	SecurityConfigAll.HashPass.SaltLength = c.SaltLength
+	SecurityConfigAll.HashPass.KeyLength = c.KeyLength
 }

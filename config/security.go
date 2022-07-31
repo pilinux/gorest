@@ -10,7 +10,8 @@ var SecurityConfigAll SecurityConfig
 
 // SecurityConfig ...
 type SecurityConfig struct {
-	BasicAuth struct {
+	MustBasicAuth string
+	BasicAuth     struct {
 		Username string
 		Password string
 	}
@@ -18,13 +19,17 @@ type SecurityConfig struct {
 	MustJWT string
 	JWT     middleware.JWTParameters
 
+	MustHash string
 	HashPass lib.HashPassConfig
+
+	MustFW   string
 	Firewall struct {
 		ListType string
 		IP       string
 	}
 
-	CORS struct {
+	MustCORS string
+	CORS     struct {
 		Origin      string
 		Credentials string
 		Headers     string
