@@ -6,7 +6,6 @@ import (
 
 	"github.com/pilinux/gorest/database"
 	"github.com/pilinux/gorest/database/model"
-	"github.com/pilinux/gorest/lib/middleware"
 	"github.com/pilinux/gorest/lib/renderer"
 
 	"github.com/gin-gonic/gin"
@@ -66,7 +65,7 @@ func CreateUser(c *gin.Context) {
 	user := model.User{}
 	userFinal := model.User{}
 
-	userIDAuth := middleware.CustomClaims.AuthID
+	userIDAuth := c.GetUint64("authID")
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&userFinal).Error; err == nil {
@@ -102,7 +101,7 @@ func UpdateUser(c *gin.Context) {
 	user := model.User{}
 	userFinal := model.User{}
 
-	userIDAuth := middleware.CustomClaims.AuthID
+	userIDAuth := c.GetUint64("authID")
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&userFinal).Error; err != nil {
@@ -140,7 +139,7 @@ func AddHobby(c *gin.Context) {
 	hobbyNew := model.Hobby{}
 	hobbyFound := 0 // default (do not create new hobby) = 0, create new hobby = 1
 
-	userIDAuth := middleware.CustomClaims.AuthID
+	userIDAuth := c.GetUint64("authID")
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&user).Error; err != nil {

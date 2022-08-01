@@ -6,7 +6,6 @@ import (
 
 	"github.com/pilinux/gorest/database"
 	"github.com/pilinux/gorest/database/model"
-	"github.com/pilinux/gorest/lib/middleware"
 	"github.com/pilinux/gorest/lib/renderer"
 
 	"github.com/gin-gonic/gin"
@@ -48,7 +47,7 @@ func CreatePost(c *gin.Context) {
 	post := model.Post{}
 	postFinal := model.Post{}
 
-	userIDAuth := middleware.CustomClaims.AuthID
+	userIDAuth := c.GetUint64("authID")
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&user).Error; err != nil {
@@ -86,7 +85,7 @@ func UpdatePost(c *gin.Context) {
 	postFinal := model.Post{}
 	id := c.Params.ByName("id")
 
-	userIDAuth := middleware.CustomClaims.AuthID
+	userIDAuth := c.GetUint64("authID")
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&user).Error; err != nil {
@@ -129,7 +128,7 @@ func DeletePost(c *gin.Context) {
 	post := model.Post{}
 	id := c.Params.ByName("id")
 
-	userIDAuth := middleware.CustomClaims.AuthID
+	userIDAuth := c.GetUint64("authID")
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&user).Error; err != nil {

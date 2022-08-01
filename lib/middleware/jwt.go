@@ -50,9 +50,6 @@ type JWTClaims struct {
 	jwt.StandardClaims
 }
 
-// CustomClaims - temporarily save user-related info
-var CustomClaims MyCustomClaims
-
 // JWTPayload ...
 type JWTPayload struct {
 	AccessJWT  string `json:"accessJWT,omitempty"`
@@ -83,15 +80,17 @@ func JWT() gin.HandlerFunc {
 		}
 
 		if claims, ok := token.Claims.(*JWTClaims); ok && token.Valid {
-			CustomClaims.AuthID = claims.AuthID
-			CustomClaims.Email = claims.Email
-			CustomClaims.Role = claims.Role
-			CustomClaims.Scope = claims.Scope
-			CustomClaims.TwoFA = claims.TwoFA
-			CustomClaims.SiteLan = claims.SiteLan
-			CustomClaims.Custom1 = claims.Custom1
-			CustomClaims.Custom2 = claims.Custom2
+			c.Set("authID", claims.AuthID)
+			c.Set("email", claims.Email)
+			c.Set("role", claims.Role)
+			c.Set("scope", claims.Scope)
+			c.Set("tfa", claims.TwoFA)
+			c.Set("siteLan", claims.SiteLan)
+			c.Set("custom1", claims.Custom1)
+			c.Set("custom2", claims.Custom2)
 		}
+
+		c.Next()
 	}
 }
 
@@ -111,15 +110,17 @@ func RefreshJWT() gin.HandlerFunc {
 		}
 
 		if claims, ok := token.Claims.(*JWTClaims); ok && token.Valid {
-			CustomClaims.AuthID = claims.AuthID
-			CustomClaims.Email = claims.Email
-			CustomClaims.Role = claims.Role
-			CustomClaims.Scope = claims.Scope
-			CustomClaims.TwoFA = claims.TwoFA
-			CustomClaims.SiteLan = claims.SiteLan
-			CustomClaims.Custom1 = claims.Custom1
-			CustomClaims.Custom2 = claims.Custom2
+			c.Set("authID", claims.AuthID)
+			c.Set("email", claims.Email)
+			c.Set("role", claims.Role)
+			c.Set("scope", claims.Scope)
+			c.Set("tfa", claims.TwoFA)
+			c.Set("siteLan", claims.SiteLan)
+			c.Set("custom1", claims.Custom1)
+			c.Set("custom2", claims.Custom2)
 		}
+
+		c.Next()
 	}
 }
 

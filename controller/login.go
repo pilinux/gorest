@@ -81,30 +81,28 @@ func Login(c *gin.Context) {
 
 // Refresh ...
 func Refresh(c *gin.Context) {
-	authID := middleware.CustomClaims.AuthID
-	email := middleware.CustomClaims.Email
-
+	// get claims
+	claims := middleware.MyCustomClaims{
+		AuthID:  c.GetUint64("authID"),
+		Email:   c.GetString("email"),
+		Role:    c.GetString("role"),
+		Scope:   c.GetString("scope"),
+		TwoFA:   c.GetString("tfa"),
+		SiteLan: c.GetString("siteLan"),
+		Custom1: c.GetString("custom1"),
+		Custom2: c.GetString("custom2"),
+	}
 	// check validity
-	if authID == 0 {
+	if claims.AuthID == 0 {
 		renderer.Render(c, gin.H{"msg": "access denied"}, http.StatusUnauthorized)
 		return
 	}
-	if email == "" {
+	if claims.Email == "" {
 		renderer.Render(c, gin.H{"msg": "access denied"}, http.StatusUnauthorized)
 		return
 	}
 
 	// issue new tokens
-	claims := middleware.MyCustomClaims{
-		AuthID:  authID,
-		Email:   email,
-		Role:    "",
-		Scope:   "",
-		TwoFA:   "",
-		SiteLan: "en",
-		Custom1: "",
-		Custom2: "",
-	}
 	accessJWT, _, err := middleware.GetJWT(claims, "access")
 	if err != nil {
 		log.WithError(err).Error("error code: 1021")

@@ -39,5 +39,7 @@ func Firewall(listType string, ipList string) gin.HandlerFunc {
 				return
 			}
 		}
+
+		c.Next()
 	}
 }
