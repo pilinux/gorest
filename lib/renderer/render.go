@@ -31,5 +31,5 @@ func Render(c *gin.Context, data interface{}, statusCode int, htmlTpl ...string)
 	}
 
 	// Respond with JSON
-	c.JSON(statusCode, data)
+	c.SecureJSON(statusCode, data)
 }
