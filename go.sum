@@ -265,6 +265,16 @@ github.com/russross/blackfriday v1.5.2/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR
 github.com/ryanuber/columnize v2.1.0+incompatible/go.mod h1:sm1tb6uqfes/u+d4ooFouqFdy9/2g9QGwK3SQygK0Ts=
 github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
 github.com/schollz/closestmatch v2.1.0+incompatible/go.mod h1:RtP1ddjLong6gTkbtmuhtR2uUrrJOpYzYRvbcPAid+g=
+github.com/sec51/convert v1.0.2 h1:NoKWIRARjM3rQglNypMpcXSLLqPsN/uTTzaGeqDKbeg=
+github.com/sec51/convert v1.0.2/go.mod h1:5qL/cT/oiOIvWXy2SccQ7LnacYftqqy9wdyFkTc1k2w=
+github.com/sec51/cryptoengine v0.0.0-20180911112225-2306d105a49e h1:HsNjVWYeVdO/zoSfNBwJOs1PuSQCSCkwqW6Lp1TtZGs=
+github.com/sec51/cryptoengine v0.0.0-20180911112225-2306d105a49e/go.mod h1:g7izN9sUffTPdvcrt39y/ZephG5oJ9XizhJxxBOYDL0=
+github.com/sec51/gf256 v0.0.0-20160126143050-2454accbeb9e h1:wKXba8dfsFjbxkMpzZBKt8gkJAMSm1fIf1OSWQFQrVA=
+github.com/sec51/gf256 v0.0.0-20160126143050-2454accbeb9e/go.mod h1:hCjOqSOB9PBw5MdJ+0uSLCBV7FbLy0xwOR+c193HkcE=
+github.com/sec51/qrcode v0.0.0-20160126144534-b7779abbcaf1 h1:CI9zS8HvMiibvXM/F3IthY797GW77fNYgioJl/8Xzzk=
+github.com/sec51/qrcode v0.0.0-20160126144534-b7779abbcaf1/go.mod h1:uPm44Rj3uXSSOvmKmoeRuAUNUgwH2JHW5KIzqFFS/j4=
+github.com/sec51/twofactor v1.0.0 h1:1BTbzPhyMyB0YvcWxgNxEkI7WDNsBLvR+z699YWGMC8=
+github.com/sec51/twofactor v1.0.0/go.mod h1:CjtKwpvQSs9SYzLUsRH7gML+TgKeIofT8uxoy7RTLQI=
 github.com/sergi/go-diff v1.0.0/go.mod h1:0CfEIISq7TuYL3j771MWULgwwjU+GofnZX9QAmXWZgo=
 github.com/shopspring/decimal v0.0.0-20180709203117-cd690d0c9e24/go.mod h1:M+9NzErvs504Cn4c5DxATwIqPbtswREoFCre64PpcG4=
 github.com/shopspring/decimal v1.2.0 h1:abSATXmQEYyShuxI4/vyW3tV1MrKAJzCZ/0zLUXYbsQ=

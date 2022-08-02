@@ -14,6 +14,7 @@ require (
 	github.com/onrik/logrus v0.9.0
 	github.com/pilinux/structs v1.1.1
 	github.com/qiniu/qmgo v1.1.1
+	github.com/sec51/twofactor v1.0.0
 	github.com/sirupsen/logrus v1.9.0
 	go.mongodb.org/mongo-driver v1.10.0
 	gorm.io/driver/mysql v1.3.5
@@ -54,6 +55,10 @@ require (
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
 	github.com/pelletier/go-toml/v2 v2.0.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/sec51/convert v1.0.2 // indirect
+	github.com/sec51/cryptoengine v0.0.0-20180911112225-2306d105a49e // indirect
+	github.com/sec51/gf256 v0.0.0-20160126143050-2454accbeb9e // indirect
+	github.com/sec51/qrcode v0.0.0-20160126144534-b7779abbcaf1 // indirect
 	github.com/tilinna/clock v1.0.2 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
