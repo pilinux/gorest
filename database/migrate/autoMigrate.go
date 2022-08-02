@@ -14,6 +14,7 @@ import (
 
 // Load all the models
 type auth model.Auth
+type twoFA model.TwoFA
 type user model.User
 type post model.Post
 type hobby model.Hobby
@@ -61,7 +62,14 @@ func main() {
 
 func dropAllTables() {
 	// Careful! It will drop all the tables!
-	if err := db.Migrator().DropTable(&userHobby{}, &hobby{}, &post{}, &user{}, &auth{}); err != nil {
+	if err := db.Migrator().DropTable(
+		&userHobby{},
+		&hobby{},
+		&post{},
+		&user{},
+		&twoFA{},
+		&auth{},
+	); err != nil {
 		errorState = 1
 		fmt.Println(err)
 	} else {
@@ -75,8 +83,13 @@ func migrateTables() {
 
 	if driver == "mysql" {
 		// db.Set() --> add table suffix during auto migration
-		if err := db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(&auth{},
-			&user{}, &post{}, &hobby{}); err != nil {
+		if err := db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(
+			&auth{},
+			&twoFA{},
+			&user{},
+			&post{},
+			&hobby{},
+		); err != nil {
 			errorState = 1
 			fmt.Println(err)
 		} else {

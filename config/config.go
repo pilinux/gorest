@@ -1,6 +1,7 @@
 package config
 
 import (
+	"crypto"
 	"os"
 	"strconv"
 	"time"
@@ -240,6 +241,46 @@ func Security() SecurityConfig {
 		setParamsHash(securityConfig.HashPass)
 	}
 	securityConfig.MustHash = SecurityConfigAll.MustHash
+
+	// Two-factor authentication
+	SecurityConfigAll.Must2FA = os.Getenv("ACTIVATE_2FA")
+	if SecurityConfigAll.Must2FA == Activated {
+		SecurityConfigAll.TwoFA.Issuer = os.Getenv("TWO_FA_ISSUER")
+
+		cryptoAlg := os.Getenv("TWO_FA_CRYPTO")
+		if cryptoAlg == "1" {
+			SecurityConfigAll.TwoFA.Crypto = crypto.SHA1
+		}
+		if cryptoAlg == "256" {
+			SecurityConfigAll.TwoFA.Crypto = crypto.SHA256
+		}
+		if cryptoAlg == "512" {
+			SecurityConfigAll.TwoFA.Crypto = crypto.SHA512
+		}
+
+		digits, err := strconv.Atoi(os.Getenv("TWO_FA_DIGITS"))
+		if err != nil {
+			log.WithError(err).Panic("panic code: 130")
+		}
+		SecurityConfigAll.TwoFA.Digits = digits
+
+		// define different statuses of individual user
+		SecurityConfigAll.TwoFA.Status.Verified = os.Getenv("TWO_FA_VERIFIED")
+		SecurityConfigAll.TwoFA.Status.On = os.Getenv("TWO_FA_ON")
+		SecurityConfigAll.TwoFA.Status.Off = os.Getenv("TWO_FA_OFF")
+
+		// for saving QR temporarily
+		SecurityConfigAll.TwoFA.PathQR = os.Getenv("TWO_FA_QR_PATH")
+
+		securityConfig.TwoFA.Issuer = SecurityConfigAll.TwoFA.Issuer
+		securityConfig.TwoFA.Crypto = SecurityConfigAll.TwoFA.Crypto
+		securityConfig.TwoFA.Digits = SecurityConfigAll.TwoFA.Digits
+		securityConfig.TwoFA.Status.Verified = SecurityConfigAll.TwoFA.Status.Verified
+		securityConfig.TwoFA.Status.On = SecurityConfigAll.TwoFA.Status.On
+		securityConfig.TwoFA.Status.Off = SecurityConfigAll.TwoFA.Status.Off
+		securityConfig.TwoFA.PathQR = SecurityConfigAll.TwoFA.PathQR
+	}
+	securityConfig.Must2FA = SecurityConfigAll.Must2FA
 
 	// App firewall
 	SecurityConfigAll.MustFW = os.Getenv("ACTIVATE_FIREWALL")
