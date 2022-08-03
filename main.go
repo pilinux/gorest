@@ -170,10 +170,12 @@ func SetupRouter() (*gin.Engine, error) {
 			rJWT.POST("", controller.Refresh)
 
 			// Double authentication
-			r2FA := v1.Group("2fa")
-			r2FA.Use(middleware.JWT())
-			r2FA.POST("setup", controller.Setup2FA)
-			r2FA.POST("activate", controller.Activate2FA)
+			if configure.Security.Must2FA == config.Activated {
+				r2FA := v1.Group("2fa")
+				r2FA.Use(middleware.JWT())
+				r2FA.POST("setup", controller.Setup2FA)
+				r2FA.POST("activate", controller.Activate2FA)
+			}
 
 			// User
 			rUsers := v1.Group("users")
