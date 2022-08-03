@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -40,7 +41,7 @@ func (v *Auth) UnmarshalJSON(b []byte) error {
 	}
 
 	v.AuthID = aux.AuthID
-	v.Email = aux.Email
+	v.Email = strings.TrimSpace(aux.Email)
 
 	config := lib.HashPassConfig{
 		Memory:      config.SecurityConfigAll.HashPass.Memory,
@@ -65,7 +66,7 @@ func (v Auth) MarshalJSON() ([]byte, error) {
 		Email  string `json:"Email"`
 	}{
 		AuthID: v.AuthID,
-		Email:  v.Email,
+		Email:  strings.TrimSpace(v.Email),
 	}
 
 	return json.Marshal(aux)

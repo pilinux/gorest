@@ -36,6 +36,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	payload.Email = strings.TrimSpace(payload.Email)
 	if !lib.ValidateEmail(payload.Email) {
 		renderer.Render(c, gin.H{"msg": "wrong email address"}, http.StatusBadRequest)
 		return
