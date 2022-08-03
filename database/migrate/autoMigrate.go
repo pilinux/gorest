@@ -108,11 +108,6 @@ func migrateTables() {
 
 func setPkFk() {
 	// Manually set foreign key for MySQL and PostgreSQL
-	if err := db.Migrator().CreateConstraint(&auth{}, "User"); err != nil {
-		errorState = 1
-		fmt.Println(err)
-	}
-
 	if err := db.Migrator().CreateConstraint(&user{}, "Posts"); err != nil {
 		errorState = 1
 		fmt.Println(err)

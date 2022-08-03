@@ -19,7 +19,6 @@ type Auth struct {
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 	Email     string         `json:"Email"`
 	Password  string         `json:"Password"`
-	User      User           `gorm:"foreignkey:IDAuth;references:AuthID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
 // UnmarshalJSON ...

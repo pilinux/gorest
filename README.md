@@ -19,7 +19,7 @@ under the [MIT license][13] and is free for any personal or commercial project.
 
 `1.MAJOR.MINOR.PATCH`
 
-`1`: can be used in production
+`1`: production-ready
 
 `MAJOR`: breaking changes
 
