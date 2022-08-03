@@ -173,6 +173,7 @@ func SetupRouter() (*gin.Engine, error) {
 			r2FA := v1.Group("2fa")
 			r2FA.Use(middleware.JWT())
 			r2FA.POST("setup", controller.Setup2FA)
+			r2FA.POST("activate", controller.Activate2FA)
 
 			// User
 			rUsers := v1.Group("users")

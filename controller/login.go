@@ -2,9 +2,11 @@ package controller
 
 import (
 	"crypto/sha256"
+	"encoding/base64"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/pilinux/gorest/config"
 	"github.com/pilinux/gorest/database"
@@ -16,6 +18,7 @@ import (
 
 	"github.com/alexedwards/argon2id"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -244,6 +247,162 @@ func Setup2FA(c *gin.Context) {
 
 	// serve the QR to the client
 	c.File(config.SecurityConfigAll.TwoFA.PathQR + img)
+}
+
+// Activate2FA - activate 2FA upon validation
+// possible for accounts without 2FA-ON
+func Activate2FA(c *gin.Context) {
+	// get claims
+	claims := getClaims(c)
+
+	// check user validity
+	ok := validateUserID(claims.AuthID, claims.Email)
+	if !ok {
+		renderer.Render(c, gin.H{"msg": "access denied"}, http.StatusUnauthorized)
+		return
+	}
+
+	if claims.TwoFA == config.SecurityConfigAll.TwoFA.Status.Verified || claims.TwoFA == config.SecurityConfigAll.TwoFA.Status.On {
+		renderer.Render(c, gin.H{"msg": "2-fa activated already"}, http.StatusBadRequest)
+		return
+	}
+
+	// start 2FA activation procedure
+	//
+	// step 1: check if client secret is available in memory
+	data2FA, ok := model.InMemorySecret2FA[claims.AuthID]
+	if !ok {
+		renderer.Render(c, gin.H{"msg": "request for a new 2-fa secret"}, http.StatusBadRequest)
+		return
+	}
+
+	// step 2: bind JSON
+	userInput := struct {
+		Input string `json:"OTP"`
+	}{}
+	if err := c.ShouldBindJSON(&userInput); err != nil {
+		renderer.Render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
+		return
+	}
+
+	// step 3: validate user-provided token
+	otpByte, err := lib.ValidateTOTP(
+		data2FA.Secret,
+		config.SecurityConfigAll.TwoFA.Issuer,
+		userInput.Input,
+	)
+	if err != nil {
+		// client provided invalid OTP
+		if len(otpByte) > 0 {
+			// save the new secret in memory for future validation procedure
+			data2FA.Secret = otpByte
+			model.InMemorySecret2FA[claims.AuthID] = data2FA
+
+			renderer.Render(c, gin.H{"msg": "validation failed"}, http.StatusForbidden)
+			return
+		}
+
+		// internal error
+		log.WithError(err).Error("error code: 1041")
+		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		return
+	}
+
+	// step 4: check DB
+	db := database.GetDB()
+	twoFA := model.TwoFA{}
+	available := false
+	if err := db.Where("id_auth = ?", claims.AuthID).First(&twoFA).Error; err == nil {
+		// record found in DB
+		available = true
+
+		// 2FA already activated!
+		if twoFA.Status == config.SecurityConfigAll.TwoFA.Status.On {
+			// delete QR image from disk
+			err := os.Remove(config.SecurityConfigAll.TwoFA.PathQR + data2FA.Image)
+			if err != nil {
+				log.WithError(err).Error("error code: 1042")
+			}
+
+			// delete secrets from memory
+			delMem2FA(claims.AuthID)
+
+			renderer.Render(c, gin.H{"msg": "2-fa activated already"}, http.StatusBadRequest)
+			return
+		}
+	}
+
+	// step 5: encrypt (AES-256) secret using hash of user's pass
+	keyMainInByte, err := lib.Encrypt(otpByte, data2FA.PassSHA)
+	if err != nil {
+		log.WithError(err).Error("error code: 1043")
+		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		return
+	}
+
+	// step 6: generate recovery key
+	keyBackup := uuid.NewString()
+	keyBackup = keyBackup[len(keyBackup)-6:]
+	keyBackupHash := sha256.Sum256([]byte(keyBackup))
+
+	// step 7: encrypt secret using hash of recovery key
+	keyMBackupInByte, err := lib.Encrypt(otpByte, keyBackupHash[:])
+	if err != nil {
+		log.WithError(err).Error("error code: 1044")
+		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		return
+	}
+
+	// step 8: encode in base64
+	twoFA.KeyMain = base64.StdEncoding.EncodeToString(keyMainInByte)
+	twoFA.KeyBackup = base64.StdEncoding.EncodeToString(keyMBackupInByte)
+
+	// step 9: save in DB
+	twoFA.Status = config.SecurityConfigAll.TwoFA.Status.On
+	twoFA.IDAuth = claims.AuthID
+
+	tx := db.Begin()
+	txOK := true
+
+	if available {
+		twoFA.UpdatedAt = time.Now().Local()
+
+		if err := tx.Save(&twoFA).Error; err != nil {
+			tx.Rollback()
+			txOK = false
+			log.WithError(err).Error("error code: 1045")
+		} else {
+			tx.Commit()
+		}
+	}
+
+	if !available {
+		if err := tx.Create(&twoFA).Error; err != nil {
+			tx.Rollback()
+			txOK = false
+			log.WithError(err).Error("error code: 1046")
+		} else {
+			tx.Commit()
+		}
+	}
+
+	if !txOK {
+		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		return
+	}
+
+	// step 10: delete secrets from memory
+	delMem2FA(claims.AuthID)
+
+	// send response to the client
+	response := struct {
+		msg         string
+		recoveryKey string
+	}{}
+	response.msg = "2FA activated"
+	response.recoveryKey = keyBackup
+
+	renderer.Render(c, response, http.StatusOK)
 }
 
 // getClaims - get JWT custom claims
