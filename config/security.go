@@ -50,7 +50,6 @@ type SecurityConfig struct {
 		Status Status2FA
 		PathQR string
 	}
-	InMemorySecret2FA map[uint64]Secret2FA
 }
 
 // Status2FA - user's 2FA statuses
@@ -58,11 +57,4 @@ type Status2FA struct {
 	Verified string
 	On       string
 	Off      string
-}
-
-// Secret2FA - save encoded secrets in RAM temporarily
-type Secret2FA struct {
-	Image   string
-	Secret  []byte
-	PassSHA []byte
 }

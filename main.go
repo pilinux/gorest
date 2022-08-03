@@ -169,6 +169,11 @@ func SetupRouter() (*gin.Engine, error) {
 			rJWT.Use(middleware.RefreshJWT())
 			rJWT.POST("", controller.Refresh)
 
+			// Double authentication
+			r2FA := v1.Group("2fa")
+			r2FA.Use(middleware.JWT())
+			r2FA.POST("setup", controller.Setup2FA)
+
 			// User
 			rUsers := v1.Group("users")
 			rUsers.GET("", controller.GetUsers)    // Non-protected

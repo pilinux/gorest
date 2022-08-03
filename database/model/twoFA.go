@@ -17,3 +17,14 @@ type TwoFA struct {
 	Status    string
 	IDAuth    uint64
 }
+
+// Secret2FA - save encoded secrets in RAM temporarily
+type Secret2FA struct {
+	PassSHA []byte
+	Secret  []byte
+	Image   string
+}
+
+// InMemorySecret2FA - keep secrets temporarily
+// in memory to setup 2FA
+var InMemorySecret2FA = make(map[uint64]Secret2FA)
