@@ -285,6 +285,7 @@ func Activate2FA(c *gin.Context) {
 		renderer.Render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
 		return
 	}
+	userInput.Input = lib.RemoveAllSpace(userInput.Input)
 
 	// step 3: validate user-provided token
 	otpByte, err := lib.ValidateTOTP(
@@ -342,12 +343,12 @@ func Activate2FA(c *gin.Context) {
 	}
 
 	// step 6: generate recovery key
-	keyBackup := uuid.NewString()
-	keyBackup = keyBackup[len(keyBackup)-6:]
-	keyBackupHash := sha256.Sum256([]byte(keyBackup))
+	keyRecovery := uuid.NewString()
+	keyRecovery = keyRecovery[len(keyRecovery)-6:]
+	keyRecoveryHash := sha256.Sum256([]byte(keyRecovery))
 
 	// step 7: encrypt secret using hash of recovery key
-	keyMBackupInByte, err := lib.Encrypt(otpByte, keyBackupHash[:])
+	keyMBackupInByte, err := lib.Encrypt(otpByte, keyRecoveryHash[:])
 	if err != nil {
 		log.WithError(err).Error("error code: 1044")
 		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
@@ -392,16 +393,22 @@ func Activate2FA(c *gin.Context) {
 		return
 	}
 
-	// step 10: delete secrets from memory
+	// step 10: delete QR image
+	err = os.Remove(config.SecurityConfigAll.TwoFA.PathQR + data2FA.Image)
+	if err != nil {
+		log.WithError(err).Error("error code: 1047")
+	}
+
+	// step 11: delete secrets from memory
 	delMem2FA(claims.AuthID)
 
 	// send response to the client
 	response := struct {
-		msg         string
-		recoveryKey string
+		Msg         string `json:"Msg"`
+		RecoveryKey string `json:"RecoveryKey"`
 	}{}
-	response.msg = "2FA activated"
-	response.recoveryKey = keyBackup
+	response.Msg = "2FA ON"
+	response.RecoveryKey = keyRecovery
 
 	renderer.Render(c, response, http.StatusOK)
 }
