@@ -268,6 +268,7 @@ func Security() SecurityConfig {
 		SecurityConfigAll.TwoFA.Status.Verified = os.Getenv("TWO_FA_VERIFIED")
 		SecurityConfigAll.TwoFA.Status.On = os.Getenv("TWO_FA_ON")
 		SecurityConfigAll.TwoFA.Status.Off = os.Getenv("TWO_FA_OFF")
+		SecurityConfigAll.TwoFA.Status.Invalid = os.Getenv("TWO_FA_INVALID")
 
 		// for saving QR temporarily
 		SecurityConfigAll.TwoFA.PathQR = os.Getenv("TWO_FA_QR_PATH")
@@ -278,6 +279,7 @@ func Security() SecurityConfig {
 		securityConfig.TwoFA.Status.Verified = SecurityConfigAll.TwoFA.Status.Verified
 		securityConfig.TwoFA.Status.On = SecurityConfigAll.TwoFA.Status.On
 		securityConfig.TwoFA.Status.Off = SecurityConfigAll.TwoFA.Status.Off
+		securityConfig.TwoFA.Status.Invalid = SecurityConfigAll.TwoFA.Status.Invalid
 		securityConfig.TwoFA.PathQR = SecurityConfigAll.TwoFA.PathQR
 	}
 	securityConfig.Must2FA = SecurityConfigAll.Must2FA

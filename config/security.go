@@ -57,4 +57,5 @@ type Status2FA struct {
 	Verified string
 	On       string
 	Off      string
+	Invalid  string
 }
