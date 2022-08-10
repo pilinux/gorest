@@ -80,6 +80,14 @@ func Login(c *gin.Context) {
 			// 2FA ON
 			if twoFA.Status == config.SecurityConfigAll.TwoFA.Status.On {
 				claims.TwoFA = twoFA.Status
+
+				// hash user's pass in sha256
+				hashPass := sha256.Sum256([]byte(payload.Password))
+
+				// save the hashed pass in memory for OTP validation step
+				data2FA := model.Secret2FA{}
+				data2FA.PassSHA = hashPass[:]
+				model.InMemorySecret2FA[claims.AuthID] = data2FA
 			}
 		}
 	}
@@ -233,14 +241,16 @@ func Setup2FA(c *gin.Context) {
 	// step 6: check if client secret is available in memory
 	data2FA, ok := model.InMemorySecret2FA[claims.AuthID]
 	if ok {
-		// delete old QR image
-		err := os.Remove(config.SecurityConfigAll.TwoFA.PathQR + data2FA.Image)
-		if err != nil {
-			log.WithError(err).Error("error code: 1035")
+		// delete old QR image if available
+		if lib.FileExist(config.SecurityConfigAll.TwoFA.PathQR + data2FA.Image) {
+			err := os.Remove(config.SecurityConfigAll.TwoFA.PathQR + data2FA.Image)
+			if err != nil {
+				log.WithError(err).Error("error code: 1035")
+			}
 		}
 	}
 
-	// step 7: save the secrets in RAM for validation
+	// step 7: save the secrets in memory for validation
 	data2FA.PassSHA = hashPass[:]
 	data2FA.Secret = otpByte
 	data2FA.Image = img
@@ -286,21 +296,25 @@ func Activate2FA(c *gin.Context) {
 		return
 	}
 	userInput.Input = lib.RemoveAllSpace(userInput.Input)
+	if len(userInput.Input) != config.SecurityConfigAll.TwoFA.Digits {
+		renderer.Render(c, gin.H{"msg": "wrong one-time password"}, http.StatusUnauthorized)
+		return
+	}
 
-	// step 3: validate user-provided token
-	otpByte, err := lib.ValidateTOTP(
+	// step 3: validate user-provided OTP
+	otpByte, status, err := validate2FA(
 		data2FA.Secret,
 		config.SecurityConfigAll.TwoFA.Issuer,
 		userInput.Input,
 	)
 	if err != nil {
 		// client provided invalid OTP
-		if len(otpByte) > 0 {
-			// save the new secret in memory for future validation procedure
+		if status == config.SecurityConfigAll.TwoFA.Status.Invalid {
+			// save the secret with failed attempt in memory for future validation procedure
 			data2FA.Secret = otpByte
 			model.InMemorySecret2FA[claims.AuthID] = data2FA
 
-			renderer.Render(c, gin.H{"msg": "validation failed"}, http.StatusForbidden)
+			renderer.Render(c, gin.H{"msg": "wrong OTP"}, http.StatusUnauthorized)
 			return
 		}
 
@@ -321,9 +335,11 @@ func Activate2FA(c *gin.Context) {
 		// 2FA already activated!
 		if twoFA.Status == config.SecurityConfigAll.TwoFA.Status.On {
 			// delete QR image from disk
-			err := os.Remove(config.SecurityConfigAll.TwoFA.PathQR + data2FA.Image)
-			if err != nil {
-				log.WithError(err).Error("error code: 1042")
+			if lib.FileExist(config.SecurityConfigAll.TwoFA.PathQR + data2FA.Image) {
+				err := os.Remove(config.SecurityConfigAll.TwoFA.PathQR + data2FA.Image)
+				if err != nil {
+					log.WithError(err).Error("error code: 1042")
+				}
 			}
 
 			// delete secrets from memory
@@ -394,20 +410,45 @@ func Activate2FA(c *gin.Context) {
 	}
 
 	// step 10: delete QR image
-	err = os.Remove(config.SecurityConfigAll.TwoFA.PathQR + data2FA.Image)
-	if err != nil {
-		log.WithError(err).Error("error code: 1047")
+	if lib.FileExist(config.SecurityConfigAll.TwoFA.PathQR + data2FA.Image) {
+		err = os.Remove(config.SecurityConfigAll.TwoFA.PathQR + data2FA.Image)
+		if err != nil {
+			log.WithError(err).Error("error code: 1047")
+		}
 	}
 
 	// step 11: delete secrets from memory
 	delMem2FA(claims.AuthID)
 
+	// step 12: issue new tokens
+	//
+	// set 2FA claim
+	claims.TwoFA = config.SecurityConfigAll.TwoFA.Status.Verified
+	//
+	accessJWT, _, err := middleware.GetJWT(claims, "access")
+	if err != nil {
+		log.WithError(err).Error("error code: 1048")
+		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		return
+	}
+	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
+	if err != nil {
+		log.WithError(err).Error("error code: 1049")
+		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		return
+	}
+
 	// send response to the client
 	response := struct {
-		Msg         string `json:"Msg"`
-		RecoveryKey string `json:"RecoveryKey"`
+		AccessJWT   string `json:"accessJWT"`
+		RefreshJWT  string `json:"refreshJWT"`
+		TwoAuth     string `json:"2fa"`
+		RecoveryKey string `json:"recoveryKey"`
 	}{}
-	response.Msg = "2FA ON"
+
+	response.AccessJWT = accessJWT
+	response.RefreshJWT = refreshJWT
+	response.TwoAuth = config.SecurityConfigAll.TwoFA.Status.On
 	response.RecoveryKey = keyRecovery
 
 	renderer.Render(c, response, http.StatusOK)
@@ -434,6 +475,24 @@ func getClaims(c *gin.Context) middleware.MyCustomClaims {
 func validateUserID(authID uint64, email string) bool {
 	email = strings.TrimSpace(email)
 	return authID != 0 && email != ""
+}
+
+// validate2FA validates user-provided OTP
+func validate2FA(encryptedMessage []byte, issuer string, userInput string) ([]byte, string, error) {
+	otpByte, err := lib.ValidateTOTP(encryptedMessage, issuer, userInput)
+	// client provided invalid OTP / internal error
+	if err != nil {
+		// client provided invalid OTP
+		if len(otpByte) > 0 {
+			return otpByte, config.SecurityConfigAll.TwoFA.Status.Invalid, err
+		}
+
+		// internal error
+		return []byte{}, "", err
+	}
+
+	// validated
+	return otpByte, config.SecurityConfigAll.TwoFA.Status.Verified, nil
 }
 
 // delMem2FA - delete secrets from memory
