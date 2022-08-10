@@ -454,6 +454,206 @@ func Activate2FA(c *gin.Context) {
 	renderer.Render(c, response, http.StatusOK)
 }
 
+// Validate2FA - issue new JWTs upon 2FA validation
+// required for accounts with 2FA-ON
+func Validate2FA(c *gin.Context) {
+	// get claims
+	claims := getClaims(c)
+
+	// check user validity
+	ok := validateUserID(claims.AuthID, claims.Email)
+	if !ok {
+		renderer.Render(c, gin.H{"msg": "access denied"}, http.StatusUnauthorized)
+		return
+	}
+
+	// check preconditions
+	//
+	// already verified!
+	if claims.TwoFA == config.SecurityConfigAll.TwoFA.Status.Verified {
+		renderer.Render(
+			c,
+			gin.H{"msg": config.SecurityConfigAll.TwoFA.Status.Verified},
+			http.StatusOK,
+		)
+		return
+	}
+	// user needs to log in again / 2FA is disabled for this account
+	if claims.TwoFA != config.SecurityConfigAll.TwoFA.Status.On {
+		renderer.Render(
+			c,
+			gin.H{"msg": "unexpected request (1): 2-fa is OFF / log in again"},
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	// start 2FA validation procedure
+	//
+	// step 1: check if client secret is available in memory
+	data2FA, ok := model.InMemorySecret2FA[claims.AuthID]
+	if !ok {
+		renderer.Render(c, gin.H{"msg": "log in again"}, http.StatusUnauthorized)
+		return
+	}
+
+	// step 2: bind JSON
+	userInput := struct {
+		Input string `json:"OTP"`
+	}{}
+	if err := c.ShouldBindJSON(&userInput); err != nil {
+		renderer.Render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
+		return
+	}
+	userInput.Input = lib.RemoveAllSpace(userInput.Input)
+	if len(userInput.Input) != config.SecurityConfigAll.TwoFA.Digits {
+		renderer.Render(c, gin.H{"msg": "wrong one-time password"}, http.StatusUnauthorized)
+		return
+	}
+
+	newProcess := true
+	var encryptedMessage []byte
+
+	// step 3: check if revalidation process
+	if len(data2FA.Secret) > 0 {
+		encryptedMessage = data2FA.Secret
+		newProcess = false
+	}
+
+	// check DB
+	db := database.GetDB()
+	twoFA := model.TwoFA{}
+	// no record in DB!
+	if err := db.Where("id_auth = ?", claims.AuthID).First(&twoFA).Error; err != nil {
+		renderer.Render(
+			c,
+			gin.H{"msg": "unexpected request (2): 2-fa is OFF / log in again"},
+			http.StatusBadRequest,
+		)
+		return
+	}
+	// if 2FA is not ON
+	if twoFA.Status != config.SecurityConfigAll.TwoFA.Status.On {
+		renderer.Render(
+			c,
+			gin.H{"msg": "unexpected request (3): 2-fa is OFF / log in again"},
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	// retrieve encrypted secrets from DB for new validation process
+	if newProcess {
+		// decode base64 encoded secret key
+		cipherInByte, err := base64.StdEncoding.DecodeString(twoFA.KeyMain)
+		if err != nil {
+			log.WithError(err).Error("error code: 1051")
+			renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+			return
+		}
+
+		// decrypt (AES-256) secret using hash of user's pass
+		secretInByte, err := lib.Decrypt(cipherInByte, data2FA.PassSHA)
+		if err != nil {
+			log.WithError(err).Error("error code: 1052")
+			renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+			return
+		}
+
+		encryptedMessage = secretInByte
+	}
+
+	// step 4: validate user-provided OTP
+	otpByte, status, err := validate2FA(
+		encryptedMessage,
+		config.SecurityConfigAll.TwoFA.Issuer,
+		userInput.Input,
+	)
+	if err != nil {
+		// client provided invalid OTP
+		if status == config.SecurityConfigAll.TwoFA.Status.Invalid {
+			// save the new secret in memory for future validation procedure
+			data2FA.Secret = otpByte
+			model.InMemorySecret2FA[claims.AuthID] = data2FA
+
+			// save in DB to protect from accidental data loss
+			//
+			// encrypt (AES-256) secret using hash of user's pass
+			keyMainInByte, err := lib.Encrypt(otpByte, data2FA.PassSHA)
+			if err != nil {
+				log.WithError(err).Error("error code: 1053")
+			}
+			// encode in base64
+			twoFA.KeyMain = base64.StdEncoding.EncodeToString(keyMainInByte)
+			// updateAt
+			twoFA.UpdatedAt = time.Now().Local()
+			// write in DB
+			tx := db.Begin()
+			if err := tx.Save(&twoFA).Error; err != nil {
+				tx.Rollback()
+				log.WithError(err).Error("error code: 1054")
+			} else {
+				tx.Commit()
+			}
+
+			// response to the client
+			renderer.Render(c, gin.H{"msg": "wrong OTP"}, http.StatusUnauthorized)
+			return
+		}
+
+		// internal error
+		log.WithError(err).Error("error code: 1055")
+		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		return
+	}
+
+	// step 5: 2FA validated
+	//
+	// encrypt (AES-256) secret using hash of user's pass
+	keyMainInByte, err := lib.Encrypt(otpByte, data2FA.PassSHA)
+	if err != nil {
+		log.WithError(err).Error("error code: 1056")
+		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		return
+	}
+	// encode in base64
+	twoFA.KeyMain = base64.StdEncoding.EncodeToString(keyMainInByte)
+	// updateAt
+	twoFA.UpdatedAt = time.Now().Local()
+	// write in DB
+	tx := db.Begin()
+	if err := tx.Save(&twoFA).Error; err != nil {
+		tx.Rollback()
+		log.WithError(err).Error("error code: 1057")
+	} else {
+		tx.Commit()
+	}
+	// delete secrets from memory
+	delMem2FA(claims.AuthID)
+	//
+	// set 2FA claim
+	claims.TwoFA = config.SecurityConfigAll.TwoFA.Status.Verified
+	//
+	// issue new tokens
+	accessJWT, _, err := middleware.GetJWT(claims, "access")
+	if err != nil {
+		log.WithError(err).Error("error code: 1058")
+		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		return
+	}
+	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
+	if err != nil {
+		log.WithError(err).Error("error code: 1059")
+		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		return
+	}
+
+	jwtPayload := middleware.JWTPayload{}
+	jwtPayload.AccessJWT = accessJWT
+	jwtPayload.RefreshJWT = refreshJWT
+	renderer.Render(c, jwtPayload, http.StatusOK)
+}
+
 // getClaims - get JWT custom claims
 func getClaims(c *gin.Context) middleware.MyCustomClaims {
 	// get claims
