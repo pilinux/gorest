@@ -1,3 +1,5 @@
+// Package database handles connections to different
+// types of databases
 package database
 
 import (

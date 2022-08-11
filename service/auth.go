@@ -1,3 +1,5 @@
+// Package service contains common functions used by
+// the whole application
 package service
 
 import (

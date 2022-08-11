@@ -1,3 +1,9 @@
+// Package lib provides additional functionalities to the application:
+// - AES encryption-decryption
+// - Argon2id hashing
+// - SHA hashing
+// - Two-factor authentication
+// - Email format validation along with MX lookup
 package lib
 
 import (

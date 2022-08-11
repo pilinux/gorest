@@ -1,3 +1,5 @@
+// Package model contains all the models required
+// for a functional database management system
 package model
 
 import (

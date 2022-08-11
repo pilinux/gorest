@@ -1,3 +1,6 @@
+// Package config is responsible for reading all environment
+// variables and set up the base configuration for a
+// functional application
 package config
 
 import (

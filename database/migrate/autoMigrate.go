@@ -1,5 +1,6 @@
 // autoMigrate.go needs to be executed only when it is required
-
+// to migrate a new relational database schema or to delete
+// an existing database
 package main
 
 import (

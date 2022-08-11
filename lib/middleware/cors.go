@@ -1,3 +1,9 @@
+// Package middleware contains:
+// - CORS
+// - Application firewall
+// - Pongo2 template engine
+// - JWT
+// - Sentry logger
 package middleware
 
 // github.com/pilinux/gorest

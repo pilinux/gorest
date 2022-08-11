@@ -1,3 +1,5 @@
+// Package renderer uses template engine to
+// render and serve HTML pages
 package renderer
 
 // github.com/pilinux/gorest

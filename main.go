@@ -1,3 +1,4 @@
+// main function of the application
 package main
 
 import (

@@ -1,3 +1,5 @@
+// Package controller contains all the controllers
+// of the application
 package controller
 
 import (
