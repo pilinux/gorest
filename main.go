@@ -184,6 +184,13 @@ func SetupRouter() (*gin.Engine, error) {
 			rUsers.GET("", controller.GetUsers)    // Non-protected
 			rUsers.GET("/:id", controller.GetUser) // Non-protected
 			rUsers.Use(middleware.JWT())
+			if configure.Security.Must2FA == config.Activated {
+				rUsers.Use(middleware.TwoFA(
+					configure.Security.TwoFA.Status.On,
+					configure.Security.TwoFA.Status.Off,
+					configure.Security.TwoFA.Status.Verified,
+				))
+			}
 			rUsers.POST("", controller.CreateUser)      // Protected
 			rUsers.PUT("", controller.UpdateUser)       // Protected
 			rUsers.PUT("/hobbies", controller.AddHobby) // Protected
@@ -193,6 +200,13 @@ func SetupRouter() (*gin.Engine, error) {
 			rPosts.GET("", controller.GetPosts)    // Non-protected
 			rPosts.GET("/:id", controller.GetPost) // Non-protected
 			rPosts.Use(middleware.JWT())
+			if configure.Security.Must2FA == config.Activated {
+				rPosts.Use(middleware.TwoFA(
+					configure.Security.TwoFA.Status.On,
+					configure.Security.TwoFA.Status.Off,
+					configure.Security.TwoFA.Status.Verified,
+				))
+			}
 			rPosts.POST("", controller.CreatePost)       // Protected
 			rPosts.PUT("/:id", controller.UpdatePost)    // Protected
 			rPosts.DELETE("/:id", controller.DeletePost) // Protected

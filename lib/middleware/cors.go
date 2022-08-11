@@ -4,6 +4,7 @@
 // - Pongo2 template engine
 // - JWT
 // - Sentry logger
+// - Two-factor auth validator
 package middleware
 
 // github.com/pilinux/gorest
