@@ -15,22 +15,22 @@ import (
 
 // RedisData - key:value
 type RedisData struct {
-	Key   string `json:"Key"`
-	Value string `json:"Value"`
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 // RedisDataHash - key:hashValues
 type RedisDataHash struct {
-	Key   string `json:"Key"`
+	Key   string `json:"key"`
 	Value RedisDataHashValue
 }
 
 // RedisDataHashValue - values
 type RedisDataHashValue struct {
-	Value1 string `json:"Value1"`
-	Value2 string `json:"Value2"`
-	Value3 string `json:"Value3"`
-	Value4 string `json:"Value4"`
+	Value1 string `json:"value1"`
+	Value2 string `json:"value2"`
+	Value3 string `json:"value3"`
+	Value4 string `json:"value4"`
 }
 
 // RedisCreate - SET key

@@ -14,20 +14,20 @@ import (
 
 // Auth model - `auths` table
 type Auth struct {
-	AuthID    uint64 `gorm:"primaryKey"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
-	Email     string         `json:"Email"`
-	Password  string         `json:"Password"`
+	AuthID    uint64         `gorm:"primaryKey" json:"authID,omitempty"`
+	CreatedAt time.Time      `json:"createdAt,omitempty"`
+	UpdatedAt time.Time      `json:"updatedAt,omitempty"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	Email     string         `json:"email"`
+	Password  string         `json:"password"`
 }
 
 // UnmarshalJSON ...
 func (v *Auth) UnmarshalJSON(b []byte) error {
 	aux := struct {
-		AuthID   uint64 `json:"AuthID"`
-		Email    string `json:"Email"`
-		Password string `json:"Password"`
+		AuthID   uint64 `json:"authID"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}{}
 	if err := json.Unmarshal(b, &aux); err != nil {
 		return err
@@ -62,8 +62,8 @@ func (v *Auth) UnmarshalJSON(b []byte) error {
 // MarshalJSON ...
 func (v Auth) MarshalJSON() ([]byte, error) {
 	aux := struct {
-		AuthID uint64 `json:"AuthId"`
-		Email  string `json:"Email"`
+		AuthID uint64 `json:"authID"`
+		Email  string `json:"email"`
 	}{
 		AuthID: v.AuthID,
 		Email:  strings.TrimSpace(v.Email),

@@ -8,10 +8,10 @@ import (
 
 // Hobby model - `hobbies` table
 type Hobby struct {
-	HobbyID   uint64 `gorm:"primaryKey"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	HobbyID   uint64         `gorm:"primaryKey" json:"hobbyID,omitempty"`
+	CreatedAt time.Time      `json:"createdAt,omitempty"`
+	UpdatedAt time.Time      `json:"updatedAt,omitempty"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-	Hobby     string         `json:"Hobby,omitempty"`
+	Hobby     string         `json:"hobby,omitempty"`
 	Users     []User         `gorm:"many2many:user_hobbies" json:"-"`
 }

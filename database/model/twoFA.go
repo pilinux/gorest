@@ -8,21 +8,21 @@ import (
 
 // TwoFA model - 'two_fas' table
 type TwoFA struct {
-	ID        uint64 `gorm:"primaryKey"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
-	KeyMain   string
-	KeyBackup string
-	Status    string
-	IDAuth    uint64
+	ID        uint64         `gorm:"primaryKey" json:"-"`
+	CreatedAt time.Time      `json:"-"`
+	UpdatedAt time.Time      `json:"-"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	KeyMain   string         `json:"-"`
+	KeyBackup string         `json:"-"`
+	Status    string         `json:"-"`
+	IDAuth    uint64         `json:"-"`
 }
 
 // Secret2FA - save encoded secrets in RAM temporarily
 type Secret2FA struct {
-	PassSHA []byte
-	Secret  []byte
-	Image   string
+	PassSHA []byte `json:"-"`
+	Secret  []byte `json:"-"`
+	Image   string `json:"-"`
 }
 
 // InMemorySecret2FA - keep secrets temporarily

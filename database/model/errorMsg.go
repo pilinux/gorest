@@ -2,6 +2,6 @@ package model
 
 // ErrorMsg ...
 type ErrorMsg struct {
-	HTTPCode int    `structs:"http_response_code" json:"-"`
+	HTTPCode int    `structs:"httpResponseCode" json:"-"`
 	Message  string `structs:"msg" json:"msg"`
 }

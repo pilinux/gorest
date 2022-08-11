@@ -38,7 +38,7 @@ type MyCustomClaims struct {
 	Email   string `json:"email,omitempty"`
 	Role    string `json:"role,omitempty"`
 	Scope   string `json:"scope,omitempty"`
-	TwoFA   string `json:"2fa,omitempty"`
+	TwoFA   string `json:"twoFA,omitempty"`
 	SiteLan string `json:"siteLan,omitempty"`
 	Custom1 string `json:"custom1,omitempty"`
 	Custom2 string `json:"custom2,omitempty"`

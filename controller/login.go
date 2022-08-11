@@ -24,8 +24,8 @@ import (
 
 // LoginPayload ...
 type LoginPayload struct {
-	Email    string `json:"Email"`
-	Password string `json:"Password"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 // Login - issue new JWTs after user:pass verification
@@ -180,7 +180,7 @@ func Setup2FA(c *gin.Context) {
 	//
 	// step 1: verify user pass
 	pass := struct {
-		Password string `json:"Password"`
+		Password string `json:"password"`
 	}{}
 	// bind JSON
 	if err := c.ShouldBindJSON(&pass); err != nil {
@@ -289,7 +289,7 @@ func Activate2FA(c *gin.Context) {
 
 	// step 2: bind JSON
 	userInput := struct {
-		Input string `json:"OTP"`
+		Input string `json:"otp"`
 	}{}
 	if err := c.ShouldBindJSON(&userInput); err != nil {
 		renderer.Render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
@@ -442,7 +442,7 @@ func Activate2FA(c *gin.Context) {
 	response := struct {
 		AccessJWT   string `json:"accessJWT"`
 		RefreshJWT  string `json:"refreshJWT"`
-		TwoAuth     string `json:"2fa"`
+		TwoAuth     string `json:"twoFA"`
 		RecoveryKey string `json:"recoveryKey"`
 	}{}
 
@@ -499,7 +499,7 @@ func Validate2FA(c *gin.Context) {
 
 	// step 2: bind JSON
 	userInput := struct {
-		Input string `json:"OTP"`
+		Input string `json:"otp"`
 	}{}
 	if err := c.ShouldBindJSON(&userInput); err != nil {
 		renderer.Render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
