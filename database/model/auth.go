@@ -45,12 +45,13 @@ func (v *Auth) UnmarshalJSON(b []byte) error {
 	v.AuthID = aux.AuthID
 	v.Email = strings.TrimSpace(aux.Email)
 
+	configSecurity := config.GetConfig().Security
 	config := lib.HashPassConfig{
-		Memory:      config.SecurityConfigAll.HashPass.Memory,
-		Iterations:  config.SecurityConfigAll.HashPass.Iterations,
-		Parallelism: config.SecurityConfigAll.HashPass.Parallelism,
-		SaltLength:  config.SecurityConfigAll.HashPass.SaltLength,
-		KeyLength:   config.SecurityConfigAll.HashPass.KeyLength,
+		Memory:      configSecurity.HashPass.Memory,
+		Iterations:  configSecurity.HashPass.Iterations,
+		Parallelism: configSecurity.HashPass.Parallelism,
+		SaltLength:  configSecurity.HashPass.SaltLength,
+		KeyLength:   configSecurity.HashPass.KeyLength,
 	}
 	pass, err := lib.HashPass(config, aux.Password)
 	if err != nil {

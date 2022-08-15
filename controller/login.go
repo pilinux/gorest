@@ -71,14 +71,15 @@ func Login(c *gin.Context) {
 	// claims.Custom2
 
 	// when 2FA is enabled for this application (ACTIVATE_2FA=yes)
-	if config.SecurityConfigAll.Must2FA == config.Activated {
+	configSecurity := config.GetConfig().Security
+	if configSecurity.Must2FA == config.Activated {
 		db := database.GetDB()
 		twoFA := model.TwoFA{}
 
 		// have the user configured 2FA
 		if err := db.Where("id_auth = ?", v.AuthID).First(&twoFA).Error; err == nil {
 			// 2FA ON
-			if twoFA.Status == config.SecurityConfigAll.TwoFA.Status.On {
+			if twoFA.Status == configSecurity.TwoFA.Status.On {
 				claims.TwoFA = twoFA.Status
 
 				// hash user's pass in sha256
@@ -158,7 +159,8 @@ func Setup2FA(c *gin.Context) {
 	}
 
 	// 2FA already enabled
-	if claims.TwoFA == config.SecurityConfigAll.TwoFA.Status.Verified || claims.TwoFA == config.SecurityConfigAll.TwoFA.Status.On {
+	configSecurity := config.GetConfig().Security
+	if claims.TwoFA == configSecurity.TwoFA.Status.Verified || claims.TwoFA == configSecurity.TwoFA.Status.On {
 		renderer.Render(c, gin.H{"msg": "2-fa activated already"}, http.StatusOK)
 		return
 	}
@@ -169,7 +171,7 @@ func Setup2FA(c *gin.Context) {
 	// err != nil => never configured before
 	// err == nil => 2FA disabled
 	if err := db.Where("id_auth = ?", claims.AuthID).First(&twoFA).Error; err == nil {
-		if twoFA.Status == config.SecurityConfigAll.TwoFA.Status.On {
+		if twoFA.Status == configSecurity.TwoFA.Status.On {
 			// 2FA ON
 			renderer.Render(c, gin.H{"msg": "2-fa activated already"}, http.StatusBadRequest)
 			return
@@ -206,9 +208,9 @@ func Setup2FA(c *gin.Context) {
 	// step 2: create new TOTP object
 	otpByte, err := lib.NewTOTP(
 		claims.Email,
-		config.SecurityConfigAll.TwoFA.Issuer,
-		config.SecurityConfigAll.TwoFA.Crypto,
-		config.SecurityConfigAll.TwoFA.Digits,
+		configSecurity.TwoFA.Issuer,
+		configSecurity.TwoFA.Crypto,
+		configSecurity.TwoFA.Digits,
 	)
 	if err != nil {
 		log.WithError(err).Error("error code: 1032")
@@ -219,7 +221,7 @@ func Setup2FA(c *gin.Context) {
 	// step 3: encode QR in bytes
 	qrByte, err := lib.NewQR(
 		otpByte,
-		config.SecurityConfigAll.TwoFA.Issuer,
+		configSecurity.TwoFA.Issuer,
 	)
 	if err != nil {
 		log.WithError(err).Error("error code: 1033")
@@ -228,7 +230,7 @@ func Setup2FA(c *gin.Context) {
 	}
 
 	// step 4: generate QR in PNG format and save on disk
-	img, err := lib.ByteToPNG(qrByte, config.SecurityConfigAll.TwoFA.PathQR)
+	img, err := lib.ByteToPNG(qrByte, configSecurity.TwoFA.PathQR)
 	if err != nil {
 		log.WithError(err).Error("error code: 1034")
 		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
@@ -242,8 +244,8 @@ func Setup2FA(c *gin.Context) {
 	data2FA, ok := model.InMemorySecret2FA[claims.AuthID]
 	if ok {
 		// delete old QR image if available
-		if lib.FileExist(config.SecurityConfigAll.TwoFA.PathQR + data2FA.Image) {
-			err := os.Remove(config.SecurityConfigAll.TwoFA.PathQR + data2FA.Image)
+		if lib.FileExist(configSecurity.TwoFA.PathQR + data2FA.Image) {
+			err := os.Remove(configSecurity.TwoFA.PathQR + data2FA.Image)
 			if err != nil {
 				log.WithError(err).Error("error code: 1035")
 			}
@@ -257,7 +259,7 @@ func Setup2FA(c *gin.Context) {
 	model.InMemorySecret2FA[claims.AuthID] = data2FA
 
 	// serve the QR to the client
-	c.File(config.SecurityConfigAll.TwoFA.PathQR + img)
+	c.File(configSecurity.TwoFA.PathQR + img)
 }
 
 // Activate2FA - activate 2FA upon validation
@@ -273,7 +275,8 @@ func Activate2FA(c *gin.Context) {
 		return
 	}
 
-	if claims.TwoFA == config.SecurityConfigAll.TwoFA.Status.Verified || claims.TwoFA == config.SecurityConfigAll.TwoFA.Status.On {
+	configSecurity := config.GetConfig().Security
+	if claims.TwoFA == configSecurity.TwoFA.Status.Verified || claims.TwoFA == configSecurity.TwoFA.Status.On {
 		renderer.Render(c, gin.H{"msg": "2-fa activated already"}, http.StatusBadRequest)
 		return
 	}
@@ -296,7 +299,7 @@ func Activate2FA(c *gin.Context) {
 		return
 	}
 	userInput.Input = lib.RemoveAllSpace(userInput.Input)
-	if len(userInput.Input) != config.SecurityConfigAll.TwoFA.Digits {
+	if len(userInput.Input) != configSecurity.TwoFA.Digits {
 		renderer.Render(c, gin.H{"msg": "wrong one-time password"}, http.StatusUnauthorized)
 		return
 	}
@@ -304,12 +307,12 @@ func Activate2FA(c *gin.Context) {
 	// step 3: validate user-provided OTP
 	otpByte, status, err := validate2FA(
 		data2FA.Secret,
-		config.SecurityConfigAll.TwoFA.Issuer,
+		configSecurity.TwoFA.Issuer,
 		userInput.Input,
 	)
 	if err != nil {
 		// client provided invalid OTP
-		if status == config.SecurityConfigAll.TwoFA.Status.Invalid {
+		if status == configSecurity.TwoFA.Status.Invalid {
 			// save the secret with failed attempt in memory for future validation procedure
 			data2FA.Secret = otpByte
 			model.InMemorySecret2FA[claims.AuthID] = data2FA
@@ -333,10 +336,10 @@ func Activate2FA(c *gin.Context) {
 		available = true
 
 		// 2FA already activated!
-		if twoFA.Status == config.SecurityConfigAll.TwoFA.Status.On {
+		if twoFA.Status == configSecurity.TwoFA.Status.On {
 			// delete QR image from disk
-			if lib.FileExist(config.SecurityConfigAll.TwoFA.PathQR + data2FA.Image) {
-				err := os.Remove(config.SecurityConfigAll.TwoFA.PathQR + data2FA.Image)
+			if lib.FileExist(configSecurity.TwoFA.PathQR + data2FA.Image) {
+				err := os.Remove(configSecurity.TwoFA.PathQR + data2FA.Image)
 				if err != nil {
 					log.WithError(err).Error("error code: 1042")
 				}
@@ -376,7 +379,7 @@ func Activate2FA(c *gin.Context) {
 	twoFA.KeyBackup = base64.StdEncoding.EncodeToString(keyMBackupInByte)
 
 	// step 9: save in DB
-	twoFA.Status = config.SecurityConfigAll.TwoFA.Status.On
+	twoFA.Status = configSecurity.TwoFA.Status.On
 	twoFA.IDAuth = claims.AuthID
 
 	tx := db.Begin()
@@ -410,8 +413,8 @@ func Activate2FA(c *gin.Context) {
 	}
 
 	// step 10: delete QR image
-	if lib.FileExist(config.SecurityConfigAll.TwoFA.PathQR + data2FA.Image) {
-		err = os.Remove(config.SecurityConfigAll.TwoFA.PathQR + data2FA.Image)
+	if lib.FileExist(configSecurity.TwoFA.PathQR + data2FA.Image) {
+		err = os.Remove(configSecurity.TwoFA.PathQR + data2FA.Image)
 		if err != nil {
 			log.WithError(err).Error("error code: 1047")
 		}
@@ -423,7 +426,7 @@ func Activate2FA(c *gin.Context) {
 	// step 12: issue new tokens
 	//
 	// set 2FA claim
-	claims.TwoFA = config.SecurityConfigAll.TwoFA.Status.Verified
+	claims.TwoFA = configSecurity.TwoFA.Status.Verified
 	//
 	accessJWT, _, err := middleware.GetJWT(claims, "access")
 	if err != nil {
@@ -448,7 +451,7 @@ func Activate2FA(c *gin.Context) {
 
 	response.AccessJWT = accessJWT
 	response.RefreshJWT = refreshJWT
-	response.TwoAuth = config.SecurityConfigAll.TwoFA.Status.On
+	response.TwoAuth = configSecurity.TwoFA.Status.On
 	response.RecoveryKey = keyRecovery
 
 	renderer.Render(c, response, http.StatusOK)
@@ -470,16 +473,17 @@ func Validate2FA(c *gin.Context) {
 	// check preconditions
 	//
 	// already verified!
-	if claims.TwoFA == config.SecurityConfigAll.TwoFA.Status.Verified {
+	configSecurity := config.GetConfig().Security
+	if claims.TwoFA == configSecurity.TwoFA.Status.Verified {
 		renderer.Render(
 			c,
-			gin.H{"msg": config.SecurityConfigAll.TwoFA.Status.Verified},
+			gin.H{"msg": configSecurity.TwoFA.Status.Verified},
 			http.StatusOK,
 		)
 		return
 	}
 	// user needs to log in again / 2FA is disabled for this account
-	if claims.TwoFA != config.SecurityConfigAll.TwoFA.Status.On {
+	if claims.TwoFA != configSecurity.TwoFA.Status.On {
 		renderer.Render(
 			c,
 			gin.H{"msg": "unexpected request (1): 2-fa is OFF / log in again"},
@@ -506,7 +510,7 @@ func Validate2FA(c *gin.Context) {
 		return
 	}
 	userInput.Input = lib.RemoveAllSpace(userInput.Input)
-	if len(userInput.Input) != config.SecurityConfigAll.TwoFA.Digits {
+	if len(userInput.Input) != configSecurity.TwoFA.Digits {
 		renderer.Render(c, gin.H{"msg": "wrong one-time password"}, http.StatusUnauthorized)
 		return
 	}
@@ -533,7 +537,7 @@ func Validate2FA(c *gin.Context) {
 		return
 	}
 	// if 2FA is not ON
-	if twoFA.Status != config.SecurityConfigAll.TwoFA.Status.On {
+	if twoFA.Status != configSecurity.TwoFA.Status.On {
 		renderer.Render(
 			c,
 			gin.H{"msg": "unexpected request (3): 2-fa is OFF / log in again"},
@@ -566,12 +570,12 @@ func Validate2FA(c *gin.Context) {
 	// step 4: validate user-provided OTP
 	otpByte, status, err := validate2FA(
 		encryptedMessage,
-		config.SecurityConfigAll.TwoFA.Issuer,
+		configSecurity.TwoFA.Issuer,
 		userInput.Input,
 	)
 	if err != nil {
 		// client provided invalid OTP
-		if status == config.SecurityConfigAll.TwoFA.Status.Invalid {
+		if status == configSecurity.TwoFA.Status.Invalid {
 			// save the new secret in memory for future validation procedure
 			data2FA.Secret = otpByte
 			model.InMemorySecret2FA[claims.AuthID] = data2FA
@@ -632,7 +636,7 @@ func Validate2FA(c *gin.Context) {
 	delMem2FA(claims.AuthID)
 	//
 	// set 2FA claim
-	claims.TwoFA = config.SecurityConfigAll.TwoFA.Status.Verified
+	claims.TwoFA = configSecurity.TwoFA.Status.Verified
 	//
 	// issue new tokens
 	accessJWT, _, err := middleware.GetJWT(claims, "access")
@@ -679,12 +683,13 @@ func validateUserID(authID uint64, email string) bool {
 
 // validate2FA validates user-provided OTP
 func validate2FA(encryptedMessage []byte, issuer string, userInput string) ([]byte, string, error) {
+	configSecurity := config.GetConfig().Security
 	otpByte, err := lib.ValidateTOTP(encryptedMessage, issuer, userInput)
 	// client provided invalid OTP / internal error
 	if err != nil {
 		// client provided invalid OTP
 		if len(otpByte) > 0 {
-			return otpByte, config.SecurityConfigAll.TwoFA.Status.Invalid, err
+			return otpByte, configSecurity.TwoFA.Status.Invalid, err
 		}
 
 		// internal error
@@ -692,7 +697,7 @@ func validate2FA(encryptedMessage []byte, issuer string, userInput string) ([]by
 	}
 
 	// validated
-	return otpByte, config.SecurityConfigAll.TwoFA.Status.Verified, nil
+	return otpByte, configSecurity.TwoFA.Status.Verified, nil
 }
 
 // delMem2FA - delete secrets from memory

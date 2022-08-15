@@ -7,9 +7,6 @@ import (
 	"github.com/pilinux/gorest/lib/middleware"
 )
 
-// SecurityConfigAll - exported variables
-var SecurityConfigAll SecurityConfig
-
 // SecurityConfig ...
 type SecurityConfig struct {
 	MustBasicAuth string

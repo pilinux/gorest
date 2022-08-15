@@ -37,26 +37,26 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// DB global variable to access gorm
-var DB *gorm.DB
+// dbClient variable to access gorm
+var dbClient *gorm.DB
 
 var sqlDB *sql.DB
 var err error
 
-// RedisClient global variable to access the redis client
-var RedisClient radix.Client
+// redisClient variable to access the redis client
+var redisClient *radix.Client
 
 // RedisConnTTL - context deadline in second
 var RedisConnTTL int
 
-// MongoClient instance
-var MongoClient *qmgo.Client
+// mongoClient instance
+var mongoClient *qmgo.Client
 
 // InitDB - function to initialize db
 func InitDB() *gorm.DB {
-	var db = DB
+	var db = dbClient
 
-	configureDB := config.DBConfigAll.RDBMS
+	configureDB := config.GetConfig().Database.RDBMS
 
 	driver := configureDB.Env.Driver
 	username := configureDB.Access.User
@@ -135,19 +135,19 @@ func InitDB() *gorm.DB {
 		log.Fatal("The driver " + driver + " is not implemented yet")
 	}
 
-	DB = db
+	dbClient = db
 
-	return DB
+	return dbClient
 }
 
 // GetDB - get a connection
 func GetDB() *gorm.DB {
-	return DB
+	return dbClient
 }
 
 // InitRedis - function to initialize redis client
-func InitRedis() (radix.Client, error) {
-	configureRedis := config.DBConfigAll.REDIS
+func InitRedis() (*radix.Client, error) {
+	configureRedis := config.GetConfig().Database.REDIS
 
 	RedisConnTTL = configureRedis.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(RedisConnTTL)*time.Second)
@@ -160,35 +160,35 @@ func InitRedis() (radix.Client, error) {
 		configureRedis.Env.Port))
 	if err != nil {
 		log.WithError(err).Panic("panic code: 161")
-		return rClient, err
+		return &rClient, err
 	}
 	// Only for debugging
 	if err == nil {
 		fmt.Println("REDIS pool connection successful!")
 	}
 
-	RedisClient = rClient
+	redisClient = &rClient
 
-	return RedisClient, nil
+	return redisClient, nil
 }
 
 // GetRedis - get a connection
-func GetRedis() radix.Client {
-	return RedisClient
+func GetRedis() *radix.Client {
+	return redisClient
 }
 
 // InitMongo - function to initialize mongo client
 func InitMongo() (*qmgo.Client, error) {
-	configureMongo := config.DBConfigAll.MongoDB
+	configureMongo := config.GetConfig().Database.MongoDB
 
 	// Connect to the database or cluster
-	URI := configureMongo.Env.URI
+	uri := configureMongo.Env.URI
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(configureMongo.Env.ConnTTL)*time.Second)
 	defer cancel()
 
 	clientConfig := &qmgo.Config{
-		Uri:         URI,
+		Uri:         uri,
 		MaxPoolSize: &configureMongo.Env.PoolSize,
 	}
 	serverAPIOptions := opts.ServerAPI(opts.ServerAPIVersion1)
@@ -219,12 +219,12 @@ func InitMongo() (*qmgo.Client, error) {
 	// Only for debugging
 	fmt.Println("MongoDB pool connection successful!")
 
-	MongoClient = client
+	mongoClient = client
 
-	return MongoClient, nil
+	return mongoClient, nil
 }
 
 // GetMongo - get a connection
 func GetMongo() *qmgo.Client {
-	return MongoClient
+	return mongoClient
 }

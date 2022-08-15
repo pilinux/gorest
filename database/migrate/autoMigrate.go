@@ -25,7 +25,7 @@ var db *gorm.DB
 var errorState int
 
 func main() {
-	configureDB := config.Database().RDBMS
+	configureDB := config.GetConfig().Database.RDBMS
 	driver := configureDB.Env.Driver
 
 	/*
@@ -79,7 +79,7 @@ func dropAllTables() {
 }
 
 func migrateTables() {
-	configureDB := config.Database().RDBMS
+	configureDB := config.GetConfig().Database.RDBMS
 	driver := configureDB.Env.Driver
 
 	if driver == "mysql" {

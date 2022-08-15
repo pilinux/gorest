@@ -27,6 +27,8 @@ type Configuration struct {
 	ViewConfig ViewConfig
 }
 
+var configAll *Configuration
+
 // env - load the configurations from .env
 func env() {
 	// Load environment variables
@@ -37,20 +39,27 @@ func env() {
 }
 
 // Config - load all the configurations
-func Config() Configuration {
+func Config() *Configuration {
 	var configuration Configuration
 
-	configuration.Database = Database()
-	configuration.Logger = Logger()
-	configuration.Security = Security()
-	configuration.Server = Server()
-	configuration.ViewConfig = View()
+	configuration.Database = database()
+	configuration.Logger = logger()
+	configuration.Security = security()
+	configuration.Server = server()
+	configuration.ViewConfig = view()
 
-	return configuration
+	configAll = &configuration
+
+	return configAll
+}
+
+// GetConfig - return all the config variables
+func GetConfig() *Configuration {
+	return configAll
 }
 
 // Database - all DB variables
-func Database() DatabaseConfig {
+func database() DatabaseConfig {
 	var databaseConfig DatabaseConfig
 
 	// Load environment variables
@@ -59,41 +68,29 @@ func Database() DatabaseConfig {
 	// RDBMS
 	activateRDBMS := os.Getenv("ACTIVATE_RDBMS")
 	if activateRDBMS == Activated {
-		databaseConfig.RDBMS = DatabaseRDBMS().RDBMS
-
-		// set params globally
-		setParamsDatabaseRDBMS(databaseConfig.RDBMS)
+		databaseConfig.RDBMS = databaseRDBMS().RDBMS
 	}
-	DBConfigAll.RDBMS.Activate = activateRDBMS
 	databaseConfig.RDBMS.Activate = activateRDBMS
 
 	// REDIS
 	activateRedis := os.Getenv("ACTIVATE_REDIS")
 	if activateRedis == Activated {
-		databaseConfig.REDIS = DatabaseRedis().REDIS
-
-		// set params globally
-		setParamsDatabaseRedis(databaseConfig.REDIS)
+		databaseConfig.REDIS = databaseRedis().REDIS
 	}
-	DBConfigAll.REDIS.Activate = activateRedis
 	databaseConfig.REDIS.Activate = activateRedis
 
 	// MongoDB
 	activateMongo := os.Getenv("ACTIVATE_MONGO")
 	if activateMongo == Activated {
-		databaseConfig.MongoDB = DatabaseMongo().MongoDB
-
-		// set params globally
-		setParamsDatabaseMongo(databaseConfig.MongoDB)
+		databaseConfig.MongoDB = databaseMongo().MongoDB
 	}
-	DBConfigAll.MongoDB.Activate = activateMongo
 	databaseConfig.MongoDB.Activate = activateMongo
 
 	return databaseConfig
 }
 
 // DatabaseRDBMS - all RDBMS variables
-func DatabaseRDBMS() DatabaseConfig {
+func databaseRDBMS() DatabaseConfig {
 	var databaseConfig DatabaseConfig
 	var err error
 
@@ -139,7 +136,7 @@ func DatabaseRDBMS() DatabaseConfig {
 }
 
 // DatabaseRedis - all REDIS DB variables
-func DatabaseRedis() DatabaseConfig {
+func databaseRedis() DatabaseConfig {
 	var databaseConfig DatabaseConfig
 
 	// Load environment variables
@@ -164,7 +161,7 @@ func DatabaseRedis() DatabaseConfig {
 }
 
 // DatabaseMongo - all MongoDB variables
-func DatabaseMongo() DatabaseConfig {
+func databaseMongo() DatabaseConfig {
 	var databaseConfig DatabaseConfig
 
 	// Load environment variables
@@ -190,7 +187,7 @@ func DatabaseMongo() DatabaseConfig {
 }
 
 // Logger ...
-func Logger() LoggerConfig {
+func logger() LoggerConfig {
 	var loggerConfig LoggerConfig
 
 	// Load environment variables
@@ -205,112 +202,82 @@ func Logger() LoggerConfig {
 }
 
 // Security - configs for generating tokens and hashes
-func Security() SecurityConfig {
+func security() SecurityConfig {
 	var securityConfig SecurityConfig
 
 	// Load environment variables
 	env()
 
 	// Basic auth
-	SecurityConfigAll.MustBasicAuth = os.Getenv("ACTIVATE_BASIC_AUTH")
-	if SecurityConfigAll.MustBasicAuth == Activated {
-		username := os.Getenv("USERNAME")
-		password := os.Getenv("PASSWORD")
-
-		SecurityConfigAll.BasicAuth.Username = username
-		SecurityConfigAll.BasicAuth.Password = password
-
-		securityConfig.BasicAuth.Username = username
-		securityConfig.BasicAuth.Password = password
+	securityConfig.MustBasicAuth = os.Getenv("ACTIVATE_BASIC_AUTH")
+	if securityConfig.MustBasicAuth == Activated {
+		securityConfig.BasicAuth.Username = os.Getenv("USERNAME")
+		securityConfig.BasicAuth.Password = os.Getenv("PASSWORD")
 	}
-	securityConfig.MustBasicAuth = SecurityConfigAll.MustBasicAuth
 
 	// JWT
-	SecurityConfigAll.MustJWT = os.Getenv("ACTIVATE_JWT")
-	if SecurityConfigAll.MustJWT == Activated {
+	securityConfig.MustJWT = os.Getenv("ACTIVATE_JWT")
+	if securityConfig.MustJWT == Activated {
 		securityConfig.JWT = getParamsJWT()
 
 		// set params globally
 		setParamsJWT(securityConfig.JWT)
 	}
-	securityConfig.MustJWT = SecurityConfigAll.MustJWT
 
 	// Hashing passwords
-	SecurityConfigAll.MustHash = os.Getenv("ACTIVATE_HASHING")
-	if SecurityConfigAll.MustHash == Activated {
+	securityConfig.MustHash = os.Getenv("ACTIVATE_HASHING")
+	if securityConfig.MustHash == Activated {
 		securityConfig.HashPass = getParamsHash()
-
-		// set params globally
-		setParamsHash(securityConfig.HashPass)
 	}
-	securityConfig.MustHash = SecurityConfigAll.MustHash
 
 	// Two-factor authentication
-	SecurityConfigAll.Must2FA = os.Getenv("ACTIVATE_2FA")
-	if SecurityConfigAll.Must2FA == Activated {
-		SecurityConfigAll.TwoFA.Issuer = os.Getenv("TWO_FA_ISSUER")
+	securityConfig.Must2FA = os.Getenv("ACTIVATE_2FA")
+	if securityConfig.Must2FA == Activated {
+		securityConfig.TwoFA.Issuer = os.Getenv("TWO_FA_ISSUER")
 
 		cryptoAlg := os.Getenv("TWO_FA_CRYPTO")
 		if cryptoAlg == "1" {
-			SecurityConfigAll.TwoFA.Crypto = crypto.SHA1
+			securityConfig.TwoFA.Crypto = crypto.SHA1
 		}
 		if cryptoAlg == "256" {
-			SecurityConfigAll.TwoFA.Crypto = crypto.SHA256
+			securityConfig.TwoFA.Crypto = crypto.SHA256
 		}
 		if cryptoAlg == "512" {
-			SecurityConfigAll.TwoFA.Crypto = crypto.SHA512
+			securityConfig.TwoFA.Crypto = crypto.SHA512
 		}
 
 		digits, err := strconv.Atoi(os.Getenv("TWO_FA_DIGITS"))
 		if err != nil {
 			log.WithError(err).Panic("panic code: 130")
 		}
-		SecurityConfigAll.TwoFA.Digits = digits
+		securityConfig.TwoFA.Digits = digits
 
 		// define different statuses of individual user
-		SecurityConfigAll.TwoFA.Status.Verified = os.Getenv("TWO_FA_VERIFIED")
-		SecurityConfigAll.TwoFA.Status.On = os.Getenv("TWO_FA_ON")
-		SecurityConfigAll.TwoFA.Status.Off = os.Getenv("TWO_FA_OFF")
-		SecurityConfigAll.TwoFA.Status.Invalid = os.Getenv("TWO_FA_INVALID")
+		securityConfig.TwoFA.Status.Verified = os.Getenv("TWO_FA_VERIFIED")
+		securityConfig.TwoFA.Status.On = os.Getenv("TWO_FA_ON")
+		securityConfig.TwoFA.Status.Off = os.Getenv("TWO_FA_OFF")
+		securityConfig.TwoFA.Status.Invalid = os.Getenv("TWO_FA_INVALID")
 
 		// for saving QR temporarily
-		SecurityConfigAll.TwoFA.PathQR = os.Getenv("TWO_FA_QR_PATH")
-
-		securityConfig.TwoFA.Issuer = SecurityConfigAll.TwoFA.Issuer
-		securityConfig.TwoFA.Crypto = SecurityConfigAll.TwoFA.Crypto
-		securityConfig.TwoFA.Digits = SecurityConfigAll.TwoFA.Digits
-		securityConfig.TwoFA.Status.Verified = SecurityConfigAll.TwoFA.Status.Verified
-		securityConfig.TwoFA.Status.On = SecurityConfigAll.TwoFA.Status.On
-		securityConfig.TwoFA.Status.Off = SecurityConfigAll.TwoFA.Status.Off
-		securityConfig.TwoFA.Status.Invalid = SecurityConfigAll.TwoFA.Status.Invalid
-		securityConfig.TwoFA.PathQR = SecurityConfigAll.TwoFA.PathQR
+		securityConfig.TwoFA.PathQR = os.Getenv("TWO_FA_QR_PATH")
 	}
-	securityConfig.Must2FA = SecurityConfigAll.Must2FA
 
 	// App firewall
-	SecurityConfigAll.MustFW = os.Getenv("ACTIVATE_FIREWALL")
-	if SecurityConfigAll.MustFW == Activated {
-		listType := os.Getenv("LISTTYPE")
-		ip := os.Getenv("IP")
-
-		SecurityConfigAll.Firewall.ListType = listType
-		SecurityConfigAll.Firewall.IP = ip
-
-		securityConfig.Firewall.ListType = listType
-		securityConfig.Firewall.IP = ip
+	securityConfig.MustFW = os.Getenv("ACTIVATE_FIREWALL")
+	if securityConfig.MustFW == Activated {
+		securityConfig.Firewall.ListType = os.Getenv("LISTTYPE")
+		securityConfig.Firewall.IP = os.Getenv("IP")
 	}
-	securityConfig.MustFW = SecurityConfigAll.MustFW
 
 	// CORS
-	SecurityConfigAll.MustCORS = os.Getenv("ACTIVATE_CORS")
-	if SecurityConfigAll.MustCORS == Activated {
+	securityConfig.MustCORS = os.Getenv("ACTIVATE_CORS")
+	if securityConfig.MustCORS == Activated {
 		securityConfig.CORS.Origin = os.Getenv("CORS_ORIGIN")
 		securityConfig.CORS.Credentials = os.Getenv("CORS_CREDENTIALS")
 		securityConfig.CORS.Headers = os.Getenv("CORS_HEADERS")
 		securityConfig.CORS.Methods = os.Getenv("CORS_METHODS")
 		securityConfig.CORS.MaxAge = os.Getenv("CORS_MAXAGE")
 	}
-	securityConfig.MustCORS = SecurityConfigAll.MustCORS
 
 	// Important for getting real client IP
 	securityConfig.TrustedPlatform = os.Getenv("TRUSTED_PLATFORM")
@@ -319,7 +286,7 @@ func Security() SecurityConfig {
 }
 
 // Server - port and env
-func Server() ServerConfig {
+func server() ServerConfig {
 	var serverConfig ServerConfig
 
 	// Load environment variables
@@ -332,7 +299,7 @@ func Server() ServerConfig {
 }
 
 // View - HTML renderer
-func View() ViewConfig {
+func view() ViewConfig {
 	var viewConfig ViewConfig
 
 	// Load environment variables
@@ -344,44 +311,6 @@ func View() ViewConfig {
 	}
 
 	return viewConfig
-}
-
-// setParamsDatabaseRDBMS - set parameters for RDBMS
-func setParamsDatabaseRDBMS(c RDBMS) {
-	DBConfigAll.RDBMS.Env.Driver = c.Env.Driver
-	DBConfigAll.RDBMS.Env.Host = c.Env.Host
-	DBConfigAll.RDBMS.Env.Port = c.Env.Port
-	DBConfigAll.RDBMS.Env.TimeZone = c.Env.TimeZone
-
-	DBConfigAll.RDBMS.Access.DbName = c.Access.DbName
-	DBConfigAll.RDBMS.Access.User = c.Access.User
-	DBConfigAll.RDBMS.Access.Pass = c.Access.Pass
-
-	DBConfigAll.RDBMS.Ssl.Sslmode = c.Ssl.Sslmode
-
-	DBConfigAll.RDBMS.Conn.MaxIdleConns = c.Conn.MaxIdleConns
-	DBConfigAll.RDBMS.Conn.MaxOpenConns = c.Conn.MaxOpenConns
-	DBConfigAll.RDBMS.Conn.ConnMaxLifetime = c.Conn.ConnMaxLifetime
-
-	DBConfigAll.RDBMS.Log.LogLevel = c.Log.LogLevel
-}
-
-// setParamsDatabaseRedis - set parameters for Redis
-func setParamsDatabaseRedis(c REDIS) {
-	DBConfigAll.REDIS.Env.Host = c.Env.Host
-	DBConfigAll.REDIS.Env.Port = c.Env.Port
-
-	DBConfigAll.REDIS.Conn.PoolSize = c.Conn.PoolSize
-	DBConfigAll.REDIS.Conn.ConnTTL = c.Conn.ConnTTL
-}
-
-// setParamsDatabaseMongo - set parameters for MongoDB
-func setParamsDatabaseMongo(c MongoDB) {
-	DBConfigAll.MongoDB.Env.AppName = c.Env.AppName
-	DBConfigAll.MongoDB.Env.URI = c.Env.URI
-	DBConfigAll.MongoDB.Env.PoolSize = c.Env.PoolSize
-	DBConfigAll.MongoDB.Env.PoolMon = c.Env.PoolMon
-	DBConfigAll.MongoDB.Env.ConnTTL = c.Env.ConnTTL
 }
 
 // getParamsJWT - read parameters from env
@@ -464,13 +393,4 @@ func getParamsHash() lib.HashPassConfig {
 	params.KeyLength = uint32(hashPassKeyLength64)
 
 	return params
-}
-
-// setParamsHash - set parameters for hashing
-func setParamsHash(c lib.HashPassConfig) {
-	SecurityConfigAll.HashPass.Memory = c.Memory
-	SecurityConfigAll.HashPass.Iterations = c.Iterations
-	SecurityConfigAll.HashPass.Parallelism = c.Parallelism
-	SecurityConfigAll.HashPass.SaltLength = c.SaltLength
-	SecurityConfigAll.HashPass.KeyLength = c.KeyLength
 }

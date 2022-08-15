@@ -2,8 +2,6 @@
 package main
 
 import (
-	// "fmt"
-
 	"fmt"
 
 	"github.com/pilinux/gorest/config"

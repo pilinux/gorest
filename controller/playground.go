@@ -9,6 +9,7 @@ import (
 	"github.com/mediocregopher/radix/v4"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/pilinux/gorest/config"
 	"github.com/pilinux/gorest/database"
 	"github.com/pilinux/gorest/lib/renderer"
 )
@@ -41,7 +42,7 @@ func RedisCreate(c *gin.Context) {
 		return
 	}
 
-	client := database.GetRedis()
+	client := *database.GetRedis()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(database.RedisConnTTL)*time.Second)
 	defer cancel()
@@ -70,9 +71,11 @@ func RedisRead(c *gin.Context) {
 		return
 	}
 
-	client := database.GetRedis()
+	client := *database.GetRedis()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(database.RedisConnTTL)*time.Second)
+	rConnTTL := config.GetConfig().Database.REDIS.Conn.ConnTTL
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
 
 	// Is key available in Redis
@@ -105,7 +108,7 @@ func RedisDelete(c *gin.Context) {
 		return
 	}
 
-	client := database.GetRedis()
+	client := *database.GetRedis()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(database.RedisConnTTL)*time.Second)
 	defer cancel()
@@ -133,7 +136,7 @@ func RedisCreateHash(c *gin.Context) {
 		return
 	}
 
-	client := database.GetRedis()
+	client := *database.GetRedis()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(database.RedisConnTTL)*time.Second)
 	defer cancel()
@@ -156,7 +159,7 @@ func RedisReadHash(c *gin.Context) {
 		return
 	}
 
-	client := database.GetRedis()
+	client := *database.GetRedis()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(database.RedisConnTTL)*time.Second)
 	defer cancel()
@@ -191,7 +194,7 @@ func RedisDeleteHash(c *gin.Context) {
 		return
 	}
 
-	client := database.GetRedis()
+	client := *database.GetRedis()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(database.RedisConnTTL)*time.Second)
 	defer cancel()
