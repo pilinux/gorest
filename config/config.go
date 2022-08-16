@@ -21,6 +21,7 @@ const Activated string = "yes"
 // Configuration - server and db configuration variables
 type Configuration struct {
 	Database   DatabaseConfig
+	EmailConf  EmailConfig
 	Logger     LoggerConfig
 	Server     ServerConfig
 	Security   SecurityConfig
@@ -43,6 +44,7 @@ func Config() *Configuration {
 	var configuration Configuration
 
 	configuration.Database = database()
+	configuration.EmailConf = email()
 	configuration.Logger = logger()
 	configuration.Security = security()
 	configuration.Server = server()
@@ -58,7 +60,7 @@ func GetConfig() *Configuration {
 	return configAll
 }
 
-// Database - all DB variables
+// database - all DB variables
 func database() DatabaseConfig {
 	var databaseConfig DatabaseConfig
 
@@ -89,7 +91,7 @@ func database() DatabaseConfig {
 	return databaseConfig
 }
 
-// DatabaseRDBMS - all RDBMS variables
+// databaseRDBMS - all RDBMS variables
 func databaseRDBMS() DatabaseConfig {
 	var databaseConfig DatabaseConfig
 	var err error
@@ -135,7 +137,7 @@ func databaseRDBMS() DatabaseConfig {
 	return databaseConfig
 }
 
-// DatabaseRedis - all REDIS DB variables
+// databaseRedis - all REDIS DB variables
 func databaseRedis() DatabaseConfig {
 	var databaseConfig DatabaseConfig
 
@@ -160,7 +162,7 @@ func databaseRedis() DatabaseConfig {
 	return databaseConfig
 }
 
-// DatabaseMongo - all MongoDB variables
+// databaseMongo - all MongoDB variables
 func databaseMongo() DatabaseConfig {
 	var databaseConfig DatabaseConfig
 
@@ -186,7 +188,41 @@ func databaseMongo() DatabaseConfig {
 	return databaseConfig
 }
 
-// Logger ...
+// email - config for using external email services
+func email() EmailConfig {
+	var emailConfig EmailConfig
+	var err error
+
+	// Load environment variables
+	env()
+
+	emailConfig.Activate = os.Getenv("ACTIVATE_EMAIL_SERVICE")
+	if emailConfig.Activate == Activated {
+		emailConfig.Provider = os.Getenv("EMAIL_SERVICE_PROVIDER")
+
+		emailConfig.TemplateID, err = strconv.ParseInt((os.Getenv("EMAIL_TEMPLATE_ID")), 10, 64)
+		if err != nil {
+			log.WithError(err).Panic("panic code: 141")
+		}
+
+		emailConfig.AddrFrom = os.Getenv("EMAIL_FROM")
+		emailConfig.Tag = os.Getenv("EMAIL_TAG")
+
+		trackOpens := os.Getenv("EMAIL_TRACK_OPENS")
+		if trackOpens == "yes" {
+			emailConfig.TrackOpens = true
+		} else {
+			emailConfig.TrackOpens = false
+		}
+
+		emailConfig.TrackLinks = os.Getenv("EMAIL_TRACK_LINKS")
+		emailConfig.MsgType = os.Getenv("EMAIL_TYPE")
+	}
+
+	return emailConfig
+}
+
+// logger - config for sentry.io
 func logger() LoggerConfig {
 	var loggerConfig LoggerConfig
 
@@ -201,7 +237,7 @@ func logger() LoggerConfig {
 	return loggerConfig
 }
 
-// Security - configs for generating tokens and hashes
+// security - configs for generating tokens and hashes
 func security() SecurityConfig {
 	var securityConfig SecurityConfig
 
@@ -285,7 +321,7 @@ func security() SecurityConfig {
 	return securityConfig
 }
 
-// Server - port and env
+// server - port and env
 func server() ServerConfig {
 	var serverConfig ServerConfig
 
@@ -298,7 +334,7 @@ func server() ServerConfig {
 	return serverConfig
 }
 
-// View - HTML renderer
+// view - HTML renderer
 func view() ViewConfig {
 	var viewConfig ViewConfig
 
