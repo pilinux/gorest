@@ -199,6 +199,7 @@ func email() EmailConfig {
 	emailConfig.Activate = os.Getenv("ACTIVATE_EMAIL_SERVICE")
 	if emailConfig.Activate == Activated {
 		emailConfig.Provider = os.Getenv("EMAIL_SERVICE_PROVIDER")
+		emailConfig.APIToken = os.Getenv("EMAIL_API_TOKEN")
 
 		emailConfig.TemplateID, err = strconv.ParseInt((os.Getenv("EMAIL_TEMPLATE_ID")), 10, 64)
 		if err != nil {
