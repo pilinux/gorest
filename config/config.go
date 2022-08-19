@@ -191,7 +191,6 @@ func databaseMongo() DatabaseConfig {
 // email - config for using external email services
 func email() EmailConfig {
 	var emailConfig EmailConfig
-	var err error
 
 	// Load environment variables
 	env()
@@ -200,14 +199,7 @@ func email() EmailConfig {
 	if emailConfig.Activate == Activated {
 		emailConfig.Provider = os.Getenv("EMAIL_SERVICE_PROVIDER")
 		emailConfig.APIToken = os.Getenv("EMAIL_API_TOKEN")
-
-		emailConfig.TemplateID, err = strconv.ParseInt((os.Getenv("EMAIL_TEMPLATE_ID")), 10, 64)
-		if err != nil {
-			log.WithError(err).Panic("panic code: 141")
-		}
-
 		emailConfig.AddrFrom = os.Getenv("EMAIL_FROM")
-		emailConfig.Tag = os.Getenv("EMAIL_TAG")
 
 		trackOpens := os.Getenv("EMAIL_TRACK_OPENS")
 		if trackOpens == "yes" {
