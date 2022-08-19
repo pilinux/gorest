@@ -259,6 +259,16 @@ func security() SecurityConfig {
 		securityConfig.HashPass = getParamsHash()
 	}
 
+	// Email verification and password recovery
+	securityConfig.VerifyEmail = false
+	securityConfig.ResetPass = false
+	if os.Getenv("VERIFY_EMAIL") == "yes" {
+		securityConfig.VerifyEmail = true
+	}
+	if os.Getenv("RESET_PASSWORD") == "yes" {
+		securityConfig.ResetPass = true
+	}
+
 	// Two-factor authentication
 	securityConfig.Must2FA = os.Getenv("ACTIVATE_2FA")
 	if securityConfig.Must2FA == Activated {

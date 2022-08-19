@@ -21,6 +21,9 @@ type SecurityConfig struct {
 	MustHash string
 	HashPass lib.HashPassConfig
 
+	VerifyEmail bool
+	ResetPass   bool
+
 	MustFW   string
 	Firewall struct {
 		ListType string
