@@ -14,14 +14,22 @@ import (
 	"github.com/pilinux/gorest/lib"
 )
 
+// Email verification statuses
+const (
+	EmailNotVerified       int8 = -1
+	EmailVerifyNotRequired int8 = 0
+	EmailVerified          int8 = 1
+)
+
 // Auth model - `auths` table
 type Auth struct {
-	AuthID    uint64         `gorm:"primaryKey" json:"authID,omitempty"`
-	CreatedAt time.Time      `json:"createdAt,omitempty"`
-	UpdatedAt time.Time      `json:"updatedAt,omitempty"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-	Email     string         `json:"email"`
-	Password  string         `json:"password"`
+	AuthID      uint64         `gorm:"primaryKey" json:"authID,omitempty"`
+	CreatedAt   time.Time      `json:"createdAt,omitempty"`
+	UpdatedAt   time.Time      `json:"updatedAt,omitempty"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+	Email       string         `json:"email"`
+	Password    string         `json:"password"`
+	VerifyEmail int8           `json:"-"`
 }
 
 // UnmarshalJSON ...

@@ -25,6 +25,7 @@ var db *gorm.DB
 var errorState int
 
 func main() {
+	config.Config()
 	configureDB := config.GetConfig().Database.RDBMS
 	driver := configureDB.Env.Driver
 
@@ -50,6 +51,7 @@ func main() {
 	migrateTables()
 
 	// Manually set foreign keys for MySQL and PostgreSQL
+	// Disable it if foreign keys are already set in the database
 	if driver != "sqlite3" {
 		setPkFk()
 	}

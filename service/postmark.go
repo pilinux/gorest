@@ -35,9 +35,7 @@ func Postmark(params PostmarkParams) (postmark.EmailResponse, error) {
 	email.TrackOpens = params.TrackOpens
 	email.TrackLinks = params.TrackLinks
 	email.MessageStream = params.MessageStream
-
-	htmlModel := params.HTMLModel
-	email.TemplateModel = htmlModel
+	email.TemplateModel = params.HTMLModel
 
 	res, err := client.SendTemplatedEmail(email)
 	/*

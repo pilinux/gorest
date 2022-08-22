@@ -191,6 +191,7 @@ func databaseMongo() DatabaseConfig {
 // email - config for using external email services
 func email() EmailConfig {
 	var emailConfig EmailConfig
+	var err error
 
 	// Load environment variables
 	env()
@@ -201,15 +202,34 @@ func email() EmailConfig {
 		emailConfig.APIToken = os.Getenv("EMAIL_API_TOKEN")
 		emailConfig.AddrFrom = os.Getenv("EMAIL_FROM")
 
+		emailConfig.TrackOpens = false
 		trackOpens := os.Getenv("EMAIL_TRACK_OPENS")
 		if trackOpens == "yes" {
 			emailConfig.TrackOpens = true
-		} else {
-			emailConfig.TrackOpens = false
 		}
 
 		emailConfig.TrackLinks = os.Getenv("EMAIL_TRACK_LINKS")
 		emailConfig.MsgType = os.Getenv("EMAIL_TYPE")
+
+		emailConfig.EmailVerificationTemplateID, err = strconv.ParseInt(os.Getenv("EMAIL_VERIFY_TEMPLATE_ID"), 10, 64)
+		if err != nil {
+			log.WithError(err).Panic("panic code: 141")
+		}
+		emailConfig.PasswordResetTemplateID, err = strconv.ParseInt(os.Getenv("EMAIL_PASS_RESET_TEMPLATE_ID"), 10, 64)
+		if err != nil {
+			log.WithError(err).Panic("panic code: 142")
+		}
+		emailConfig.EmailVerificationCodeLength, err = strconv.ParseUint(os.Getenv("EMAIL_VERIFY_CODE_LENGTH"), 10, 32)
+		if err != nil {
+			log.WithError(err).Panic("panic code: 143")
+		}
+		emailConfig.EmailVerificationTag = os.Getenv("EMAIL_VERIFY_TAG")
+		emailConfig.PasswordResetTag = os.Getenv("EMAIL_PASS_RESET_TAG")
+		emailConfig.HTMLModel = os.Getenv("EMAIL_HTML_MODEL")
+		emailConfig.EmailValidityPeriod, err = strconv.ParseUint(os.Getenv("EMAIL_VALIDITY_PERIOD"), 10, 32)
+		if err != nil {
+			log.WithError(err).Panic("panic code: 144")
+		}
 	}
 
 	return emailConfig
