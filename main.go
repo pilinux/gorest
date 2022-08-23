@@ -160,6 +160,13 @@ func SetupRouter() (*gin.Engine, error) {
 			// Register - no JWT required
 			v1.POST("register", controller.CreateUserAuth)
 
+			// Verify email
+			if configure.Security.VerifyEmail {
+				if configure.Database.REDIS.Activate == config.Activated {
+					v1.POST("verify", controller.VerifyEmail)
+				}
+			}
+
 			// Login - app issues JWT
 			v1.POST("login", controller.Login)
 
