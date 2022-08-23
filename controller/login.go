@@ -48,6 +48,17 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	// app settings
+	configSecurity := config.GetConfig().Security
+
+	// check whether email verification is required
+	if configSecurity.VerifyEmail {
+		if v.VerifyEmail != model.EmailVerified {
+			renderer.Render(c, gin.H{"msg": "email verification required"}, http.StatusUnauthorized)
+			return
+		}
+	}
+
 	verifyPass, err := argon2id.ComparePasswordAndHash(payload.Password, v.Password)
 	if err != nil {
 		log.WithError(err).Error("error code: 1011")
@@ -71,7 +82,6 @@ func Login(c *gin.Context) {
 	// claims.Custom2
 
 	// when 2FA is enabled for this application (ACTIVATE_2FA=yes)
-	configSecurity := config.GetConfig().Security
 	if configSecurity.Must2FA == config.Activated {
 		db := database.GetDB()
 		twoFA := model.TwoFA{}
