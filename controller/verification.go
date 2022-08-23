@@ -4,13 +4,17 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/pilinux/gorest/config"
 	"github.com/pilinux/gorest/database"
 	"github.com/pilinux/gorest/database/model"
+	"github.com/pilinux/gorest/lib"
 	"github.com/pilinux/gorest/lib/renderer"
+	"github.com/pilinux/gorest/service"
 
+	"github.com/alexedwards/argon2id"
 	"github.com/gin-gonic/gin"
 	"github.com/mediocregopher/radix/v4"
 	log "github.com/sirupsen/logrus"
@@ -96,4 +100,51 @@ func VerifyEmail(c *gin.Context) {
 	tx.Commit()
 
 	renderer.Render(c, gin.H{"msg": "email successfully verified"}, http.StatusOK)
+}
+
+// CreateVerificationEmail issues new verification code upon request
+func CreateVerificationEmail(c *gin.Context) {
+	var payload LoginPayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		renderer.Render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
+		return
+	}
+
+	payload.Email = strings.TrimSpace(payload.Email)
+	if !lib.ValidateEmail(payload.Email) {
+		renderer.Render(c, gin.H{"msg": "wrong email address"}, http.StatusBadRequest)
+		return
+	}
+
+	v, err := service.GetUserByEmail(payload.Email)
+	if err != nil {
+		renderer.Render(c, gin.H{"msg": "user not found"}, http.StatusNotFound)
+		return
+	}
+
+	// is email already verified
+	if v.VerifyEmail == model.EmailVerified {
+		renderer.Render(c, gin.H{"msg": "email already verified"}, http.StatusOK)
+		return
+	}
+
+	// verify password
+	verifyPass, err := argon2id.ComparePasswordAndHash(payload.Password, v.Password)
+	if err != nil {
+		log.WithError(err).Error("error code: 1071")
+		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		return
+	}
+	if !verifyPass {
+		renderer.Render(c, gin.H{"msg": "wrong credentials"}, http.StatusUnauthorized)
+		return
+	}
+
+	// issue new verification code
+	if !sendVerificationEmail(v.Email) {
+		renderer.Render(c, gin.H{"msg": "failed to send verification email"}, http.StatusServiceUnavailable)
+		return
+	}
+
+	renderer.Render(c, gin.H{"msg": "sent verification email"}, http.StatusOK)
 }

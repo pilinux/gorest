@@ -164,6 +164,7 @@ func SetupRouter() (*gin.Engine, error) {
 			if configure.Security.VerifyEmail {
 				if configure.Database.REDIS.Activate == config.Activated {
 					v1.POST("verify", controller.VerifyEmail)
+					v1.POST("resend-verification-email", controller.CreateVerificationEmail)
 				}
 			}
 
