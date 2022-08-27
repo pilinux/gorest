@@ -209,13 +209,13 @@ func email() EmailConfig {
 		}
 
 		emailConfig.TrackLinks = os.Getenv("EMAIL_TRACK_LINKS")
-		emailConfig.MsgType = os.Getenv("EMAIL_TYPE")
+		emailConfig.DeliveryType = os.Getenv("EMAIL_DELIVERY_TYPE")
 
 		emailConfig.EmailVerificationTemplateID, err = strconv.ParseInt(os.Getenv("EMAIL_VERIFY_TEMPLATE_ID"), 10, 64)
 		if err != nil {
 			log.WithError(err).Panic("panic code: 141")
 		}
-		emailConfig.PasswordResetTemplateID, err = strconv.ParseInt(os.Getenv("EMAIL_PASS_RESET_TEMPLATE_ID"), 10, 64)
+		emailConfig.PasswordRecoverTemplateID, err = strconv.ParseInt(os.Getenv("EMAIL_PASS_RECOVER_TEMPLATE_ID"), 10, 64)
 		if err != nil {
 			log.WithError(err).Panic("panic code: 142")
 		}
@@ -223,12 +223,20 @@ func email() EmailConfig {
 		if err != nil {
 			log.WithError(err).Panic("panic code: 143")
 		}
-		emailConfig.EmailVerificationTag = os.Getenv("EMAIL_VERIFY_TAG")
-		emailConfig.PasswordResetTag = os.Getenv("EMAIL_PASS_RESET_TAG")
-		emailConfig.HTMLModel = os.Getenv("EMAIL_HTML_MODEL")
-		emailConfig.EmailValidityPeriod, err = strconv.ParseUint(os.Getenv("EMAIL_VALIDITY_PERIOD"), 10, 32)
+		emailConfig.PasswordRecoverCodeLength, err = strconv.ParseUint(os.Getenv("EMAIL_PASS_RECOVER_CODE_LENGTH"), 10, 32)
 		if err != nil {
 			log.WithError(err).Panic("panic code: 144")
+		}
+		emailConfig.EmailVerificationTag = os.Getenv("EMAIL_VERIFY_TAG")
+		emailConfig.PasswordRecoverTag = os.Getenv("EMAIL_PASS_RECOVER_TAG")
+		emailConfig.HTMLModel = os.Getenv("EMAIL_HTML_MODEL")
+		emailConfig.EmailVerifyValidityPeriod, err = strconv.ParseUint(os.Getenv("EMAIL_VERIFY_VALIDITY_PERIOD"), 10, 32)
+		if err != nil {
+			log.WithError(err).Panic("panic code: 145")
+		}
+		emailConfig.PassRecoverValidityPeriod, err = strconv.ParseUint(os.Getenv("EMAIL_PASS_RECOVER_VALIDITY_PERIOD"), 10, 32)
+		if err != nil {
+			log.WithError(err).Panic("panic code: 146")
 		}
 	}
 
@@ -281,12 +289,12 @@ func security() SecurityConfig {
 
 	// Email verification and password recovery
 	securityConfig.VerifyEmail = false
-	securityConfig.ResetPass = false
+	securityConfig.RecoverPass = false
 	if os.Getenv("VERIFY_EMAIL") == "yes" {
 		securityConfig.VerifyEmail = true
 	}
-	if os.Getenv("RESET_PASSWORD") == "yes" {
-		securityConfig.ResetPass = true
+	if os.Getenv("RECOVER_PASSWORD") == "yes" {
+		securityConfig.RecoverPass = true
 	}
 
 	// Two-factor authentication

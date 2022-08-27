@@ -2,20 +2,22 @@ package config
 
 // EmailConfig - for external email services
 type EmailConfig struct {
-	Activate   string
-	Provider   string
-	APIToken   string
-	AddrFrom   string
-	TrackOpens bool
-	TrackLinks string
-	MsgType    string
+	Activate     string
+	Provider     string
+	APIToken     string
+	AddrFrom     string
+	TrackOpens   bool
+	TrackLinks   string
+	DeliveryType string
 
 	// for templated email
 	EmailVerificationTemplateID int64
-	PasswordResetTemplateID     int64
+	PasswordRecoverTemplateID   int64
 	EmailVerificationCodeLength uint64
+	PasswordRecoverCodeLength   uint64
 	EmailVerificationTag        string
-	PasswordResetTag            string
+	PasswordRecoverTag          string
 	HTMLModel                   string
-	EmailValidityPeriod         uint64 // in seconds
+	EmailVerifyValidityPeriod   uint64 // in seconds
+	PassRecoverValidityPeriod   uint64 // in seconds
 }

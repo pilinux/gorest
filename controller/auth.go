@@ -48,7 +48,7 @@ func CreateUserAuth(c *gin.Context) {
 	authFinal.Email = auth.Email
 	authFinal.Password = auth.Password
 
-	if sendVerificationEmail(authFinal.Email) {
+	if sendEmail(authFinal.Email, model.EmailTypeVerification) {
 		authFinal.VerifyEmail = model.EmailNotVerified
 	}
 
@@ -66,27 +66,47 @@ func CreateUserAuth(c *gin.Context) {
 	renderer.Render(c, authFinal, http.StatusCreated)
 }
 
-// sendVerificationEmail sends a verification email if
+// sendEmail sends a verification/password recovery email if
 // - required by the application
 // - an external email service is configured
 // - a redis database is configured
-func sendVerificationEmail(email string) bool {
-	// send verification email if required by the application
+func sendEmail(email string, emailType int) bool {
+	// send email if required by the application
 	appConfig := config.GetConfig()
 	// is external email service activated
 	if appConfig.EmailConf.Activate == config.Activated {
-		// is email verification required
+		// is verification/password recovery email required
+		doSendEmail := false
 		if appConfig.Security.VerifyEmail {
+			doSendEmail = true
+		}
+		if appConfig.Security.RecoverPass {
+			doSendEmail = true
+		}
+		if doSendEmail {
 			// is redis database activated
 			if appConfig.Database.REDIS.Activate == config.Activated {
-				// generate verification code
-				verificationCode := lib.SecureRandomNumber(uint(appConfig.EmailConf.EmailVerificationCodeLength))
-
 				data := struct {
 					key   string
 					value string
 				}{}
-				data.key = "gorest-email-verification-" + strconv.FormatUint(verificationCode, 10)
+				var keyTTL uint64
+				var emailTag string
+
+				// generate verification/password recovery code
+				var code uint64
+				if emailType == model.EmailTypeVerification {
+					code = lib.SecureRandomNumber(appConfig.EmailConf.EmailVerificationCodeLength)
+					data.key = model.EmailVerificationKeyPrefix + strconv.FormatUint(code, 10)
+					keyTTL = appConfig.EmailConf.EmailVerifyValidityPeriod
+					emailTag = appConfig.EmailConf.EmailVerificationTag
+				}
+				if emailType == model.EmailTypePassRecovery {
+					code = lib.SecureRandomNumber(appConfig.EmailConf.PasswordRecoverCodeLength)
+					data.key = model.PasswordRecoveryKeyPrefix + strconv.FormatUint(code, 10)
+					keyTTL = appConfig.EmailConf.PassRecoverValidityPeriod
+					emailTag = appConfig.EmailConf.PasswordRecoverTag
+				}
 				data.value = email
 
 				// save in redis with expiry time
@@ -107,7 +127,7 @@ func sendVerificationEmail(email string) bool {
 
 				// Set expiry time
 				r2 := 0
-				if err := client.Do(ctx, radix.FlatCmd(&r2, "EXPIRE", data.key, appConfig.EmailConf.EmailValidityPeriod)); err != nil {
+				if err := client.Do(ctx, radix.FlatCmd(&r2, "EXPIRE", data.key, keyTTL)); err != nil {
 					log.WithError(err).Error("error code: 1004")
 				}
 				if r2 != 1 {
@@ -118,17 +138,17 @@ func sendVerificationEmail(email string) bool {
 				// for Postmark
 				if appConfig.EmailConf.Provider == "postmark" {
 					htmlModel := lib.HTMLModel(lib.StrArrHTMLModel(appConfig.EmailConf.HTMLModel))
-					htmlModel["verification_code"] = verificationCode
+					htmlModel["secret_code"] = code
 
 					params := service.PostmarkParams{}
 					params.ServerToken = appConfig.EmailConf.APIToken
 					params.TemplateID = appConfig.EmailConf.EmailVerificationTemplateID
 					params.From = appConfig.EmailConf.AddrFrom
 					params.To = email
-					params.Tag = appConfig.EmailConf.EmailVerificationTag
+					params.Tag = emailTag
 					params.TrackOpens = appConfig.EmailConf.TrackOpens
 					params.TrackLinks = appConfig.EmailConf.TrackLinks
-					params.MessageStream = appConfig.EmailConf.MsgType
+					params.MessageStream = appConfig.EmailConf.DeliveryType
 					params.HTMLModel = htmlModel
 
 					// send the email

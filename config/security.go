@@ -22,7 +22,7 @@ type SecurityConfig struct {
 	HashPass lib.HashPassConfig
 
 	VerifyEmail bool
-	ResetPass   bool
+	RecoverPass bool
 
 	MustFW   string
 	Firewall struct {

@@ -21,6 +21,18 @@ const (
 	EmailVerified          int8 = 1
 )
 
+// Email type
+const (
+	EmailTypeVerification int = 1
+	EmailTypePassRecovery int = 2
+)
+
+// Redis key prefixes
+const (
+	EmailVerificationKeyPrefix string = "gorest-email-verification-"
+	PasswordRecoveryKeyPrefix  string = "gorest-pass-recover-"
+)
+
 // Auth model - `auths` table
 type Auth struct {
 	AuthID      uint64         `gorm:"primaryKey" json:"authID,omitempty"`

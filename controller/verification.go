@@ -35,7 +35,7 @@ func VerifyEmail(c *gin.Context) {
 		key   string
 		value string
 	}{}
-	data.key = "gorest-email-verification-" + payload.VerificationCode
+	data.key = model.EmailVerificationKeyPrefix + payload.VerificationCode
 
 	// get redis client
 	client := *database.GetRedis()
@@ -141,7 +141,7 @@ func CreateVerificationEmail(c *gin.Context) {
 	}
 
 	// issue new verification code
-	if !sendVerificationEmail(v.Email) {
+	if !sendEmail(v.Email, model.EmailTypeVerification) {
 		renderer.Render(c, gin.H{"msg": "failed to send verification email"}, http.StatusServiceUnavailable)
 		return
 	}
