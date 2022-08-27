@@ -244,6 +244,8 @@ github.com/pelletier/go-toml v1.2.0 h1:T5zMGML61Wp+FlcbWjRDT7yAxhJNAiPPLOFECq181
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/pelletier/go-toml/v2 v2.0.1 h1:8e3L2cCQzLFi2CR4g7vGFuFxX7Jl1kKX8gW+iV0GUKU=
 github.com/pelletier/go-toml/v2 v2.0.1/go.mod h1:r9LEWfGN8R5k0VXJ+0BkIe7MYkRdwZOjgMj2KwnJFUo=
+github.com/pilinux/libgo v0.0.5 h1:vvCIeZbPhhtGHcosWYNQ0wIuM06DDtbUPl8PnXqAiGM=
+github.com/pilinux/libgo v0.0.5/go.mod h1:dRkAmsF0HiyctSiYgBMbn6nxRbyavlipm2lIzRjMFdE=
 github.com/pilinux/structs v1.1.1 h1:oab30yWZjsxSWCA8bHdCB4yUcB0qMSE8QVvgGSPEYxY=
 github.com/pilinux/structs v1.1.1/go.mod h1:Gm07WsM5mG+wZAqX2I4y5PoW4zvLhzDR+YoWm1c1BBk=
 github.com/pingcap/errors v0.11.4 h1:lFuQV/oaUMGcD2tqt+01ROSmJs75VG1ToEOkZIZ4nE4=

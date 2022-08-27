@@ -13,6 +13,7 @@ require (
 	github.com/mediocregopher/radix/v4 v4.1.0
 	github.com/mrz1836/postmark v1.2.11
 	github.com/onrik/logrus v0.9.0
+	github.com/pilinux/libgo v0.0.5
 	github.com/pilinux/structs v1.1.1
 	github.com/qiniu/qmgo v1.1.1
 	github.com/sec51/twofactor v1.0.0

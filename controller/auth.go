@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/mediocregopher/radix/v4"
 	"github.com/pilinux/gorest/config"
 	"github.com/pilinux/gorest/database"
 	"github.com/pilinux/gorest/database/model"
@@ -17,6 +16,8 @@ import (
 	"github.com/pilinux/gorest/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mediocregopher/radix/v4"
+	"github.com/pilinux/libgo/timestring"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -139,6 +140,7 @@ func sendEmail(email string, emailType int) bool {
 				if appConfig.EmailConf.Provider == "postmark" {
 					htmlModel := lib.HTMLModel(lib.StrArrHTMLModel(appConfig.EmailConf.HTMLModel))
 					htmlModel["secret_code"] = code
+					htmlModel["email_validity_period"] = timestring.HourMinuteSecond(keyTTL)
 
 					params := service.PostmarkParams{}
 					params.ServerToken = appConfig.EmailConf.APIToken
