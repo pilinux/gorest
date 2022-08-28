@@ -185,6 +185,12 @@ func SetupRouter() (*gin.Engine, error) {
 				r2FA.POST("validate", controller.Validate2FA)
 			}
 
+			// Reset forgotten password
+			if configure.EmailConf.Activate == config.Activated {
+				// send password recovery email
+				v1.POST("forgot-password", controller.PasswordForgot)
+			}
+
 			// User
 			rUsers := v1.Group("users")
 			rUsers.GET("", controller.GetUsers)    // Non-protected

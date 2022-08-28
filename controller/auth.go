@@ -154,7 +154,15 @@ func sendEmail(email string, emailType int) bool {
 
 		params := service.PostmarkParams{}
 		params.ServerToken = appConfig.EmailConf.APIToken
-		params.TemplateID = appConfig.EmailConf.EmailVerificationTemplateID
+
+		if emailType == model.EmailTypeVerification {
+			params.TemplateID = appConfig.EmailConf.EmailVerificationTemplateID
+		}
+
+		if emailType == model.EmailTypePassRecovery {
+			params.TemplateID = appConfig.EmailConf.PasswordRecoverTemplateID
+		}
+
 		params.From = appConfig.EmailConf.AddrFrom
 		params.To = email
 		params.Tag = emailTag
