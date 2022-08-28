@@ -373,7 +373,8 @@ func Activate2FA(c *gin.Context) {
 
 	// step 6: generate recovery key
 	keyRecovery := uuid.NewString()
-	keyRecovery = keyRecovery[len(keyRecovery)-6:]
+	keyRecovery = strings.ReplaceAll(keyRecovery, "-", "")
+	keyRecovery = keyRecovery[len(keyRecovery)-configSecurity.TwoFA.Digits:]
 	keyRecoveryHash := sha256.Sum256([]byte(keyRecovery))
 
 	// step 7: encrypt secret using hash of recovery key
@@ -384,11 +385,22 @@ func Activate2FA(c *gin.Context) {
 		return
 	}
 
-	// step 8: encode in base64
+	// step 8: generate new UUID code
+	uuidPlain := uuid.NewString()
+	uuidEncInByte, err := lib.Encrypt([]byte(uuidPlain), keyRecoveryHash[:])
+	if err != nil {
+		log.WithError(err).Error("error code: 1045")
+		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		return
+	}
+
+	// step 9: encode in base64
 	twoFA.KeyMain = base64.StdEncoding.EncodeToString(keyMainInByte)
 	twoFA.KeyBackup = base64.StdEncoding.EncodeToString(keyMBackupInByte)
+	twoFA.UUIDEnc = base64.StdEncoding.EncodeToString(uuidEncInByte)
 
-	// step 9: save in DB
+	// step 10: save in DB
+	twoFA.UUIDPlain = uuidPlain
 	twoFA.Status = configSecurity.TwoFA.Status.On
 	twoFA.IDAuth = claims.AuthID
 
@@ -401,7 +413,7 @@ func Activate2FA(c *gin.Context) {
 		if err := tx.Save(&twoFA).Error; err != nil {
 			tx.Rollback()
 			txOK = false
-			log.WithError(err).Error("error code: 1045")
+			log.WithError(err).Error("error code: 1046")
 		} else {
 			tx.Commit()
 		}
@@ -411,7 +423,7 @@ func Activate2FA(c *gin.Context) {
 		if err := tx.Create(&twoFA).Error; err != nil {
 			tx.Rollback()
 			txOK = false
-			log.WithError(err).Error("error code: 1046")
+			log.WithError(err).Error("error code: 1047")
 		} else {
 			tx.Commit()
 		}
@@ -422,31 +434,31 @@ func Activate2FA(c *gin.Context) {
 		return
 	}
 
-	// step 10: delete QR image
+	// step 11: delete QR image
 	if lib.FileExist(configSecurity.TwoFA.PathQR + data2FA.Image) {
 		err = os.Remove(configSecurity.TwoFA.PathQR + data2FA.Image)
 		if err != nil {
-			log.WithError(err).Error("error code: 1047")
+			log.WithError(err).Error("error code: 1048")
 		}
 	}
 
-	// step 11: delete secrets from memory
+	// step 12: delete secrets from memory
 	delMem2FA(claims.AuthID)
 
-	// step 12: issue new tokens
+	// step 13: issue new tokens
 	//
 	// set 2FA claim
 	claims.TwoFA = configSecurity.TwoFA.Status.Verified
 	//
 	accessJWT, _, err := middleware.GetJWT(claims, "access")
 	if err != nil {
-		log.WithError(err).Error("error code: 1048")
+		log.WithError(err).Error("error code: 1049")
 		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		return
 	}
 	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
 	if err != nil {
-		log.WithError(err).Error("error code: 1049")
+		log.WithError(err).Error("error code: 1050")
 		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		return
 	}
