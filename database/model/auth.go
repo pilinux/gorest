@@ -55,17 +55,18 @@ func (v *Auth) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
+	configSecurity := config.GetConfig().Security
+
 	// check password length
 	// if more checks are required i.e. password pattern,
 	// add all conditions here
-	if len(aux.Password) < 6 {
+	if len(aux.Password) < configSecurity.UserPassMinLength {
 		return errors.New("short password")
 	}
 
 	v.AuthID = aux.AuthID
 	v.Email = strings.TrimSpace(aux.Email)
 
-	configSecurity := config.GetConfig().Security
 	config := lib.HashPassConfig{
 		Memory:      configSecurity.HashPass.Memory,
 		Iterations:  configSecurity.HashPass.Iterations,

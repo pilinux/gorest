@@ -9,6 +9,8 @@ import (
 
 // SecurityConfig ...
 type SecurityConfig struct {
+	UserPassMinLength int
+
 	MustBasicAuth string
 	BasicAuth     struct {
 		Username string

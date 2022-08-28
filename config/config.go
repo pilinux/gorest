@@ -265,6 +265,13 @@ func security() SecurityConfig {
 	// Load environment variables
 	env()
 
+	// Minimum password length
+	userPassMinLength, err := strconv.Atoi(os.Getenv("MIN_PASS_LENGTH"))
+	if err != nil {
+		log.WithError(err).Panic("panic code: 129")
+	}
+	securityConfig.UserPassMinLength = userPassMinLength
+
 	// Basic auth
 	securityConfig.MustBasicAuth = os.Getenv("ACTIVATE_BASIC_AUTH")
 	if securityConfig.MustBasicAuth == Activated {
