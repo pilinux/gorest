@@ -189,6 +189,8 @@ func SetupRouter() (*gin.Engine, error) {
 			if configure.EmailConf.Activate == config.Activated {
 				// send password recovery email
 				v1.POST("forgot-password", controller.PasswordForgot)
+				// recover account and set new password
+				v1.POST("reset-password", controller.PasswordRecover)
 			}
 
 			// User
