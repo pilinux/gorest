@@ -14,7 +14,7 @@ type TwoFA struct {
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 	KeyMain   string         `json:"-"`
 	KeyBackup string         `json:"-"`
-	UUIDPlain string         `json:"-"`
+	UUIDSHA   string         `json:"-"`
 	UUIDEnc   string         `json:"-"`
 	Status    string         `json:"-"`
 	IDAuth    uint64         `json:"-"`

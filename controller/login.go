@@ -387,7 +387,11 @@ func Activate2FA(c *gin.Context) {
 
 	// step 8: generate new UUID code
 	uuidPlain := uuid.NewString()
-	uuidEncInByte, err := lib.Encrypt([]byte(uuidPlain), keyRecoveryHash[:])
+	uuidPlainInByte := []byte(uuidPlain)
+	uuidSHA256 := sha256.Sum256(uuidPlainInByte)
+	uuidSHA := base64.StdEncoding.EncodeToString(uuidSHA256[:])
+
+	uuidEncInByte, err := lib.Encrypt(uuidPlainInByte, keyRecoveryHash[:])
 	if err != nil {
 		log.WithError(err).Error("error code: 1045")
 		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
@@ -400,7 +404,7 @@ func Activate2FA(c *gin.Context) {
 	twoFA.UUIDEnc = base64.StdEncoding.EncodeToString(uuidEncInByte)
 
 	// step 10: save in DB
-	twoFA.UUIDPlain = uuidPlain
+	twoFA.UUIDSHA = uuidSHA
 	twoFA.Status = configSecurity.TwoFA.Status.On
 	twoFA.IDAuth = claims.AuthID
 
