@@ -121,7 +121,7 @@ func PasswordRecover(c *gin.Context) {
 		return
 	}
 	if result == 0 {
-		renderer.Render(c, gin.H{"msg": "wrong/expired recovery key"}, http.StatusUnauthorized)
+		renderer.Render(c, gin.H{"msg": "wrong/expired secret code"}, http.StatusUnauthorized)
 		return
 	}
 
@@ -295,7 +295,7 @@ func PasswordRecover(c *gin.Context) {
 		log.WithError(err).Error("error code: 1085")
 	}
 	if result == 0 {
-		err := errors.New("failed to delete key from redis: " + data.key)
+		err := errors.New("failed to delete recovery key from redis")
 		log.WithError(err).Error("error code: 1086")
 	}
 

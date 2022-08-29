@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -67,6 +68,10 @@ func VerifyEmail(c *gin.Context) {
 	if err := client.Do(ctx, radix.FlatCmd(&result, "DEL", data.key)); err != nil {
 		log.WithError(err).Error("error code: 1063")
 	}
+	if result == 0 {
+		err := errors.New("failed to delete recovery key from redis")
+		log.WithError(err).Error("error code: 1064")
+	}
 
 	// update verification status in database
 	db := database.GetDB()
@@ -88,7 +93,7 @@ func VerifyEmail(c *gin.Context) {
 	tx := db.Begin()
 	if err := tx.Save(&auth).Error; err != nil {
 		tx.Rollback()
-		log.WithError(err).Error("error code: 1064")
+		log.WithError(err).Error("error code: 1065")
 		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		return
 	}
