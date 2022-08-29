@@ -8,6 +8,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alexedwards/argon2id"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/pilinux/gorest/config"
 	"github.com/pilinux/gorest/database"
 	"github.com/pilinux/gorest/database/model"
@@ -15,11 +20,6 @@ import (
 	"github.com/pilinux/gorest/lib/middleware"
 	"github.com/pilinux/gorest/lib/renderer"
 	"github.com/pilinux/gorest/service"
-
-	"github.com/alexedwards/argon2id"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
 )
 
 // LoginPayload ...
@@ -682,51 +682,4 @@ func Validate2FA(c *gin.Context) {
 	jwtPayload.AccessJWT = accessJWT
 	jwtPayload.RefreshJWT = refreshJWT
 	renderer.Render(c, jwtPayload, http.StatusOK)
-}
-
-// getClaims - get JWT custom claims
-func getClaims(c *gin.Context) middleware.MyCustomClaims {
-	// get claims
-	claims := middleware.MyCustomClaims{
-		AuthID:  c.GetUint64("authID"),
-		Email:   c.GetString("email"),
-		Role:    c.GetString("role"),
-		Scope:   c.GetString("scope"),
-		TwoFA:   c.GetString("tfa"),
-		SiteLan: c.GetString("siteLan"),
-		Custom1: c.GetString("custom1"),
-		Custom2: c.GetString("custom2"),
-	}
-
-	return claims
-}
-
-// validateUserID - check whether authID or email is missing
-func validateUserID(authID uint64, email string) bool {
-	email = strings.TrimSpace(email)
-	return authID != 0 && email != ""
-}
-
-// validate2FA validates user-provided OTP
-func validate2FA(encryptedMessage []byte, issuer string, userInput string) ([]byte, string, error) {
-	configSecurity := config.GetConfig().Security
-	otpByte, err := lib.ValidateTOTP(encryptedMessage, issuer, userInput)
-	// client provided invalid OTP / internal error
-	if err != nil {
-		// client provided invalid OTP
-		if len(otpByte) > 0 {
-			return otpByte, configSecurity.TwoFA.Status.Invalid, err
-		}
-
-		// internal error
-		return []byte{}, "", err
-	}
-
-	// validated
-	return otpByte, configSecurity.TwoFA.Status.Verified, nil
-}
-
-// delMem2FA - delete secrets from memory
-func delMem2FA(authID uint64) {
-	delete(model.InMemorySecret2FA, authID)
 }
