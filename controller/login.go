@@ -364,7 +364,7 @@ func Activate2FA(c *gin.Context) {
 	}
 
 	// step 5: encrypt (AES-256) secret using hash of user's pass
-	keyMainInByte, err := lib.Encrypt(otpByte, data2FA.PassSHA)
+	keyMainCipherByte, err := lib.Encrypt(otpByte, data2FA.PassSHA)
 	if err != nil {
 		log.WithError(err).Error("error code: 1043")
 		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
@@ -378,7 +378,7 @@ func Activate2FA(c *gin.Context) {
 	keyRecoveryHash := sha256.Sum256([]byte(keyRecovery))
 
 	// step 7: encrypt secret using hash of recovery key
-	keyMBackupInByte, err := lib.Encrypt(otpByte, keyRecoveryHash[:])
+	keyBackupCipherByte, err := lib.Encrypt(otpByte, keyRecoveryHash[:])
 	if err != nil {
 		log.WithError(err).Error("error code: 1044")
 		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
@@ -386,12 +386,12 @@ func Activate2FA(c *gin.Context) {
 	}
 
 	// step 8: generate new UUID code
-	uuidPlain := uuid.NewString()
-	uuidPlainInByte := []byte(uuidPlain)
-	uuidSHA256 := sha256.Sum256(uuidPlainInByte)
+	uuidPlaintext := uuid.NewString()
+	uuidPlaintextByte := []byte(uuidPlaintext)
+	uuidSHA256 := sha256.Sum256(uuidPlaintextByte)
 	uuidSHA := base64.StdEncoding.EncodeToString(uuidSHA256[:])
 
-	uuidEncInByte, err := lib.Encrypt(uuidPlainInByte, keyRecoveryHash[:])
+	uuidEncByte, err := lib.Encrypt(uuidPlaintextByte, keyRecoveryHash[:])
 	if err != nil {
 		log.WithError(err).Error("error code: 1045")
 		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
@@ -399,9 +399,9 @@ func Activate2FA(c *gin.Context) {
 	}
 
 	// step 9: encode in base64
-	twoFA.KeyMain = base64.StdEncoding.EncodeToString(keyMainInByte)
-	twoFA.KeyBackup = base64.StdEncoding.EncodeToString(keyMBackupInByte)
-	twoFA.UUIDEnc = base64.StdEncoding.EncodeToString(uuidEncInByte)
+	twoFA.KeyMain = base64.StdEncoding.EncodeToString(keyMainCipherByte)
+	twoFA.KeyBackup = base64.StdEncoding.EncodeToString(keyBackupCipherByte)
+	twoFA.UUIDEnc = base64.StdEncoding.EncodeToString(uuidEncByte)
 
 	// step 10: save in DB
 	twoFA.UUIDSHA = uuidSHA
@@ -575,7 +575,7 @@ func Validate2FA(c *gin.Context) {
 	// retrieve encrypted secrets from DB for new validation process
 	if newProcess {
 		// decode base64 encoded secret key
-		cipherInByte, err := base64.StdEncoding.DecodeString(twoFA.KeyMain)
+		keyMainCipherByte, err := base64.StdEncoding.DecodeString(twoFA.KeyMain)
 		if err != nil {
 			log.WithError(err).Error("error code: 1051")
 			renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
@@ -583,14 +583,14 @@ func Validate2FA(c *gin.Context) {
 		}
 
 		// decrypt (AES-256) secret using hash of user's pass
-		secretInByte, err := lib.Decrypt(cipherInByte, data2FA.PassSHA)
+		keyMainPlaintextByte, err := lib.Decrypt(keyMainCipherByte, data2FA.PassSHA)
 		if err != nil {
 			log.WithError(err).Error("error code: 1052")
 			renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 			return
 		}
 
-		encryptedMessage = secretInByte
+		encryptedMessage = keyMainPlaintextByte
 	}
 
 	// step 4: validate user-provided OTP
@@ -609,12 +609,12 @@ func Validate2FA(c *gin.Context) {
 			// save in DB to protect from accidental data loss
 			//
 			// encrypt (AES-256) secret using hash of user's pass
-			keyMainInByte, err := lib.Encrypt(otpByte, data2FA.PassSHA)
+			keyMainCipherByte, err := lib.Encrypt(otpByte, data2FA.PassSHA)
 			if err != nil {
 				log.WithError(err).Error("error code: 1053")
 			}
 			// encode in base64
-			twoFA.KeyMain = base64.StdEncoding.EncodeToString(keyMainInByte)
+			twoFA.KeyMain = base64.StdEncoding.EncodeToString(keyMainCipherByte)
 			// updateAt
 			twoFA.UpdatedAt = time.Now().Local()
 			// write in DB
@@ -640,14 +640,14 @@ func Validate2FA(c *gin.Context) {
 	// step 5: 2FA validated
 	//
 	// encrypt (AES-256) secret using hash of user's pass
-	keyMainInByte, err := lib.Encrypt(otpByte, data2FA.PassSHA)
+	keyMainCipherByte, err := lib.Encrypt(otpByte, data2FA.PassSHA)
 	if err != nil {
 		log.WithError(err).Error("error code: 1056")
 		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
 		return
 	}
 	// encode in base64
-	twoFA.KeyMain = base64.StdEncoding.EncodeToString(keyMainInByte)
+	twoFA.KeyMain = base64.StdEncoding.EncodeToString(keyMainCipherByte)
 	// updateAt
 	twoFA.UpdatedAt = time.Now().Local()
 	// write in DB
