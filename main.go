@@ -185,13 +185,25 @@ func SetupRouter() (*gin.Engine, error) {
 				r2FA.POST("validate", controller.Validate2FA)
 			}
 
+			// Update/reset password
+			rPass := v1.Group("password")
 			// Reset forgotten password
 			if configure.EmailConf.Activate == config.Activated {
 				// send password recovery email
-				v1.POST("forgot-password", controller.PasswordForgot)
+				rPass.POST("forgot", controller.PasswordForgot)
 				// recover account and set new password
-				v1.POST("reset-password", controller.PasswordRecover)
+				rPass.POST("reset", controller.PasswordRecover)
 			}
+			rPass.Use(middleware.JWT())
+			if configure.Security.Must2FA == config.Activated {
+				rPass.Use(middleware.TwoFA(
+					configure.Security.TwoFA.Status.On,
+					configure.Security.TwoFA.Status.Off,
+					configure.Security.TwoFA.Status.Verified,
+				))
+			}
+			// change password while logged in
+			rPass.POST("edit", controller.PasswordUpdate)
 
 			// User
 			rUsers := v1.Group("users")
