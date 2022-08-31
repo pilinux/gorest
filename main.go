@@ -183,6 +183,15 @@ func SetupRouter() (*gin.Engine, error) {
 				r2FA.POST("setup", controller.Setup2FA)
 				r2FA.POST("activate", controller.Activate2FA)
 				r2FA.POST("validate", controller.Validate2FA)
+				if configure.Security.Must2FA == config.Activated {
+					r2FA.Use(middleware.TwoFA(
+						configure.Security.TwoFA.Status.On,
+						configure.Security.TwoFA.Status.Off,
+						configure.Security.TwoFA.Status.Verified,
+					))
+				}
+				// disable 2FA
+				r2FA.POST("deactivate", controller.Deactivate2FA)
 			}
 
 			// Update/reset password

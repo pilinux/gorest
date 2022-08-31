@@ -549,3 +549,115 @@ func Validate2FA(c *gin.Context) {
 	jwtPayload.RefreshJWT = refreshJWT
 	renderer.Render(c, jwtPayload, http.StatusOK)
 }
+
+// Deactivate2FA - disable 2FA for user account
+func Deactivate2FA(c *gin.Context) {
+	// get claims
+	claims := getClaims(c)
+
+	// app security settings
+	configSecurity := config.GetConfig().Security
+
+	// token confirms that 2FA is disabled
+	if claims.TwoFA == "" || claims.TwoFA == configSecurity.TwoFA.Status.Off {
+		renderer.Render(c, gin.H{"twoFA": configSecurity.TwoFA.Status.Off}, http.StatusOK)
+		return
+	}
+
+	// verify user pass
+	payload := struct {
+		Password string `json:"password"`
+	}{}
+	// bind JSON
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		renderer.Render(c, gin.H{"msg": "bad request"}, http.StatusBadRequest)
+		return
+	}
+	// find user
+	v, err := service.GetUserByEmail(claims.Email)
+	if err != nil {
+		renderer.Render(c, gin.H{"msg": "unknown user"}, http.StatusNotFound)
+		return
+	}
+	// verify password
+	verifyPass, err := argon2id.ComparePasswordAndHash(payload.Password, v.Password)
+	if err != nil {
+		log.WithError(err).Error("error code: 1036")
+		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		return
+	}
+	if !verifyPass {
+		renderer.Render(c, gin.H{"msg": "wrong credentials"}, http.StatusUnauthorized)
+		return
+	}
+
+	// get 2FA info from database
+	db := database.GetDB()
+	twoFA := model.TwoFA{}
+
+	err = db.Where("id_auth = ?", v.AuthID).First(&twoFA).Error
+	if err != nil {
+		// no record in DB
+		// set 2FA claim
+		claims.TwoFA = ""
+	}
+
+	// record found in DB
+	if err == nil {
+		// 2FA already disabled in DB
+		if twoFA.Status == "" || twoFA.Status == configSecurity.TwoFA.Status.Off {
+			// set 2FA claim
+			claims.TwoFA = twoFA.Status
+		}
+
+		// 2FA is active
+		if twoFA.Status == configSecurity.TwoFA.Status.On {
+			// remove 2FA keys from DB
+			twoFA.UpdatedAt = time.Now().Local()
+			twoFA.KeyMain = ""
+			twoFA.KeyBackup = ""
+			twoFA.UUIDSHA = ""
+			twoFA.UUIDEnc = ""
+			twoFA.Status = configSecurity.TwoFA.Status.Off
+
+			tx := db.Begin()
+			if err := tx.Save(&twoFA).Error; err != nil {
+				tx.Rollback()
+				log.WithError(err).Error("error code: 1037")
+				renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+				return
+			}
+			tx.Commit()
+
+			// set 2FA claim
+			claims.TwoFA = twoFA.Status
+		}
+	}
+
+	// generate new tokens
+	accessJWT, _, err := middleware.GetJWT(claims, "access")
+	if err != nil {
+		log.WithError(err).Error("error code: 1038")
+		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		return
+	}
+	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
+	if err != nil {
+		log.WithError(err).Error("error code: 1039")
+		renderer.Render(c, gin.H{"msg": "internal server error"}, http.StatusInternalServerError)
+		return
+	}
+
+	// send response to the client
+	response := struct {
+		AccessJWT  string `json:"accessJWT"`
+		RefreshJWT string `json:"refreshJWT"`
+		TwoAuth    string `json:"twoFA"`
+	}{}
+
+	response.AccessJWT = accessJWT
+	response.RefreshJWT = refreshJWT
+	response.TwoAuth = claims.TwoFA
+
+	renderer.Render(c, response, http.StatusOK)
+}
