@@ -7,6 +7,7 @@ import (
 	"crypto"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -381,7 +382,16 @@ func view() ViewConfig {
 
 	viewConfig.Activate = os.Getenv("ACTIVATE_VIEW")
 	if viewConfig.Activate == Activated {
-		viewConfig.Directory = os.Getenv("TEMPLATE_DIR")
+		viewConfig.Directory = strings.TrimSpace(os.Getenv("TEMPLATE_DIR"))
+
+		if viewConfig.Directory != "" {
+			// verify directory for templates exists
+			if _, err := os.Stat(viewConfig.Directory); os.IsNotExist(err) {
+				// directory does not exist
+				log.WithError(err).Panic("panic code: 110")
+			}
+		}
+
 	}
 
 	return viewConfig
