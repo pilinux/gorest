@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.6.0-rc.1 [Sep 03 - 2022]
+
+Link: https://github.com/pilinux/gorest/releases/tag/v1.6.0-rc.1
+
+&#9889; optimized database configuration files
+
+&#9889; optimized web application firewall
+
+&#9889; JSON protection from hijacking
+
+&#9889; better handling of JWT
+
+&#9889; two-factor authentication
+
+&#9889; email verification
+
+&#9889; password recovery
+
+&#9889; password update
+
 ## v1.5.1 [Jul 23 - 2022]
 
 Link: https://github.com/pilinux/gorest/releases/tag/v1.5.1
