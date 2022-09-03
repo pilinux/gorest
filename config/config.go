@@ -6,6 +6,7 @@ package config
 import (
 	"crypto"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -334,7 +335,19 @@ func security() SecurityConfig {
 		securityConfig.TwoFA.Status.Invalid = os.Getenv("TWO_FA_INVALID")
 
 		// for saving QR temporarily
-		securityConfig.TwoFA.PathQR = os.Getenv("TWO_FA_QR_PATH")
+		securityConfig.TwoFA.PathQR = strings.TrimSpace(os.Getenv("TWO_FA_QR_PATH"))
+
+		if securityConfig.TwoFA.PathQR != "" {
+			// verify directory exists
+			if _, err := os.Stat(securityConfig.TwoFA.PathQR); os.IsNotExist(err) {
+				// directory does not exist, create the directory
+				path := filepath.Join(".", securityConfig.TwoFA.PathQR)
+				err := os.MkdirAll(path, os.ModePerm)
+				if err != nil {
+					log.WithError(err).Panic("panic code: 109")
+				}
+			}
+		}
 	}
 
 	// App firewall
@@ -387,11 +400,14 @@ func view() ViewConfig {
 		if viewConfig.Directory != "" {
 			// verify directory for templates exists
 			if _, err := os.Stat(viewConfig.Directory); os.IsNotExist(err) {
-				// directory does not exist
-				log.WithError(err).Panic("panic code: 110")
+				// directory does not exist, create the directory
+				path := filepath.Join(".", viewConfig.Directory)
+				err := os.MkdirAll(path, os.ModePerm)
+				if err != nil {
+					log.WithError(err).Panic("panic code: 110")
+				}
 			}
 		}
-
 	}
 
 	return viewConfig
