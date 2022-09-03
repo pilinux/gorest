@@ -3,6 +3,6 @@
 *.log
 .env
 vendor/
-crosscompile.sh
+crosscompile*.sh
 gorest
 migrate
