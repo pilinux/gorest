@@ -4,11 +4,10 @@ package migrate
 import (
 	"fmt"
 
-	"gorm.io/gorm"
-
+	gconfig "github.com/pilinux/gorest/config"
+	gdatabase "github.com/pilinux/gorest/database"
 	gmodel "github.com/pilinux/gorest/database/model"
 
-	"github.com/pilinux/gorest/config"
 	"github.com/pilinux/gorest/example/database/model"
 )
 
@@ -20,10 +19,10 @@ type post model.Post
 type hobby model.Hobby
 type userHobby model.UserHobby
 
-var db *gorm.DB
-
 // DropAllTables - careful! It will drop all the tables!
 func DropAllTables() error {
+	db := gdatabase.GetDB()
+
 	if err := db.Migrator().DropTable(
 		&userHobby{},
 		&hobby{},
@@ -42,8 +41,9 @@ func DropAllTables() error {
 // StartMigration - automatically migrate all the tables
 // - Only create tables with missing columns and missing indexes
 // - Will not change/delete any existing columns and their types
-func StartMigration() error {
-	configureDB := config.GetConfig().Database.RDBMS
+func StartMigration(configure gconfig.Configuration) error {
+	db := gdatabase.GetDB()
+	configureDB := configure.Database.RDBMS
 	driver := configureDB.Env.Driver
 
 	if driver == "mysql" {
@@ -55,11 +55,6 @@ func StartMigration() error {
 			&post{},
 			&hobby{},
 		); err != nil {
-			return err
-		}
-
-		err := setPkFk()
-		if err != nil {
 			return err
 		}
 
@@ -81,8 +76,10 @@ func StartMigration() error {
 	return nil
 }
 
-func setPkFk() error {
-	// manually set foreign key for MySQL
+// SetPkFk - manually set foreign key for MySQL and PostgreSQL
+func SetPkFk() error {
+	db := gdatabase.GetDB()
+
 	if err := db.Migrator().CreateConstraint(&user{}, "Posts"); err != nil {
 		return err
 	}

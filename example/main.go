@@ -22,16 +22,27 @@ func main() {
 		}
 
 		// Drop all tables from DB
-		if err := migrate.DropAllTables(); err != nil {
+		/*
+			if err := migrate.DropAllTables(); err != nil {
+				fmt.Println(err)
+				return
+			}
+		*/
+
+		// Start DB migration
+		if err := migrate.StartMigration(*configure); err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		// Start DB migration
-		if err := migrate.StartMigration(); err != nil {
-			fmt.Println(err)
-			return
-		}
+		// Manually set foreign key for MySQL
+		// execute it only when required!
+		/*
+			if err := migrate.SetPkFk(); err != nil {
+				fmt.Println(err)
+				return
+			}
+		*/
 	}
 
 	if configure.Database.REDIS.Activate == gconfig.Activated {
