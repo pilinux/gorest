@@ -22,13 +22,13 @@ func GetUsers() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 
 	if err := db.Find(&users).Error; err != nil {
 		log.WithError(err).Error("error code: 1101")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 
 	if len(users) == 0 {
-		httpResponse.Result = "no user found"
+		httpResponse.Message = "no user found"
 		httpStatusCode = http.StatusNotFound
 		return
 	}
@@ -44,7 +44,7 @@ func GetUsers() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 		users[j].Hobbies = hobbies
 	}
 
-	httpResponse.Result = users
+	httpResponse.Message = users
 	httpStatusCode = http.StatusOK
 	return
 }
@@ -57,7 +57,7 @@ func GetUser(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	hobbies := []model.Hobby{}
 
 	if err := db.Where("user_id = ?", id).First(&user).Error; err != nil {
-		httpResponse.Result = "user not found"
+		httpResponse.Message = "user not found"
 		httpStatusCode = http.StatusNotFound
 		return
 	}
@@ -71,7 +71,7 @@ func GetUser(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 		Find(&hobbies)
 	user.Hobbies = hobbies
 
-	httpResponse.Result = user
+	httpResponse.Message = user
 	httpStatusCode = http.StatusOK
 	return
 }
@@ -83,7 +83,7 @@ func CreateUser(userIDAuth uint64, user model.User) (httpResponse gmodel.HTTPRes
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&userFinal).Error; err == nil {
-		httpResponse.Result = "user profile found, no need to create a new one"
+		httpResponse.Message = "user profile found, no need to create a new one"
 		httpStatusCode = http.StatusForbidden
 		return
 	}
@@ -97,13 +97,13 @@ func CreateUser(userIDAuth uint64, user model.User) (httpResponse gmodel.HTTPRes
 	if err := tx.Create(&userFinal).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Error("error code: 1111")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	tx.Commit()
 
-	httpResponse.Result = userFinal
+	httpResponse.Message = userFinal
 	httpStatusCode = http.StatusCreated
 	return
 }
@@ -115,7 +115,7 @@ func UpdateUser(userIDAuth uint64, user model.User) (httpResponse gmodel.HTTPRes
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&userFinal).Error; err != nil {
-		httpResponse.Result = "no user profile found"
+		httpResponse.Message = "no user profile found"
 		httpStatusCode = http.StatusNotFound
 		return
 	}
@@ -129,13 +129,13 @@ func UpdateUser(userIDAuth uint64, user model.User) (httpResponse gmodel.HTTPRes
 	if err := tx.Save(&userFinal).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Error("error code: 1121")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	tx.Commit()
 
-	httpResponse.Result = userFinal
+	httpResponse.Message = userFinal
 	httpStatusCode = http.StatusOK
 	return
 }
@@ -149,7 +149,7 @@ func AddHobby(userIDAuth uint64, hobby model.Hobby) (httpResponse gmodel.HTTPRes
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&user).Error; err != nil {
-		httpResponse.Result = "no user profile found"
+		httpResponse.Message = "no user profile found"
 		httpStatusCode = http.StatusForbidden
 		return
 	}
@@ -164,7 +164,7 @@ func AddHobby(userIDAuth uint64, hobby model.Hobby) (httpResponse gmodel.HTTPRes
 		if err := tx.Create(&hobbyNew).Error; err != nil {
 			tx.Rollback()
 			log.WithError(err).Error("error code: 1131")
-			httpResponse.Result = "internal server error"
+			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
 		}
@@ -178,14 +178,14 @@ func AddHobby(userIDAuth uint64, hobby model.Hobby) (httpResponse gmodel.HTTPRes
 		if err := tx.Save(&user).Error; err != nil {
 			tx.Rollback()
 			log.WithError(err).Error("error code: 1132")
-			httpResponse.Result = "internal server error"
+			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
 		}
 		tx.Commit()
 	}
 
-	httpResponse.Result = user
+	httpResponse.Message = user
 	httpStatusCode = http.StatusOK
 	return
 }

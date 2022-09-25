@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	gmodel "github.com/pilinux/gorest/database/model"
 	grenderer "github.com/pilinux/gorest/lib/renderer"
 
 	"github.com/pilinux/gorest/example/database/model"
@@ -28,15 +27,15 @@ func GetPost(c *gin.Context) {
 	resp, statusCode := handler.GetPost(id)
 
 	if statusCode >= 400 {
-		errorMsg := gmodel.ErrorMsg{}
+		errorMsg := model.ErrorMsg{}
 		errorMsg.HTTPCode = statusCode
-		errorMsg.Message = fmt.Sprintf("%v", resp.Result)
+		errorMsg.Message = fmt.Sprintf("%v", resp.Message)
 
 		grenderer.Render(c, errorMsg, statusCode, "error.html")
 		return
 	}
 
-	grenderer.Render(c, resp, statusCode, "read-article.html")
+	grenderer.Render(c, resp.Message, statusCode, "read-article.html")
 }
 
 // CreatePost - POST /posts
@@ -46,13 +45,18 @@ func CreatePost(c *gin.Context) {
 
 	// bind JSON
 	if err := c.ShouldBindJSON(&post); err != nil {
-		grenderer.Render(c, gin.H{"result": err.Error()}, http.StatusBadRequest)
+		grenderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
 		return
 	}
 
 	resp, statusCode := handler.CreatePost(userIDAuth, post)
 
-	grenderer.Render(c, resp, statusCode)
+	if statusCode >= 400 {
+		grenderer.Render(c, resp, statusCode)
+		return
+	}
+
+	grenderer.Render(c, resp.Message, statusCode)
 }
 
 // UpdatePost - PUT /posts/:id
@@ -63,13 +67,18 @@ func UpdatePost(c *gin.Context) {
 
 	// bind JSON
 	if err := c.ShouldBindJSON(&post); err != nil {
-		grenderer.Render(c, gin.H{"result": err.Error()}, http.StatusBadRequest)
+		grenderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
 		return
 	}
 
 	resp, statusCode := handler.UpdatePost(userIDAuth, id, post)
 
-	grenderer.Render(c, resp, statusCode)
+	if statusCode >= 400 {
+		grenderer.Render(c, resp, statusCode)
+		return
+	}
+
+	grenderer.Render(c, resp.Message, statusCode)
 }
 
 // DeletePost - DELETE /posts/:id

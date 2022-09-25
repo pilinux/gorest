@@ -25,7 +25,7 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	// check user validity
 	ok := service.ValidateUserID(claims.AuthID, claims.Email)
 	if !ok {
-		httpResponse.Result = "access denied"
+		httpResponse.Message = "access denied"
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
@@ -33,7 +33,7 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	// 2FA already enabled
 	configSecurity := config.GetConfig().Security
 	if claims.TwoFA == configSecurity.TwoFA.Status.Verified || claims.TwoFA == configSecurity.TwoFA.Status.On {
-		httpResponse.Result = "2-fa activated already"
+		httpResponse.Message = "2-fa activated already"
 		httpStatusCode = http.StatusOK
 		return
 	}
@@ -46,7 +46,7 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	if err := db.Where("id_auth = ?", claims.AuthID).First(&twoFA).Error; err == nil {
 		if twoFA.Status == configSecurity.TwoFA.Status.On {
 			// 2FA ON
-			httpResponse.Result = "2-fa activated already, log in again"
+			httpResponse.Message = "2-fa activated already, log in again"
 			httpStatusCode = http.StatusBadRequest
 			return
 		}
@@ -57,19 +57,19 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	// step 1: verify user pass
 	v, err := service.GetUserByEmail(claims.Email)
 	if err != nil {
-		httpResponse.Result = "user not found"
+		httpResponse.Message = "user not found"
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
 	verifyPass, err := argon2id.ComparePasswordAndHash(authPayload.Password, v.Password)
 	if err != nil {
 		log.WithError(err).Error("error code: 1031")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	if !verifyPass {
-		httpResponse.Result = "wrong credentials"
+		httpResponse.Message = "wrong credentials"
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
@@ -83,7 +83,7 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	)
 	if err != nil {
 		log.WithError(err).Error("error code: 1032")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
@@ -95,7 +95,7 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	)
 	if err != nil {
 		log.WithError(err).Error("error code: 1033")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
@@ -104,7 +104,7 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	img, err := lib.ByteToPNG(qrByte, configSecurity.TwoFA.PathQR)
 	if err != nil {
 		log.WithError(err).Error("error code: 1034")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
@@ -131,7 +131,7 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	model.InMemorySecret2FA[claims.AuthID] = data2FA
 
 	// serve the QR to the client
-	httpResponse.Result = configSecurity.TwoFA.PathQR + img
+	httpResponse.Message = configSecurity.TwoFA.PathQR + img
 	httpStatusCode = http.StatusOK
 	return
 }
@@ -141,14 +141,14 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	// check user validity
 	ok := service.ValidateUserID(claims.AuthID, claims.Email)
 	if !ok {
-		httpResponse.Result = "validation failed - access denied"
+		httpResponse.Message = "validation failed - access denied"
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
 
 	configSecurity := config.GetConfig().Security
 	if claims.TwoFA == configSecurity.TwoFA.Status.Verified || claims.TwoFA == configSecurity.TwoFA.Status.On {
-		httpResponse.Result = "2-fa activated already, log in again"
+		httpResponse.Message = "2-fa activated already, log in again"
 		httpStatusCode = http.StatusBadRequest
 		return
 	}
@@ -158,7 +158,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	// step 1: check if client secret is available in memory
 	data2FA, ok := model.InMemorySecret2FA[claims.AuthID]
 	if !ok {
-		httpResponse.Result = "request for a new 2-fa secret"
+		httpResponse.Message = "request for a new 2-fa secret"
 		httpStatusCode = http.StatusBadRequest
 		return
 	}
@@ -166,7 +166,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	// step 2: check otp length
 	authPayload.OTP = lib.RemoveAllSpace(authPayload.OTP)
 	if len(authPayload.OTP) != configSecurity.TwoFA.Digits {
-		httpResponse.Result = "wrong one-time password"
+		httpResponse.Message = "wrong one-time password"
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
@@ -184,14 +184,14 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 			data2FA.Secret = otpByte
 			model.InMemorySecret2FA[claims.AuthID] = data2FA
 
-			httpResponse.Result = "wrong one-time password"
+			httpResponse.Message = "wrong one-time password"
 			httpStatusCode = http.StatusUnauthorized
 			return
 		}
 
 		// internal error
 		log.WithError(err).Error("error code: 1041")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
@@ -217,7 +217,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 			// delete secrets from memory
 			service.DelMem2FA(claims.AuthID)
 
-			httpResponse.Result = "2-fa activated already, log in again"
+			httpResponse.Message = "2-fa activated already, log in again"
 			httpStatusCode = http.StatusBadRequest
 			return
 		}
@@ -227,7 +227,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	keyMainCipherByte, err := lib.Encrypt(otpByte, data2FA.PassSHA)
 	if err != nil {
 		log.WithError(err).Error("error code: 1043")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
@@ -242,7 +242,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	keyBackupCipherByte, err := lib.Encrypt(otpByte, keyRecoveryHash[:])
 	if err != nil {
 		log.WithError(err).Error("error code: 1044")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
@@ -256,7 +256,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	uuidEncByte, err := lib.Encrypt(uuidPlaintextByte, keyRecoveryHash[:])
 	if err != nil {
 		log.WithError(err).Error("error code: 1045")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
@@ -297,7 +297,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	}
 
 	if !txOK {
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
@@ -321,14 +321,14 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	accessJWT, _, err := middleware.GetJWT(claims, "access")
 	if err != nil {
 		log.WithError(err).Error("error code: 1049")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
 	if err != nil {
 		log.WithError(err).Error("error code: 1050")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
@@ -346,7 +346,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	response.TwoAuth = configSecurity.TwoFA.Status.On
 	response.RecoveryKey = keyRecovery
 
-	httpResponse.Result = response
+	httpResponse.Message = response
 	httpStatusCode = http.StatusOK
 	return
 }
@@ -356,7 +356,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	// check user validity
 	ok := service.ValidateUserID(claims.AuthID, claims.Email)
 	if !ok {
-		httpResponse.Result = "validation failed - access denied"
+		httpResponse.Message = "validation failed - access denied"
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
@@ -366,13 +366,13 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	// already verified!
 	configSecurity := config.GetConfig().Security
 	if claims.TwoFA == configSecurity.TwoFA.Status.Verified {
-		httpResponse.Result = configSecurity.TwoFA.Status.Verified
+		httpResponse.Message = configSecurity.TwoFA.Status.Verified
 		httpStatusCode = http.StatusOK
 		return
 	}
 	// user needs to log in again / 2FA is disabled for this account
 	if claims.TwoFA != configSecurity.TwoFA.Status.On {
-		httpResponse.Result = "unexpected request (1): 2-fa is OFF / log in again"
+		httpResponse.Message = "unexpected request (1): 2-fa is OFF / log in again"
 		httpStatusCode = http.StatusBadRequest
 		return
 	}
@@ -382,7 +382,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	// step 1: check if client secret is available in memory
 	data2FA, ok := model.InMemorySecret2FA[claims.AuthID]
 	if !ok {
-		httpResponse.Result = "log in again"
+		httpResponse.Message = "log in again"
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
@@ -390,7 +390,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	// step 2: check otp length
 	authPayload.OTP = lib.RemoveAllSpace(authPayload.OTP)
 	if len(authPayload.OTP) != configSecurity.TwoFA.Digits {
-		httpResponse.Result = "wrong one-time password"
+		httpResponse.Message = "wrong one-time password"
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
@@ -409,13 +409,13 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	twoFA := model.TwoFA{}
 	// no record in DB!
 	if err := db.Where("id_auth = ?", claims.AuthID).First(&twoFA).Error; err != nil {
-		httpResponse.Result = "unexpected request (2): 2-fa is OFF / log in again"
+		httpResponse.Message = "unexpected request (2): 2-fa is OFF / log in again"
 		httpStatusCode = http.StatusBadRequest
 		return
 	}
 	// if 2FA is not ON
 	if twoFA.Status != configSecurity.TwoFA.Status.On {
-		httpResponse.Result = "unexpected request (3): 2-fa is OFF / log in again"
+		httpResponse.Message = "unexpected request (3): 2-fa is OFF / log in again"
 		httpStatusCode = http.StatusBadRequest
 		return
 	}
@@ -426,7 +426,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 		keyMainCipherByte, err := base64.StdEncoding.DecodeString(twoFA.KeyMain)
 		if err != nil {
 			log.WithError(err).Error("error code: 1051")
-			httpResponse.Result = "internal server error"
+			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
 		}
@@ -435,7 +435,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 		keyMainPlaintextByte, err := lib.Decrypt(keyMainCipherByte, data2FA.PassSHA)
 		if err != nil {
 			log.WithError(err).Error("error code: 1052")
-			httpResponse.Result = "internal server error"
+			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
 		}
@@ -477,14 +477,14 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 			}
 
 			// response to the client
-			httpResponse.Result = "wrong OTP"
+			httpResponse.Message = "wrong OTP"
 			httpStatusCode = http.StatusUnauthorized
 			return
 		}
 
 		// internal error
 		log.WithError(err).Error("error code: 1055")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
@@ -495,7 +495,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	keyMainCipherByte, err := lib.Encrypt(otpByte, data2FA.PassSHA)
 	if err != nil {
 		log.WithError(err).Error("error code: 1056")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
@@ -521,14 +521,14 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	accessJWT, _, err := middleware.GetJWT(claims, "access")
 	if err != nil {
 		log.WithError(err).Error("error code: 1058")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
 	if err != nil {
 		log.WithError(err).Error("error code: 1059")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
@@ -537,7 +537,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	jwtPayload.AccessJWT = accessJWT
 	jwtPayload.RefreshJWT = refreshJWT
 
-	httpResponse.Result = jwtPayload
+	httpResponse.Message = jwtPayload
 	httpStatusCode = http.StatusOK
 	return
 }
@@ -549,7 +549,7 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 
 	// token confirms that 2FA is disabled
 	if claims.TwoFA == "" || claims.TwoFA == configSecurity.TwoFA.Status.Off {
-		httpResponse.Result = "twoFA is " + configSecurity.TwoFA.Status.Off
+		httpResponse.Message = "twoFA is " + configSecurity.TwoFA.Status.Off
 		httpStatusCode = http.StatusOK
 		return
 	}
@@ -557,7 +557,7 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 	// find user
 	v, err := service.GetUserByEmail(claims.Email)
 	if err != nil {
-		httpResponse.Result = "unknown user"
+		httpResponse.Message = "unknown user"
 		httpStatusCode = http.StatusNotFound
 		return
 	}
@@ -565,12 +565,12 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 	verifyPass, err := argon2id.ComparePasswordAndHash(authPayload.Password, v.Password)
 	if err != nil {
 		log.WithError(err).Error("error code: 1036")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	if !verifyPass {
-		httpResponse.Result = "wrong credentials"
+		httpResponse.Message = "wrong credentials"
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
@@ -608,7 +608,7 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 			if err := tx.Save(&twoFA).Error; err != nil {
 				tx.Rollback()
 				log.WithError(err).Error("error code: 1037")
-				httpResponse.Result = "internal server error"
+				httpResponse.Message = "internal server error"
 				httpStatusCode = http.StatusInternalServerError
 				return
 			}
@@ -623,14 +623,14 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 	accessJWT, _, err := middleware.GetJWT(claims, "access")
 	if err != nil {
 		log.WithError(err).Error("error code: 1038")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
 	if err != nil {
 		log.WithError(err).Error("error code: 1039")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
@@ -646,7 +646,7 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 	response.RefreshJWT = refreshJWT
 	response.TwoAuth = claims.TwoFA
 
-	httpResponse.Result = response
+	httpResponse.Message = response
 	httpStatusCode = http.StatusOK
 	return
 }

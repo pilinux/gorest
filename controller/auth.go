@@ -18,11 +18,16 @@ func CreateUserAuth(c *gin.Context) {
 
 	// bind JSON
 	if err := c.ShouldBindJSON(&auth); err != nil {
-		renderer.Render(c, gin.H{"result": err.Error()}, http.StatusBadRequest)
+		renderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
 		return
 	}
 
 	resp, statusCode := handler.CreateUserAuth(auth)
 
-	renderer.Render(c, resp, statusCode)
+	if statusCode >= 400 {
+		renderer.Render(c, resp, statusCode)
+		return
+	}
+
+	renderer.Render(c, resp.Message, statusCode)
 }

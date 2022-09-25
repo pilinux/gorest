@@ -18,18 +18,18 @@ func GetHobbies() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 
 	if err := db.Find(&hobbies).Error; err != nil {
 		log.WithError(err).Error("error code: 1251")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 
 	if len(hobbies) == 0 {
-		httpResponse.Result = "no hobby found"
+		httpResponse.Message = "no hobby found"
 		httpStatusCode = http.StatusNotFound
 		return
 	}
 
-	httpResponse.Result = hobbies
+	httpResponse.Message = hobbies
 	httpStatusCode = http.StatusOK
 	return
 }

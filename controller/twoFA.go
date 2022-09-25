@@ -20,7 +20,7 @@ func Setup2FA(c *gin.Context) {
 	// bind JSON
 	password := model.AuthPayload{}
 	if err := c.ShouldBindJSON(&password); err != nil {
-		renderer.Render(c, gin.H{"result": err.Error()}, http.StatusBadRequest)
+		renderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
 		return
 	}
 
@@ -38,13 +38,18 @@ func Activate2FA(c *gin.Context) {
 	// bind JSON
 	otp := model.AuthPayload{}
 	if err := c.ShouldBindJSON(&otp); err != nil {
-		renderer.Render(c, gin.H{"result": err.Error()}, http.StatusBadRequest)
+		renderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
 		return
 	}
 
 	resp, statusCode := handler.Setup2FA(claims, otp)
 
-	renderer.Render(c, resp, statusCode)
+	if statusCode >= 400 {
+		renderer.Render(c, resp, statusCode)
+		return
+	}
+
+	renderer.Render(c, resp.Message, statusCode)
 }
 
 // Validate2FA - issue new JWTs upon 2FA validation
@@ -56,13 +61,18 @@ func Validate2FA(c *gin.Context) {
 	// bind JSON
 	otp := model.AuthPayload{}
 	if err := c.ShouldBindJSON(&otp); err != nil {
-		renderer.Render(c, gin.H{"result": err.Error()}, http.StatusBadRequest)
+		renderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
 		return
 	}
 
 	resp, statusCode := handler.Validate2FA(claims, otp)
 
-	renderer.Render(c, resp, statusCode)
+	if statusCode >= 400 {
+		renderer.Render(c, resp, statusCode)
+		return
+	}
+
+	renderer.Render(c, resp.Message, statusCode)
 }
 
 // Deactivate2FA - disable 2FA for user account
@@ -73,11 +83,16 @@ func Deactivate2FA(c *gin.Context) {
 	// bind JSON
 	password := model.AuthPayload{}
 	if err := c.ShouldBindJSON(&password); err != nil {
-		renderer.Render(c, gin.H{"result": err.Error()}, http.StatusBadRequest)
+		renderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
 		return
 	}
 
 	resp, statusCode := handler.Validate2FA(claims, password)
 
-	renderer.Render(c, resp, statusCode)
+	if statusCode >= 400 {
+		renderer.Render(c, resp, statusCode)
+		return
+	}
+
+	renderer.Render(c, resp.Message, statusCode)
 }

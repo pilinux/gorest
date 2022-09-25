@@ -10,5 +10,5 @@ import (
 
 // AccessResource - can be accessed by basic auth
 func AccessResource(c *gin.Context) {
-	grenderer.Render(c, gin.H{"msg": "access granted!"}, http.StatusOK)
+	grenderer.Render(c, gin.H{"message": "access granted!"}, http.StatusOK)
 }

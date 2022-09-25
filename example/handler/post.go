@@ -19,18 +19,18 @@ func GetPosts() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 
 	if err := db.Find(&posts).Error; err != nil {
 		log.WithError(err).Error("error code: 1201")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 
 	if len(posts) == 0 {
-		httpResponse.Result = "no article found"
+		httpResponse.Message = "no article found"
 		httpStatusCode = http.StatusNotFound
 		return
 	}
 
-	httpResponse.Result = posts
+	httpResponse.Message = posts
 	httpStatusCode = http.StatusOK
 	return
 }
@@ -41,12 +41,12 @@ func GetPost(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	post := model.Post{}
 
 	if err := db.Where("post_id = ?", id).First(&post).Error; err != nil {
-		httpResponse.Result = "article not found"
+		httpResponse.Message = "article not found"
 		httpStatusCode = http.StatusNotFound
 		return
 	}
 
-	httpResponse.Result = post
+	httpResponse.Message = post
 	httpStatusCode = http.StatusOK
 	return
 }
@@ -59,7 +59,7 @@ func CreatePost(userIDAuth uint64, post model.Post) (httpResponse gmodel.HTTPRes
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&user).Error; err != nil {
-		httpResponse.Result = "no user profile found"
+		httpResponse.Message = "no user profile found"
 		httpStatusCode = http.StatusForbidden
 		return
 	}
@@ -73,13 +73,13 @@ func CreatePost(userIDAuth uint64, post model.Post) (httpResponse gmodel.HTTPRes
 	if err := tx.Create(&postFinal).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Error("error code: 1211")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	tx.Commit()
 
-	httpResponse.Result = postFinal
+	httpResponse.Message = postFinal
 	httpStatusCode = http.StatusCreated
 	return
 }
@@ -92,14 +92,14 @@ func UpdatePost(userIDAuth uint64, id string, post model.Post) (httpResponse gmo
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&user).Error; err != nil {
-		httpResponse.Result = "no user profile found"
+		httpResponse.Message = "no user profile found"
 		httpStatusCode = http.StatusForbidden
 		return
 	}
 
 	// does the post exist + does the user have right to modify this post
 	if err := db.Where("post_id = ?", id).Where("id_user = ?", user.UserID).First(&postFinal).Error; err != nil {
-		httpResponse.Result = "user may not have access to perform this task"
+		httpResponse.Message = "user may not have access to perform this task"
 		httpStatusCode = http.StatusForbidden
 		return
 	}
@@ -113,13 +113,13 @@ func UpdatePost(userIDAuth uint64, id string, post model.Post) (httpResponse gmo
 	if err := tx.Save(&postFinal).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Error("error code: 1221")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	tx.Commit()
 
-	httpResponse.Result = postFinal
+	httpResponse.Message = postFinal
 	httpStatusCode = http.StatusOK
 	return
 }
@@ -132,14 +132,14 @@ func DeletePost(userIDAuth uint64, id string) (httpResponse gmodel.HTTPResponse,
 
 	// does the user have an existing profile
 	if err := db.Where("id_auth = ?", userIDAuth).First(&user).Error; err != nil {
-		httpResponse.Result = "no user profile found"
+		httpResponse.Message = "no user profile found"
 		httpStatusCode = http.StatusForbidden
 		return
 	}
 
 	// does the post exist + does the user have right to delete this post
 	if err := db.Where("post_id = ?", id).Where("id_user = ?", user.UserID).First(&post).Error; err != nil {
-		httpResponse.Result = "user may not have access to perform this task"
+		httpResponse.Message = "user may not have access to perform this task"
 		httpStatusCode = http.StatusForbidden
 		return
 	}
@@ -148,13 +148,13 @@ func DeletePost(userIDAuth uint64, id string) (httpResponse gmodel.HTTPResponse,
 	if err := tx.Delete(&post).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Error("error code: 1231")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	tx.Commit()
 
-	httpResponse.Result = "post ID# " + id + " deleted!"
+	httpResponse.Message = "post ID# " + id + " deleted!"
 	httpStatusCode = http.StatusOK
 	return
 }

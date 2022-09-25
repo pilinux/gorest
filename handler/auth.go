@@ -19,14 +19,14 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 
 	// email validation
 	if !lib.ValidateEmail(auth.Email) {
-		httpResponse.Result = "wrong email address"
+		httpResponse.Message = "wrong email address"
 		httpStatusCode = http.StatusBadRequest
 		return
 	}
 
 	// email must be unique
 	if err := db.Where("email = ?", auth.Email).First(&auth).Error; err == nil {
-		httpResponse.Result = "email already registered"
+		httpResponse.Message = "email already registered"
 		httpStatusCode = http.StatusForbidden
 		return
 	}
@@ -44,13 +44,13 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 	if err := tx.Create(&authFinal).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Error("error code: 1001")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	tx.Commit()
 
-	httpResponse.Result = *authFinal
+	httpResponse.Message = *authFinal
 	httpStatusCode = http.StatusCreated
 	return
 }

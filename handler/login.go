@@ -20,14 +20,14 @@ import (
 func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	payload.Email = strings.TrimSpace(payload.Email)
 	if !lib.ValidateEmail(payload.Email) {
-		httpResponse.Result = "wrong email address"
+		httpResponse.Message = "wrong email address"
 		httpStatusCode = http.StatusBadRequest
 		return
 	}
 
 	v, err := service.GetUserByEmail(payload.Email)
 	if err != nil {
-		httpResponse.Result = "email not found"
+		httpResponse.Message = "email not found"
 		httpStatusCode = http.StatusNotFound
 		return
 	}
@@ -38,7 +38,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 	// check whether email verification is required
 	if configSecurity.VerifyEmail {
 		if v.VerifyEmail != model.EmailVerified {
-			httpResponse.Result = "email verification required"
+			httpResponse.Message = "email verification required"
 			httpStatusCode = http.StatusUnauthorized
 			return
 		}
@@ -47,12 +47,12 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 	verifyPass, err := argon2id.ComparePasswordAndHash(payload.Password, v.Password)
 	if err != nil {
 		log.WithError(err).Error("error code: 1011")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	if !verifyPass {
-		httpResponse.Result = "wrong credentials"
+		httpResponse.Message = "wrong credentials"
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
@@ -94,14 +94,14 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 	accessJWT, _, err := middleware.GetJWT(claims, "access")
 	if err != nil {
 		log.WithError(err).Error("error code: 1012")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
 	if err != nil {
 		log.WithError(err).Error("error code: 1013")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
@@ -110,7 +110,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 	jwtPayload.AccessJWT = accessJWT
 	jwtPayload.RefreshJWT = refreshJWT
 
-	httpResponse.Result = jwtPayload
+	httpResponse.Message = jwtPayload
 	httpStatusCode = http.StatusOK
 	return
 }
@@ -121,7 +121,7 @@ func Refresh(claims middleware.MyCustomClaims) (httpResponse model.HTTPResponse,
 	// check validity
 	ok := service.ValidateUserID(claims.AuthID, claims.Email)
 	if !ok {
-		httpResponse.Result = "access denied"
+		httpResponse.Message = "access denied"
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
@@ -130,14 +130,14 @@ func Refresh(claims middleware.MyCustomClaims) (httpResponse model.HTTPResponse,
 	accessJWT, _, err := middleware.GetJWT(claims, "access")
 	if err != nil {
 		log.WithError(err).Error("error code: 1021")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
 	if err != nil {
 		log.WithError(err).Error("error code: 1022")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
@@ -146,7 +146,7 @@ func Refresh(claims middleware.MyCustomClaims) (httpResponse model.HTTPResponse,
 	jwtPayload.AccessJWT = accessJWT
 	jwtPayload.RefreshJWT = refreshJWT
 
-	httpResponse.Result = jwtPayload
+	httpResponse.Message = jwtPayload
 	httpStatusCode = http.StatusOK
 	return
 }

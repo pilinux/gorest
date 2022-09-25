@@ -15,13 +15,18 @@ import (
 func Login(c *gin.Context) {
 	var payload model.AuthPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		renderer.Render(c, gin.H{"result": err.Error()}, http.StatusBadRequest)
+		renderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
 		return
 	}
 
 	resp, statusCode := handler.Login(payload)
 
-	renderer.Render(c, resp, statusCode)
+	if statusCode >= 400 {
+		renderer.Render(c, resp, statusCode)
+		return
+	}
+
+	renderer.Render(c, resp.Message, statusCode)
 }
 
 // Refresh - issue new JWTs after validation
@@ -31,5 +36,10 @@ func Refresh(c *gin.Context) {
 
 	resp, statusCode := handler.Refresh(claims)
 
-	renderer.Render(c, resp, statusCode)
+	if statusCode >= 400 {
+		renderer.Render(c, resp, statusCode)
+		return
+	}
+
+	renderer.Render(c, resp.Message, statusCode)
 }

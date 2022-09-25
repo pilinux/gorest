@@ -27,7 +27,12 @@ func GetUser(c *gin.Context) {
 
 	resp, statusCode := handler.GetUser(id)
 
-	grenderer.Render(c, resp, statusCode)
+	if statusCode >= 400 {
+		grenderer.Render(c, resp, statusCode)
+		return
+	}
+
+	grenderer.Render(c, resp.Message, statusCode)
 }
 
 // CreateUser - POST /users
@@ -37,13 +42,18 @@ func CreateUser(c *gin.Context) {
 
 	// bind JSON
 	if err := c.ShouldBindJSON(&user); err != nil {
-		grenderer.Render(c, gin.H{"result": err.Error()}, http.StatusBadRequest)
+		grenderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
 		return
 	}
 
 	resp, statusCode := handler.CreateUser(userIDAuth, user)
 
-	grenderer.Render(c, resp, statusCode)
+	if statusCode >= 400 {
+		grenderer.Render(c, resp, statusCode)
+		return
+	}
+
+	grenderer.Render(c, resp.Message, statusCode)
 }
 
 // UpdateUser - PUT /users
@@ -53,13 +63,18 @@ func UpdateUser(c *gin.Context) {
 
 	// bind JSON
 	if err := c.ShouldBindJSON(&user); err != nil {
-		grenderer.Render(c, gin.H{"result": err.Error()}, http.StatusBadRequest)
+		grenderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
 		return
 	}
 
 	resp, statusCode := handler.UpdateUser(userIDAuth, user)
 
-	grenderer.Render(c, resp, statusCode)
+	if statusCode >= 400 {
+		grenderer.Render(c, resp, statusCode)
+		return
+	}
+
+	grenderer.Render(c, resp.Message, statusCode)
 }
 
 // AddHobby - PUT /users/hobbies
@@ -69,11 +84,16 @@ func AddHobby(c *gin.Context) {
 
 	// bind JSON
 	if err := c.ShouldBindJSON(&hobby); err != nil {
-		grenderer.Render(c, gin.H{"result": err.Error()}, http.StatusBadRequest)
+		grenderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
 		return
 	}
 
 	resp, statusCode := handler.AddHobby(userIDAuth, hobby)
 
-	grenderer.Render(c, resp, statusCode)
+	if statusCode >= 400 {
+		grenderer.Render(c, resp, statusCode)
+		return
+	}
+
+	grenderer.Render(c, resp.Message, statusCode)
 }

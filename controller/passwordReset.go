@@ -16,7 +16,7 @@ func PasswordForgot(c *gin.Context) {
 	email := model.AuthPayload{}
 
 	if err := c.ShouldBindJSON(&email); err != nil {
-		renderer.Render(c, gin.H{"result": err.Error()}, http.StatusBadRequest)
+		renderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
 		return
 	}
 
@@ -29,13 +29,18 @@ func PasswordForgot(c *gin.Context) {
 func PasswordRecover(c *gin.Context) {
 	payload := model.AuthPayload{}
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		renderer.Render(c, gin.H{"result": err.Error()}, http.StatusBadRequest)
+		renderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
 		return
 	}
 
 	resp, statusCode := handler.PasswordRecover(payload)
 
-	renderer.Render(c, resp, statusCode)
+	if statusCode >= 400 {
+		renderer.Render(c, resp, statusCode)
+		return
+	}
+
+	renderer.Render(c, resp.Message, statusCode)
 }
 
 // PasswordUpdate - change password in logged-in state
@@ -45,7 +50,7 @@ func PasswordUpdate(c *gin.Context) {
 
 	payload := model.AuthPayload{}
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		renderer.Render(c, gin.H{"result": err.Error()}, http.StatusBadRequest)
+		renderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
 		return
 	}
 

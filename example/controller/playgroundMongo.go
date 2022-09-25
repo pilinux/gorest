@@ -16,13 +16,18 @@ import (
 func MongoCreateOne(c *gin.Context) {
 	data := model.Geocoding{}
 	if err := c.ShouldBindJSON(&data); err != nil {
-		grenderer.Render(c, gin.H{"result": err.Error()}, http.StatusBadRequest)
+		grenderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
 		return
 	}
 
 	resp, statusCode := handler.MongoCreateOne(data)
 
-	grenderer.Render(c, resp, statusCode)
+	if statusCode >= 400 {
+		grenderer.Render(c, resp, statusCode)
+		return
+	}
+
+	grenderer.Render(c, resp.Message, statusCode)
 }
 
 // MongoGetAll - get all documents
@@ -38,14 +43,19 @@ func MongoGetByID(c *gin.Context) {
 
 	resp, statusCode := handler.MongoGetByID(id)
 
-	grenderer.Render(c, resp, statusCode)
+	if statusCode >= 400 {
+		grenderer.Render(c, resp, statusCode)
+		return
+	}
+
+	grenderer.Render(c, resp.Message, statusCode)
 }
 
 // MongoGetByFilter - find documents using filter
 func MongoGetByFilter(c *gin.Context) {
 	req := model.Geocoding{}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		grenderer.Render(c, gin.H{"result": err.Error()}, http.StatusBadRequest)
+		grenderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
 		return
 	}
 
@@ -61,26 +71,36 @@ func MongoGetByFilter(c *gin.Context) {
 func MongoUpdateByID(c *gin.Context) {
 	req := model.Geocoding{}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		grenderer.Render(c, gin.H{"result": err.Error()}, http.StatusBadRequest)
+		grenderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
 		return
 	}
 
 	resp, statusCode := handler.MongoUpdateByID(req)
 
-	grenderer.Render(c, resp, statusCode)
+	if statusCode >= 400 {
+		grenderer.Render(c, resp, statusCode)
+		return
+	}
+
+	grenderer.Render(c, resp.Message, statusCode)
 }
 
 // MongoDeleteFieldByID - delete existing field(s) from a document
 func MongoDeleteFieldByID(c *gin.Context) {
 	req := model.Geocoding{}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		grenderer.Render(c, gin.H{"result": err.Error()}, http.StatusBadRequest)
+		grenderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
 		return
 	}
 
 	resp, statusCode := handler.MongoDeleteFieldByID(req)
 
-	grenderer.Render(c, resp, statusCode)
+	if statusCode >= 400 {
+		grenderer.Render(c, resp, statusCode)
+		return
+	}
+
+	grenderer.Render(c, resp.Message, statusCode)
 }
 
 // MongoDeleteByID - delete one document by ID

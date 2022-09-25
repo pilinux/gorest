@@ -14,7 +14,7 @@ import (
 func VerifyEmail(c *gin.Context) {
 	payload := model.AuthPayload{}
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		renderer.Render(c, gin.H{"result": err.Error()}, http.StatusBadRequest)
+		renderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
 		return
 	}
 
@@ -27,7 +27,7 @@ func VerifyEmail(c *gin.Context) {
 func CreateVerificationEmail(c *gin.Context) {
 	payload := model.AuthPayload{}
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		renderer.Render(c, gin.H{"result": err.Error()}, http.StatusBadRequest)
+		renderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
 		return
 	}
 

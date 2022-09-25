@@ -26,18 +26,18 @@ func RedisCreate(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpSt
 	result := ""
 	if err := client.Do(ctx, radix.FlatCmd(&result, "SET", data.Key, data.Value)); err != nil {
 		log.WithError(err).Error("error code: 1301")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 
 	if result != "OK" {
-		httpResponse.Result = "operation failed"
+		httpResponse.Message = "operation failed"
 		httpStatusCode = http.StatusNotAcceptable
 		return
 	}
 
-	httpResponse.Result = data
+	httpResponse.Message = data
 	httpStatusCode = http.StatusCreated
 	return
 }
@@ -53,13 +53,13 @@ func RedisRead(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpStat
 	result := 0
 	if err := client.Do(ctx, radix.FlatCmd(&result, "EXISTS", data.Key)); err != nil {
 		log.WithError(err).Error("error code: 1311")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 
 	if result == 0 {
-		httpResponse.Result = "key does not exist"
+		httpResponse.Message = "key does not exist"
 		httpStatusCode = http.StatusNotFound
 		return
 	}
@@ -67,12 +67,12 @@ func RedisRead(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpStat
 	// find key in Redis
 	if err := client.Do(ctx, radix.FlatCmd(&data.Value, "GET", data.Key)); err != nil {
 		log.WithError(err).Error("error code: 1312")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 
-	httpResponse.Result = data
+	httpResponse.Message = data
 	httpStatusCode = http.StatusOK
 	return
 }
@@ -88,18 +88,18 @@ func RedisDelete(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpSt
 	result := 0
 	if err := client.Do(ctx, radix.FlatCmd(&result, "DEL", data.Key)); err != nil {
 		log.WithError(err).Error("error code: 1321")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 
 	if result == 0 {
-		httpResponse.Result = "key does not exist"
+		httpResponse.Message = "key does not exist"
 		httpStatusCode = http.StatusNotFound
 		return
 	}
 
-	httpResponse.Result = "key is deleted"
+	httpResponse.Message = "key is deleted"
 	httpStatusCode = http.StatusOK
 	return
 }
@@ -115,18 +115,18 @@ func RedisCreateHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse
 	result := 0
 	if err := client.Do(ctx, radix.FlatCmd(&result, "HSET", data.Key, data.Value)); err != nil {
 		log.WithError(err).Error("error code: 1331")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 
 	if result != 1 {
-		httpResponse.Result = "operation failed"
+		httpResponse.Message = "operation failed"
 		httpStatusCode = http.StatusNotAcceptable
 		return
 	}
 
-	httpResponse.Result = data
+	httpResponse.Message = data
 	httpStatusCode = http.StatusCreated
 	return
 }
@@ -142,13 +142,13 @@ func RedisReadHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse, 
 	result := 0
 	if err := client.Do(ctx, radix.FlatCmd(&result, "EXISTS", data.Key)); err != nil {
 		log.WithError(err).Error("error code: 1341")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 
 	if result == 0 {
-		httpResponse.Result = "key does not exist"
+		httpResponse.Message = "key does not exist"
 		httpStatusCode = http.StatusNotFound
 		return
 	}
@@ -156,12 +156,12 @@ func RedisReadHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse, 
 	// find key in Redis
 	if err := client.Do(ctx, radix.FlatCmd(&data.Value, "HGETALL", data.Key)); err != nil {
 		log.WithError(err).Error("error code: 1342")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 
-	httpResponse.Result = data
+	httpResponse.Message = data
 	httpStatusCode = http.StatusOK
 	return
 }
@@ -177,18 +177,18 @@ func RedisDeleteHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse
 	result := 0
 	if err := client.Do(ctx, radix.FlatCmd(&result, "HDEL", data.Key, data.Value)); err != nil {
 		log.WithError(err).Error("error code: 1351")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 
 	if result == 0 {
-		httpResponse.Result = "key does not exist"
+		httpResponse.Message = "key does not exist"
 		httpStatusCode = http.StatusNotFound
 		return
 	}
 
-	httpResponse.Result = "key is deleted"
+	httpResponse.Message = "key is deleted"
 	httpStatusCode = http.StatusOK
 	return
 }

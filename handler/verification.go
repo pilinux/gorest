@@ -36,13 +36,13 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 	result := 0
 	if err := client.Do(ctx, radix.FlatCmd(&result, "EXISTS", data.key)); err != nil {
 		log.WithError(err).Error("error code: 1061")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 
 	if result == 0 {
-		httpResponse.Result = "wrong/expired verification code"
+		httpResponse.Message = "wrong/expired verification code"
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
@@ -50,7 +50,7 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 	// find key in redis
 	if err := client.Do(ctx, radix.FlatCmd(&data.value, "GET", data.key)); err != nil {
 		log.WithError(err).Error("error code: 1062")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
@@ -70,13 +70,13 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 	auth := model.Auth{}
 
 	if err := db.Where("email = ?", data.value).First(&auth).Error; err != nil {
-		httpResponse.Result = "unknown user"
+		httpResponse.Message = "unknown user"
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
 
 	if auth.VerifyEmail == model.EmailVerified {
-		httpResponse.Result = "email already verified"
+		httpResponse.Message = "email already verified"
 		httpStatusCode = http.StatusOK
 		return
 	}
@@ -88,13 +88,13 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 	if err := tx.Save(&auth).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Error("error code: 1065")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	tx.Commit()
 
-	httpResponse.Result = "email successfully verified"
+	httpResponse.Message = "email successfully verified"
 	httpStatusCode = http.StatusOK
 	return
 }
@@ -103,21 +103,21 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 func CreateVerificationEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	payload.Email = strings.TrimSpace(payload.Email)
 	if !lib.ValidateEmail(payload.Email) {
-		httpResponse.Result = "wrong email address"
+		httpResponse.Message = "wrong email address"
 		httpStatusCode = http.StatusBadRequest
 		return
 	}
 
 	v, err := service.GetUserByEmail(payload.Email)
 	if err != nil {
-		httpResponse.Result = "user not found"
+		httpResponse.Message = "user not found"
 		httpStatusCode = http.StatusNotFound
 		return
 	}
 
 	// is email already verified
 	if v.VerifyEmail == model.EmailVerified {
-		httpResponse.Result = "email already verified"
+		httpResponse.Message = "email already verified"
 		httpStatusCode = http.StatusOK
 		return
 	}
@@ -126,24 +126,24 @@ func CreateVerificationEmail(payload model.AuthPayload) (httpResponse model.HTTP
 	verifyPass, err := argon2id.ComparePasswordAndHash(payload.Password, v.Password)
 	if err != nil {
 		log.WithError(err).Error("error code: 1071")
-		httpResponse.Result = "internal server error"
+		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	if !verifyPass {
-		httpResponse.Result = "wrong credentials"
+		httpResponse.Message = "wrong credentials"
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
 
 	// issue new verification code
 	if !service.SendEmail(v.Email, model.EmailTypeVerification) {
-		httpResponse.Result = "failed to send verification email"
+		httpResponse.Message = "failed to send verification email"
 		httpStatusCode = http.StatusServiceUnavailable
 		return
 	}
 
-	httpResponse.Result = "sent verification email"
+	httpResponse.Message = "sent verification email"
 	httpStatusCode = http.StatusOK
 	return
 }
