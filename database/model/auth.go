@@ -95,3 +95,19 @@ func (v Auth) MarshalJSON() ([]byte, error) {
 
 	return json.Marshal(aux)
 }
+
+// AuthPayload - struct to handle all auth data
+type AuthPayload struct {
+	Email    string `json:"email,omitempty"`
+	Password string `json:"password,omitempty"`
+
+	VerificationCode string `json:"verificationCode,omitempty"`
+
+	OTP string `json:"otp,omitempty"`
+
+	SecretCode  string `json:"secretCode,omitempty"`
+	RecoveryKey string `json:"recoveryKey,omitempty"`
+
+	PassNew    string `json:"passNew,omitempty"`
+	PassRepeat string `json:"passRepeat,omitempty"`
+}
