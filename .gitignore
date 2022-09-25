@@ -5,4 +5,3 @@
 vendor/
 crosscompile*.sh
 gorest
-migrate
