@@ -1,4 +1,4 @@
-package controller
+package service
 
 import (
 	"context"
@@ -15,14 +15,11 @@ import (
 	"github.com/pilinux/gorest/database/model"
 	"github.com/pilinux/gorest/lib"
 	"github.com/pilinux/gorest/lib/middleware"
-	"github.com/pilinux/gorest/service"
 	"github.com/pilinux/libgo/timestring"
 )
 
-// common functions used locally by controllers
-
-// getClaims - get JWT custom claims
-func getClaims(c *gin.Context) middleware.MyCustomClaims {
+// GetClaims - get JWT custom claims
+func GetClaims(c *gin.Context) middleware.MyCustomClaims {
 	// get claims
 	claims := middleware.MyCustomClaims{
 		AuthID:  c.GetUint64("authID"),
@@ -38,14 +35,14 @@ func getClaims(c *gin.Context) middleware.MyCustomClaims {
 	return claims
 }
 
-// validateUserID - check whether authID or email is missing
-func validateUserID(authID uint64, email string) bool {
+// ValidateUserID - check whether authID or email is missing
+func ValidateUserID(authID uint64, email string) bool {
 	email = strings.TrimSpace(email)
 	return authID != 0 && email != ""
 }
 
-// validate2FA validates user-provided OTP
-func validate2FA(encryptedMessage []byte, issuer string, userInput string) ([]byte, string, error) {
+// Validate2FA validates user-provided OTP
+func Validate2FA(encryptedMessage []byte, issuer string, userInput string) ([]byte, string, error) {
 	configSecurity := config.GetConfig().Security
 	otpByte, err := lib.ValidateTOTP(encryptedMessage, issuer, userInput)
 	// client provided invalid OTP / internal error
@@ -63,16 +60,16 @@ func validate2FA(encryptedMessage []byte, issuer string, userInput string) ([]by
 	return otpByte, configSecurity.TwoFA.Status.Verified, nil
 }
 
-// delMem2FA - delete secrets from memory
-func delMem2FA(authID uint64) {
+// DelMem2FA - delete secrets from memory
+func DelMem2FA(authID uint64) {
 	delete(model.InMemorySecret2FA, authID)
 }
 
-// sendEmail sends a verification/password recovery email if
+// SendEmail sends a verification/password recovery email if
 // - required by the application
 // - an external email service is configured
 // - a redis database is configured
-func sendEmail(email string, emailType int) bool {
+func SendEmail(email string, emailType int) bool {
 	// send email if required by the application
 	appConfig := config.GetConfig()
 
@@ -153,7 +150,7 @@ func sendEmail(email string, emailType int) bool {
 		htmlModel["secret_code"] = code
 		htmlModel["email_validity_period"] = timestring.HourMinuteSecond(keyTTL)
 
-		params := service.PostmarkParams{}
+		params := PostmarkParams{}
 		params.ServerToken = appConfig.EmailConf.APIToken
 
 		if emailType == model.EmailTypeVerification {
@@ -173,7 +170,7 @@ func sendEmail(email string, emailType int) bool {
 		params.HTMLModel = htmlModel
 
 		// send the email
-		res, err := service.Postmark(params)
+		res, err := Postmark(params)
 		if err != nil {
 			log.WithError(err).Error("error code: 405")
 		}
