@@ -1,18 +1,21 @@
+// Package handler ...
 package handler
 
 import (
 	"net/http"
 	"time"
 
-	"github.com/pilinux/gorest/database"
-	"github.com/pilinux/gorest/database/model"
-
 	log "github.com/sirupsen/logrus"
+
+	gdatabase "github.com/pilinux/gorest/database"
+	gmodel "github.com/pilinux/gorest/database/model"
+
+	"github.com/pilinux/gorest/example/database/model"
 )
 
 // GetUsers handles jobs for controller.GetUsers
-func GetUsers() (httpResponse model.HTTPResponse, httpStatusCode int) {
-	db := database.GetDB()
+func GetUsers() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	db := gdatabase.GetDB()
 	users := []model.User{}
 	posts := []model.Post{}
 	hobbies := []model.Hobby{}
@@ -47,8 +50,8 @@ func GetUsers() (httpResponse model.HTTPResponse, httpStatusCode int) {
 }
 
 // GetUser handles jobs for controller.GetUser
-func GetUser(id string) (httpResponse model.HTTPResponse, httpStatusCode int) {
-	db := database.GetDB()
+func GetUser(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	db := gdatabase.GetDB()
 	user := model.User{}
 	posts := []model.Post{}
 	hobbies := []model.Hobby{}
@@ -74,8 +77,8 @@ func GetUser(id string) (httpResponse model.HTTPResponse, httpStatusCode int) {
 }
 
 // CreateUser handles jobs for controller.CreateUser
-func CreateUser(userIDAuth uint64, user model.User) (httpResponse model.HTTPResponse, httpStatusCode int) {
-	db := database.GetDB()
+func CreateUser(userIDAuth uint64, user model.User) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	db := gdatabase.GetDB()
 	userFinal := model.User{}
 
 	// does the user have an existing profile
@@ -106,8 +109,8 @@ func CreateUser(userIDAuth uint64, user model.User) (httpResponse model.HTTPResp
 }
 
 // UpdateUser handles jobs for controller.UpdateUser
-func UpdateUser(userIDAuth uint64, user model.User) (httpResponse model.HTTPResponse, httpStatusCode int) {
-	db := database.GetDB()
+func UpdateUser(userIDAuth uint64, user model.User) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	db := gdatabase.GetDB()
 	userFinal := model.User{}
 
 	// does the user have an existing profile
@@ -138,8 +141,8 @@ func UpdateUser(userIDAuth uint64, user model.User) (httpResponse model.HTTPResp
 }
 
 // AddHobby handles jobs for controller.AddHobby
-func AddHobby(userIDAuth uint64, hobby model.Hobby) (httpResponse model.HTTPResponse, httpStatusCode int) {
-	db := database.GetDB()
+func AddHobby(userIDAuth uint64, hobby model.Hobby) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	db := gdatabase.GetDB()
 	user := model.User{}
 	hobbyNew := model.Hobby{}
 	hobbyFound := 0 // default (do not create new hobby) = 0, create new hobby = 1

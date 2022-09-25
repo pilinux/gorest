@@ -6,17 +6,18 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
-	log "github.com/sirupsen/logrus"
+	gdatabase "github.com/pilinux/gorest/database"
+	gmodel "github.com/pilinux/gorest/database/model"
 
-	"github.com/pilinux/gorest/database"
-	"github.com/pilinux/gorest/database/model"
+	"github.com/pilinux/gorest/example/database/model"
 )
 
 // MongoCreateOne - handles jobs for controller.MongoCreateOne
-func MongoCreateOne(data model.Geocoding) (httpResponse model.HTTPResponse, httpStatusCode int) {
+func MongoCreateOne(data model.Geocoding) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	// remove all leading and trailing white spaces
 	data = mongoTrimSpace(data)
 	if data.IsEmpty() {
@@ -28,7 +29,7 @@ func MongoCreateOne(data model.Geocoding) (httpResponse model.HTTPResponse, http
 	// generate a new ObjectID
 	data.ID = primitive.NewObjectID()
 
-	client := database.GetMongo()
+	client := gdatabase.GetMongo()
 	db := client.Database("map")            // set database name
 	collection := db.Collection("geocodes") // set collection name
 
@@ -51,8 +52,8 @@ func MongoCreateOne(data model.Geocoding) (httpResponse model.HTTPResponse, http
 }
 
 // MongoGetAll handles jobs for controller.MongoGetAll
-func MongoGetAll() (httpResponse model.HTTPResponse, httpStatusCode int) {
-	client := database.GetMongo()
+func MongoGetAll() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	client := gdatabase.GetMongo()
 	db := client.Database("map")            // set database name
 	collection := db.Collection("geocodes") // set collection name
 
@@ -81,7 +82,7 @@ func MongoGetAll() (httpResponse model.HTTPResponse, httpStatusCode int) {
 }
 
 // MongoGetByID handles jobs for controller.MongoGetByID
-func MongoGetByID(id string) (httpResponse model.HTTPResponse, httpStatusCode int) {
+func MongoGetByID(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		httpResponse.Result = "invalid id"
@@ -89,7 +90,7 @@ func MongoGetByID(id string) (httpResponse model.HTTPResponse, httpStatusCode in
 		return
 	}
 
-	client := database.GetMongo()
+	client := gdatabase.GetMongo()
 	db := client.Database("map")            // set database name
 	collection := db.Collection("geocodes") // set collection name
 
@@ -111,7 +112,7 @@ func MongoGetByID(id string) (httpResponse model.HTTPResponse, httpStatusCode in
 }
 
 // MongoGetByFilter handles jobs for controller.MongoGetByFilter
-func MongoGetByFilter(req model.Geocoding) (httpResponse model.HTTPResponse, httpStatusCode int) {
+func MongoGetByFilter(req model.Geocoding) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	// remove all leading and trailing white spaces
 	req = mongoTrimSpace(req)
 
@@ -124,7 +125,7 @@ func MongoGetByFilter(req model.Geocoding) (httpResponse model.HTTPResponse, htt
 		return
 	}
 
-	client := database.GetMongo()
+	client := gdatabase.GetMongo()
 	db := client.Database("map")            // set database name
 	collection := db.Collection("geocodes") // set collection name
 
@@ -153,7 +154,7 @@ func MongoGetByFilter(req model.Geocoding) (httpResponse model.HTTPResponse, htt
 }
 
 // MongoUpdateByID handles jobs for controller.MongoUpdateByID
-func MongoUpdateByID(req model.Geocoding) (httpResponse model.HTTPResponse, httpStatusCode int) {
+func MongoUpdateByID(req model.Geocoding) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	if req.ID.IsZero() {
 		httpResponse.Result = "document ID is missing"
 		httpStatusCode = http.StatusBadRequest
@@ -168,7 +169,7 @@ func MongoUpdateByID(req model.Geocoding) (httpResponse model.HTTPResponse, http
 		"_id": bson.M{"$eq": req.ID},
 	}
 
-	client := database.GetMongo()
+	client := gdatabase.GetMongo()
 	db := client.Database("map")            // set database name
 	collection := db.Collection("geocodes") // set collection name
 
@@ -196,7 +197,7 @@ func MongoUpdateByID(req model.Geocoding) (httpResponse model.HTTPResponse, http
 }
 
 // MongoDeleteFieldByID handles jobs for controller.MongoDeleteFieldByID
-func MongoDeleteFieldByID(req model.Geocoding) (httpResponse model.HTTPResponse, httpStatusCode int) {
+func MongoDeleteFieldByID(req model.Geocoding) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	if req.ID.IsZero() {
 		httpResponse.Result = "document ID is missing"
 		httpStatusCode = http.StatusBadRequest
@@ -210,7 +211,7 @@ func MongoDeleteFieldByID(req model.Geocoding) (httpResponse model.HTTPResponse,
 		"_id": bson.M{"$eq": req.ID},
 	}
 
-	client := database.GetMongo()
+	client := gdatabase.GetMongo()
 	db := client.Database("map")            // set database name
 	collection := db.Collection("geocodes") // set collection name
 
@@ -238,7 +239,7 @@ func MongoDeleteFieldByID(req model.Geocoding) (httpResponse model.HTTPResponse,
 }
 
 // MongoDeleteByID handles jobs for controller.MongoDeleteByID
-func MongoDeleteByID(id string) (httpResponse model.HTTPResponse, httpStatusCode int) {
+func MongoDeleteByID(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		httpResponse.Result = "invalid id"
@@ -246,7 +247,7 @@ func MongoDeleteByID(id string) (httpResponse model.HTTPResponse, httpStatusCode
 		return
 	}
 
-	client := database.GetMongo()
+	client := gdatabase.GetMongo()
 	db := client.Database("map")            // set database name
 	collection := db.Collection("geocodes") // set collection name
 

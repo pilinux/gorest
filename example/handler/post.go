@@ -4,15 +4,17 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pilinux/gorest/database"
-	"github.com/pilinux/gorest/database/model"
-
 	log "github.com/sirupsen/logrus"
+
+	gdatabase "github.com/pilinux/gorest/database"
+	gmodel "github.com/pilinux/gorest/database/model"
+
+	"github.com/pilinux/gorest/example/database/model"
 )
 
 // GetPosts handles jobs for controller.GetPosts
-func GetPosts() (httpResponse model.HTTPResponse, httpStatusCode int) {
-	db := database.GetDB()
+func GetPosts() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	db := gdatabase.GetDB()
 	posts := []model.Post{}
 
 	if err := db.Find(&posts).Error; err != nil {
@@ -34,8 +36,8 @@ func GetPosts() (httpResponse model.HTTPResponse, httpStatusCode int) {
 }
 
 // GetPost handles jobs for controller.GetPost
-func GetPost(id string) (httpResponse model.HTTPResponse, httpStatusCode int) {
-	db := database.GetDB()
+func GetPost(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	db := gdatabase.GetDB()
 	post := model.Post{}
 
 	if err := db.Where("post_id = ?", id).First(&post).Error; err != nil {
@@ -50,8 +52,8 @@ func GetPost(id string) (httpResponse model.HTTPResponse, httpStatusCode int) {
 }
 
 // CreatePost handles jobs for controller.CreatePost
-func CreatePost(userIDAuth uint64, post model.Post) (httpResponse model.HTTPResponse, httpStatusCode int) {
-	db := database.GetDB()
+func CreatePost(userIDAuth uint64, post model.Post) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	db := gdatabase.GetDB()
 	user := model.User{}
 	postFinal := model.Post{}
 
@@ -83,8 +85,8 @@ func CreatePost(userIDAuth uint64, post model.Post) (httpResponse model.HTTPResp
 }
 
 // UpdatePost handles jobs for controller.UpdatePost
-func UpdatePost(userIDAuth uint64, id string, post model.Post) (httpResponse model.HTTPResponse, httpStatusCode int) {
-	db := database.GetDB()
+func UpdatePost(userIDAuth uint64, id string, post model.Post) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	db := gdatabase.GetDB()
 	user := model.User{}
 	postFinal := model.Post{}
 
@@ -123,8 +125,8 @@ func UpdatePost(userIDAuth uint64, id string, post model.Post) (httpResponse mod
 }
 
 // DeletePost handles jobs for controller.DeletePost
-func DeletePost(userIDAuth uint64, id string) (httpResponse model.HTTPResponse, httpStatusCode int) {
-	db := database.GetDB()
+func DeletePost(userIDAuth uint64, id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	db := gdatabase.GetDB()
 	user := model.User{}
 	post := model.Post{}
 

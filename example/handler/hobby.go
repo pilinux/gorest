@@ -5,13 +5,15 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/pilinux/gorest/database"
-	"github.com/pilinux/gorest/database/model"
+	gdatabase "github.com/pilinux/gorest/database"
+	gmodel "github.com/pilinux/gorest/database/model"
+
+	"github.com/pilinux/gorest/example/database/model"
 )
 
 // GetHobbies handles jobs for controller.GetHobbies
-func GetHobbies() (httpResponse model.HTTPResponse, httpStatusCode int) {
-	db := database.GetDB()
+func GetHobbies() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	db := gdatabase.GetDB()
 	hobbies := []model.Hobby{}
 
 	if err := db.Find(&hobbies).Error; err != nil {

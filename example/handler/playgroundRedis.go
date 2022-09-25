@@ -8,15 +8,17 @@ import (
 	"github.com/mediocregopher/radix/v4"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/pilinux/gorest/config"
-	"github.com/pilinux/gorest/database"
-	"github.com/pilinux/gorest/database/model"
+	gconfig "github.com/pilinux/gorest/config"
+	gdatabase "github.com/pilinux/gorest/database"
+	gmodel "github.com/pilinux/gorest/database/model"
+
+	"github.com/pilinux/gorest/example/database/model"
 )
 
 // RedisCreate - handles jobs for controller.RedisCreate
-func RedisCreate(data model.RedisData) (httpResponse model.HTTPResponse, httpStatusCode int) {
-	client := *database.GetRedis()
-	rConnTTL := config.GetConfig().Database.REDIS.Conn.ConnTTL
+func RedisCreate(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	client := *gdatabase.GetRedis()
+	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
 
@@ -41,9 +43,9 @@ func RedisCreate(data model.RedisData) (httpResponse model.HTTPResponse, httpSta
 }
 
 // RedisRead - handles jobs for controller.RedisRead
-func RedisRead(data model.RedisData) (httpResponse model.HTTPResponse, httpStatusCode int) {
-	client := *database.GetRedis()
-	rConnTTL := config.GetConfig().Database.REDIS.Conn.ConnTTL
+func RedisRead(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	client := *gdatabase.GetRedis()
+	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
 
@@ -76,9 +78,9 @@ func RedisRead(data model.RedisData) (httpResponse model.HTTPResponse, httpStatu
 }
 
 // RedisDelete - handles jobs for controller.RedisDelete
-func RedisDelete(data model.RedisData) (httpResponse model.HTTPResponse, httpStatusCode int) {
-	client := *database.GetRedis()
-	rConnTTL := config.GetConfig().Database.REDIS.Conn.ConnTTL
+func RedisDelete(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	client := *gdatabase.GetRedis()
+	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
 
@@ -103,9 +105,9 @@ func RedisDelete(data model.RedisData) (httpResponse model.HTTPResponse, httpSta
 }
 
 // RedisCreateHash - handles jobs for controller.RedisCreateHash
-func RedisCreateHash(data model.RedisDataHash) (httpResponse model.HTTPResponse, httpStatusCode int) {
-	client := *database.GetRedis()
-	rConnTTL := config.GetConfig().Database.REDIS.Conn.ConnTTL
+func RedisCreateHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	client := *gdatabase.GetRedis()
+	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
 
@@ -130,9 +132,9 @@ func RedisCreateHash(data model.RedisDataHash) (httpResponse model.HTTPResponse,
 }
 
 // RedisReadHash - handles jobs for controller.RedisReadHash
-func RedisReadHash(data model.RedisDataHash) (httpResponse model.HTTPResponse, httpStatusCode int) {
-	client := *database.GetRedis()
-	rConnTTL := config.GetConfig().Database.REDIS.Conn.ConnTTL
+func RedisReadHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	client := *gdatabase.GetRedis()
+	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
 
@@ -165,9 +167,9 @@ func RedisReadHash(data model.RedisDataHash) (httpResponse model.HTTPResponse, h
 }
 
 // RedisDeleteHash - handles jobs for controller.RedisDeleteHash
-func RedisDeleteHash(data model.RedisDataHash) (httpResponse model.HTTPResponse, httpStatusCode int) {
-	client := *database.GetRedis()
-	rConnTTL := config.GetConfig().Database.REDIS.Conn.ConnTTL
+func RedisDeleteHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	client := *gdatabase.GetRedis()
+	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
 

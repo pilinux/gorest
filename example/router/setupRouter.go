@@ -4,13 +4,15 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 
-	"github.com/pilinux/gorest/config"
-	"github.com/pilinux/gorest/controller"
-	"github.com/pilinux/gorest/lib/middleware"
+	gconfig "github.com/pilinux/gorest/config"
+	gcontroller "github.com/pilinux/gorest/controller"
+	gmiddleware "github.com/pilinux/gorest/lib/middleware"
+
+	"github.com/pilinux/gorest/example/controller"
 )
 
 // SetupRouter sets up all the routes
-func SetupRouter(configure *config.Configuration) (*gin.Engine, error) {
+func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 	if configure.Server.ServerEnv == "production" {
 		gin.SetMode(gin.ReleaseMode) // Omit this line to enable debug mode
 	}
@@ -82,8 +84,8 @@ func SetupRouter(configure *config.Configuration) (*gin.Engine, error) {
 	r.TrustedPlatform = trustedPlatform
 
 	// CORS
-	if configure.Security.MustCORS == config.Activated {
-		r.Use(middleware.CORS(
+	if configure.Security.MustCORS == gconfig.Activated {
+		r.Use(gmiddleware.CORS(
 			configure.Security.CORS.Origin,
 			configure.Security.CORS.Credentials,
 			configure.Security.CORS.Headers,
@@ -93,92 +95,92 @@ func SetupRouter(configure *config.Configuration) (*gin.Engine, error) {
 	}
 
 	// Sentry.io
-	if configure.Logger.Activate == config.Activated {
-		r.Use(middleware.SentryCapture(configure.Logger.SentryDsn))
+	if configure.Logger.Activate == gconfig.Activated {
+		r.Use(gmiddleware.SentryCapture(configure.Logger.SentryDsn))
 	}
 
 	// WAF
-	if configure.Security.MustFW == config.Activated {
-		r.Use(middleware.Firewall(
+	if configure.Security.MustFW == gconfig.Activated {
+		r.Use(gmiddleware.Firewall(
 			configure.Security.Firewall.ListType,
 			configure.Security.Firewall.IP,
 		))
 	}
 
 	// Render HTML
-	if configure.ViewConfig.Activate == config.Activated {
-		r.Use(middleware.Pongo2(configure.ViewConfig.Directory))
+	if configure.ViewConfig.Activate == gconfig.Activated {
+		r.Use(gmiddleware.Pongo2(configure.ViewConfig.Directory))
 	}
 
 	// API:v1.0
 	v1 := r.Group("/api/v1/")
 	{
 		// RDBMS
-		if configure.Database.RDBMS.Activate == config.Activated {
+		if configure.Database.RDBMS.Activate == gconfig.Activated {
 			// Register - no JWT required
-			v1.POST("register", controller.CreateUserAuth)
+			v1.POST("register", gcontroller.CreateUserAuth)
 
 			// Verify email
 			if configure.Security.VerifyEmail {
-				if configure.Database.REDIS.Activate == config.Activated {
-					v1.POST("verify", controller.VerifyEmail)
-					v1.POST("resend-verification-email", controller.CreateVerificationEmail)
+				if configure.Database.REDIS.Activate == gconfig.Activated {
+					v1.POST("verify", gcontroller.VerifyEmail)
+					v1.POST("resend-verification-email", gcontroller.CreateVerificationEmail)
 				}
 			}
 
 			// Login - app issues JWT
-			v1.POST("login", controller.Login)
+			v1.POST("login", gcontroller.Login)
 
 			// Refresh - app issues new JWT
 			rJWT := v1.Group("refresh")
-			rJWT.Use(middleware.RefreshJWT())
-			rJWT.POST("", controller.Refresh)
+			rJWT.Use(gmiddleware.RefreshJWT())
+			rJWT.POST("", gcontroller.Refresh)
 
 			// Double authentication
-			if configure.Security.Must2FA == config.Activated {
+			if configure.Security.Must2FA == gconfig.Activated {
 				r2FA := v1.Group("2fa")
-				r2FA.Use(middleware.JWT())
-				r2FA.POST("setup", controller.Setup2FA)
-				r2FA.POST("activate", controller.Activate2FA)
-				r2FA.POST("validate", controller.Validate2FA)
-				if configure.Security.Must2FA == config.Activated {
-					r2FA.Use(middleware.TwoFA(
+				r2FA.Use(gmiddleware.JWT())
+				r2FA.POST("setup", gcontroller.Setup2FA)
+				r2FA.POST("activate", gcontroller.Activate2FA)
+				r2FA.POST("validate", gcontroller.Validate2FA)
+				if configure.Security.Must2FA == gconfig.Activated {
+					r2FA.Use(gmiddleware.TwoFA(
 						configure.Security.TwoFA.Status.On,
 						configure.Security.TwoFA.Status.Off,
 						configure.Security.TwoFA.Status.Verified,
 					))
 				}
 				// disable 2FA
-				r2FA.POST("deactivate", controller.Deactivate2FA)
+				r2FA.POST("deactivate", gcontroller.Deactivate2FA)
 			}
 
 			// Update/reset password
 			rPass := v1.Group("password")
 			// Reset forgotten password
-			if configure.EmailConf.Activate == config.Activated {
+			if configure.EmailConf.Activate == gconfig.Activated {
 				// send password recovery email
-				rPass.POST("forgot", controller.PasswordForgot)
+				rPass.POST("forgot", gcontroller.PasswordForgot)
 				// recover account and set new password
-				rPass.POST("reset", controller.PasswordRecover)
+				rPass.POST("reset", gcontroller.PasswordRecover)
 			}
-			rPass.Use(middleware.JWT())
-			if configure.Security.Must2FA == config.Activated {
-				rPass.Use(middleware.TwoFA(
+			rPass.Use(gmiddleware.JWT())
+			if configure.Security.Must2FA == gconfig.Activated {
+				rPass.Use(gmiddleware.TwoFA(
 					configure.Security.TwoFA.Status.On,
 					configure.Security.TwoFA.Status.Off,
 					configure.Security.TwoFA.Status.Verified,
 				))
 			}
 			// change password while logged in
-			rPass.POST("edit", controller.PasswordUpdate)
+			rPass.POST("edit", gcontroller.PasswordUpdate)
 
 			// User
 			rUsers := v1.Group("users")
 			rUsers.GET("", controller.GetUsers)    // Non-protected
 			rUsers.GET("/:id", controller.GetUser) // Non-protected
-			rUsers.Use(middleware.JWT())
-			if configure.Security.Must2FA == config.Activated {
-				rUsers.Use(middleware.TwoFA(
+			rUsers.Use(gmiddleware.JWT())
+			if configure.Security.Must2FA == gconfig.Activated {
+				rUsers.Use(gmiddleware.TwoFA(
 					configure.Security.TwoFA.Status.On,
 					configure.Security.TwoFA.Status.Off,
 					configure.Security.TwoFA.Status.Verified,
@@ -192,9 +194,9 @@ func SetupRouter(configure *config.Configuration) (*gin.Engine, error) {
 			rPosts := v1.Group("posts")
 			rPosts.GET("", controller.GetPosts)    // Non-protected
 			rPosts.GET("/:id", controller.GetPost) // Non-protected
-			rPosts.Use(middleware.JWT())
-			if configure.Security.Must2FA == config.Activated {
-				rPosts.Use(middleware.TwoFA(
+			rPosts.Use(gmiddleware.JWT())
+			if configure.Security.Must2FA == gconfig.Activated {
+				rPosts.Use(gmiddleware.TwoFA(
 					configure.Security.TwoFA.Status.On,
 					configure.Security.TwoFA.Status.Off,
 					configure.Security.TwoFA.Status.Verified,
@@ -210,7 +212,7 @@ func SetupRouter(configure *config.Configuration) (*gin.Engine, error) {
 		}
 
 		// REDIS Playground
-		if configure.Database.REDIS.Activate == config.Activated {
+		if configure.Database.REDIS.Activate == gconfig.Activated {
 			rPlayground := v1.Group("playground")
 			rPlayground.GET("/redis_read", controller.RedisRead)        // Non-protected
 			rPlayground.POST("/redis_create", controller.RedisCreate)   // Non-protected
@@ -222,7 +224,7 @@ func SetupRouter(configure *config.Configuration) (*gin.Engine, error) {
 		}
 
 		// Mongo Playground
-		if configure.Database.MongoDB.Activate == config.Activated {
+		if configure.Database.MongoDB.Activate == gconfig.Activated {
 			rPlaygroundMongo := v1.Group("playground-mongo")
 			rPlaygroundMongo.POST("/mongo_create_one", controller.MongoCreateOne)                 // Non-protected
 			rPlaygroundMongo.GET("/mongo_get_all", controller.MongoGetAll)                        // Non-protected
@@ -234,7 +236,7 @@ func SetupRouter(configure *config.Configuration) (*gin.Engine, error) {
 		}
 
 		// Basic Auth demo
-		if configure.Security.MustBasicAuth == config.Activated {
+		if configure.Security.MustBasicAuth == gconfig.Activated {
 			user := configure.Security.BasicAuth.Username
 			pass := configure.Security.BasicAuth.Password
 			rBasicAuth := v1.Group("access_resources")
@@ -243,7 +245,6 @@ func SetupRouter(configure *config.Configuration) (*gin.Engine, error) {
 			}))
 			rBasicAuth.GET("", controller.AccessResource) // Protected
 		}
-
 	}
 
 	return r, nil
