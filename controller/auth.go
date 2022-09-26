@@ -4,6 +4,7 @@ package controller
 
 import (
 	"net/http"
+	"reflect"
 
 	"github.com/gin-gonic/gin"
 
@@ -24,7 +25,7 @@ func CreateUserAuth(c *gin.Context) {
 
 	resp, statusCode := handler.CreateUserAuth(auth)
 
-	if statusCode >= 400 {
+	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
 		renderer.Render(c, resp, statusCode)
 		return
 	}
