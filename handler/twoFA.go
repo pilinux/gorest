@@ -101,7 +101,7 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	}
 
 	// step 4: generate QR in PNG format and save on disk
-	img, err := lib.ByteToPNG(qrByte, configSecurity.TwoFA.PathQR)
+	img, err := lib.ByteToPNG(qrByte, configSecurity.TwoFA.PathQR+"/")
 	if err != nil {
 		log.WithError(err).Error("error code: 1034")
 		httpResponse.Message = "internal server error"
@@ -116,8 +116,8 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	data2FA, ok := model.InMemorySecret2FA[claims.AuthID]
 	if ok {
 		// delete old QR image if available
-		if lib.FileExist(configSecurity.TwoFA.PathQR + data2FA.Image) {
-			err := os.Remove(configSecurity.TwoFA.PathQR + data2FA.Image)
+		if lib.FileExist(configSecurity.TwoFA.PathQR + "/" + data2FA.Image) {
+			err := os.Remove(configSecurity.TwoFA.PathQR + "/" + data2FA.Image)
 			if err != nil {
 				log.WithError(err).Error("error code: 1035")
 			}
@@ -131,8 +131,8 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	model.InMemorySecret2FA[claims.AuthID] = data2FA
 
 	// serve the QR to the client
-	httpResponse.Message = configSecurity.TwoFA.PathQR + img
-	httpStatusCode = http.StatusOK
+	httpResponse.Message = configSecurity.TwoFA.PathQR + "/" + img
+	httpStatusCode = http.StatusCreated
 	return
 }
 
@@ -207,8 +207,8 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 		// 2FA already activated!
 		if twoFA.Status == configSecurity.TwoFA.Status.On {
 			// delete QR image from disk
-			if lib.FileExist(configSecurity.TwoFA.PathQR + data2FA.Image) {
-				err := os.Remove(configSecurity.TwoFA.PathQR + data2FA.Image)
+			if lib.FileExist(configSecurity.TwoFA.PathQR + "/" + data2FA.Image) {
+				err := os.Remove(configSecurity.TwoFA.PathQR + "/" + data2FA.Image)
 				if err != nil {
 					log.WithError(err).Error("error code: 1042")
 				}
@@ -303,8 +303,8 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	}
 
 	// step 11: delete QR image
-	if lib.FileExist(configSecurity.TwoFA.PathQR + data2FA.Image) {
-		err = os.Remove(configSecurity.TwoFA.PathQR + data2FA.Image)
+	if lib.FileExist(configSecurity.TwoFA.PathQR + "/" + data2FA.Image) {
+		err = os.Remove(configSecurity.TwoFA.PathQR + "/" + data2FA.Image)
 		if err != nil {
 			log.WithError(err).Error("error code: 1048")
 		}

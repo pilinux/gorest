@@ -335,7 +335,7 @@ func security() SecurityConfig {
 		securityConfig.TwoFA.Status.Invalid = os.Getenv("TWO_FA_INVALID")
 
 		// for saving QR temporarily
-		securityConfig.TwoFA.PathQR = strings.TrimSpace(os.Getenv("TWO_FA_QR_PATH"))
+		securityConfig.TwoFA.PathQR = strings.TrimRight(strings.TrimSpace(os.Getenv("TWO_FA_QR_PATH")), "/")
 
 		if securityConfig.TwoFA.PathQR != "" {
 			// verify directory exists
@@ -395,7 +395,7 @@ func view() ViewConfig {
 
 	viewConfig.Activate = os.Getenv("ACTIVATE_VIEW")
 	if viewConfig.Activate == Activated {
-		viewConfig.Directory = strings.TrimSpace(os.Getenv("TEMPLATE_DIR"))
+		viewConfig.Directory = strings.TrimRight(strings.TrimSpace(os.Getenv("TEMPLATE_DIR")), "/")
 
 		if viewConfig.Directory != "" {
 			// verify directory for templates exists
