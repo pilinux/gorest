@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"reflect"
 
 	"github.com/gin-gonic/gin"
 
@@ -21,7 +22,7 @@ func RedisCreate(c *gin.Context) {
 
 	resp, statusCode := handler.RedisCreate(data)
 
-	if statusCode >= 400 {
+	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
 		grenderer.Render(c, resp, statusCode)
 		return
 	}
@@ -39,7 +40,7 @@ func RedisRead(c *gin.Context) {
 
 	resp, statusCode := handler.RedisRead(data)
 
-	if statusCode >= 400 {
+	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
 		grenderer.Render(c, resp, statusCode)
 		return
 	}
@@ -70,7 +71,7 @@ func RedisCreateHash(c *gin.Context) {
 
 	resp, statusCode := handler.RedisCreateHash(data)
 
-	if statusCode >= 400 {
+	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
 		grenderer.Render(c, resp, statusCode)
 		return
 	}
@@ -88,7 +89,7 @@ func RedisReadHash(c *gin.Context) {
 
 	resp, statusCode := handler.RedisReadHash(data)
 
-	if statusCode >= 400 {
+	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
 		grenderer.Render(c, resp, statusCode)
 		return
 	}
