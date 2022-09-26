@@ -112,17 +112,10 @@ func RedisCreateHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse
 	defer cancel()
 
 	// set key in Redis
-	result := 0
-	if err := client.Do(ctx, radix.FlatCmd(&result, "HSET", data.Key, data.Value)); err != nil {
+	if err := client.Do(ctx, radix.FlatCmd(nil, "HSET", data.Key, data.Value)); err != nil {
 		log.WithError(err).Error("error code: 1331")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
-		return
-	}
-
-	if result != 1 {
-		httpResponse.Message = "operation failed"
-		httpStatusCode = http.StatusNotAcceptable
 		return
 	}
 

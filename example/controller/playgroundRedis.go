@@ -104,7 +104,7 @@ func RedisDeleteHash(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := handler.RedisReadHash(data)
+	resp, statusCode := handler.RedisDeleteHash(data)
 
 	grenderer.Render(c, resp, statusCode)
 }

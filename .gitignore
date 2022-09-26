@@ -5,3 +5,5 @@
 vendor/
 crosscompile*.sh
 gorest
+keys
+tmp
