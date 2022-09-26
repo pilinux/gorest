@@ -147,8 +147,13 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	}
 
 	configSecurity := config.GetConfig().Security
-	if claims.TwoFA == configSecurity.TwoFA.Status.Verified || claims.TwoFA == configSecurity.TwoFA.Status.On {
+	if claims.TwoFA == configSecurity.TwoFA.Status.On {
 		httpResponse.Message = "2-fa activated already, log in again"
+		httpStatusCode = http.StatusBadRequest
+		return
+	}
+	if claims.TwoFA == configSecurity.TwoFA.Status.Verified {
+		httpResponse.Message = "2-fa activated already"
 		httpStatusCode = http.StatusBadRequest
 		return
 	}
@@ -477,7 +482,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 			}
 
 			// response to the client
-			httpResponse.Message = "wrong OTP"
+			httpResponse.Message = "wrong one-time password"
 			httpStatusCode = http.StatusUnauthorized
 			return
 		}

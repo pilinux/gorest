@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
+	"reflect"
 
 	"github.com/gin-gonic/gin"
 
@@ -26,7 +28,13 @@ func Setup2FA(c *gin.Context) {
 
 	resp, statusCode := handler.Setup2FA(claims, password)
 
-	renderer.Render(c, resp, statusCode)
+	if statusCode != 201 {
+		renderer.Render(c, resp, statusCode)
+		return
+	}
+
+	// serve the QR code
+	c.File(fmt.Sprintf("%v", resp.Message))
 }
 
 // Activate2FA - activate 2FA upon validation
@@ -42,9 +50,9 @@ func Activate2FA(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := handler.Setup2FA(claims, otp)
+	resp, statusCode := handler.Activate2FA(claims, otp)
 
-	if statusCode >= 400 {
+	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
 		renderer.Render(c, resp, statusCode)
 		return
 	}
@@ -67,7 +75,7 @@ func Validate2FA(c *gin.Context) {
 
 	resp, statusCode := handler.Validate2FA(claims, otp)
 
-	if statusCode >= 400 {
+	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
 		renderer.Render(c, resp, statusCode)
 		return
 	}
@@ -87,9 +95,9 @@ func Deactivate2FA(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := handler.Validate2FA(claims, password)
+	resp, statusCode := handler.Deactivate2FA(claims, password)
 
-	if statusCode >= 400 {
+	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
 		renderer.Render(c, resp, statusCode)
 		return
 	}
