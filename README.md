@@ -17,15 +17,13 @@ under the [MIT license][13] and is free for any personal or commercial project.
 
 ## Versioning
 
-`1.MAJOR.MINOR.PATCH`
+`1.x.y`
 
 `1`: production-ready
 
-`MAJOR`: breaking changes
+`x`: breaking changes
 
-`MINOR`: new functionality in a backwards compatible manner
-
-`PATCH`: [optional] backwards compatible bug fixes
+`y`: new functionality or bug fixes in a backwards compatible manner
 
 ## Important
 
