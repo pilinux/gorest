@@ -66,9 +66,16 @@ _Note:_ gorest uses [GORM][21] as its ORM
 
 ## Start building
 
-_Tutorials:_ [Wiki][10]
+Please study the `.env.sample` file. It is one of the most crucial files required
+to properly set up a new project. To load all environment variables, either rename
+the `.env.sample` file to `.env`, or set all the environment variables in your
+development or production instance manually.
 
-For version `1.6.x`, I will publish new tutorials in my free time.
+_Tutorials:_
+
+For version `1.6.x`, please check the project in [example](example)
+
+For version `1.4.x` and `1.5.x`, [Wiki][10]
 
 - convention over configuration
 
@@ -88,10 +95,9 @@ import (
 - set up an environment to compile the Go codes (a [quick tutorial][41]
   for any Debian based OS)
 - install `git`
-- check the [Wiki][10] for tutorials
+- check the [Wiki][10] and [example](example) for tutorials and implementations
 
-_Note:_ Omit the line `setPkFk()` in `autoMigrate.go` file if the driver is not **MySQL**
-([check issue: 7][42])
+_Note:_ For **MySQL** driver, please [check issue: 7][42]
 
 **Note For SQLite3:**
 
