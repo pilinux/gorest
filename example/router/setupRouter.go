@@ -85,13 +85,7 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 
 	// CORS
 	if configure.Security.MustCORS == gconfig.Activated {
-		r.Use(gmiddleware.CORS(
-			configure.Security.CORS.Origin,
-			configure.Security.CORS.Credentials,
-			configure.Security.CORS.Headers,
-			configure.Security.CORS.Methods,
-			configure.Security.CORS.MaxAge,
-		))
+		r.Use(gmiddleware.CORS(configure.Security.CORS))
 	}
 
 	// Sentry.io

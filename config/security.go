@@ -33,13 +33,7 @@ type SecurityConfig struct {
 	}
 
 	MustCORS string
-	CORS     struct {
-		Origin      string
-		Credentials string
-		Headers     string
-		Methods     string
-		MaxAge      string
-	}
+	CORS     []middleware.CORSPolicy
 
 	TrustedPlatform string
 

@@ -360,11 +360,124 @@ func security() SecurityConfig {
 	// CORS
 	securityConfig.MustCORS = os.Getenv("ACTIVATE_CORS")
 	if securityConfig.MustCORS == Activated {
-		securityConfig.CORS.Origin = os.Getenv("CORS_ORIGIN")
-		securityConfig.CORS.Credentials = os.Getenv("CORS_CREDENTIALS")
-		securityConfig.CORS.Headers = os.Getenv("CORS_HEADERS")
-		securityConfig.CORS.Methods = os.Getenv("CORS_METHODS")
-		securityConfig.CORS.MaxAge = os.Getenv("CORS_MAXAGE")
+		cp := middleware.CORSPolicy{}
+
+		// Access-Control-Allow-Origin
+		// Indicates whether the response can be shared with requesting code from the given origin
+		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
+		cp.Value = strings.TrimSpace(os.Getenv("CORS_ORIGIN"))
+		if cp.Value != "" {
+			cp.Key = "Access-Control-Allow-Origin"
+			securityConfig.CORS = append(securityConfig.CORS, cp)
+		}
+
+		// Access-Control-Allow-Credentials
+		// Indicates whether or not the actual request can be made using credentials
+		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials
+		cp.Value = strings.TrimSpace(os.Getenv("CORS_CREDENTIALS"))
+		if cp.Value != "" {
+			cp.Key = "Access-Control-Allow-Credentials"
+			securityConfig.CORS = append(securityConfig.CORS, cp)
+		}
+
+		// Access-Control-Allow-Headers
+		// Indicate which HTTP headers can be used during the actual request
+		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Headers
+		cp.Value = strings.TrimSpace(os.Getenv("CORS_HEADERS"))
+		if cp.Value != "" {
+			cp.Key = "Access-Control-Allow-Headers"
+			securityConfig.CORS = append(securityConfig.CORS, cp)
+		}
+
+		// Access-Control-Expose-Headers
+		// Which response headers should be made available to scripts running in the browser
+		// in response to a cross-origin request
+		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers
+		cp.Value = strings.TrimSpace(os.Getenv("CORS_EXPOSE_HEADERS"))
+		if cp.Value != "" {
+			cp.Key = "Access-Control-Expose-Headers"
+			securityConfig.CORS = append(securityConfig.CORS, cp)
+		}
+
+		// Access-Control-Allow-Methods
+		// Specifies one or more allowed methods
+		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Methods
+		cp.Value = strings.TrimSpace(os.Getenv("CORS_METHODS"))
+		if cp.Value != "" {
+			cp.Key = "Access-Control-Allow-Methods"
+			securityConfig.CORS = append(securityConfig.CORS, cp)
+		}
+
+		// Access-Control-Max-Age
+		// Indicates how long the results of a preflight request can be cached
+		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age
+		cp.Value = strings.TrimSpace(os.Getenv("CORS_MAXAGE"))
+		if cp.Value != "" {
+			cp.Key = "Access-Control-Max-Age"
+			securityConfig.CORS = append(securityConfig.CORS, cp)
+		}
+
+		// X-Content-Type-Options
+		// Prevent some browsers from MIME-sniffing the response
+		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options
+		cp.Value = strings.TrimSpace(os.Getenv("CORS_X_CONTENT_TYPE"))
+		if cp.Value != "" {
+			cp.Key = "X-Content-Type-Options"
+			securityConfig.CORS = append(securityConfig.CORS, cp)
+		}
+
+		// X-Frame-Options
+		// Protect website against clickjacking
+		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
+		// https://tools.ietf.org/html/rfc7034#section-2.1
+		// X-Frame-Options: DENY, SAMEORIGIN
+		cp.Value = strings.TrimSpace(os.Getenv("CORS_X_FRAME"))
+		if cp.Value != "" {
+			cp.Key = "X-Frame-Options"
+			securityConfig.CORS = append(securityConfig.CORS, cp)
+		}
+
+		// Referrer-Policy
+		// Set a strict Referrer Policy to mitigate information leakage
+		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
+		cp.Value = strings.TrimSpace(os.Getenv("CORS_REFERRER"))
+		if cp.Value != "" {
+			cp.Key = "Referrer-Policy"
+			securityConfig.CORS = append(securityConfig.CORS, cp)
+		}
+
+		// Content-Security-Policy
+		// Mitigate the risk of cross-site scripting and other content-injection attacks
+		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
+		// https://content-security-policy.com/
+		// https://developers.google.com/web/fundamentals/security/csp
+		cp.Value = strings.TrimSpace(os.Getenv("CORS_CONTENT_SECURITY"))
+		if cp.Value != "" {
+			cp.Key = "Content-Security-Policy"
+			securityConfig.CORS = append(securityConfig.CORS, cp)
+		}
+
+		// Timing-Allow-Origin
+		// Allow cross-origin access to the timing information for all resources
+		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Timing-Allow-Origin
+		cp.Value = strings.TrimSpace(os.Getenv("CORS_TIMING_ALLOW_ORIGIN"))
+		if cp.Value != "" {
+			cp.Key = "Timing-Allow-Origin"
+			securityConfig.CORS = append(securityConfig.CORS, cp)
+		}
+
+		// Strict-Transport-Security
+		// HTTP Strict Transport Security (HSTS)
+		// https://tools.ietf.org/html/rfc6797#section-6.1
+		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
+		// Strict-Transport-Security: max-age=63072000; includeSubDomains
+		// To enable HSTS preload inclusion: https://hstspreload.org/#deployment-recommendations
+		// Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+		cp.Value = strings.TrimSpace(os.Getenv("CORS_HSTS"))
+		if cp.Value != "" {
+			cp.Key = "Strict-Transport-Security"
+			securityConfig.CORS = append(securityConfig.CORS, cp)
+		}
 	}
 
 	// Important for getting real client IP
