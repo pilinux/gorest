@@ -106,6 +106,9 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 		r.Use(gmiddleware.Pongo2(configure.ViewConfig.Directory))
 	}
 
+	// API Status
+	r.GET("", controller.APIStatus)
+
 	// API:v1.0
 	v1 := r.Group("/api/v1/")
 	{
