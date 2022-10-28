@@ -11,7 +11,7 @@ require (
 	github.com/jinzhu/gorm v1.9.16
 	github.com/joho/godotenv v1.4.0
 	github.com/mediocregopher/radix/v4 v4.1.1
-	github.com/mrz1836/postmark v1.2.11
+	github.com/mrz1836/postmark v1.3.0
 	github.com/onrik/logrus v0.9.0
 	github.com/pilinux/libgo v0.0.5
 	github.com/pilinux/structs v1.1.1
