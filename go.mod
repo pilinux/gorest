@@ -11,21 +11,19 @@ require (
 	github.com/jinzhu/gorm v1.9.16
 	github.com/joho/godotenv v1.4.0
 	github.com/mediocregopher/radix/v4 v4.1.1
-	github.com/mrz1836/postmark v1.2.11
+	github.com/mrz1836/postmark v1.3.0
 	github.com/onrik/logrus v0.9.0
 	github.com/pilinux/libgo v0.0.5
 	github.com/pilinux/structs v1.1.1
-	github.com/qiniu/qmgo v1.1.2
+	github.com/qiniu/qmgo v1.1.4
 	github.com/sec51/twofactor v1.0.0
 	github.com/sirupsen/logrus v1.9.0
-	go.mongodb.org/mongo-driver v1.10.2
-	gorm.io/driver/mysql v1.3.6
-	gorm.io/driver/postgres v1.3.10
-	gorm.io/driver/sqlite v1.3.6
-	gorm.io/gorm v1.23.10
+	go.mongodb.org/mongo-driver v1.11.0
+	gorm.io/driver/mysql v1.4.4
+	gorm.io/driver/postgres v1.4.5
+	gorm.io/driver/sqlite v1.4.3
+	gorm.io/gorm v1.24.1
 )
-
-retract v1.5.0
 
 require (
 	github.com/getsentry/sentry-go v0.13.0 // indirect
@@ -51,7 +49,7 @@ require (
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/lib/pq v1.10.2 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
-	github.com/mattn/go-sqlite3 v1.14.12 // indirect
+	github.com/mattn/go-sqlite3 v1.14.15 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect

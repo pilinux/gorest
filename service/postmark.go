@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+
 	"github.com/mrz1836/postmark"
 )
 
@@ -37,7 +39,7 @@ func Postmark(params PostmarkParams) (postmark.EmailResponse, error) {
 	email.MessageStream = params.MessageStream
 	email.TemplateModel = params.HTMLModel
 
-	res, err := client.SendTemplatedEmail(email)
+	res, err := client.SendTemplatedEmail(context.Background(), email)
 	/*
 		res.To:				recipient email address
 		res.SubmittedAt:	timestamp in UTC

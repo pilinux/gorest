@@ -2,8 +2,10 @@
 #################################
 *.log
 .env
+*.bak
 vendor/
 crosscompile*.sh
 gorest
+example/example
 keys
 tmp
