@@ -47,7 +47,7 @@ type MyCustomClaims struct {
 // JWTClaims ...
 type JWTClaims struct {
 	MyCustomClaims
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
 
 // JWTPayload ...
@@ -170,18 +170,20 @@ func GetJWT(customClaims MyCustomClaims, tokenType string) (string, string, erro
 			Custom1: customClaims.Custom1,
 			Custom2: customClaims.Custom2,
 		},
-		jwt.StandardClaims{
-			Audience:  JWTParams.Audience,
-			ExpiresAt: time.Now().Add(time.Minute * time.Duration(ttl)).Unix(),
-			Id:        uuid.NewString(),
-			IssuedAt:  time.Now().Unix(),
+		jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * time.Duration(ttl))),
+			ID:        uuid.NewString(),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			Issuer:    JWTParams.Issuer,
 			Subject:   JWTParams.Subject,
 		},
 	}
 
+	if JWTParams.Audience != "" {
+		claims.Audience = []string{JWTParams.Audience}
+	}
 	if nbf > 0 {
-		claims.NotBefore = time.Now().Add(time.Second * time.Duration(nbf)).Unix()
+		claims.NotBefore = jwt.NewNumericDate(time.Now().Add(time.Second * time.Duration(nbf)))
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -190,5 +192,5 @@ func GetJWT(customClaims MyCustomClaims, tokenType string) (string, string, erro
 	if err != nil {
 		return "", "", err
 	}
-	return jwtValue, claims.Id, nil
+	return jwtValue, claims.ID, nil
 }
