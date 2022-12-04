@@ -10,7 +10,7 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/flosch/pongo2"
+	"github.com/flosch/pongo2/v6"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
