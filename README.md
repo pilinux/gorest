@@ -33,7 +33,7 @@ _Note:_ For version `1.4.5`: [v1.4.5](https://github.com/pilinux/gorest/tree/v1.
 
 ## Requirement
 
-`Go 1.17+`
+`Go 1.19+`
 
 ## Supported databases
 
