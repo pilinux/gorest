@@ -32,8 +32,8 @@ type Configuration struct {
 
 var configAll *Configuration
 
-// env - load the configurations from .env
-func env() {
+// Env - load the configurations from .env
+func Env() {
 	// Load environment variables
 	err := godotenv.Load()
 	if err != nil {
@@ -67,7 +67,7 @@ func database() DatabaseConfig {
 	var databaseConfig DatabaseConfig
 
 	// Load environment variables
-	env()
+	Env()
 
 	// RDBMS
 	activateRDBMS := os.Getenv("ACTIVATE_RDBMS")
@@ -99,7 +99,7 @@ func databaseRDBMS() DatabaseConfig {
 	var err error
 
 	// Load environment variables
-	env()
+	Env()
 
 	// Env
 	databaseConfig.RDBMS.Env.Driver = os.Getenv("DBDRIVER")
@@ -144,7 +144,7 @@ func databaseRedis() DatabaseConfig {
 	var databaseConfig DatabaseConfig
 
 	// Load environment variables
-	env()
+	Env()
 
 	// REDIS
 	poolSize, err := strconv.Atoi(os.Getenv("POOLSIZE"))
@@ -169,7 +169,7 @@ func databaseMongo() DatabaseConfig {
 	var databaseConfig DatabaseConfig
 
 	// Load environment variables
-	env()
+	Env()
 
 	// MongoDB
 	poolSize, err := strconv.ParseUint(os.Getenv("MONGO_POOLSIZE"), 10, 64)
@@ -196,7 +196,7 @@ func email() EmailConfig {
 	var err error
 
 	// Load environment variables
-	env()
+	Env()
 
 	emailConfig.Activate = os.Getenv("ACTIVATE_EMAIL_SERVICE")
 	if emailConfig.Activate == Activated {
@@ -250,7 +250,7 @@ func logger() LoggerConfig {
 	var loggerConfig LoggerConfig
 
 	// Load environment variables
-	env()
+	Env()
 
 	loggerConfig.Activate = os.Getenv("ACTIVATE_SENTRY")
 	if loggerConfig.Activate == Activated {
@@ -265,7 +265,7 @@ func security() SecurityConfig {
 	var securityConfig SecurityConfig
 
 	// Load environment variables
-	env()
+	Env()
 
 	// Minimum password length
 	userPassMinLength, err := strconv.Atoi(os.Getenv("MIN_PASS_LENGTH"))
@@ -491,7 +491,7 @@ func server() ServerConfig {
 	var serverConfig ServerConfig
 
 	// Load environment variables
-	env()
+	Env()
 
 	serverConfig.ServerPort = os.Getenv("APP_PORT")
 	serverConfig.ServerEnv = os.Getenv("APP_ENV")
@@ -504,7 +504,7 @@ func view() ViewConfig {
 	var viewConfig ViewConfig
 
 	// Load environment variables
-	env()
+	Env()
 
 	viewConfig.Activate = os.Getenv("ACTIVATE_VIEW")
 	if viewConfig.Activate == Activated {
@@ -528,7 +528,7 @@ func view() ViewConfig {
 
 // getParamsJWT - read parameters from env
 func getParamsJWT() middleware.JWTParameters {
-	env()
+	Env()
 
 	params := middleware.JWTParameters{}
 	var err error
@@ -573,7 +573,7 @@ func setParamsJWT(c middleware.JWTParameters) {
 
 // getParamsHash - read parameters from env
 func getParamsHash() lib.HashPassConfig {
-	env()
+	Env()
 
 	params := lib.HashPassConfig{}
 	var err error
