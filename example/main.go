@@ -12,7 +12,15 @@ import (
 )
 
 func main() {
-	configure := gconfig.Config()
+	// set configs
+	err := gconfig.Config()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// read configs
+	configure := gconfig.GetConfig()
 
 	if configure.Database.RDBMS.Activate == gconfig.Activated {
 		// Initialize RDBMS client

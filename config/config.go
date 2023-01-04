@@ -14,7 +14,6 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/pilinux/gorest/lib"
 	"github.com/pilinux/gorest/lib/middleware"
-	log "github.com/sirupsen/logrus"
 )
 
 // Activated - "yes" keyword to activate a service
@@ -33,28 +32,43 @@ type Configuration struct {
 var configAll *Configuration
 
 // Env - load the configurations from .env
-func Env() {
+func Env() error {
 	// Load environment variables
-	err := godotenv.Load()
-	if err != nil {
-		log.WithError(err).Panic("panic code: 101")
-	}
+	return godotenv.Load()
 }
 
 // Config - load all the configurations
-func Config() *Configuration {
+func Config() (err error) {
 	var configuration Configuration
 
-	configuration.Database = database()
-	configuration.EmailConf = email()
-	configuration.Logger = logger()
-	configuration.Security = security()
-	configuration.Server = server()
-	configuration.ViewConfig = view()
+	configuration.Database, err = database()
+	if err != nil {
+		return
+	}
+	configuration.EmailConf, err = email()
+	if err != nil {
+		return
+	}
+	configuration.Logger, err = logger()
+	if err != nil {
+		return
+	}
+	configuration.Security, err = security()
+	if err != nil {
+		return
+	}
+	configuration.Server, err = server()
+	if err != nil {
+		return
+	}
+	configuration.ViewConfig, err = view()
+	if err != nil {
+		return
+	}
 
 	configAll = &configuration
 
-	return configAll
+	return
 }
 
 // GetConfig - return all the config variables
@@ -63,43 +77,59 @@ func GetConfig() *Configuration {
 }
 
 // database - all DB variables
-func database() DatabaseConfig {
-	var databaseConfig DatabaseConfig
-
+func database() (databaseConfig DatabaseConfig, err error) {
 	// Load environment variables
-	Env()
+	err = Env()
+	if err != nil {
+		return
+	}
 
 	// RDBMS
 	activateRDBMS := os.Getenv("ACTIVATE_RDBMS")
 	if activateRDBMS == Activated {
-		databaseConfig.RDBMS = databaseRDBMS().RDBMS
+		dbRDBMS, errThis := databaseRDBMS()
+		if errThis != nil {
+			err = errThis
+			return
+		}
+		databaseConfig.RDBMS = dbRDBMS.RDBMS
 	}
 	databaseConfig.RDBMS.Activate = activateRDBMS
 
 	// REDIS
 	activateRedis := os.Getenv("ACTIVATE_REDIS")
 	if activateRedis == Activated {
-		databaseConfig.REDIS = databaseRedis().REDIS
+		dbRedis, errThis := databaseRedis()
+		if errThis != nil {
+			err = errThis
+			return
+		}
+		databaseConfig.REDIS = dbRedis.REDIS
 	}
 	databaseConfig.REDIS.Activate = activateRedis
 
 	// MongoDB
 	activateMongo := os.Getenv("ACTIVATE_MONGO")
 	if activateMongo == Activated {
-		databaseConfig.MongoDB = databaseMongo().MongoDB
+		dbMongo, errThis := databaseMongo()
+		if errThis != nil {
+			err = errThis
+			return
+		}
+		databaseConfig.MongoDB = dbMongo.MongoDB
 	}
 	databaseConfig.MongoDB.Activate = activateMongo
 
-	return databaseConfig
+	return
 }
 
 // databaseRDBMS - all RDBMS variables
-func databaseRDBMS() DatabaseConfig {
-	var databaseConfig DatabaseConfig
-	var err error
-
+func databaseRDBMS() (databaseConfig DatabaseConfig, err error) {
 	// Load environment variables
-	Env()
+	err = Env()
+	if err != nil {
+		return
+	}
 
 	// Env
 	databaseConfig.RDBMS.Env.Driver = os.Getenv("DBDRIVER")
@@ -118,42 +148,45 @@ func databaseRDBMS() DatabaseConfig {
 	dbConnMaxLifetime := os.Getenv("DBCONNMAXLIFETIME")
 	databaseConfig.RDBMS.Conn.MaxIdleConns, err = strconv.Atoi(dbMaxIdleConns)
 	if err != nil {
-		log.WithError(err).Panic("panic code: 131")
+		return
 	}
 	databaseConfig.RDBMS.Conn.MaxOpenConns, err = strconv.Atoi(dbMaxOpenConns)
 	if err != nil {
-		log.WithError(err).Panic("panic code: 132")
+		return
 	}
 	databaseConfig.RDBMS.Conn.ConnMaxLifetime, err = time.ParseDuration(dbConnMaxLifetime)
 	if err != nil {
-		log.WithError(err).Panic("panic code: 133")
+		return
 	}
 
 	// Logger
 	dbLogLevel := os.Getenv("DBLOGLEVEL")
 	databaseConfig.RDBMS.Log.LogLevel, err = strconv.Atoi(dbLogLevel)
 	if err != nil {
-		log.WithError(err).Panic("panic code: 134")
+		return
 	}
 
-	return databaseConfig
+	return
 }
 
 // databaseRedis - all REDIS DB variables
-func databaseRedis() DatabaseConfig {
-	var databaseConfig DatabaseConfig
-
+func databaseRedis() (databaseConfig DatabaseConfig, err error) {
 	// Load environment variables
-	Env()
+	err = Env()
+	if err != nil {
+		return
+	}
 
 	// REDIS
-	poolSize, err := strconv.Atoi(os.Getenv("POOLSIZE"))
-	if err != nil {
-		log.WithError(err).Panic("panic code: 135")
+	poolSize, errThis := strconv.Atoi(os.Getenv("POOLSIZE"))
+	if errThis != nil {
+		err = errThis
+		return
 	}
-	connTTL, err := strconv.Atoi(os.Getenv("CONNTTL"))
-	if err != nil {
-		log.WithError(err).Panic("panic code: 136")
+	connTTL, errThis := strconv.Atoi(os.Getenv("CONNTTL"))
+	if errThis != nil {
+		err = errThis
+		return
 	}
 
 	databaseConfig.REDIS.Env.Host = os.Getenv("REDISHOST")
@@ -161,24 +194,27 @@ func databaseRedis() DatabaseConfig {
 	databaseConfig.REDIS.Conn.PoolSize = poolSize
 	databaseConfig.REDIS.Conn.ConnTTL = connTTL
 
-	return databaseConfig
+	return
 }
 
 // databaseMongo - all MongoDB variables
-func databaseMongo() DatabaseConfig {
-	var databaseConfig DatabaseConfig
-
+func databaseMongo() (databaseConfig DatabaseConfig, err error) {
 	// Load environment variables
-	Env()
+	err = Env()
+	if err != nil {
+		return
+	}
 
 	// MongoDB
-	poolSize, err := strconv.ParseUint(os.Getenv("MONGO_POOLSIZE"), 10, 64)
-	if err != nil {
-		log.WithError(err).Panic("panic code: 137")
+	poolSize, errThis := strconv.ParseUint(os.Getenv("MONGO_POOLSIZE"), 10, 64)
+	if errThis != nil {
+		err = errThis
+		return
 	}
-	connTTL, err := strconv.Atoi(os.Getenv("MONGO_CONNTTL"))
-	if err != nil {
-		log.WithError(err).Panic("panic code: 138")
+	connTTL, errThis := strconv.Atoi(os.Getenv("MONGO_CONNTTL"))
+	if errThis != nil {
+		err = errThis
+		return
 	}
 
 	databaseConfig.MongoDB.Env.URI = os.Getenv("MONGO_URI")
@@ -187,16 +223,16 @@ func databaseMongo() DatabaseConfig {
 	databaseConfig.MongoDB.Env.PoolMon = os.Getenv("MONGO_MONITOR_POOL")
 	databaseConfig.MongoDB.Env.ConnTTL = connTTL
 
-	return databaseConfig
+	return
 }
 
 // email - config for using external email services
-func email() EmailConfig {
-	var emailConfig EmailConfig
-	var err error
-
+func email() (emailConfig EmailConfig, err error) {
 	// Load environment variables
-	Env()
+	err = Env()
+	if err != nil {
+		return
+	}
 
 	emailConfig.Activate = os.Getenv("ACTIVATE_EMAIL_SERVICE")
 	if emailConfig.Activate == Activated {
@@ -215,62 +251,65 @@ func email() EmailConfig {
 
 		emailConfig.EmailVerificationTemplateID, err = strconv.ParseInt(os.Getenv("EMAIL_VERIFY_TEMPLATE_ID"), 10, 64)
 		if err != nil {
-			log.WithError(err).Panic("panic code: 141")
+			return
 		}
 		emailConfig.PasswordRecoverTemplateID, err = strconv.ParseInt(os.Getenv("EMAIL_PASS_RECOVER_TEMPLATE_ID"), 10, 64)
 		if err != nil {
-			log.WithError(err).Panic("panic code: 142")
+			return
 		}
 		emailConfig.EmailVerificationCodeLength, err = strconv.ParseUint(os.Getenv("EMAIL_VERIFY_CODE_LENGTH"), 10, 32)
 		if err != nil {
-			log.WithError(err).Panic("panic code: 143")
+			return
 		}
 		emailConfig.PasswordRecoverCodeLength, err = strconv.ParseUint(os.Getenv("EMAIL_PASS_RECOVER_CODE_LENGTH"), 10, 32)
 		if err != nil {
-			log.WithError(err).Panic("panic code: 144")
+			return
 		}
 		emailConfig.EmailVerificationTag = os.Getenv("EMAIL_VERIFY_TAG")
 		emailConfig.PasswordRecoverTag = os.Getenv("EMAIL_PASS_RECOVER_TAG")
 		emailConfig.HTMLModel = os.Getenv("EMAIL_HTML_MODEL")
 		emailConfig.EmailVerifyValidityPeriod, err = strconv.ParseUint(os.Getenv("EMAIL_VERIFY_VALIDITY_PERIOD"), 10, 32)
 		if err != nil {
-			log.WithError(err).Panic("panic code: 145")
+			return
 		}
 		emailConfig.PassRecoverValidityPeriod, err = strconv.ParseUint(os.Getenv("EMAIL_PASS_RECOVER_VALIDITY_PERIOD"), 10, 32)
 		if err != nil {
-			log.WithError(err).Panic("panic code: 146")
+			return
 		}
 	}
 
-	return emailConfig
+	return
 }
 
 // logger - config for sentry.io
-func logger() LoggerConfig {
-	var loggerConfig LoggerConfig
-
+func logger() (loggerConfig LoggerConfig, err error) {
 	// Load environment variables
-	Env()
+	err = Env()
+	if err != nil {
+		return
+	}
 
 	loggerConfig.Activate = os.Getenv("ACTIVATE_SENTRY")
 	if loggerConfig.Activate == Activated {
 		loggerConfig.SentryDsn = os.Getenv("SentryDSN")
 	}
 
-	return loggerConfig
+	return
 }
 
 // security - configs for generating tokens and hashes
-func security() SecurityConfig {
-	var securityConfig SecurityConfig
-
+func security() (securityConfig SecurityConfig, err error) {
 	// Load environment variables
-	Env()
+	err = Env()
+	if err != nil {
+		return
+	}
 
 	// Minimum password length
-	userPassMinLength, err := strconv.Atoi(os.Getenv("MIN_PASS_LENGTH"))
-	if err != nil {
-		log.WithError(err).Panic("panic code: 129")
+	userPassMinLength, errThis := strconv.Atoi(os.Getenv("MIN_PASS_LENGTH"))
+	if errThis != nil {
+		err = errThis
+		return
 	}
 	securityConfig.UserPassMinLength = userPassMinLength
 
@@ -284,7 +323,10 @@ func security() SecurityConfig {
 	// JWT
 	securityConfig.MustJWT = os.Getenv("ACTIVATE_JWT")
 	if securityConfig.MustJWT == Activated {
-		securityConfig.JWT = getParamsJWT()
+		securityConfig.JWT, err = getParamsJWT()
+		if err != nil {
+			return
+		}
 
 		// set params globally
 		setParamsJWT(securityConfig.JWT)
@@ -293,7 +335,10 @@ func security() SecurityConfig {
 	// Hashing passwords
 	securityConfig.MustHash = os.Getenv("ACTIVATE_HASHING")
 	if securityConfig.MustHash == Activated {
-		securityConfig.HashPass = getParamsHash()
+		securityConfig.HashPass, err = getParamsHash()
+		if err != nil {
+			return
+		}
 	}
 
 	// Email verification and password recovery
@@ -322,9 +367,10 @@ func security() SecurityConfig {
 			securityConfig.TwoFA.Crypto = crypto.SHA512
 		}
 
-		digits, err := strconv.Atoi(os.Getenv("TWO_FA_DIGITS"))
-		if err != nil {
-			log.WithError(err).Panic("panic code: 130")
+		digits, errThis := strconv.Atoi(os.Getenv("TWO_FA_DIGITS"))
+		if errThis != nil {
+			err = errThis
+			return
 		}
 		securityConfig.TwoFA.Digits = digits
 
@@ -339,12 +385,12 @@ func security() SecurityConfig {
 
 		if securityConfig.TwoFA.PathQR != "" {
 			// verify directory exists
-			if _, err := os.Stat(securityConfig.TwoFA.PathQR); os.IsNotExist(err) {
+			if _, errThis = os.Stat(securityConfig.TwoFA.PathQR); os.IsNotExist(errThis) {
 				// directory does not exist, create the directory
 				path := filepath.Join(".", securityConfig.TwoFA.PathQR)
-				err := os.MkdirAll(path, os.ModePerm)
+				err = os.MkdirAll(path, os.ModePerm)
 				if err != nil {
-					log.WithError(err).Panic("panic code: 109")
+					return
 				}
 			}
 		}
@@ -483,28 +529,30 @@ func security() SecurityConfig {
 	// Important for getting real client IP
 	securityConfig.TrustedPlatform = os.Getenv("TRUSTED_PLATFORM")
 
-	return securityConfig
+	return
 }
 
 // server - port and env
-func server() ServerConfig {
-	var serverConfig ServerConfig
-
+func server() (serverConfig ServerConfig, err error) {
 	// Load environment variables
-	Env()
+	err = Env()
+	if err != nil {
+		return
+	}
 
 	serverConfig.ServerPort = os.Getenv("APP_PORT")
 	serverConfig.ServerEnv = os.Getenv("APP_ENV")
 
-	return serverConfig
+	return
 }
 
 // view - HTML renderer
-func view() ViewConfig {
-	var viewConfig ViewConfig
-
+func view() (viewConfig ViewConfig, err error) {
 	// Load environment variables
-	Env()
+	err = Env()
+	if err != nil {
+		return
+	}
 
 	viewConfig.Activate = os.Getenv("ACTIVATE_VIEW")
 	if viewConfig.Activate == Activated {
@@ -512,50 +560,50 @@ func view() ViewConfig {
 
 		if viewConfig.Directory != "" {
 			// verify directory for templates exists
-			if _, err := os.Stat(viewConfig.Directory); os.IsNotExist(err) {
+			if _, errThis := os.Stat(viewConfig.Directory); os.IsNotExist(errThis) {
 				// directory does not exist, create the directory
 				path := filepath.Join(".", viewConfig.Directory)
-				err := os.MkdirAll(path, os.ModePerm)
+				err = os.MkdirAll(path, os.ModePerm)
 				if err != nil {
-					log.WithError(err).Panic("panic code: 110")
+					return
 				}
 			}
 		}
 	}
 
-	return viewConfig
+	return
 }
 
 // getParamsJWT - read parameters from env
-func getParamsJWT() middleware.JWTParameters {
-	Env()
-
-	params := middleware.JWTParameters{}
-	var err error
+func getParamsJWT() (params middleware.JWTParameters, err error) {
+	err = Env()
+	if err != nil {
+		return
+	}
 
 	params.AccessKey = []byte(os.Getenv("ACCESS_KEY"))
 	params.AccessKeyTTL, err = strconv.Atoi(os.Getenv("ACCESS_KEY_TTL"))
 	if err != nil {
-		log.WithError(err).Panic("panic code: 111")
+		return
 	}
 	params.RefreshKey = []byte(os.Getenv("REFRESH_KEY"))
 	params.RefreshKeyTTL, err = strconv.Atoi(os.Getenv("REFRESH_KEY_TTL"))
 	if err != nil {
-		log.WithError(err).Panic("panic code: 112")
+		return
 	}
 	params.Audience = os.Getenv("AUDIENCE")
 	params.Issuer = os.Getenv("ISSUER")
 	params.AccNbf, err = strconv.Atoi(os.Getenv("NOT_BEFORE_ACC"))
 	if err != nil {
-		log.WithError(err).Panic("panic code: 113")
+		return
 	}
 	params.RefNbf, err = strconv.Atoi(os.Getenv("NOT_BEFORE_REF"))
 	if err != nil {
-		log.WithError(err).Panic("panic code: 114")
+		return
 	}
 	params.Subject = os.Getenv("SUBJECT")
 
-	return params
+	return
 }
 
 // setParamsJWT - set parameters for JWT
@@ -572,31 +620,36 @@ func setParamsJWT(c middleware.JWTParameters) {
 }
 
 // getParamsHash - read parameters from env
-func getParamsHash() lib.HashPassConfig {
-	Env()
+func getParamsHash() (params lib.HashPassConfig, err error) {
+	err = Env()
+	if err != nil {
+		return
+	}
 
-	params := lib.HashPassConfig{}
-	var err error
-
-	hashPassMemory64, err := strconv.ParseUint((os.Getenv("HASHPASSMEMORY")), 10, 32)
-	if err != nil {
-		log.WithError(err).Panic("panic code: 121")
+	hashPassMemory64, errThis := strconv.ParseUint((os.Getenv("HASHPASSMEMORY")), 10, 32)
+	if errThis != nil {
+		err = errThis
+		return
 	}
-	hashPassIterations64, err := strconv.ParseUint((os.Getenv("HASHPASSITERATIONS")), 10, 32)
-	if err != nil {
-		log.WithError(err).Panic("panic code: 122")
+	hashPassIterations64, errThis := strconv.ParseUint((os.Getenv("HASHPASSITERATIONS")), 10, 32)
+	if errThis != nil {
+		err = errThis
+		return
 	}
-	hashPassParallelism64, err := strconv.ParseUint((os.Getenv("HASHPASSPARALLELISM")), 10, 8)
-	if err != nil {
-		log.WithError(err).Panic("panic code: 123")
+	hashPassParallelism64, errThis := strconv.ParseUint((os.Getenv("HASHPASSPARALLELISM")), 10, 8)
+	if errThis != nil {
+		err = errThis
+		return
 	}
-	hashPassSaltLength64, err := strconv.ParseUint((os.Getenv("HASHPASSSALTLENGTH")), 10, 32)
-	if err != nil {
-		log.WithError(err).Panic("panic code: 124")
+	hashPassSaltLength64, errThis := strconv.ParseUint((os.Getenv("HASHPASSSALTLENGTH")), 10, 32)
+	if errThis != nil {
+		err = errThis
+		return
 	}
-	hashPassKeyLength64, err := strconv.ParseUint((os.Getenv("HASHPASSKEYLENGTH")), 10, 32)
-	if err != nil {
-		log.WithError(err).Panic("panic code: 125")
+	hashPassKeyLength64, errThis := strconv.ParseUint((os.Getenv("HASHPASSKEYLENGTH")), 10, 32)
+	if errThis != nil {
+		err = errThis
+		return
 	}
 
 	params.Memory = uint32(hashPassMemory64)
@@ -605,5 +658,5 @@ func getParamsHash() lib.HashPassConfig {
 	params.SaltLength = uint32(hashPassSaltLength64)
 	params.KeyLength = uint32(hashPassKeyLength64)
 
-	return params
+	return
 }

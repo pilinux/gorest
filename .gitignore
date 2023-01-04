@@ -10,3 +10,4 @@ example/example
 keys
 tmp
 .vscode
+coverage.txt
