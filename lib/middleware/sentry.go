@@ -5,6 +5,8 @@ package middleware
 // Copyright (c) 2022 pilinux
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/onrik/logrus/sentry"
 	log "github.com/sirupsen/logrus"
@@ -24,7 +26,8 @@ func SentryCapture(sentryDsn string) gin.HandlerFunc {
 			Dsn: sentryDsn,
 		})
 		if err != nil {
-			log.WithError(err).Error("error msg: middleware -> sentry NewHook failed")
+			// middleware -> sentry NewHook failed
+			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
 		sentryHook.AddTag("method", c.Request.Method)
