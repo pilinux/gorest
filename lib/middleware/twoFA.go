@@ -16,7 +16,7 @@ func TwoFA(keywordOn, keywordOff, keywordVerified string) gin.HandlerFunc {
 		requestAllowed := false
 
 		// JWT is not activated for this app
-		// or, JWT is activated for this app, but 2-FA was never configured
+		// or, JWT is activated for this app, but 2-FA is off or not configured
 		if !statusChecked && statusFromJWT == "" {
 			statusChecked = true
 			requestAllowed = true

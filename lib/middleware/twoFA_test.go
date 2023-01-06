@@ -21,7 +21,7 @@ func TestTwoFA(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "2-FA was never configured",
+			name:           "2-FA is off or not configured",
 			tfa:            "",
 			expectedStatus: http.StatusOK,
 		},
