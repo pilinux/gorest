@@ -29,7 +29,7 @@ func TestFirewall(t *testing.T) {
 
 	for _, tc := range testCases {
 		// set up a gin router and handler
-		gin.SetMode(gin.ReleaseMode)
+		gin.SetMode(gin.TestMode)
 		router := gin.New()
 		err := router.SetTrustedProxies(nil)
 		if err != nil {

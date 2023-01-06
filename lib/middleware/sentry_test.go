@@ -13,7 +13,7 @@ import (
 
 func TestSentryCapture(t *testing.T) {
 	// set up a gin router and handler
-	gin.SetMode(gin.ReleaseMode)
+	gin.SetMode(gin.TestMode)
 	router := gin.New()
 	err := router.SetTrustedProxies(nil)
 	if err != nil {
