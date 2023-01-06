@@ -31,5 +31,15 @@ jobs:
       - name: Build
         run: go build -v ./...
 
+      - name: Test
+        env:
+          TEST_ENV_URL: ${{ secrets.TEST_ENV_URL }}
+          TEST_INDEX_HTML_URL: ${{ secrets.TEST_INDEX_HTML_URL }}
+          TEST_SENTRY_DSN: ${{ secrets.TEST_SENTRY_DSN }}
+        run: go test -v -cover -coverprofile=coverage.txt -covermode=atomic ./...
+
+      - name: Upload coverage to Codecov
+        run: bash <(curl -s https://codecov.io/bash)
+
       - name: Update Go report card
         uses: creekorful/goreportcard-action@v1.0
