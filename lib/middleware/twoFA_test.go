@@ -41,6 +41,12 @@ func TestTwoFA(t *testing.T) {
 			tfa:            "verified",
 			expectedStatus: http.StatusOK,
 		},
+
+		{
+			name:           "2-FA on, status from JWT not defined",
+			tfa:            "not.defined",
+			expectedStatus: http.StatusUnauthorized,
+		},
 	}
 
 	// run the test cases
