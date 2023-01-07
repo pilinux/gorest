@@ -5,6 +5,8 @@
 ![CodeQL][02]
 ![Go][07]
 ![Linter][08]
+[![Codecov][04]][05]
+[![Go Reference][14]][15]
 [![Go Report Card](https://goreportcard.com/badge/github.com/pilinux/gorest)][01]
 [![CodeFactor](https://www.codefactor.io/repository/github/pilinux/gorest/badge)][06]
 [![codebeat badge](https://codebeat.co/badges/3e3573cc-2e9d-48bc-a8c5-4f054bfdfcf7)][03]
@@ -67,9 +69,8 @@ _Note:_ gorest uses [GORM][21] as its ORM
 ## Start building
 
 Please study the `.env.sample` file. It is one of the most crucial files required
-to properly set up a new project. To load all environment variables, either rename
-the `.env.sample` file to `.env`, or set all the environment variables in your
-development or production instance manually.
+to properly set up a new project. Please rename the `.env.sample` file to `.env`,
+and set the environment variables according to your own instance setup.
 
 _Tutorials:_
 
@@ -119,13 +120,15 @@ Please see [this][62] document.
 
 ## License
 
-© Mahir Hasan 2019 - 2022
+© Mahir Hasan 2019 - 2023
 
 Released under the [MIT license][13]
 
 [01]: https://goreportcard.com/report/github.com/pilinux/gorest
 [02]: https://github.com/pilinux/gorest/actions/workflows/codeql-analysis.yml/badge.svg
 [03]: https://codebeat.co/projects/github-com-pilinux-gorest-main
+[04]: https://codecov.io/gh/pilinux/gorest/branch/main/graph/badge.svg?token=xGLBRrCAvB
+[05]: https://codecov.io/gh/pilinux/gorest
 [06]: https://www.codefactor.io/repository/github/pilinux/gorest
 [07]: https://github.com/pilinux/gorest/actions/workflows/go.yml/badge.svg
 [08]: https://github.com/pilinux/gorest/actions/workflows/golangci-lint.yml/badge.svg
@@ -133,6 +136,8 @@ Released under the [MIT license][13]
 [11]: https://github.com/golang/go
 [12]: https://github.com/gin-gonic/gin
 [13]: LICENSE
+[14]: https://pkg.go.dev/badge/github.com/pilinux/gorest
+[15]: https://pkg.go.dev/github.com/pilinux/gorest
 [16]: https://github.com/golang-jwt/jwt
 [17]: https://sentry.io/
 [21]: https://gorm.io
