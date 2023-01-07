@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.6.x and above
+
+Please check the releases
+
 ## v1.6.0-rc.1 [Sep 03 - 2022]
 
 Link: https://github.com/pilinux/gorest/releases/tag/v1.6.0-rc.1
