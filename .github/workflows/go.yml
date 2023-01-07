@@ -32,6 +32,7 @@ jobs:
         run: go build -v ./...
 
       - name: Test
+        if: github.event_name == 'push'
         env:
           TEST_ENV_URL: ${{ secrets.TEST_ENV_URL }}
           TEST_INDEX_HTML_URL: ${{ secrets.TEST_INDEX_HTML_URL }}
@@ -39,7 +40,9 @@ jobs:
         run: go test -v -cover -coverprofile=coverage.txt -covermode=atomic ./...
 
       - name: Upload coverage to Codecov
+        if: github.event_name == 'push'
         run: bash <(curl -s https://codecov.io/bash)
 
       - name: Update Go report card
+        if: github.event_name == 'push'
         uses: creekorful/goreportcard-action@v1.0
