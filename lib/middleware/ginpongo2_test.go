@@ -71,7 +71,78 @@ func TestConvertContext(t *testing.T) {
 }
 
 func TestPongo2(t *testing.T) {
-	t.Logf("start the test with proper directory and template files")
+	testCases := []struct {
+		name          string
+		baseDirectory string
+		template      string
+		data          interface{}
+		expectedCode  int
+		expectedBody  string
+	}{
+		{
+			"valid data",
+			"templates",
+			"index.html",
+			map[string]interface{}{
+				"message": "Hello, World!",
+			},
+			http.StatusOK,
+			"Hello, World!",
+		},
+
+		{
+			"missing template name",
+			"templates",
+			"",
+			map[string]interface{}{
+				"message": "Hello, World!",
+			},
+			http.StatusOK,
+			"",
+		},
+
+		{
+			"missing data",
+			"templates",
+			"index.html",
+			nil,
+			http.StatusOK,
+			"",
+		},
+
+		{
+			"invalid base directory",
+			"invalid/path",
+			"index.html",
+			map[string]interface{}{
+				"message": "Hello, World!",
+			},
+			http.StatusInternalServerError,
+			"",
+		},
+
+		{
+			"invalid template file",
+			"templates",
+			"invalid.html",
+			map[string]interface{}{
+				"message": "Hello, World!",
+			},
+			http.StatusInternalServerError,
+			"",
+		},
+
+		{
+			"panicking template execution",
+			"templates",
+			"index.html",
+			map[string]interface{}{
+				"message": "Hello, World!",
+			},
+			http.StatusOK,
+			"",
+		},
+	}
 
 	// create a new directory for testing
 	err := os.Mkdir("templates", 0700)
@@ -86,41 +157,47 @@ func TestPongo2(t *testing.T) {
 		t.Error(err)
 	}
 
-	// set up a gin router and handler
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	err = router.SetTrustedProxies(nil)
-	if err != nil {
-		t.Errorf("failed to set trusted proxies to nil")
-	}
-	router.TrustedPlatform = "X-Real-Ip"
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// set up a gin router and handler
+			gin.SetMode(gin.TestMode)
+			router := gin.New()
+			err = router.SetTrustedProxies(nil)
+			if err != nil {
+				t.Errorf("failed to set trusted proxies to nil")
+			}
+			router.TrustedPlatform = "X-Real-Ip"
 
-	router.Use(middleware.Pongo2("templates"))
-	router.GET("/", func(c *gin.Context) {
-		c.Set("template", "index.html")
-		c.Set("data", map[string]interface{}{"message": "Hello, World!"})
-	})
+			router.Use(middleware.Pongo2(tc.baseDirectory))
+			router.GET("/", func(c *gin.Context) {
+				c.Set("template", tc.template)
+				c.Set("data", tc.data)
+				if tc.name == "panicking template execution" {
+					panic("test panic")
+				}
+			})
 
-	// create a request and response recorder
-	w := httptest.NewRecorder()
-	req, err := http.NewRequest("GET", "/", nil)
-	if err != nil {
-		t.Errorf("failed to create an HTTP request")
-		return
-	}
+			// create a request and response recorder
+			w := httptest.NewRecorder()
+			req, err := http.NewRequest("GET", "/", nil)
+			if err != nil {
+				t.Errorf("failed to create an HTTP request")
+				return
+			}
 
-	// call the handler
-	router.ServeHTTP(w, req)
+			// call the handler
+			router.ServeHTTP(w, req)
 
-	// check the status code
-	if w.Code != http.StatusOK {
-		t.Errorf("unexpected status code: got %v, want %v", w.Code, http.StatusOK)
-	}
+			// check the status code
+			if w.Code != tc.expectedCode {
+				t.Errorf("unexpected status code: got %v, want %v", w.Code, tc.expectedCode)
+			}
 
-	// check the response body
-	expectedBody := "Hello, World!"
-	if !strings.Contains(w.Body.String(), expectedBody) {
-		t.Errorf("unexpected response body: got %v, want %v", w.Body.String(), expectedBody)
+			// check the response body
+			if !strings.Contains(w.Body.String(), tc.expectedBody) {
+				t.Errorf("unexpected response body: got %v, want %v", w.Body.String(), tc.expectedBody)
+			}
+		})
 	}
 
 	// remove the directory at the end of the test
