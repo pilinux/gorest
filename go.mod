@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/jinzhu/gorm v1.9.16
 	github.com/joho/godotenv v1.4.0
-	github.com/mediocregopher/radix/v4 v4.1.1
+	github.com/mediocregopher/radix/v4 v4.1.2
 	github.com/mrz1836/postmark v1.3.0
 	github.com/onrik/logrus v0.10.0
 	github.com/pilinux/libgo v0.0.5
