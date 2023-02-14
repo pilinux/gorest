@@ -18,7 +18,7 @@ require (
 	github.com/qiniu/qmgo v1.1.4
 	github.com/sec51/twofactor v1.0.0
 	github.com/sirupsen/logrus v1.9.0
-	go.mongodb.org/mongo-driver v1.11.1
+	go.mongodb.org/mongo-driver v1.11.2
 	gorm.io/driver/mysql v1.4.5
 	gorm.io/driver/postgres v1.4.6
 	gorm.io/driver/sqlite v1.4.4
