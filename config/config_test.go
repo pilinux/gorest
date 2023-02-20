@@ -70,6 +70,11 @@ func TestGetConfig(t *testing.T) {
 	expected.Database.RDBMS.Access.User = "test_user"
 	expected.Database.RDBMS.Access.Pass = "test_password"
 	expected.Database.RDBMS.Ssl.Sslmode = "disable"
+	expected.Database.RDBMS.Ssl.MinTLS = "1.2"
+	expected.Database.RDBMS.Ssl.RootCA = "/path/to/ca.pem"
+	expected.Database.RDBMS.Ssl.ServerCert = "/path/to/server-cert.pem"
+	expected.Database.RDBMS.Ssl.ClientCert = "/path/to/client-cert.pem"
+	expected.Database.RDBMS.Ssl.ClientKey = "/path/to/client-key.pem"
 	expected.Database.RDBMS.Conn.MaxIdleConns = 10
 	expected.Database.RDBMS.Conn.MaxOpenConns = 100
 	expected.Database.RDBMS.Conn.ConnMaxLifetime = time.Duration(1 * time.Hour)

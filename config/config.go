@@ -141,7 +141,12 @@ func databaseRDBMS() (databaseConfig DatabaseConfig, err error) {
 	databaseConfig.RDBMS.Access.User = os.Getenv("DBUSER")
 	databaseConfig.RDBMS.Access.Pass = os.Getenv("DBPASS")
 	// SSL
-	databaseConfig.RDBMS.Ssl.Sslmode = os.Getenv("DBSSLMODE")
+	databaseConfig.RDBMS.Ssl.Sslmode = strings.TrimSpace(os.Getenv("DBSSLMODE"))
+	databaseConfig.RDBMS.Ssl.MinTLS = strings.TrimSpace(os.Getenv("DBSSL_TLS_MIN"))
+	databaseConfig.RDBMS.Ssl.RootCA = strings.TrimSpace(os.Getenv("DBSSL_ROOT_CA"))
+	databaseConfig.RDBMS.Ssl.ServerCert = strings.TrimSpace(os.Getenv("DBSSL_SERVER_CERT"))
+	databaseConfig.RDBMS.Ssl.ClientCert = strings.TrimSpace(os.Getenv("DBSSL_CLIENT_CERT"))
+	databaseConfig.RDBMS.Ssl.ClientKey = strings.TrimSpace(os.Getenv("DBSSL_CLIENT_KEY"))
 	// Conn
 	dbMaxIdleConns := os.Getenv("DBMAXIDLECONNS")
 	dbMaxOpenConns := os.Getenv("DBMAXOPENCONNS")

@@ -31,7 +31,12 @@ type RDBMS struct {
 		Pass   string
 	}
 	Ssl struct {
-		Sslmode string
+		Sslmode    string
+		MinTLS     string
+		RootCA     string
+		ServerCert string
+		ClientCert string
+		ClientKey  string
 	}
 	Conn struct {
 		MaxIdleConns    int

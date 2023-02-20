@@ -74,6 +74,13 @@ func InitDB() *gorm.DB {
 	switch driver {
 	case "mysql":
 		dsn := username + ":" + password + "@tcp(" + host + ":" + port + ")/" + database + "?charset=utf8mb4&parseTime=True&loc=Local"
+		if sslmode != "disable" {
+			dsn += "&tls=custom"
+			err = InitTLSMySQL()
+			if err != nil {
+				log.WithError(err).Panic("panic code: 150")
+			}
+		}
 		sqlDB, err = sql.Open(driver, dsn)
 		if err != nil {
 			log.WithError(err).Panic("panic code: 151")
