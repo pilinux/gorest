@@ -85,7 +85,7 @@ func database() (databaseConfig DatabaseConfig, err error) {
 	}
 
 	// RDBMS
-	activateRDBMS := os.Getenv("ACTIVATE_RDBMS")
+	activateRDBMS := strings.TrimSpace(os.Getenv("ACTIVATE_RDBMS"))
 	if activateRDBMS == Activated {
 		dbRDBMS, errThis := databaseRDBMS()
 		if errThis != nil {
@@ -97,7 +97,7 @@ func database() (databaseConfig DatabaseConfig, err error) {
 	databaseConfig.RDBMS.Activate = activateRDBMS
 
 	// REDIS
-	activateRedis := os.Getenv("ACTIVATE_REDIS")
+	activateRedis := strings.TrimSpace(os.Getenv("ACTIVATE_REDIS"))
 	if activateRedis == Activated {
 		dbRedis, errThis := databaseRedis()
 		if errThis != nil {
@@ -109,7 +109,7 @@ func database() (databaseConfig DatabaseConfig, err error) {
 	databaseConfig.REDIS.Activate = activateRedis
 
 	// MongoDB
-	activateMongo := os.Getenv("ACTIVATE_MONGO")
+	activateMongo := strings.TrimSpace(os.Getenv("ACTIVATE_MONGO"))
 	if activateMongo == Activated {
 		dbMongo, errThis := databaseMongo()
 		if errThis != nil {
@@ -132,14 +132,14 @@ func databaseRDBMS() (databaseConfig DatabaseConfig, err error) {
 	}
 
 	// Env
-	databaseConfig.RDBMS.Env.Driver = os.Getenv("DBDRIVER")
-	databaseConfig.RDBMS.Env.Host = os.Getenv("DBHOST")
-	databaseConfig.RDBMS.Env.Port = os.Getenv("DBPORT")
-	databaseConfig.RDBMS.Env.TimeZone = os.Getenv("DBTIMEZONE")
+	databaseConfig.RDBMS.Env.Driver = strings.TrimSpace(os.Getenv("DBDRIVER"))
+	databaseConfig.RDBMS.Env.Host = strings.TrimSpace(os.Getenv("DBHOST"))
+	databaseConfig.RDBMS.Env.Port = strings.TrimSpace(os.Getenv("DBPORT"))
+	databaseConfig.RDBMS.Env.TimeZone = strings.TrimSpace(os.Getenv("DBTIMEZONE"))
 	// Access
-	databaseConfig.RDBMS.Access.DbName = os.Getenv("DBNAME")
-	databaseConfig.RDBMS.Access.User = os.Getenv("DBUSER")
-	databaseConfig.RDBMS.Access.Pass = os.Getenv("DBPASS")
+	databaseConfig.RDBMS.Access.DbName = strings.TrimSpace(os.Getenv("DBNAME"))
+	databaseConfig.RDBMS.Access.User = strings.TrimSpace(os.Getenv("DBUSER"))
+	databaseConfig.RDBMS.Access.Pass = strings.TrimSpace(os.Getenv("DBPASS"))
 	// SSL
 	databaseConfig.RDBMS.Ssl.Sslmode = strings.TrimSpace(os.Getenv("DBSSLMODE"))
 	databaseConfig.RDBMS.Ssl.MinTLS = strings.TrimSpace(os.Getenv("DBSSL_TLS_MIN"))
@@ -148,9 +148,9 @@ func databaseRDBMS() (databaseConfig DatabaseConfig, err error) {
 	databaseConfig.RDBMS.Ssl.ClientCert = strings.TrimSpace(os.Getenv("DBSSL_CLIENT_CERT"))
 	databaseConfig.RDBMS.Ssl.ClientKey = strings.TrimSpace(os.Getenv("DBSSL_CLIENT_KEY"))
 	// Conn
-	dbMaxIdleConns := os.Getenv("DBMAXIDLECONNS")
-	dbMaxOpenConns := os.Getenv("DBMAXOPENCONNS")
-	dbConnMaxLifetime := os.Getenv("DBCONNMAXLIFETIME")
+	dbMaxIdleConns := strings.TrimSpace(os.Getenv("DBMAXIDLECONNS"))
+	dbMaxOpenConns := strings.TrimSpace(os.Getenv("DBMAXOPENCONNS"))
+	dbConnMaxLifetime := strings.TrimSpace(os.Getenv("DBCONNMAXLIFETIME"))
 	databaseConfig.RDBMS.Conn.MaxIdleConns, err = strconv.Atoi(dbMaxIdleConns)
 	if err != nil {
 		return
@@ -165,7 +165,7 @@ func databaseRDBMS() (databaseConfig DatabaseConfig, err error) {
 	}
 
 	// Logger
-	dbLogLevel := os.Getenv("DBLOGLEVEL")
+	dbLogLevel := strings.TrimSpace(os.Getenv("DBLOGLEVEL"))
 	databaseConfig.RDBMS.Log.LogLevel, err = strconv.Atoi(dbLogLevel)
 	if err != nil {
 		return
@@ -183,19 +183,19 @@ func databaseRedis() (databaseConfig DatabaseConfig, err error) {
 	}
 
 	// REDIS
-	poolSize, errThis := strconv.Atoi(os.Getenv("POOLSIZE"))
+	poolSize, errThis := strconv.Atoi(strings.TrimSpace(os.Getenv("POOLSIZE")))
 	if errThis != nil {
 		err = errThis
 		return
 	}
-	connTTL, errThis := strconv.Atoi(os.Getenv("CONNTTL"))
+	connTTL, errThis := strconv.Atoi(strings.TrimSpace(os.Getenv("CONNTTL")))
 	if errThis != nil {
 		err = errThis
 		return
 	}
 
-	databaseConfig.REDIS.Env.Host = os.Getenv("REDISHOST")
-	databaseConfig.REDIS.Env.Port = os.Getenv("REDISPORT")
+	databaseConfig.REDIS.Env.Host = strings.TrimSpace(os.Getenv("REDISHOST"))
+	databaseConfig.REDIS.Env.Port = strings.TrimSpace(os.Getenv("REDISPORT"))
 	databaseConfig.REDIS.Conn.PoolSize = poolSize
 	databaseConfig.REDIS.Conn.ConnTTL = connTTL
 
@@ -211,21 +211,21 @@ func databaseMongo() (databaseConfig DatabaseConfig, err error) {
 	}
 
 	// MongoDB
-	poolSize, errThis := strconv.ParseUint(os.Getenv("MONGO_POOLSIZE"), 10, 64)
+	poolSize, errThis := strconv.ParseUint(strings.TrimSpace(os.Getenv("MONGO_POOLSIZE")), 10, 64)
 	if errThis != nil {
 		err = errThis
 		return
 	}
-	connTTL, errThis := strconv.Atoi(os.Getenv("MONGO_CONNTTL"))
+	connTTL, errThis := strconv.Atoi(strings.TrimSpace(os.Getenv("MONGO_CONNTTL")))
 	if errThis != nil {
 		err = errThis
 		return
 	}
 
-	databaseConfig.MongoDB.Env.URI = os.Getenv("MONGO_URI")
-	databaseConfig.MongoDB.Env.AppName = os.Getenv("MONGO_APP")
+	databaseConfig.MongoDB.Env.URI = strings.TrimSpace(os.Getenv("MONGO_URI"))
+	databaseConfig.MongoDB.Env.AppName = strings.TrimSpace(os.Getenv("MONGO_APP"))
 	databaseConfig.MongoDB.Env.PoolSize = poolSize
-	databaseConfig.MongoDB.Env.PoolMon = os.Getenv("MONGO_MONITOR_POOL")
+	databaseConfig.MongoDB.Env.PoolMon = strings.TrimSpace(os.Getenv("MONGO_MONITOR_POOL"))
 	databaseConfig.MongoDB.Env.ConnTTL = connTTL
 
 	return
@@ -239,45 +239,45 @@ func email() (emailConfig EmailConfig, err error) {
 		return
 	}
 
-	emailConfig.Activate = os.Getenv("ACTIVATE_EMAIL_SERVICE")
+	emailConfig.Activate = strings.TrimSpace(os.Getenv("ACTIVATE_EMAIL_SERVICE"))
 	if emailConfig.Activate == Activated {
-		emailConfig.Provider = os.Getenv("EMAIL_SERVICE_PROVIDER")
-		emailConfig.APIToken = os.Getenv("EMAIL_API_TOKEN")
-		emailConfig.AddrFrom = os.Getenv("EMAIL_FROM")
+		emailConfig.Provider = strings.TrimSpace(os.Getenv("EMAIL_SERVICE_PROVIDER"))
+		emailConfig.APIToken = strings.TrimSpace(os.Getenv("EMAIL_API_TOKEN"))
+		emailConfig.AddrFrom = strings.TrimSpace(os.Getenv("EMAIL_FROM"))
 
 		emailConfig.TrackOpens = false
-		trackOpens := os.Getenv("EMAIL_TRACK_OPENS")
+		trackOpens := strings.TrimSpace(os.Getenv("EMAIL_TRACK_OPENS"))
 		if trackOpens == "yes" {
 			emailConfig.TrackOpens = true
 		}
 
-		emailConfig.TrackLinks = os.Getenv("EMAIL_TRACK_LINKS")
-		emailConfig.DeliveryType = os.Getenv("EMAIL_DELIVERY_TYPE")
+		emailConfig.TrackLinks = strings.TrimSpace(os.Getenv("EMAIL_TRACK_LINKS"))
+		emailConfig.DeliveryType = strings.TrimSpace(os.Getenv("EMAIL_DELIVERY_TYPE"))
 
-		emailConfig.EmailVerificationTemplateID, err = strconv.ParseInt(os.Getenv("EMAIL_VERIFY_TEMPLATE_ID"), 10, 64)
+		emailConfig.EmailVerificationTemplateID, err = strconv.ParseInt(strings.TrimSpace(os.Getenv("EMAIL_VERIFY_TEMPLATE_ID")), 10, 64)
 		if err != nil {
 			return
 		}
-		emailConfig.PasswordRecoverTemplateID, err = strconv.ParseInt(os.Getenv("EMAIL_PASS_RECOVER_TEMPLATE_ID"), 10, 64)
+		emailConfig.PasswordRecoverTemplateID, err = strconv.ParseInt(strings.TrimSpace(os.Getenv("EMAIL_PASS_RECOVER_TEMPLATE_ID")), 10, 64)
 		if err != nil {
 			return
 		}
-		emailConfig.EmailVerificationCodeLength, err = strconv.ParseUint(os.Getenv("EMAIL_VERIFY_CODE_LENGTH"), 10, 32)
+		emailConfig.EmailVerificationCodeLength, err = strconv.ParseUint(strings.TrimSpace(os.Getenv("EMAIL_VERIFY_CODE_LENGTH")), 10, 32)
 		if err != nil {
 			return
 		}
-		emailConfig.PasswordRecoverCodeLength, err = strconv.ParseUint(os.Getenv("EMAIL_PASS_RECOVER_CODE_LENGTH"), 10, 32)
+		emailConfig.PasswordRecoverCodeLength, err = strconv.ParseUint(strings.TrimSpace(os.Getenv("EMAIL_PASS_RECOVER_CODE_LENGTH")), 10, 32)
 		if err != nil {
 			return
 		}
-		emailConfig.EmailVerificationTag = os.Getenv("EMAIL_VERIFY_TAG")
-		emailConfig.PasswordRecoverTag = os.Getenv("EMAIL_PASS_RECOVER_TAG")
-		emailConfig.HTMLModel = os.Getenv("EMAIL_HTML_MODEL")
-		emailConfig.EmailVerifyValidityPeriod, err = strconv.ParseUint(os.Getenv("EMAIL_VERIFY_VALIDITY_PERIOD"), 10, 32)
+		emailConfig.EmailVerificationTag = strings.TrimSpace(os.Getenv("EMAIL_VERIFY_TAG"))
+		emailConfig.PasswordRecoverTag = strings.TrimSpace(os.Getenv("EMAIL_PASS_RECOVER_TAG"))
+		emailConfig.HTMLModel = strings.TrimSpace(os.Getenv("EMAIL_HTML_MODEL"))
+		emailConfig.EmailVerifyValidityPeriod, err = strconv.ParseUint(strings.TrimSpace(os.Getenv("EMAIL_VERIFY_VALIDITY_PERIOD")), 10, 32)
 		if err != nil {
 			return
 		}
-		emailConfig.PassRecoverValidityPeriod, err = strconv.ParseUint(os.Getenv("EMAIL_PASS_RECOVER_VALIDITY_PERIOD"), 10, 32)
+		emailConfig.PassRecoverValidityPeriod, err = strconv.ParseUint(strings.TrimSpace(os.Getenv("EMAIL_PASS_RECOVER_VALIDITY_PERIOD")), 10, 32)
 		if err != nil {
 			return
 		}
@@ -294,9 +294,9 @@ func logger() (loggerConfig LoggerConfig, err error) {
 		return
 	}
 
-	loggerConfig.Activate = os.Getenv("ACTIVATE_SENTRY")
+	loggerConfig.Activate = strings.TrimSpace(os.Getenv("ACTIVATE_SENTRY"))
 	if loggerConfig.Activate == Activated {
-		loggerConfig.SentryDsn = os.Getenv("SentryDSN")
+		loggerConfig.SentryDsn = strings.TrimSpace(os.Getenv("SentryDSN"))
 	}
 
 	return
@@ -311,7 +311,7 @@ func security() (securityConfig SecurityConfig, err error) {
 	}
 
 	// Minimum password length
-	userPassMinLength, errThis := strconv.Atoi(os.Getenv("MIN_PASS_LENGTH"))
+	userPassMinLength, errThis := strconv.Atoi(strings.TrimSpace(os.Getenv("MIN_PASS_LENGTH")))
 	if errThis != nil {
 		err = errThis
 		return
@@ -319,14 +319,14 @@ func security() (securityConfig SecurityConfig, err error) {
 	securityConfig.UserPassMinLength = userPassMinLength
 
 	// Basic auth
-	securityConfig.MustBasicAuth = os.Getenv("ACTIVATE_BASIC_AUTH")
+	securityConfig.MustBasicAuth = strings.TrimSpace(os.Getenv("ACTIVATE_BASIC_AUTH"))
 	if securityConfig.MustBasicAuth == Activated {
-		securityConfig.BasicAuth.Username = os.Getenv("USERNAME")
-		securityConfig.BasicAuth.Password = os.Getenv("PASSWORD")
+		securityConfig.BasicAuth.Username = strings.TrimSpace(os.Getenv("USERNAME"))
+		securityConfig.BasicAuth.Password = strings.TrimSpace(os.Getenv("PASSWORD"))
 	}
 
 	// JWT
-	securityConfig.MustJWT = os.Getenv("ACTIVATE_JWT")
+	securityConfig.MustJWT = strings.TrimSpace(os.Getenv("ACTIVATE_JWT"))
 	if securityConfig.MustJWT == Activated {
 		securityConfig.JWT, err = getParamsJWT()
 		if err != nil {
@@ -338,7 +338,7 @@ func security() (securityConfig SecurityConfig, err error) {
 	}
 
 	// Hashing passwords
-	securityConfig.MustHash = os.Getenv("ACTIVATE_HASHING")
+	securityConfig.MustHash = strings.TrimSpace(os.Getenv("ACTIVATE_HASHING"))
 	if securityConfig.MustHash == Activated {
 		securityConfig.HashPass, err = getParamsHash()
 		if err != nil {
@@ -349,19 +349,19 @@ func security() (securityConfig SecurityConfig, err error) {
 	// Email verification and password recovery
 	securityConfig.VerifyEmail = false
 	securityConfig.RecoverPass = false
-	if os.Getenv("VERIFY_EMAIL") == "yes" {
+	if strings.TrimSpace(os.Getenv("VERIFY_EMAIL")) == "yes" {
 		securityConfig.VerifyEmail = true
 	}
-	if os.Getenv("RECOVER_PASSWORD") == "yes" {
+	if strings.TrimSpace(os.Getenv("RECOVER_PASSWORD")) == "yes" {
 		securityConfig.RecoverPass = true
 	}
 
 	// Two-factor authentication
-	securityConfig.Must2FA = os.Getenv("ACTIVATE_2FA")
+	securityConfig.Must2FA = strings.TrimSpace(os.Getenv("ACTIVATE_2FA"))
 	if securityConfig.Must2FA == Activated {
-		securityConfig.TwoFA.Issuer = os.Getenv("TWO_FA_ISSUER")
+		securityConfig.TwoFA.Issuer = strings.TrimSpace(os.Getenv("TWO_FA_ISSUER"))
 
-		cryptoAlg := os.Getenv("TWO_FA_CRYPTO")
+		cryptoAlg := strings.TrimSpace(os.Getenv("TWO_FA_CRYPTO"))
 		if cryptoAlg == "1" {
 			securityConfig.TwoFA.Crypto = crypto.SHA1
 		}
@@ -372,7 +372,7 @@ func security() (securityConfig SecurityConfig, err error) {
 			securityConfig.TwoFA.Crypto = crypto.SHA512
 		}
 
-		digits, errThis := strconv.Atoi(os.Getenv("TWO_FA_DIGITS"))
+		digits, errThis := strconv.Atoi(strings.TrimSpace(os.Getenv("TWO_FA_DIGITS")))
 		if errThis != nil {
 			err = errThis
 			return
@@ -380,10 +380,10 @@ func security() (securityConfig SecurityConfig, err error) {
 		securityConfig.TwoFA.Digits = digits
 
 		// define different statuses of individual user
-		securityConfig.TwoFA.Status.Verified = os.Getenv("TWO_FA_VERIFIED")
-		securityConfig.TwoFA.Status.On = os.Getenv("TWO_FA_ON")
-		securityConfig.TwoFA.Status.Off = os.Getenv("TWO_FA_OFF")
-		securityConfig.TwoFA.Status.Invalid = os.Getenv("TWO_FA_INVALID")
+		securityConfig.TwoFA.Status.Verified = strings.TrimSpace(os.Getenv("TWO_FA_VERIFIED"))
+		securityConfig.TwoFA.Status.On = strings.TrimSpace(os.Getenv("TWO_FA_ON"))
+		securityConfig.TwoFA.Status.Off = strings.TrimSpace(os.Getenv("TWO_FA_OFF"))
+		securityConfig.TwoFA.Status.Invalid = strings.TrimSpace(os.Getenv("TWO_FA_INVALID"))
 
 		// for saving QR temporarily
 		securityConfig.TwoFA.PathQR = strings.TrimRight(strings.TrimSpace(os.Getenv("TWO_FA_QR_PATH")), "/")
@@ -402,14 +402,14 @@ func security() (securityConfig SecurityConfig, err error) {
 	}
 
 	// App firewall
-	securityConfig.MustFW = os.Getenv("ACTIVATE_FIREWALL")
+	securityConfig.MustFW = strings.TrimSpace(os.Getenv("ACTIVATE_FIREWALL"))
 	if securityConfig.MustFW == Activated {
-		securityConfig.Firewall.ListType = os.Getenv("LISTTYPE")
-		securityConfig.Firewall.IP = os.Getenv("IP")
+		securityConfig.Firewall.ListType = strings.TrimSpace(os.Getenv("LISTTYPE"))
+		securityConfig.Firewall.IP = strings.TrimSpace(os.Getenv("IP"))
 	}
 
 	// CORS
-	securityConfig.MustCORS = os.Getenv("ACTIVATE_CORS")
+	securityConfig.MustCORS = strings.TrimSpace(os.Getenv("ACTIVATE_CORS"))
 	if securityConfig.MustCORS == Activated {
 		cp := middleware.CORSPolicy{}
 
@@ -532,7 +532,7 @@ func security() (securityConfig SecurityConfig, err error) {
 	}
 
 	// Important for getting real client IP
-	securityConfig.TrustedPlatform = os.Getenv("TRUSTED_PLATFORM")
+	securityConfig.TrustedPlatform = strings.TrimSpace(os.Getenv("TRUSTED_PLATFORM"))
 
 	return
 }
@@ -545,8 +545,8 @@ func server() (serverConfig ServerConfig, err error) {
 		return
 	}
 
-	serverConfig.ServerPort = os.Getenv("APP_PORT")
-	serverConfig.ServerEnv = os.Getenv("APP_ENV")
+	serverConfig.ServerPort = strings.TrimSpace(os.Getenv("APP_PORT"))
+	serverConfig.ServerEnv = strings.TrimSpace(os.Getenv("APP_ENV"))
 
 	return
 }
@@ -559,7 +559,7 @@ func view() (viewConfig ViewConfig, err error) {
 		return
 	}
 
-	viewConfig.Activate = os.Getenv("ACTIVATE_VIEW")
+	viewConfig.Activate = strings.TrimSpace(os.Getenv("ACTIVATE_VIEW"))
 	if viewConfig.Activate == Activated {
 		viewConfig.Directory = strings.TrimRight(strings.TrimSpace(os.Getenv("TEMPLATE_DIR")), "/")
 
@@ -586,27 +586,27 @@ func getParamsJWT() (params middleware.JWTParameters, err error) {
 		return
 	}
 
-	params.AccessKey = []byte(os.Getenv("ACCESS_KEY"))
-	params.AccessKeyTTL, err = strconv.Atoi(os.Getenv("ACCESS_KEY_TTL"))
+	params.AccessKey = []byte(strings.TrimSpace(os.Getenv("ACCESS_KEY")))
+	params.AccessKeyTTL, err = strconv.Atoi(strings.TrimSpace(os.Getenv("ACCESS_KEY_TTL")))
 	if err != nil {
 		return
 	}
-	params.RefreshKey = []byte(os.Getenv("REFRESH_KEY"))
-	params.RefreshKeyTTL, err = strconv.Atoi(os.Getenv("REFRESH_KEY_TTL"))
+	params.RefreshKey = []byte(strings.TrimSpace(os.Getenv("REFRESH_KEY")))
+	params.RefreshKeyTTL, err = strconv.Atoi(strings.TrimSpace(os.Getenv("REFRESH_KEY_TTL")))
 	if err != nil {
 		return
 	}
-	params.Audience = os.Getenv("AUDIENCE")
-	params.Issuer = os.Getenv("ISSUER")
-	params.AccNbf, err = strconv.Atoi(os.Getenv("NOT_BEFORE_ACC"))
+	params.Audience = strings.TrimSpace(os.Getenv("AUDIENCE"))
+	params.Issuer = strings.TrimSpace(os.Getenv("ISSUER"))
+	params.AccNbf, err = strconv.Atoi(strings.TrimSpace(os.Getenv("NOT_BEFORE_ACC")))
 	if err != nil {
 		return
 	}
-	params.RefNbf, err = strconv.Atoi(os.Getenv("NOT_BEFORE_REF"))
+	params.RefNbf, err = strconv.Atoi(strings.TrimSpace(os.Getenv("NOT_BEFORE_REF")))
 	if err != nil {
 		return
 	}
-	params.Subject = os.Getenv("SUBJECT")
+	params.Subject = strings.TrimSpace(os.Getenv("SUBJECT"))
 
 	return
 }
@@ -631,27 +631,27 @@ func getParamsHash() (params lib.HashPassConfig, err error) {
 		return
 	}
 
-	hashPassMemory64, errThis := strconv.ParseUint((os.Getenv("HASHPASSMEMORY")), 10, 32)
+	hashPassMemory64, errThis := strconv.ParseUint((strings.TrimSpace(os.Getenv("HASHPASSMEMORY"))), 10, 32)
 	if errThis != nil {
 		err = errThis
 		return
 	}
-	hashPassIterations64, errThis := strconv.ParseUint((os.Getenv("HASHPASSITERATIONS")), 10, 32)
+	hashPassIterations64, errThis := strconv.ParseUint((strings.TrimSpace(os.Getenv("HASHPASSITERATIONS"))), 10, 32)
 	if errThis != nil {
 		err = errThis
 		return
 	}
-	hashPassParallelism64, errThis := strconv.ParseUint((os.Getenv("HASHPASSPARALLELISM")), 10, 8)
+	hashPassParallelism64, errThis := strconv.ParseUint((strings.TrimSpace(os.Getenv("HASHPASSPARALLELISM"))), 10, 8)
 	if errThis != nil {
 		err = errThis
 		return
 	}
-	hashPassSaltLength64, errThis := strconv.ParseUint((os.Getenv("HASHPASSSALTLENGTH")), 10, 32)
+	hashPassSaltLength64, errThis := strconv.ParseUint((strings.TrimSpace(os.Getenv("HASHPASSSALTLENGTH"))), 10, 32)
 	if errThis != nil {
 		err = errThis
 		return
 	}
-	hashPassKeyLength64, errThis := strconv.ParseUint((os.Getenv("HASHPASSKEYLENGTH")), 10, 32)
+	hashPassKeyLength64, errThis := strconv.ParseUint((strings.TrimSpace(os.Getenv("HASHPASSKEYLENGTH"))), 10, 32)
 	if errThis != nil {
 		err = errThis
 		return
