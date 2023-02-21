@@ -31,6 +31,12 @@ func TestSecureRandomNumber(t *testing.T) {
 			minimum:    0,
 			maximum:    9,
 		},
+		{
+			name:       "test case 4",
+			totalDigit: 0,
+			minimum:    0,
+			maximum:    0,
+		},
 	}
 
 	for _, tt := range tests {
