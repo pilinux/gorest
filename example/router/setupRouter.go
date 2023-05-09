@@ -206,6 +206,11 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			// Hobby
 			rHobbies := v1.Group("hobbies")
 			rHobbies.GET("", controller.GetHobbies) // Non-protected
+
+			// Test JWT
+			rTestJWT := v1.Group("test-jwt")
+			rTestJWT.Use(gmiddleware.JWT())
+			rTestJWT.GET("", controller.AccessResource) // Protected
 		}
 
 		// REDIS Playground
