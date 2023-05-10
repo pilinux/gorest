@@ -2,6 +2,7 @@ package config
 
 import (
 	"crypto"
+	"net/http"
 
 	"github.com/pilinux/gorest/lib"
 	"github.com/pilinux/gorest/lib/middleware"
@@ -19,6 +20,14 @@ type SecurityConfig struct {
 
 	MustJWT string
 	JWT     middleware.JWTParameters
+
+	AuthCookieActivate bool
+	AuthCookiePath     string
+	AuthCookieDomain   string
+	AuthCookieSecure   bool
+	AuthCookieHTTPOnly bool
+	AuthCookieSameSite http.SameSite
+	ServeJwtAsResBody  bool
 
 	MustHash string
 	HashPass lib.HashPassConfig

@@ -5,6 +5,7 @@ package config
 
 import (
 	"crypto"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -335,6 +336,39 @@ func security() (securityConfig SecurityConfig, err error) {
 
 		// set params globally
 		setParamsJWT(securityConfig.JWT)
+	}
+
+	// Cookie for authentication and authorization
+	authCookieActivate := strings.TrimSpace(os.Getenv("AUTH_COOKIE_ACTIVATE"))
+	if authCookieActivate == "yes" {
+		securityConfig.AuthCookieActivate = true
+		securityConfig.AuthCookiePath = strings.TrimSpace(os.Getenv("AUTH_COOKIE_PATH"))
+		securityConfig.AuthCookieDomain = strings.TrimSpace(os.Getenv("AUTH_COOKIE_DOMAIN"))
+
+		if strings.TrimSpace(os.Getenv("AUTH_COOKIE_SECURE")) == "yes" {
+			securityConfig.AuthCookieSecure = true
+		}
+
+		if strings.TrimSpace(os.Getenv("AUTH_COOKIE_HttpOnly")) == "yes" {
+			securityConfig.AuthCookieHTTPOnly = true
+		}
+
+		authCookieSameSite := strings.TrimSpace(os.Getenv("AUTH_COOKIE_SameSite"))
+		if len(authCookieSameSite) > 0 {
+			if authCookieSameSite == "strict" {
+				securityConfig.AuthCookieSameSite = http.SameSiteStrictMode
+			}
+			if authCookieSameSite == "lax" {
+				securityConfig.AuthCookieSameSite = http.SameSiteLaxMode
+			}
+			if authCookieSameSite == "none" {
+				securityConfig.AuthCookieSameSite = http.SameSiteNoneMode
+			}
+		}
+
+		if strings.TrimSpace(os.Getenv("SERVE_JWT_AS_RESPONSE_BODY")) != "no" {
+			securityConfig.ServeJwtAsResBody = true
+		}
 	}
 
 	// Hashing passwords

@@ -135,6 +135,14 @@ func TestGetConfig(t *testing.T) {
 	expected.Security.JWT.RefNbf = 0
 	expected.Security.JWT.Subject = "subject"
 
+	expected.Security.AuthCookieActivate = true
+	expected.Security.AuthCookiePath = "/"
+	expected.Security.AuthCookieDomain = "test-domain.com"
+	expected.Security.AuthCookieSecure = true
+	expected.Security.AuthCookieHTTPOnly = true
+	expected.Security.AuthCookieSameSite = http.SameSiteStrictMode
+	expected.Security.ServeJwtAsResBody = true
+
 	expected.Security.MustHash = config.Activated
 	expected.Security.HashPass.Memory = 64
 	expected.Security.HashPass.Iterations = 2
