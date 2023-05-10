@@ -59,26 +59,46 @@ type JWTPayload struct {
 // JWT - validate access token
 func JWT() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		val := c.Request.Header.Get("Authorization")
+		var token *jwt.Token
+		var val string
+		var vals []string
+
+		// first try to read the cookie
+		accessJWT, err := c.Cookie("accessJWT")
+		// accessJWT is available in the cookie
+		if err == nil {
+			token, err = jwt.ParseWithClaims(accessJWT, &JWTClaims{}, validateAccessJWT)
+			if err != nil {
+				// error parsing JWT
+				c.AbortWithStatus(http.StatusUnauthorized)
+				return
+			}
+
+			goto VerifyClaims
+		}
+
+		// accessJWT is not available in the cookie
+		// try to read the Authorization header
+		val = c.Request.Header.Get("Authorization")
 		if len(val) == 0 || !strings.Contains(val, "Bearer ") {
 			// no vals or no bearer found
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
-		vals := strings.Split(val, " ")
+		vals = strings.Split(val, " ")
 		if len(vals) != 2 {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
-		token, err := jwt.ParseWithClaims(vals[1], &JWTClaims{}, validateAccessJWT)
-
+		token, err = jwt.ParseWithClaims(vals[1], &JWTClaims{}, validateAccessJWT)
 		if err != nil {
 			// error parsing JWT
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
+	VerifyClaims:
 		if claims, ok := token.Claims.(*JWTClaims); ok && token.Valid {
 			c.Set("authID", claims.AuthID)
 			c.Set("email", claims.Email)
@@ -98,11 +118,24 @@ func JWT() gin.HandlerFunc {
 func RefreshJWT() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var jwtPayload JWTPayload
+
+		// first try to read the cookie
+		refreshJWT, err := c.Cookie("refreshJWT")
+		// refreshJWT is available in the cookie
+		if err == nil {
+			jwtPayload.RefreshJWT = refreshJWT
+
+			goto VerifyClaims
+		}
+
+		// refreshJWT is not available in the cookie
+		// try to read the request body
 		if err := c.ShouldBindJSON(&jwtPayload); err != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
 
+	VerifyClaims:
 		token, err := jwt.ParseWithClaims(jwtPayload.RefreshJWT, &JWTClaims{}, validateRefreshJWT)
 		if err != nil {
 			c.AbortWithStatus(http.StatusUnauthorized)
