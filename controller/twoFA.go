@@ -126,7 +126,6 @@ func Validate2FA(c *gin.Context) {
 	configSecurity := config.GetConfig().Security
 	if configSecurity.AuthCookieActivate {
 		tokens, ok := resp.Message.(middleware.JWTPayload)
-		fmt.Println(tokens)
 		if ok {
 			c.SetSameSite(configSecurity.AuthCookieSameSite)
 			c.SetCookie(
