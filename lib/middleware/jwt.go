@@ -52,8 +52,10 @@ type JWTClaims struct {
 
 // JWTPayload ...
 type JWTPayload struct {
-	AccessJWT  string `json:"accessJWT,omitempty"`
-	RefreshJWT string `json:"refreshJWT,omitempty"`
+	AccessJWT   string `json:"accessJWT,omitempty"`
+	RefreshJWT  string `json:"refreshJWT,omitempty"`
+	TwoAuth     string `json:"twoFA,omitempty"`
+	RecoveryKey string `json:"recoveryKey,omitempty"`
 }
 
 // JWT - validate access token

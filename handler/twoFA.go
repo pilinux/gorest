@@ -338,20 +338,13 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 		return
 	}
 
-	// send response to the client
-	response := struct {
-		AccessJWT   string `json:"accessJWT"`
-		RefreshJWT  string `json:"refreshJWT"`
-		TwoAuth     string `json:"twoFA"`
-		RecoveryKey string `json:"recoveryKey"`
-	}{}
+	jwtPayload := middleware.JWTPayload{}
+	jwtPayload.AccessJWT = accessJWT
+	jwtPayload.RefreshJWT = refreshJWT
+	jwtPayload.TwoAuth = configSecurity.TwoFA.Status.Verified
+	jwtPayload.RecoveryKey = keyRecovery
 
-	response.AccessJWT = accessJWT
-	response.RefreshJWT = refreshJWT
-	response.TwoAuth = configSecurity.TwoFA.Status.Verified
-	response.RecoveryKey = keyRecovery
-
-	httpResponse.Message = response
+	httpResponse.Message = jwtPayload
 	httpStatusCode = http.StatusOK
 	return
 }
@@ -640,18 +633,12 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 		return
 	}
 
-	// send response to the client
-	response := struct {
-		AccessJWT  string `json:"accessJWT"`
-		RefreshJWT string `json:"refreshJWT"`
-		TwoAuth    string `json:"twoFA"`
-	}{}
+	jwtPayload := middleware.JWTPayload{}
+	jwtPayload.AccessJWT = accessJWT
+	jwtPayload.RefreshJWT = refreshJWT
+	jwtPayload.TwoAuth = claims.TwoFA
 
-	response.AccessJWT = accessJWT
-	response.RefreshJWT = refreshJWT
-	response.TwoAuth = claims.TwoFA
-
-	httpResponse.Message = response
+	httpResponse.Message = jwtPayload
 	httpStatusCode = http.StatusOK
 	return
 }
