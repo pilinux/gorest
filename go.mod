@@ -12,7 +12,7 @@ require (
 	github.com/jinzhu/gorm v1.9.16
 	github.com/joho/godotenv v1.5.1
 	github.com/mediocregopher/radix/v4 v4.1.2
-	github.com/mrz1836/postmark v1.3.0
+	github.com/mrz1836/postmark v1.4.0
 	github.com/onrik/logrus v0.10.0
 	github.com/pilinux/libgo v0.0.5
 	github.com/pilinux/structs v1.1.1
@@ -23,7 +23,7 @@ require (
 	gorm.io/driver/mysql v1.4.7
 	gorm.io/driver/postgres v1.4.8
 	gorm.io/driver/sqlite v1.4.4
-	gorm.io/gorm v1.24.5
+	gorm.io/gorm v1.24.6
 )
 
 require (

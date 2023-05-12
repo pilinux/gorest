@@ -105,8 +105,8 @@ github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9G
 github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
 github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe h1:iruDEfMl2E6fbMZ9s0scYfZQ84/6SPL6zC8ACM2oIL0=
 github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe/go.mod h1:wL8QJuTMNUDYhXwkmfOly8iTdp5TEcJFWZD2D7SIkUc=
-github.com/mrz1836/postmark v1.3.0 h1:2tFwxvLmAkh5quMXwCfvUdS6WYNrsr1svo1zDEzYROc=
-github.com/mrz1836/postmark v1.3.0/go.mod h1:bgRfHzpUSl+zrQ8e2yh7zhQSJBwcZXywBVWkSa+6PFw=
+github.com/mrz1836/postmark v1.4.0 h1:lh4y5eIxBNdnRWMWPbFWv/BA2BzgJyu5ITKc5dKcbkY=
+github.com/mrz1836/postmark v1.4.0/go.mod h1:bgRfHzpUSl+zrQ8e2yh7zhQSJBwcZXywBVWkSa+6PFw=
 github.com/onrik/logrus v0.10.0 h1:nWY19z/YktcI9SaZvMocXl7LMtbjIB5RRzKG7JSKIYQ=
 github.com/onrik/logrus v0.10.0/go.mod h1:0AmfIisUHTiSZkJUqdVcTTRVpPdfYLjlTprw+Iz3DEs=
 github.com/pelletier/go-toml/v2 v2.0.6 h1:nrzqCb7j9cDFj2coyLNLaZuJTLjWjlaz6nvTvIwycIU=
@@ -255,6 +255,6 @@ gorm.io/driver/sqlite v1.4.4/go.mod h1:0Aq3iPO+v9ZKbcdiz8gLWRw5VOPcBOPUQJFLq5e2e
 gorm.io/gorm v1.23.8/go.mod h1:l2lP/RyAtc1ynaTjFksBde/O8v9oOGIApu2/xRitmZk=
 gorm.io/gorm v1.24.0/go.mod h1:DVrVomtaYTbqs7gB/x2uVvqnXzv0nqjB396B8cG4dBA=
 gorm.io/gorm v1.24.2/go.mod h1:DVrVomtaYTbqs7gB/x2uVvqnXzv0nqjB396B8cG4dBA=
-gorm.io/gorm v1.24.5 h1:g6OPREKqqlWq4kh/3MCQbZKImeB9e6Xgc4zD+JgNZGE=
-gorm.io/gorm v1.24.5/go.mod h1:DVrVomtaYTbqs7gB/x2uVvqnXzv0nqjB396B8cG4dBA=
+gorm.io/gorm v1.24.6 h1:wy98aq9oFEetsc4CAbKD2SoBCdMzsbSIvSUUFJuHi5s=
+gorm.io/gorm v1.24.6/go.mod h1:L4uxeKpfBml98NYqVqwAdmV1a2nBtAec/cf3fpucW/k=
 rsc.io/pdf v0.1.1/go.mod h1:n8OzWcQ6Sp37PL01nO98y4iUCRdTGarVfzxY20ICaU4=
