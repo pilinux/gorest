@@ -6,9 +6,12 @@ import (
 	"reflect"
 
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 
+	"github.com/pilinux/gorest/config"
 	"github.com/pilinux/gorest/database/model"
 	"github.com/pilinux/gorest/handler"
+	"github.com/pilinux/gorest/lib/middleware"
 	"github.com/pilinux/gorest/lib/renderer"
 	"github.com/pilinux/gorest/service"
 )
@@ -57,6 +60,45 @@ func Activate2FA(c *gin.Context) {
 		return
 	}
 
+	// set cookie if the feature is enabled in app settings
+	configSecurity := config.GetConfig().Security
+	if configSecurity.AuthCookieActivate {
+		tokens, ok := resp.Message.(middleware.JWTPayload)
+		if ok {
+			c.SetSameSite(configSecurity.AuthCookieSameSite)
+			c.SetCookie(
+				"accessJWT",
+				tokens.AccessJWT,
+				middleware.JWTParams.AccessKeyTTL*60,
+				configSecurity.AuthCookiePath,
+				configSecurity.AuthCookieDomain,
+				configSecurity.AuthCookieSecure,
+				configSecurity.AuthCookieHTTPOnly,
+			)
+			c.SetCookie(
+				"refreshJWT",
+				tokens.RefreshJWT,
+				middleware.JWTParams.RefreshKeyTTL*60,
+				configSecurity.AuthCookiePath,
+				configSecurity.AuthCookieDomain,
+				configSecurity.AuthCookieSecure,
+				configSecurity.AuthCookieHTTPOnly,
+			)
+
+			if !configSecurity.ServeJwtAsResBody {
+				tokens.AccessJWT = ""
+				tokens.RefreshJWT = ""
+				resp.Message = tokens
+			}
+		}
+
+		if !ok {
+			log.Error("error code: 1041.1")
+			resp.Message = "failed to prepare auth cookie"
+			statusCode = http.StatusInternalServerError
+		}
+	}
+
 	renderer.Render(c, resp.Message, statusCode)
 }
 
@@ -80,6 +122,44 @@ func Validate2FA(c *gin.Context) {
 		return
 	}
 
+	// set cookie if the feature is enabled in app settings
+	configSecurity := config.GetConfig().Security
+	if configSecurity.AuthCookieActivate {
+		tokens, ok := resp.Message.(middleware.JWTPayload)
+		fmt.Println(tokens)
+		if ok {
+			c.SetSameSite(configSecurity.AuthCookieSameSite)
+			c.SetCookie(
+				"accessJWT",
+				tokens.AccessJWT,
+				middleware.JWTParams.AccessKeyTTL*60,
+				configSecurity.AuthCookiePath,
+				configSecurity.AuthCookieDomain,
+				configSecurity.AuthCookieSecure,
+				configSecurity.AuthCookieHTTPOnly,
+			)
+			c.SetCookie(
+				"refreshJWT",
+				tokens.RefreshJWT,
+				middleware.JWTParams.RefreshKeyTTL*60,
+				configSecurity.AuthCookiePath,
+				configSecurity.AuthCookieDomain,
+				configSecurity.AuthCookieSecure,
+				configSecurity.AuthCookieHTTPOnly,
+			)
+
+			if !configSecurity.ServeJwtAsResBody {
+				resp.Message = "2-fa verified"
+			}
+		}
+
+		if !ok {
+			log.Error("error code: 1051.1")
+			resp.Message = "failed to prepare auth cookie"
+			statusCode = http.StatusInternalServerError
+		}
+	}
+
 	renderer.Render(c, resp.Message, statusCode)
 }
 
@@ -100,6 +180,45 @@ func Deactivate2FA(c *gin.Context) {
 	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
 		renderer.Render(c, resp, statusCode)
 		return
+	}
+
+	// set cookie if the feature is enabled in app settings
+	configSecurity := config.GetConfig().Security
+	if configSecurity.AuthCookieActivate {
+		tokens, ok := resp.Message.(middleware.JWTPayload)
+		if ok {
+			c.SetSameSite(configSecurity.AuthCookieSameSite)
+			c.SetCookie(
+				"accessJWT",
+				tokens.AccessJWT,
+				middleware.JWTParams.AccessKeyTTL*60,
+				configSecurity.AuthCookiePath,
+				configSecurity.AuthCookieDomain,
+				configSecurity.AuthCookieSecure,
+				configSecurity.AuthCookieHTTPOnly,
+			)
+			c.SetCookie(
+				"refreshJWT",
+				tokens.RefreshJWT,
+				middleware.JWTParams.RefreshKeyTTL*60,
+				configSecurity.AuthCookiePath,
+				configSecurity.AuthCookieDomain,
+				configSecurity.AuthCookieSecure,
+				configSecurity.AuthCookieHTTPOnly,
+			)
+
+			if !configSecurity.ServeJwtAsResBody {
+				tokens.AccessJWT = ""
+				tokens.RefreshJWT = ""
+				resp.Message = tokens
+			}
+		}
+
+		if !ok {
+			log.Error("error code: 1036.1")
+			resp.Message = "failed to prepare auth cookie"
+			statusCode = http.StatusInternalServerError
+		}
 	}
 
 	renderer.Render(c, resp.Message, statusCode)
