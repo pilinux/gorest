@@ -15,6 +15,14 @@ import (
 
 // CreateUserAuth - POST /register
 func CreateUserAuth(c *gin.Context) {
+	// delete existing auth cookie if present
+	_, errAccessJWT := c.Cookie("accessJWT")
+	_, errRefreshJWT := c.Cookie("refreshJWT")
+	if errAccessJWT == nil || errRefreshJWT == nil {
+		c.SetCookie("accessJWT", "", -1, "", "", true, true)
+		c.SetCookie("refreshJWT", "", -1, "", "", true, true)
+	}
+
 	auth := model.Auth{}
 
 	// bind JSON

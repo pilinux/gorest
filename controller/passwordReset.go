@@ -14,6 +14,14 @@ import (
 
 // PasswordForgot sends secret code for resetting a forgotten password
 func PasswordForgot(c *gin.Context) {
+	// delete existing auth cookie if present
+	_, errAccessJWT := c.Cookie("accessJWT")
+	_, errRefreshJWT := c.Cookie("refreshJWT")
+	if errAccessJWT == nil || errRefreshJWT == nil {
+		c.SetCookie("accessJWT", "", -1, "", "", true, true)
+		c.SetCookie("refreshJWT", "", -1, "", "", true, true)
+	}
+
 	email := model.AuthPayload{}
 
 	if err := c.ShouldBindJSON(&email); err != nil {
@@ -28,6 +36,14 @@ func PasswordForgot(c *gin.Context) {
 
 // PasswordRecover resets a forgotten password
 func PasswordRecover(c *gin.Context) {
+	// delete existing auth cookie if present
+	_, errAccessJWT := c.Cookie("accessJWT")
+	_, errRefreshJWT := c.Cookie("refreshJWT")
+	if errAccessJWT == nil || errRefreshJWT == nil {
+		c.SetCookie("accessJWT", "", -1, "", "", true, true)
+		c.SetCookie("refreshJWT", "", -1, "", "", true, true)
+	}
+
 	payload := model.AuthPayload{}
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		renderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)

@@ -12,6 +12,14 @@ import (
 
 // VerifyEmail - verify email address
 func VerifyEmail(c *gin.Context) {
+	// delete existing auth cookie if present
+	_, errAccessJWT := c.Cookie("accessJWT")
+	_, errRefreshJWT := c.Cookie("refreshJWT")
+	if errAccessJWT == nil || errRefreshJWT == nil {
+		c.SetCookie("accessJWT", "", -1, "", "", true, true)
+		c.SetCookie("refreshJWT", "", -1, "", "", true, true)
+	}
+
 	payload := model.AuthPayload{}
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		renderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
@@ -25,6 +33,14 @@ func VerifyEmail(c *gin.Context) {
 
 // CreateVerificationEmail issues new verification code upon request
 func CreateVerificationEmail(c *gin.Context) {
+	// delete existing auth cookie if present
+	_, errAccessJWT := c.Cookie("accessJWT")
+	_, errRefreshJWT := c.Cookie("refreshJWT")
+	if errAccessJWT == nil || errRefreshJWT == nil {
+		c.SetCookie("accessJWT", "", -1, "", "", true, true)
+		c.SetCookie("refreshJWT", "", -1, "", "", true, true)
+	}
+
 	payload := model.AuthPayload{}
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		renderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
