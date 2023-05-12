@@ -210,6 +210,13 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			// Test JWT
 			rTestJWT := v1.Group("test-jwt")
 			rTestJWT.Use(gmiddleware.JWT())
+			if configure.Security.Must2FA == gconfig.Activated {
+				rTestJWT.Use(gmiddleware.TwoFA(
+					configure.Security.TwoFA.Status.On,
+					configure.Security.TwoFA.Status.Off,
+					configure.Security.TwoFA.Status.Verified,
+				))
+			}
 			rTestJWT.GET("", controller.AccessResource) // Protected
 		}
 
