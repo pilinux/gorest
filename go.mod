@@ -6,7 +6,7 @@ require (
 	github.com/alexedwards/argon2id v0.0.0-20211130144151-3585854a6387
 	github.com/flosch/pongo2/v6 v6.0.0
 	github.com/gin-gonic/gin v1.9.0
-	github.com/go-sql-driver/mysql v1.7.0
+	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/uuid v1.3.0
 	github.com/jinzhu/gorm v1.9.16
