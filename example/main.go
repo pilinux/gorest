@@ -43,14 +43,11 @@ func main() {
 			return
 		}
 
-		// Manually set foreign key for MySQL
-		// execute it only when required!
-		/*
-			if err := migrate.SetPkFk(); err != nil {
-				fmt.Println(err)
-				return
-			}
-		*/
+		// Manually set foreign key for MySQL and PostgreSQL
+		if err := migrate.SetPkFk(); err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 
 	if configure.Database.REDIS.Activate == gconfig.Activated {

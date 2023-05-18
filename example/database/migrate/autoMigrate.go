@@ -80,5 +80,12 @@ func StartMigration(configure gconfig.Configuration) error {
 func SetPkFk() error {
 	db := gdatabase.GetDB()
 
-	return db.Migrator().CreateConstraint(&user{}, "Posts")
+	if !db.Migrator().HasConstraint(&user{}, "Posts") {
+		err := db.Migrator().CreateConstraint(&user{}, "Posts")
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
