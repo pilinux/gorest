@@ -254,6 +254,10 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			}))
 			rBasicAuth.GET("", controller.AccessResource) // Protected
 		}
+
+		// QueryString demo
+		rQuery := v1.Group("query")
+		rQuery.GET("*q", controller.QueryString)
 	}
 
 	return r, nil
