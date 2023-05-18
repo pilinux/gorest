@@ -18,7 +18,7 @@ require (
 	github.com/pilinux/structs v1.1.1
 	github.com/qiniu/qmgo v1.1.5
 	github.com/sec51/twofactor v1.0.0
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.2
 	go.mongodb.org/mongo-driver v1.11.6
 	gorm.io/driver/mysql v1.5.0
 	gorm.io/driver/postgres v1.5.0
