@@ -148,7 +148,9 @@ func Validate2FA(c *gin.Context) {
 			)
 
 			if !configSecurity.ServeJwtAsResBody {
-				resp.Message = "2-fa verified"
+				tokens.AccessJWT = ""
+				tokens.RefreshJWT = ""
+				resp.Message = tokens
 			}
 		}
 

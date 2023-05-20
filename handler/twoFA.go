@@ -341,7 +341,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	jwtPayload := middleware.JWTPayload{}
 	jwtPayload.AccessJWT = accessJWT
 	jwtPayload.RefreshJWT = refreshJWT
-	jwtPayload.TwoAuth = configSecurity.TwoFA.Status.Verified
+	jwtPayload.TwoAuth = claims.TwoFA
 	jwtPayload.RecoveryKey = keyRecovery
 
 	httpResponse.Message = jwtPayload
@@ -534,6 +534,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	jwtPayload := middleware.JWTPayload{}
 	jwtPayload.AccessJWT = accessJWT
 	jwtPayload.RefreshJWT = refreshJWT
+	jwtPayload.TwoAuth = claims.TwoFA
 
 	httpResponse.Message = jwtPayload
 	httpStatusCode = http.StatusOK

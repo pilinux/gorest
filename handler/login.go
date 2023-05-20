@@ -75,10 +75,10 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 
 		// have the user configured 2FA
 		if err := db.Where("id_auth = ?", v.AuthID).First(&twoFA).Error; err == nil {
+			claims.TwoFA = twoFA.Status
+
 			// 2FA ON
 			if twoFA.Status == configSecurity.TwoFA.Status.On {
-				claims.TwoFA = twoFA.Status
-
 				// hash user's pass in sha256
 				hashPass := sha256.Sum256([]byte(payload.Password))
 
@@ -109,6 +109,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 	jwtPayload := middleware.JWTPayload{}
 	jwtPayload.AccessJWT = accessJWT
 	jwtPayload.RefreshJWT = refreshJWT
+	jwtPayload.TwoAuth = claims.TwoFA
 
 	httpResponse.Message = jwtPayload
 	httpStatusCode = http.StatusOK
@@ -145,6 +146,7 @@ func Refresh(claims middleware.MyCustomClaims) (httpResponse model.HTTPResponse,
 	jwtPayload := middleware.JWTPayload{}
 	jwtPayload.AccessJWT = accessJWT
 	jwtPayload.RefreshJWT = refreshJWT
+	jwtPayload.TwoAuth = claims.TwoFA
 
 	httpResponse.Message = jwtPayload
 	httpStatusCode = http.StatusOK

@@ -57,6 +57,11 @@ func Login(c *gin.Context) {
 
 			if !configSecurity.ServeJwtAsResBody {
 				resp.Message = "login successful"
+				if configSecurity.Must2FA == config.Activated {
+					tokens.AccessJWT = ""
+					tokens.RefreshJWT = ""
+					resp.Message = tokens
+				}
 			}
 		}
 
@@ -109,6 +114,11 @@ func Refresh(c *gin.Context) {
 
 			if !configSecurity.ServeJwtAsResBody {
 				resp.Message = "new tokens issued"
+				if configSecurity.Must2FA == config.Activated {
+					tokens.AccessJWT = ""
+					tokens.RefreshJWT = ""
+					resp.Message = tokens
+				}
 			}
 		}
 
