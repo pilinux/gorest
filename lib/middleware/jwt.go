@@ -110,6 +110,9 @@ func JWT() gin.HandlerFunc {
 			c.Set("siteLan", claims.SiteLan)
 			c.Set("custom1", claims.Custom1)
 			c.Set("custom2", claims.Custom2)
+			c.Set("expAccess", claims.ExpiresAt.Unix()) // in UTC
+			c.Set("iatAccess", claims.IssuedAt.Unix())  // in UTC
+			c.Set("jtiAccess", claims.ID)
 		}
 
 		c.Next()
@@ -153,6 +156,9 @@ func RefreshJWT() gin.HandlerFunc {
 			c.Set("siteLan", claims.SiteLan)
 			c.Set("custom1", claims.Custom1)
 			c.Set("custom2", claims.Custom2)
+			c.Set("expRefresh", claims.ExpiresAt.Unix()) // in UTC
+			c.Set("iatRefresh", claims.IssuedAt.Unix())  // in UTC
+			c.Set("jtiRefresh", claims.ID)
 		}
 
 		c.Next()
