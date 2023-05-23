@@ -16,7 +16,20 @@ import (
 )
 
 // Login - issue new JWTs after user:pass verification
+// dependency: relational database, JWT
 func Login(c *gin.Context) {
+	// verify that RDBMS is enabled in .env
+	if !config.IsRDBMS() {
+		renderer.Render(c, gin.H{"message": "relational database not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that JWT service is enabled in .env
+	if !config.IsJWT() {
+		renderer.Render(c, gin.H{"message": "JWT service not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
 	var payload model.AuthPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		renderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
@@ -76,7 +89,14 @@ func Login(c *gin.Context) {
 }
 
 // Refresh - issue new JWTs after validation
+// dependency: JWT
 func Refresh(c *gin.Context) {
+	// verify that JWT service is enabled in .env
+	if !config.IsJWT() {
+		renderer.Render(c, gin.H{"message": "JWT service not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
 	// get claims
 	claims := service.GetClaims(c)
 

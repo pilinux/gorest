@@ -8,12 +8,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/pilinux/gorest/config"
 	"github.com/pilinux/gorest/database/model"
 	"github.com/pilinux/gorest/handler"
 	"github.com/pilinux/gorest/lib/renderer"
 )
 
 // CreateUserAuth - POST /register
+// dependency: relational database
 func CreateUserAuth(c *gin.Context) {
 	// delete existing auth cookie if present
 	_, errAccessJWT := c.Cookie("accessJWT")
@@ -21,6 +23,12 @@ func CreateUserAuth(c *gin.Context) {
 	if errAccessJWT == nil || errRefreshJWT == nil {
 		c.SetCookie("accessJWT", "", -1, "", "", true, true)
 		c.SetCookie("refreshJWT", "", -1, "", "", true, true)
+	}
+
+	// verify that RDBMS is enabled in .env
+	if !config.IsRDBMS() {
+		renderer.Render(c, gin.H{"message": "relational database not enabled"}, http.StatusNotImplemented)
+		return
 	}
 
 	auth := model.Auth{}

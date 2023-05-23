@@ -18,7 +18,26 @@ import (
 
 // Setup2FA - get secret to activate 2FA
 // possible for accounts without 2FA-ON
+// dependency: relational database, JWT, 2FA service
 func Setup2FA(c *gin.Context) {
+	// verify that RDBMS is enabled in .env
+	if !config.IsRDBMS() {
+		renderer.Render(c, gin.H{"message": "relational database not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that JWT service is enabled in .env
+	if !config.IsJWT() {
+		renderer.Render(c, gin.H{"message": "JWT service not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that two-factor authentication service is enabled in .env
+	if !config.Is2FA() {
+		renderer.Render(c, gin.H{"message": "two-factor authentication service not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
 	// get claims
 	claims := service.GetClaims(c)
 
@@ -42,7 +61,26 @@ func Setup2FA(c *gin.Context) {
 
 // Activate2FA - activate 2FA upon validation
 // possible for accounts without 2FA-ON
+// dependency: relational database, JWT, 2FA service
 func Activate2FA(c *gin.Context) {
+	// verify that RDBMS is enabled in .env
+	if !config.IsRDBMS() {
+		renderer.Render(c, gin.H{"message": "relational database not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that JWT service is enabled in .env
+	if !config.IsJWT() {
+		renderer.Render(c, gin.H{"message": "JWT service not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that two-factor authentication service is enabled in .env
+	if !config.Is2FA() {
+		renderer.Render(c, gin.H{"message": "two-factor authentication service not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
 	// get claims
 	claims := service.GetClaims(c)
 
@@ -104,7 +142,26 @@ func Activate2FA(c *gin.Context) {
 
 // Validate2FA - issue new JWTs upon 2FA validation
 // required for accounts with 2FA-ON
+// dependency: relational database, JWT, 2FA service
 func Validate2FA(c *gin.Context) {
+	// verify that RDBMS is enabled in .env
+	if !config.IsRDBMS() {
+		renderer.Render(c, gin.H{"message": "relational database not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that JWT service is enabled in .env
+	if !config.IsJWT() {
+		renderer.Render(c, gin.H{"message": "JWT service not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that two-factor authentication service is enabled in .env
+	if !config.Is2FA() {
+		renderer.Render(c, gin.H{"message": "two-factor authentication service not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
 	// get claims
 	claims := service.GetClaims(c)
 
@@ -165,7 +222,26 @@ func Validate2FA(c *gin.Context) {
 }
 
 // Deactivate2FA - disable 2FA for user account
+// dependency: relational database, JWT, 2FA service
 func Deactivate2FA(c *gin.Context) {
+	// verify that RDBMS is enabled in .env
+	if !config.IsRDBMS() {
+		renderer.Render(c, gin.H{"message": "relational database not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that JWT service is enabled in .env
+	if !config.IsJWT() {
+		renderer.Render(c, gin.H{"message": "JWT service not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that two-factor authentication service is enabled in .env
+	if !config.Is2FA() {
+		renderer.Render(c, gin.H{"message": "two-factor authentication service not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
 	// get claims
 	claims := service.GetClaims(c)
 

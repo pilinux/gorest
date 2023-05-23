@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/pilinux/gorest/config"
 	"github.com/pilinux/gorest/database/model"
 	"github.com/pilinux/gorest/handler"
 	"github.com/pilinux/gorest/lib/renderer"
@@ -13,6 +14,7 @@ import (
 )
 
 // PasswordForgot sends secret code for resetting a forgotten password
+// dependency: relational database, Redis, email service
 func PasswordForgot(c *gin.Context) {
 	// delete existing auth cookie if present
 	_, errAccessJWT := c.Cookie("accessJWT")
@@ -20,6 +22,24 @@ func PasswordForgot(c *gin.Context) {
 	if errAccessJWT == nil || errRefreshJWT == nil {
 		c.SetCookie("accessJWT", "", -1, "", "", true, true)
 		c.SetCookie("refreshJWT", "", -1, "", "", true, true)
+	}
+
+	// verify that RDBMS is enabled in .env
+	if !config.IsRDBMS() {
+		renderer.Render(c, gin.H{"message": "relational database not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that Redis is enabled in .env
+	if !config.IsRedis() {
+		renderer.Render(c, gin.H{"message": "Redis not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that email service is enabled in .env
+	if !config.IsEmailService() {
+		renderer.Render(c, gin.H{"message": "email service not enabled"}, http.StatusNotImplemented)
+		return
 	}
 
 	email := model.AuthPayload{}
@@ -31,10 +51,16 @@ func PasswordForgot(c *gin.Context) {
 
 	resp, statusCode := handler.PasswordForgot(email)
 
+	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+		renderer.Render(c, resp, statusCode)
+		return
+	}
+
 	renderer.Render(c, resp, statusCode)
 }
 
 // PasswordRecover resets a forgotten password
+// dependency: relational database, Redis
 func PasswordRecover(c *gin.Context) {
 	// delete existing auth cookie if present
 	_, errAccessJWT := c.Cookie("accessJWT")
@@ -42,6 +68,18 @@ func PasswordRecover(c *gin.Context) {
 	if errAccessJWT == nil || errRefreshJWT == nil {
 		c.SetCookie("accessJWT", "", -1, "", "", true, true)
 		c.SetCookie("refreshJWT", "", -1, "", "", true, true)
+	}
+
+	// verify that RDBMS is enabled in .env
+	if !config.IsRDBMS() {
+		renderer.Render(c, gin.H{"message": "relational database not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that Redis is enabled in .env
+	if !config.IsRedis() {
+		renderer.Render(c, gin.H{"message": "Redis not enabled"}, http.StatusNotImplemented)
+		return
 	}
 
 	payload := model.AuthPayload{}
@@ -61,7 +99,20 @@ func PasswordRecover(c *gin.Context) {
 }
 
 // PasswordUpdate - change password in logged-in state
+// dependency: relational database, JWT
 func PasswordUpdate(c *gin.Context) {
+	// verify that RDBMS is enabled in .env
+	if !config.IsRDBMS() {
+		renderer.Render(c, gin.H{"message": "relational database not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that JWT service is enabled in .env
+	if !config.IsJWT() {
+		renderer.Render(c, gin.H{"message": "JWT service not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
 	// get claims
 	claims := service.GetClaims(c)
 
@@ -72,6 +123,11 @@ func PasswordUpdate(c *gin.Context) {
 	}
 
 	resp, statusCode := handler.PasswordUpdate(claims, payload)
+
+	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+		renderer.Render(c, resp, statusCode)
+		return
+	}
 
 	renderer.Render(c, resp, statusCode)
 }
