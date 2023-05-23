@@ -62,6 +62,9 @@ func TestGetConfig(t *testing.T) {
 	expected := &config.Configuration{}
 
 	expected.Database.RDBMS.Activate = config.Activated
+	if !config.IsRDBMS() {
+		t.Errorf("expected IsRDBMS() to return true, but got false")
+	}
 	expected.Database.RDBMS.Env.Driver = "mysql"
 	expected.Database.RDBMS.Env.Host = "127.0.0.1"
 	expected.Database.RDBMS.Env.Port = "3306"
@@ -81,12 +84,18 @@ func TestGetConfig(t *testing.T) {
 	expected.Database.RDBMS.Log.LogLevel = 1
 
 	expected.Database.REDIS.Activate = config.Activated
+	if !config.IsRedis() {
+		t.Errorf("expected IsRedis() to return true, but got false")
+	}
 	expected.Database.REDIS.Env.Host = "127.0.0.1"
 	expected.Database.REDIS.Env.Port = "6379"
 	expected.Database.REDIS.Conn.PoolSize = 10
 	expected.Database.REDIS.Conn.ConnTTL = 5
 
 	expected.Database.MongoDB.Activate = config.Activated
+	if !config.IsMongo() {
+		t.Errorf("expected IsMongo() to return true, but got false")
+	}
 	expected.Database.MongoDB.Env.AppName = "gorest"
 	expected.Database.MongoDB.Env.URI = "mongodb://user:pass@127.0.0.1:27017/?retryWrites=true&w=majority"
 	expected.Database.MongoDB.Env.PoolSize = 50
@@ -94,6 +103,9 @@ func TestGetConfig(t *testing.T) {
 	expected.Database.MongoDB.Env.ConnTTL = 10
 
 	expected.EmailConf.Activate = config.Activated
+	if !config.IsEmailService() {
+		t.Errorf("expected IsEmailService() to return true, but got false")
+	}
 	expected.EmailConf.Provider = "postmark"
 	expected.EmailConf.APIToken = "abcdef"
 	expected.EmailConf.AddrFrom = "email@yourdomain.com"
@@ -112,6 +124,9 @@ func TestGetConfig(t *testing.T) {
 	expected.EmailConf.PassRecoverValidityPeriod = 1800
 
 	expected.Logger.Activate = config.Activated
+	if !config.IsSentry() {
+		t.Errorf("expected IsSentry() to return true, but got false")
+	}
 	expected.Logger.SentryDsn = "https://xyz.ingest.sentry.io/123456"
 
 	expected.Server.ServerPort = "3000"
@@ -120,10 +135,16 @@ func TestGetConfig(t *testing.T) {
 	expected.Security.UserPassMinLength = 6
 
 	expected.Security.MustBasicAuth = config.Activated
+	if !config.IsBasicAuth() {
+		t.Errorf("expected IsBasicAuth() to return true, but got false")
+	}
 	expected.Security.BasicAuth.Username = "test_username"
 	expected.Security.BasicAuth.Password = "secret_password"
 
 	expected.Security.MustJWT = config.Activated
+	if !config.IsJWT() {
+		t.Errorf("expected IsJWT() to return true, but got false")
+	}
 	expected.Security.JWT.AccessKey = []byte("cryptographic_key_1")
 	expected.Security.JWT.AccessKeyTTL = 5
 	expected.Security.JWT.RefreshKey = []byte("cryptographic_key_2")
@@ -136,8 +157,14 @@ func TestGetConfig(t *testing.T) {
 	expected.Security.JWT.Subject = "subject"
 
 	expected.Security.InvalidateJWT = config.Activated
+	if !config.InvalidateJWT() {
+		t.Errorf("expected InvalidateJWT() to return true, but got false")
+	}
 
 	expected.Security.AuthCookieActivate = true
+	if !config.IsAuthCookie() {
+		t.Errorf("expected IsAuthCookie() to return true, but got false")
+	}
 	expected.Security.AuthCookiePath = "/"
 	expected.Security.AuthCookieDomain = "test-domain.com"
 	expected.Security.AuthCookieSecure = true
@@ -146,6 +173,9 @@ func TestGetConfig(t *testing.T) {
 	expected.Security.ServeJwtAsResBody = true
 
 	expected.Security.MustHash = config.Activated
+	if !config.IsHashPass() {
+		t.Errorf("expected IsHashPass() to return true, but got false")
+	}
 	expected.Security.HashPass.Memory = 64
 	expected.Security.HashPass.Iterations = 2
 	expected.Security.HashPass.Parallelism = 2
@@ -153,13 +183,25 @@ func TestGetConfig(t *testing.T) {
 	expected.Security.HashPass.KeyLength = 32
 
 	expected.Security.VerifyEmail = true
+	if !config.IsEmailVerificationService() {
+		t.Errorf("expected IsEmailVerificationService() to return true, but got false")
+	}
 	expected.Security.RecoverPass = true
+	if !config.IsPassRecoveryService() {
+		t.Errorf("expected IsPassRecoveryService() to return true, but got false")
+	}
 
 	expected.Security.MustFW = config.Activated
+	if !config.IsWAF() {
+		t.Errorf("expected IsWAF() to return true, but got false")
+	}
 	expected.Security.Firewall.ListType = "whitelist"
 	expected.Security.Firewall.IP = "*"
 
 	expected.Security.MustCORS = config.Activated
+	if !config.IsCORS() {
+		t.Errorf("expected IsCORS() to return true, but got false")
+	}
 	expected.Security.CORS = append(
 		expected.Security.CORS, middleware.CORSPolicy{
 			Key:   "Access-Control-Allow-Origin",
@@ -230,6 +272,9 @@ func TestGetConfig(t *testing.T) {
 	expected.Security.TrustedPlatform = "X-Real-Ip"
 
 	expected.Security.Must2FA = config.Activated
+	if !config.Is2FA() {
+		t.Errorf("expected Is2FA() to return true, but got false")
+	}
 	expected.Security.TwoFA.Issuer = "gorest"
 	expected.Security.TwoFA.Crypto = crypto.SHA1
 	expected.Security.TwoFA.Digits = 6
@@ -241,6 +286,9 @@ func TestGetConfig(t *testing.T) {
 	expected.Security.TwoFA.Status.Invalid = "invalid"
 
 	expected.ViewConfig.Activate = config.Activated
+	if !config.IsTemplatingEngine() {
+		t.Errorf("expected IsTemplatingEngine() to return true, but got false")
+	}
 	expected.ViewConfig.Directory = "templates"
 
 	if !reflect.DeepEqual(configAll, expected) {
