@@ -20,6 +20,9 @@ import (
 // Activated - "yes" keyword to activate a service
 const Activated string = "yes"
 
+// PrefixJtiBlacklist - to manage JWT blacklist in Redis database
+const PrefixJtiBlacklist string = "gorest-blacklist-jti:"
+
 // Configuration - server and db configuration variables
 type Configuration struct {
 	Database   DatabaseConfig
@@ -337,6 +340,9 @@ func security() (securityConfig SecurityConfig, err error) {
 		// set params globally
 		setParamsJWT(securityConfig.JWT)
 	}
+
+	// When user logs off, invalidate the tokens
+	securityConfig.InvalidateJWT = strings.TrimSpace(os.Getenv("INVALIDATE_JWT"))
 
 	// Cookie for authentication and authorization
 	authCookieActivate := strings.TrimSpace(os.Getenv("AUTH_COOKIE_ACTIVATE"))

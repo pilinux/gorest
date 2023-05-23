@@ -135,6 +135,8 @@ func TestGetConfig(t *testing.T) {
 	expected.Security.JWT.RefNbf = 0
 	expected.Security.JWT.Subject = "subject"
 
+	expected.Security.InvalidateJWT = config.Activated
+
 	expected.Security.AuthCookieActivate = true
 	expected.Security.AuthCookiePath = "/"
 	expected.Security.AuthCookieDomain = "test-domain.com"

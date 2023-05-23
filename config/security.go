@@ -21,6 +21,8 @@ type SecurityConfig struct {
 	MustJWT string
 	JWT     middleware.JWTParameters
 
+	InvalidateJWT string // when user logs off, invalidate the tokens
+
 	AuthCookieActivate bool
 	AuthCookiePath     string
 	AuthCookieDomain   string
