@@ -64,6 +64,8 @@ _Note:_ gorest uses [GORM][21] as its ORM
 - [x] forgotten password recovery
 - [x] render `HTML` templates
 - [x] forward error logs and crash reports to [sentry.io][17]
+- [x] handle authentication tokens on client devices' cookies
+- [x] logout (individually enable option - delete tokens from cookies, ban active tokens)
 - [x] super easy to learn and use - lots of example codes
 
 ## Start building
