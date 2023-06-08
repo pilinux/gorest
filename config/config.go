@@ -43,6 +43,12 @@ func Env() error {
 
 // Config - load all the configurations
 func Config() (err error) {
+	// load environment variables
+	err = Env()
+	if err != nil {
+		return
+	}
+
 	var configuration Configuration
 
 	configuration.Database, err = database()
@@ -82,12 +88,6 @@ func GetConfig() *Configuration {
 
 // database - all DB variables
 func database() (databaseConfig DatabaseConfig, err error) {
-	// Load environment variables
-	err = Env()
-	if err != nil {
-		return
-	}
-
 	// RDBMS
 	activateRDBMS := strings.TrimSpace(os.Getenv("ACTIVATE_RDBMS"))
 	if activateRDBMS == Activated {
@@ -129,12 +129,6 @@ func database() (databaseConfig DatabaseConfig, err error) {
 
 // databaseRDBMS - all RDBMS variables
 func databaseRDBMS() (databaseConfig DatabaseConfig, err error) {
-	// Load environment variables
-	err = Env()
-	if err != nil {
-		return
-	}
-
 	// Env
 	databaseConfig.RDBMS.Env.Driver = strings.TrimSpace(os.Getenv("DBDRIVER"))
 	databaseConfig.RDBMS.Env.Host = strings.TrimSpace(os.Getenv("DBHOST"))
@@ -180,12 +174,6 @@ func databaseRDBMS() (databaseConfig DatabaseConfig, err error) {
 
 // databaseRedis - all REDIS DB variables
 func databaseRedis() (databaseConfig DatabaseConfig, err error) {
-	// Load environment variables
-	err = Env()
-	if err != nil {
-		return
-	}
-
 	// REDIS
 	poolSize, errThis := strconv.Atoi(strings.TrimSpace(os.Getenv("POOLSIZE")))
 	if errThis != nil {
@@ -208,12 +196,6 @@ func databaseRedis() (databaseConfig DatabaseConfig, err error) {
 
 // databaseMongo - all MongoDB variables
 func databaseMongo() (databaseConfig DatabaseConfig, err error) {
-	// Load environment variables
-	err = Env()
-	if err != nil {
-		return
-	}
-
 	// MongoDB
 	poolSize, errThis := strconv.ParseUint(strings.TrimSpace(os.Getenv("MONGO_POOLSIZE")), 10, 64)
 	if errThis != nil {
@@ -237,12 +219,6 @@ func databaseMongo() (databaseConfig DatabaseConfig, err error) {
 
 // email - config for using external email services
 func email() (emailConfig EmailConfig, err error) {
-	// Load environment variables
-	err = Env()
-	if err != nil {
-		return
-	}
-
 	emailConfig.Activate = strings.TrimSpace(os.Getenv("ACTIVATE_EMAIL_SERVICE"))
 	if emailConfig.Activate == Activated {
 		emailConfig.Provider = strings.TrimSpace(os.Getenv("EMAIL_SERVICE_PROVIDER"))
@@ -292,12 +268,6 @@ func email() (emailConfig EmailConfig, err error) {
 
 // logger - config for sentry.io
 func logger() (loggerConfig LoggerConfig, err error) {
-	// Load environment variables
-	err = Env()
-	if err != nil {
-		return
-	}
-
 	loggerConfig.Activate = strings.TrimSpace(os.Getenv("ACTIVATE_SENTRY"))
 	if loggerConfig.Activate == Activated {
 		loggerConfig.SentryDsn = strings.TrimSpace(os.Getenv("SentryDSN"))
@@ -308,12 +278,6 @@ func logger() (loggerConfig LoggerConfig, err error) {
 
 // security - configs for generating tokens and hashes
 func security() (securityConfig SecurityConfig, err error) {
-	// Load environment variables
-	err = Env()
-	if err != nil {
-		return
-	}
-
 	// Minimum password length
 	userPassMinLength, errThis := strconv.Atoi(strings.TrimSpace(os.Getenv("MIN_PASS_LENGTH")))
 	if errThis != nil {
@@ -579,12 +543,6 @@ func security() (securityConfig SecurityConfig, err error) {
 
 // server - port and env
 func server() (serverConfig ServerConfig, err error) {
-	// Load environment variables
-	err = Env()
-	if err != nil {
-		return
-	}
-
 	serverConfig.ServerPort = strings.TrimSpace(os.Getenv("APP_PORT"))
 	serverConfig.ServerEnv = strings.TrimSpace(os.Getenv("APP_ENV"))
 
@@ -593,12 +551,6 @@ func server() (serverConfig ServerConfig, err error) {
 
 // view - HTML renderer
 func view() (viewConfig ViewConfig, err error) {
-	// Load environment variables
-	err = Env()
-	if err != nil {
-		return
-	}
-
 	viewConfig.Activate = strings.TrimSpace(os.Getenv("ACTIVATE_VIEW"))
 	if viewConfig.Activate == Activated {
 		viewConfig.Directory = strings.TrimRight(strings.TrimSpace(os.Getenv("TEMPLATE_DIR")), "/")
@@ -621,11 +573,6 @@ func view() (viewConfig ViewConfig, err error) {
 
 // getParamsJWT - read parameters from env
 func getParamsJWT() (params middleware.JWTParameters, err error) {
-	err = Env()
-	if err != nil {
-		return
-	}
-
 	params.AccessKey = []byte(strings.TrimSpace(os.Getenv("ACCESS_KEY")))
 	params.AccessKeyTTL, err = strconv.Atoi(strings.TrimSpace(os.Getenv("ACCESS_KEY_TTL")))
 	if err != nil {
@@ -666,11 +613,6 @@ func setParamsJWT(c middleware.JWTParameters) {
 
 // getParamsHash - read parameters from env
 func getParamsHash() (params lib.HashPassConfig, err error) {
-	err = Env()
-	if err != nil {
-		return
-	}
-
 	hashPassMemory64, errThis := strconv.ParseUint((strings.TrimSpace(os.Getenv("HASHPASSMEMORY"))), 10, 32)
 	if errThis != nil {
 		err = errThis
