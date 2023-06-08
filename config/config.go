@@ -25,6 +25,7 @@ const PrefixJtiBlacklist string = "gorest-blacklist-jti:"
 
 // Configuration - server and db configuration variables
 type Configuration struct {
+	Version    string
 	Database   DatabaseConfig
 	EmailConf  EmailConfig
 	Logger     LoggerConfig
@@ -50,6 +51,8 @@ func Config() (err error) {
 	}
 
 	var configuration Configuration
+
+	configuration.Version = strings.TrimSpace(os.Getenv("RELEASE_VERSION_OR_COMMIT_NUMBER"))
 
 	configuration.Database, err = database()
 	if err != nil {

@@ -61,6 +61,8 @@ func TestGetConfig(t *testing.T) {
 
 	expected := &config.Configuration{}
 
+	expected.Version = "d591c29"
+
 	expected.Database.RDBMS.Activate = config.Activated
 	if !config.IsRDBMS() {
 		t.Errorf("expected IsRDBMS() to return true, but got false")
