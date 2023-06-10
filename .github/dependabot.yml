@@ -9,3 +9,8 @@ updates:
       interval: "daily"
     # Allow up to 10 open pull requests for dependencies
     open-pull-requests-limit: 10
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: daily
