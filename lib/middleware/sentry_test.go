@@ -23,7 +23,7 @@ func TestSentryCapture(t *testing.T) {
 
 	// register middleware with valid sentry dsn
 	sentryDSN := os.Getenv("TEST_SENTRY_DSN")
-	router.Use(middleware.SentryCapture(sentryDSN))
+	router.Use(middleware.SentryCapture(sentryDSN, "production", "v0.0.1"))
 
 	// define test route
 	router.GET("/", func(c *gin.Context) {

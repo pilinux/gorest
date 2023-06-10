@@ -6,6 +6,7 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/onrik/logrus/sentry"
@@ -13,7 +14,13 @@ import (
 )
 
 // SentryCapture - capture errors and forward to sentry.io
-func SentryCapture(sentryDsn string) gin.HandlerFunc {
+//
+// required parameter (1st parameter): sentryDsn
+//
+// optional parameter (2nd parameter): environment (development or production)
+//
+// optional parameter (3rd parameter): release version or git commit number
+func SentryCapture(sentryDsn string, v ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Automatic recovery from panic
 		defer func() {
@@ -22,8 +29,21 @@ func SentryCapture(sentryDsn string) gin.HandlerFunc {
 			}
 		}()
 
+		sentryDebugMode := true
+		release := ""
+		if len(v) >= 1 {
+			if v[0] == "production" {
+				sentryDebugMode = false
+			}
+		}
+		if len(v) > 1 {
+			release = strings.TrimSpace(v[1])
+		}
+
 		sentryHook, err := sentry.NewHook(sentry.Options{
-			Dsn: sentryDsn,
+			Dsn:     sentryDsn,
+			Debug:   sentryDebugMode,
+			Release: release,
 		})
 		if err != nil {
 			// middleware -> sentry NewHook failed

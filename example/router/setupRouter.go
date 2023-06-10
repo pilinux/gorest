@@ -91,7 +91,11 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 
 	// Sentry.io
 	if configure.Logger.Activate == gconfig.Activated {
-		r.Use(gmiddleware.SentryCapture(configure.Logger.SentryDsn))
+		r.Use(gmiddleware.SentryCapture(
+			configure.Logger.SentryDsn,
+			configure.Server.ServerEnv,
+			configure.Version,
+		))
 	}
 
 	// WAF
