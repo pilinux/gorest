@@ -15,9 +15,15 @@ import (
 )
 
 func TestEnv(t *testing.T) {
+	// this should return error
+	err := config.Env()
+	if err == nil {
+		t.Errorf("expected error, got nil")
+	}
+
 	// download a file from a remote location and save it
 	fileUrl := strings.TrimSpace(os.Getenv("TEST_ENV_URL"))
-	err := downloadFile(".env", fileUrl)
+	err = downloadFile(".env", fileUrl)
 	if err != nil {
 		t.Error(err)
 	}
@@ -300,6 +306,130 @@ func TestGetConfig(t *testing.T) {
 
 	if !reflect.DeepEqual(configAll, expected) {
 		t.Errorf("got: %v, want: %v", configAll, expected)
+	}
+}
+
+func TestErrorGetConfig(t *testing.T) {
+	testCases := []struct {
+		Key   string
+		Value string
+	}{
+		{
+			Key: "MIN_PASS_LENGTH",
+		},
+		{
+			Key: "ACCESS_KEY_TTL",
+		},
+		{
+			Key: "REFRESH_KEY_TTL",
+		},
+		{
+			Key: "NOT_BEFORE_ACC",
+		},
+		{
+			Key: "NOT_BEFORE_REF",
+		},
+		{
+			Key: "HASHPASSMEMORY",
+		},
+		{
+			Key: "HASHPASSITERATIONS",
+		},
+		{
+			Key: "HASHPASSPARALLELISM",
+		},
+		{
+			Key: "HASHPASSSALTLENGTH",
+		},
+		{
+			Key: "HASHPASSKEYLENGTH",
+		},
+		{
+			Key: "TWO_FA_DIGITS",
+		},
+		{
+			Key: "DBMAXIDLECONNS",
+		},
+		{
+			Key: "DBMAXOPENCONNS",
+		},
+		{
+			Key: "DBCONNMAXLIFETIME",
+		},
+		{
+			Key: "DBLOGLEVEL",
+		},
+		{
+			Key: "POOLSIZE",
+		},
+		{
+			Key: "CONNTTL",
+		},
+		{
+			Key: "MONGO_POOLSIZE",
+		},
+		{
+			Key: "MONGO_CONNTTL",
+		},
+		{
+			Key: "EMAIL_VERIFY_TEMPLATE_ID",
+		},
+		{
+			Key: "EMAIL_PASS_RECOVER_TEMPLATE_ID",
+		},
+		{
+			Key: "EMAIL_VERIFY_CODE_LENGTH",
+		},
+		{
+			Key: "EMAIL_PASS_RECOVER_CODE_LENGTH",
+		},
+		{
+			Key: "EMAIL_VERIFY_VALIDITY_PERIOD",
+		},
+		{
+			Key: "EMAIL_PASS_RECOVER_VALIDITY_PERIOD",
+		},
+	}
+
+	// download a file from a remote location and save it
+	fileUrl := strings.TrimSpace(os.Getenv("TEST_ENV_URL"))
+	err := downloadFile(".env", fileUrl)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = config.Env()
+	if err != nil {
+		t.Errorf("got error when calling config.Env(): %v", err)
+	}
+
+	for _, tc := range testCases {
+		t.Run("When missing: "+tc.Key, func(t *testing.T) {
+			currentValue := os.Getenv(tc.Key)
+
+			// set new value
+			err = os.Setenv(tc.Key, tc.Value)
+			if err != nil {
+				t.Errorf("got error %v when setting %v", err, tc.Key)
+			}
+
+			err = config.Config()
+			if err == nil {
+				t.Errorf("expected error, got nil")
+			}
+
+			// set old value
+			err = os.Setenv(tc.Key, currentValue)
+			if err != nil {
+				t.Errorf("got error %v when setting %v", err, tc.Key)
+			}
+		})
+	}
+
+	// remove the downloaded file at the end of the test
+	err = os.RemoveAll(".env")
+	if err != nil {
+		t.Error(err)
 	}
 }
 
