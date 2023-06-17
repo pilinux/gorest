@@ -69,7 +69,7 @@ func JWT() gin.HandlerFunc {
 		accessJWT, err := c.Cookie("accessJWT")
 		// accessJWT is available in the cookie
 		if err == nil {
-			token, err = jwt.ParseWithClaims(accessJWT, &JWTClaims{}, validateAccessJWT)
+			token, err = jwt.ParseWithClaims(accessJWT, &JWTClaims{}, ValidateAccessJWT)
 			if err != nil {
 				// error parsing JWT
 				c.AbortWithStatus(http.StatusUnauthorized)
@@ -93,7 +93,7 @@ func JWT() gin.HandlerFunc {
 			return
 		}
 
-		token, err = jwt.ParseWithClaims(vals[1], &JWTClaims{}, validateAccessJWT)
+		token, err = jwt.ParseWithClaims(vals[1], &JWTClaims{}, ValidateAccessJWT)
 		if err != nil {
 			// error parsing JWT
 			c.AbortWithStatus(http.StatusUnauthorized)
@@ -141,7 +141,7 @@ func RefreshJWT() gin.HandlerFunc {
 		}
 
 	VerifyClaims:
-		token, err := jwt.ParseWithClaims(jwtPayload.RefreshJWT, &JWTClaims{}, validateRefreshJWT)
+		token, err := jwt.ParseWithClaims(jwtPayload.RefreshJWT, &JWTClaims{}, ValidateRefreshJWT)
 		if err != nil {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
@@ -165,16 +165,16 @@ func RefreshJWT() gin.HandlerFunc {
 	}
 }
 
-// validateAccessJWT ...
-func validateAccessJWT(token *jwt.Token) (interface{}, error) {
+// ValidateAccessJWT - verify the access JWT's signature, and validate its claims
+func ValidateAccessJWT(token *jwt.Token) (interface{}, error) {
 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 	}
 	return JWTParams.AccessKey, nil
 }
 
-// validateRefreshJWT ...
-func validateRefreshJWT(token *jwt.Token) (interface{}, error) {
+// ValidateRefreshJWT - verify the refresh JWT's signature, and validate its claims
+func ValidateRefreshJWT(token *jwt.Token) (interface{}, error) {
 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 	}
