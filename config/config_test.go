@@ -303,7 +303,7 @@ func TestGetConfig(t *testing.T) {
 	}
 }
 
-// downloadFile will download a url and save it to a local file.
+// downloadFile will download from a url and save it to a local file.
 // It's efficient because it will write as it downloads and not
 // load the whole file into memory.
 func downloadFile(filepath string, url string) error {
