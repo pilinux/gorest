@@ -45,6 +45,7 @@ jobs:
           TEST_ENV_URL: ${{ secrets.TEST_ENV_URL }}
           TEST_INDEX_HTML_URL: ${{ secrets.TEST_INDEX_HTML_URL }}
           TEST_SENTRY_DSN: ${{ secrets.TEST_SENTRY_DSN }}
+          TEST_KEY_FILE_LOCATION: ${{ secrets.TEST_KEY_FILE_LOCATION }}
         run: go test -v -cover -coverprofile=coverage.txt -covermode=atomic ./...
 
       - name: Upload coverage to Codecov
