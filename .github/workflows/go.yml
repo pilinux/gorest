@@ -31,6 +31,11 @@ jobs:
       - name: Examine source code
         run: go vet -v ./...
 
+      - name: Gosec security scanner
+        uses: securego/gosec@master
+        with:
+          args: -include=G102,G103,G104,G106,G107,G108,G109,G110,G111,G112,G113,G114,G201,G202,G203,G204,G205 ./...
+
       - name: Build
         run: go build -v ./...
 
