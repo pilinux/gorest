@@ -147,10 +147,15 @@ func TestGetConfig(t *testing.T) {
 	if !config.IsJWT() {
 		t.Errorf("expected IsJWT() to return true, but got false")
 	}
+	expected.Security.JWT.Algorithm = "HS256"
 	expected.Security.JWT.AccessKey = []byte("cryptographic_key_1")
 	expected.Security.JWT.AccessKeyTTL = 5
 	expected.Security.JWT.RefreshKey = []byte("cryptographic_key_2")
 	expected.Security.JWT.RefreshKeyTTL = 60
+	expected.Security.JWT.PrivKeyECDSA = nil
+	expected.Security.JWT.PubKeyECDSA = nil
+	expected.Security.JWT.PrivKeyRSA = nil
+	expected.Security.JWT.PubKeyRSA = nil
 
 	expected.Security.JWT.Audience = "audience"
 	expected.Security.JWT.Issuer = "gorest"

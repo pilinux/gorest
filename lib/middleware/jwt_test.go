@@ -457,6 +457,7 @@ func TestRefreshJWTAuthCookie(t *testing.T) {
 
 // set params
 func setParamsJWT() {
+	middleware.JWTParams.Algorithm = "HS256"
 	middleware.JWTParams.AccessKey = []byte("cryptographic_key_1")
 	middleware.JWTParams.AccessKeyTTL = 5
 	middleware.JWTParams.RefreshKey = []byte("cryptographic_key_2")
