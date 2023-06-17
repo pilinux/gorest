@@ -5,6 +5,7 @@ package config
 
 import (
 	"crypto"
+	"errors"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/joho/godotenv"
 	"github.com/pilinux/gorest/lib"
 	"github.com/pilinux/gorest/lib/middleware"
@@ -576,6 +578,27 @@ func view() (viewConfig ViewConfig, err error) {
 
 // getParamsJWT - read parameters from env
 func getParamsJWT() (params middleware.JWTParameters, err error) {
+	alg := strings.TrimSpace(os.Getenv("JWT_ALG"))
+	if alg == "" {
+		alg = "HS256" // default algorithm
+	}
+	// list of accepted algorithms
+	// HS256: HMAC-SHA256
+	// HS384: HMAC-SHA384
+	// HS512: HMAC-SHA512
+	// ES256: ECDSA Signature with SHA-256
+	// ES384: ECDSA Signature with SHA-384
+	// ES512: ECDSA Signature with SHA-512
+	// RS256: RSA Signature with SHA-256
+	// RS384: RSA Signature with SHA-384
+	// RS512: RSA Signature with SHA-512
+	if alg != "HS256" && alg != "HS384" && alg != "HS512" &&
+		alg != "ES256" && alg != "ES384" && alg != "ES512" &&
+		alg != "RS256" && alg != "RS384" && alg != "RS512" {
+		err = errors.New("unsupported algorithm for JWT")
+		return
+	}
+	params.Algorithm = alg
 	params.AccessKey = []byte(strings.TrimSpace(os.Getenv("ACCESS_KEY")))
 	params.AccessKeyTTL, err = strconv.Atoi(strings.TrimSpace(os.Getenv("ACCESS_KEY_TTL")))
 	if err != nil {
@@ -586,6 +609,67 @@ func getParamsJWT() (params middleware.JWTParameters, err error) {
 	if err != nil {
 		return
 	}
+
+	privateKeyFile := strings.TrimSpace(os.Getenv("PRIV_KEY_FILE_PATH"))
+	if privateKeyFile != "" {
+		// load the private key
+		privateKeyBytes, errThis := os.ReadFile(privateKeyFile)
+		if errThis != nil {
+			err = errThis
+			return
+		}
+
+		// ECDSA
+		if alg == "ES256" || alg == "ES384" || alg == "ES512" {
+			privateKey, errThis := jwt.ParseECPrivateKeyFromPEM(privateKeyBytes)
+			if errThis != nil {
+				err = errThis
+				return
+			}
+			params.PrivKeyECDSA = privateKey
+		}
+
+		// RSA
+		if alg == "RS256" || alg == "RS384" || alg == "RS512" {
+			privateKey, errThis := jwt.ParseRSAPrivateKeyFromPEM(privateKeyBytes)
+			if errThis != nil {
+				err = errThis
+				return
+			}
+			params.PrivKeyRSA = privateKey
+		}
+	}
+
+	publicKeyFile := strings.TrimSpace(os.Getenv("PUB_KEY_FILE_PATH"))
+	if publicKeyFile != "" {
+		// load the public key
+		publicKeyBytes, errThis := os.ReadFile(publicKeyFile)
+		if errThis != nil {
+			err = errThis
+			return
+		}
+
+		// ECDSA
+		if alg == "ES256" || alg == "ES384" || alg == "ES512" {
+			publicKey, errThis := jwt.ParseECPublicKeyFromPEM(publicKeyBytes)
+			if errThis != nil {
+				err = errThis
+				return
+			}
+			params.PubKeyECDSA = publicKey
+		}
+
+		// RSA
+		if alg == "RS256" || alg == "RS384" || alg == "RS512" {
+			publicKey, errThis := jwt.ParseRSAPublicKeyFromPEM(publicKeyBytes)
+			if errThis != nil {
+				err = errThis
+				return
+			}
+			params.PubKeyRSA = publicKey
+		}
+	}
+
 	params.Audience = strings.TrimSpace(os.Getenv("AUDIENCE"))
 	params.Issuer = strings.TrimSpace(os.Getenv("ISSUER"))
 	params.AccNbf, err = strconv.Atoi(strings.TrimSpace(os.Getenv("NOT_BEFORE_ACC")))
@@ -603,10 +687,16 @@ func getParamsJWT() (params middleware.JWTParameters, err error) {
 
 // setParamsJWT - set parameters for JWT
 func setParamsJWT(c middleware.JWTParameters) {
+	middleware.JWTParams.Algorithm = c.Algorithm
 	middleware.JWTParams.AccessKey = c.AccessKey
 	middleware.JWTParams.AccessKeyTTL = c.AccessKeyTTL
 	middleware.JWTParams.RefreshKey = c.RefreshKey
 	middleware.JWTParams.RefreshKeyTTL = c.RefreshKeyTTL
+	middleware.JWTParams.PrivKeyECDSA = c.PrivKeyECDSA
+	middleware.JWTParams.PubKeyECDSA = c.PubKeyECDSA
+	middleware.JWTParams.PrivKeyRSA = c.PrivKeyRSA
+	middleware.JWTParams.PubKeyRSA = c.PubKeyRSA
+
 	middleware.JWTParams.Audience = c.Audience
 	middleware.JWTParams.Issuer = c.Issuer
 	middleware.JWTParams.AccNbf = c.AccNbf

@@ -5,6 +5,8 @@ package middleware
 // Copyright (c) 2022 pilinux
 
 import (
+	"crypto/ecdsa"
+	"crypto/rsa"
 	"fmt"
 	"net/http"
 	"strings"
@@ -17,10 +19,15 @@ import (
 
 // JWTParameters - params to configure JWT
 type JWTParameters struct {
+	Algorithm     string
 	AccessKey     []byte
 	AccessKeyTTL  int
 	RefreshKey    []byte
 	RefreshKeyTTL int
+	PrivKeyECDSA  *ecdsa.PrivateKey
+	PubKeyECDSA   *ecdsa.PublicKey
+	PrivKeyRSA    *rsa.PrivateKey
+	PubKeyRSA     *rsa.PublicKey
 
 	Audience string
 	Issuer   string
@@ -167,26 +174,75 @@ func RefreshJWT() gin.HandlerFunc {
 
 // ValidateAccessJWT - verify the access JWT's signature, and validate its claims
 func ValidateAccessJWT(token *jwt.Token) (interface{}, error) {
-	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+	alg := JWTParams.Algorithm
+
+	// HMAC
+	if alg == "HS256" || alg == "HS384" || alg == "HS512" {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return JWTParams.AccessKey, nil
 	}
-	return JWTParams.AccessKey, nil
+
+	// ECDSA
+	if alg == "ES256" || alg == "ES384" || alg == "ES512" {
+		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return JWTParams.PubKeyECDSA, nil
+	}
+
+	// RSA
+	if alg == "RS256" || alg == "RS384" || alg == "RS512" {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return JWTParams.PubKeyRSA, nil
+	}
+
+	return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 }
 
 // ValidateRefreshJWT - verify the refresh JWT's signature, and validate its claims
 func ValidateRefreshJWT(token *jwt.Token) (interface{}, error) {
-	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+	alg := JWTParams.Algorithm
+
+	// HMAC
+	if alg == "HS256" || alg == "HS384" || alg == "HS512" {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return JWTParams.RefreshKey, nil
 	}
-	return JWTParams.RefreshKey, nil
+
+	// ECDSA
+	if alg == "ES256" || alg == "ES384" || alg == "ES512" {
+		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return JWTParams.PubKeyECDSA, nil
+	}
+
+	// RSA
+	if alg == "RS256" || alg == "RS384" || alg == "RS512" {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return JWTParams.PubKeyRSA, nil
+	}
+
+	return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+
 }
 
 // GetJWT - issue new tokens
 func GetJWT(customClaims MyCustomClaims, tokenType string) (string, string, error) {
 	var (
-		key []byte
-		ttl int
-		nbf int
+		key          []byte
+		privKeyECDSA *ecdsa.PrivateKey
+		privKeyRSA   *rsa.PrivateKey
+		ttl          int
+		nbf          int
 	)
 
 	if tokenType == "access" {
@@ -227,11 +283,93 @@ func GetJWT(customClaims MyCustomClaims, tokenType string) (string, string, erro
 		claims.NotBefore = jwt.NewNumericDate(time.Now().Add(time.Second * time.Duration(nbf)))
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	var token *jwt.Token
+	alg := JWTParams.Algorithm
 
-	jwtValue, err := token.SignedString(key)
-	if err != nil {
-		return "", "", err
+	switch alg {
+	case "HS256":
+		token = jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	case "HS384":
+		token = jwt.NewWithClaims(jwt.SigningMethodHS384, claims)
+	case "HS512":
+		token = jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
+	case "ES256":
+		privKeyECDSA = JWTParams.PrivKeyECDSA
+		token = jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+	case "ES384":
+		privKeyECDSA = JWTParams.PrivKeyECDSA
+		token = jwt.NewWithClaims(jwt.SigningMethodES384, claims)
+	case "ES512":
+		privKeyECDSA = JWTParams.PrivKeyECDSA
+		token = jwt.NewWithClaims(jwt.SigningMethodES512, claims)
+	case "RS256":
+		privKeyRSA = JWTParams.PrivKeyRSA
+		token = jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	case "RS384":
+		privKeyRSA = JWTParams.PrivKeyRSA
+		token = jwt.NewWithClaims(jwt.SigningMethodRS384, claims)
+	case "RS512":
+		privKeyRSA = JWTParams.PrivKeyRSA
+		token = jwt.NewWithClaims(jwt.SigningMethodRS512, claims)
+	default:
+		token = jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	}
+
+	var jwtValue string
+	var err error
+
+	// HMAC
+	if alg == "HS256" || alg == "HS384" || alg == "HS512" {
+		jwtValue, err = token.SignedString(key)
+		if err != nil {
+			return "", "", err
+		}
+	}
+
+	// ECDSA
+	//
+	// ES256
+	// prime256v1: X9.62/SECG curve over a 256 bit prime field, also known as P-256 or NIST P-256
+	// widely used, recommended for general-purpose cryptographic operations
+	// openssl ecparam -name prime256v1 -genkey -noout -out private-key.pem
+	// openssl ec -in private-key.pem -pubout -out public-key.pem
+	//
+	// ES384
+	// secp384r1: NIST/SECG curve over a 384 bit prime field
+	// openssl ecparam -name secp384r1 -genkey -noout -out private-key.pem
+	// openssl ec -in private-key.pem -pubout -out public-key.pem
+	//
+	// ES512
+	// secp521r1: NIST/SECG curve over a 521 bit prime field
+	// openssl ecparam -name secp521r1 -genkey -noout -out private-key.pem
+	// openssl ec -in private-key.pem -pubout -out public-key.pem
+	if alg == "ES256" || alg == "ES384" || alg == "ES512" {
+		jwtValue, err = token.SignedString(privKeyECDSA)
+		if err != nil {
+			return "", "", err
+		}
+
+	}
+
+	// RSA
+	//
+	// RS256
+	// openssl genpkey -algorithm RSA -out private-key.pem -pkeyopt rsa_keygen_bits:2048
+	// openssl rsa -in private-key.pem -pubout -out public-key.pem
+	//
+	// RS384
+	// openssl genpkey -algorithm RSA -out private-key.pem -pkeyopt rsa_keygen_bits:3072
+	// openssl rsa -in private-key.pem -pubout -out public-key.pem
+	//
+	// RS512
+	// openssl genpkey -algorithm RSA -out private-key.pem -pkeyopt rsa_keygen_bits:4096
+	// openssl rsa -in private-key.pem -pubout -out public-key.pem
+	if alg == "RS256" || alg == "RS384" || alg == "RS512" {
+		jwtValue, err = token.SignedString(privKeyRSA)
+		if err != nil {
+			return "", "", err
+		}
+	}
+
 	return jwtValue, claims.ID, nil
 }

@@ -68,6 +68,70 @@ _Note:_ gorest uses [GORM][21] as its ORM
 - [x] logout (individually enable option - delete tokens from cookies, ban active tokens)
 - [x] super easy to learn and use - lots of example codes
 
+## Supported JWT signing algorithms
+
+- [x] HS256: HMAC-SHA256
+- [x] HS384: HMAC-SHA384
+- [x] HS512: HMAC-SHA512
+- [x] ES256: ECDSA Signature with SHA-256
+- [x] ES384: ECDSA Signature with SHA-384
+- [x] ES512: ECDSA Signature with SHA-512
+- [x] RS256: RSA Signature with SHA-256
+- [x] RS384: RSA Signature with SHA-384
+- [x] RS512: RSA Signature with SHA-512
+
+Procedures to generate public-private key pair using openssl:
+
+#### ECDSA
+
+ES256:
+- prime256v1: X9.62/SECG curve over a 256 bit prime field, also known as P-256 or NIST P-256
+- widely used, recommended for general-purpose cryptographic operations
+
+```
+openssl ecparam -name prime256v1 -genkey -noout -out private-key.pem
+openssl ec -in private-key.pem -pubout -out public-key.pem
+```
+
+ES384:
+- secp384r1: NIST/SECG curve over a 384 bit prime field
+
+```
+openssl ecparam -name secp384r1 -genkey -noout -out private-key.pem
+openssl ec -in private-key.pem -pubout -out public-key.pem
+```
+
+ES512:
+- secp521r1: NIST/SECG curve over a 521 bit prime field
+
+```
+openssl ecparam -name secp521r1 -genkey -noout -out private-key.pem
+openssl ec -in private-key.pem -pubout -out public-key.pem
+```
+
+#### RSA
+
+RS256:
+
+```
+openssl genpkey -algorithm RSA -out private-key.pem -pkeyopt rsa_keygen_bits:2048
+openssl rsa -in private-key.pem -pubout -out public-key.pem
+```
+
+RS384:
+
+```
+openssl genpkey -algorithm RSA -out private-key.pem -pkeyopt rsa_keygen_bits:3072
+openssl rsa -in private-key.pem -pubout -out public-key.pem
+```
+
+RS512:
+
+```
+openssl genpkey -algorithm RSA -out private-key.pem -pkeyopt rsa_keygen_bits:4096
+openssl rsa -in private-key.pem -pubout -out public-key.pem
+```
+
 ## Start building
 
 Please study the `.env.sample` file. It is one of the most crucial files required
