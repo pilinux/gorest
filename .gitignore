@@ -11,3 +11,5 @@ keys
 tmp
 .vscode
 coverage.txt
+pri*key*.pem
+pub*key*.pem
