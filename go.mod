@@ -16,7 +16,7 @@ require (
 	github.com/onrik/logrus v0.11.0
 	github.com/pilinux/libgo v0.0.5
 	github.com/pilinux/structs v1.1.1
-	github.com/qiniu/qmgo v1.1.7
+	github.com/qiniu/qmgo v1.1.8
 	github.com/sec51/twofactor v1.0.0
 	github.com/sirupsen/logrus v1.9.3
 	go.mongodb.org/mongo-driver v1.11.7
