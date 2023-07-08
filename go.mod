@@ -11,7 +11,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/jinzhu/gorm v1.9.16
 	github.com/joho/godotenv v1.5.1
-	github.com/mediocregopher/radix/v4 v4.1.2
+	github.com/mediocregopher/radix/v4 v4.1.3
 	github.com/mrz1836/postmark v1.4.0
 	github.com/onrik/logrus v0.11.0
 	github.com/pilinux/libgo v0.0.5
