@@ -284,12 +284,15 @@ func logger() (loggerConfig LoggerConfig, err error) {
 // security - configs for generating tokens and hashes
 func security() (securityConfig SecurityConfig, err error) {
 	// Minimum password length
-	userPassMinLength, errThis := strconv.Atoi(strings.TrimSpace(os.Getenv("MIN_PASS_LENGTH")))
-	if errThis != nil {
-		err = errThis
-		return
+	minPassLength := strings.TrimSpace(os.Getenv("MIN_PASS_LENGTH"))
+	if minPassLength != "" {
+		userPassMinLength, errThis := strconv.Atoi(minPassLength)
+		if errThis != nil {
+			err = errThis
+			return
+		}
+		securityConfig.UserPassMinLength = userPassMinLength
 	}
-	securityConfig.UserPassMinLength = userPassMinLength
 
 	// Basic auth
 	securityConfig.MustBasicAuth = strings.TrimSpace(os.Getenv("ACTIVATE_BASIC_AUTH"))
@@ -315,16 +318,16 @@ func security() (securityConfig SecurityConfig, err error) {
 
 	// Cookie for authentication and authorization
 	authCookieActivate := strings.TrimSpace(os.Getenv("AUTH_COOKIE_ACTIVATE"))
-	if authCookieActivate == "yes" {
+	if authCookieActivate == Activated {
 		securityConfig.AuthCookieActivate = true
 		securityConfig.AuthCookiePath = strings.TrimSpace(os.Getenv("AUTH_COOKIE_PATH"))
 		securityConfig.AuthCookieDomain = strings.TrimSpace(os.Getenv("AUTH_COOKIE_DOMAIN"))
 
-		if strings.TrimSpace(os.Getenv("AUTH_COOKIE_SECURE")) == "yes" {
+		if strings.TrimSpace(os.Getenv("AUTH_COOKIE_SECURE")) == Activated {
 			securityConfig.AuthCookieSecure = true
 		}
 
-		if strings.TrimSpace(os.Getenv("AUTH_COOKIE_HttpOnly")) == "yes" {
+		if strings.TrimSpace(os.Getenv("AUTH_COOKIE_HttpOnly")) == Activated {
 			securityConfig.AuthCookieHTTPOnly = true
 		}
 
