@@ -353,7 +353,7 @@ func TestJWTAuthCookie(t *testing.T) {
 	}
 }
 
-func TestRefreshJWT(t *testing.T) {
+func TestRefreshJWTPayload(t *testing.T) {
 	// set JWT params
 	setParamsJWT()
 
@@ -546,6 +546,117 @@ func TestRefreshJWTAuthCookie(t *testing.T) {
 			res := httptest.NewRecorder()
 
 			router.ServeHTTP(res, req)
+			if res.Code != tc.expectedStatus {
+				t.Errorf("expected status code %d, but got %d", tc.expectedStatus, res.Code)
+			}
+		})
+	}
+}
+
+func TestRefreshJWTAuthHeader(t *testing.T) {
+	// set JWT params
+	setParamsJWT()
+
+	// valid access token
+	accessJWT, _, err := middleware.GetJWT(customClaims, "access")
+	if err != nil {
+		t.Errorf("error creating access JWT: %v", err)
+	}
+
+	// valid refresh token
+	refreshJWT, _, err := middleware.GetJWT(customClaims, "refresh")
+	if err != nil {
+		t.Errorf("error creating refresh JWT: %v", err)
+	}
+
+	// refresh token to be valid 30 seconds in the future
+	middleware.JWTParams.RefNbf = 30 // set refresh token to be valid 30 seconds in the future
+	validInFutureRefreshJWT, _, err := middleware.GetJWT(customClaims, "refresh")
+	if err != nil {
+		t.Errorf("error creating refresh JWT to be valid 30 seconds in the future: %v", err)
+	}
+	middleware.JWTParams.RefNbf = 0 // reset
+
+	// refresh token set to expire immediately
+	middleware.JWTParams.RefreshKeyTTL = -1
+	expiredRefreshJWT, _, err := middleware.GetJWT(customClaims, "refresh")
+	if err != nil {
+		t.Errorf("error creating expired refresh JWT: %v", err)
+	}
+
+	testCases := []struct {
+		name           string
+		authorization  string
+		expectedStatus int
+	}{
+		{
+			name:           "no authorization header",
+			authorization:  "",
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "empty Bearer token",
+			authorization:  "Bearer",
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "invalid authorization header (first test)",
+			authorization:  "Bearer invalid",
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "invalid authorization header (second test)",
+			authorization:  "Bearer invalid token",
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "valid authorization header with access token",
+			authorization:  "Bearer " + accessJWT,
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "expired authorization header",
+			authorization:  "Bearer " + expiredRefreshJWT,
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "valid authorization header set to be valid 30 seconds in the future",
+			authorization:  "Bearer " + validInFutureRefreshJWT,
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "valid authorization header",
+			authorization:  "Bearer " + refreshJWT,
+			expectedStatus: http.StatusOK,
+		},
+	}
+
+	// set up a gin router and handler
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	err = router.SetTrustedProxies(nil)
+	if err != nil {
+		t.Errorf("failed to set trusted proxies to nil")
+	}
+	router.TrustedPlatform = "X-Real-Ip"
+
+	// define the route and attach the RefreshJWT middleware
+	router.POST("/refresh", middleware.RefreshJWT(), func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			req, err := http.NewRequest("POST", "/refresh", nil)
+			if err != nil {
+				t.Errorf("failed to create an HTTP request: %v", err)
+				return
+			}
+			req.Header.Set("Authorization", tc.authorization)
+			res := httptest.NewRecorder()
+
+			router.ServeHTTP(res, req)
+
 			if res.Code != tc.expectedStatus {
 				t.Errorf("expected status code %d, but got %d", tc.expectedStatus, res.Code)
 			}
