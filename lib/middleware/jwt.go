@@ -126,26 +126,45 @@ func JWT() gin.HandlerFunc {
 func RefreshJWT() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var jwtPayload JWTPayload
+		var val string
+		var vals []string
 
 		// first try to read the cookie
 		refreshJWT, err := c.Cookie("refreshJWT")
 		// refreshJWT is available in the cookie
 		if err == nil {
 			jwtPayload.RefreshJWT = refreshJWT
-
 			goto VerifyClaims
 		}
 
 		// refreshJWT is not available in the cookie
-		// try to read the request body
-		if err := c.ShouldBindJSON(&jwtPayload); err != nil {
-			c.AbortWithStatus(http.StatusBadRequest)
+		// try to read the Authorization header
+		val = c.Request.Header.Get("Authorization")
+		if len(val) == 0 || !strings.Contains(val, "Bearer ") {
+			// no vals or no bearer found
+			goto CheckReqBody
+		}
+		vals = strings.Split(val, " ")
+		if len(vals) != 2 {
+			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
+		jwtPayload.RefreshJWT = vals[1]
+		goto VerifyClaims
+
+	CheckReqBody:
+		// refreshJWT is not available in the cookie or Authorization header
+		// try to read the request body
+		if err := c.ShouldBindJSON(&jwtPayload); err != nil {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+		jwtPayload.RefreshJWT = strings.TrimSpace(jwtPayload.RefreshJWT)
 
 	VerifyClaims:
 		token, err := jwt.ParseWithClaims(jwtPayload.RefreshJWT, &JWTClaims{}, ValidateRefreshJWT)
 		if err != nil {
+			// error parsing JWT
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
