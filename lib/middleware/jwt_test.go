@@ -392,7 +392,7 @@ func TestRefreshJWTPayload(t *testing.T) {
 		{
 			name:           "wrong payload type",
 			payload:        `{"refreshJWT": 1}`,
-			expectedStatus: http.StatusBadRequest,
+			expectedStatus: http.StatusUnauthorized,
 		},
 		{
 			name:           "valid access JWT",
