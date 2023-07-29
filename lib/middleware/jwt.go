@@ -68,6 +68,7 @@ type JWTPayload struct {
 // JWT - validate access token
 func JWT() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var jwtPayload JWTPayload
 		var token *jwt.Token
 		var val string
 		var vals []string
@@ -76,13 +77,7 @@ func JWT() gin.HandlerFunc {
 		accessJWT, err := c.Cookie("accessJWT")
 		// accessJWT is available in the cookie
 		if err == nil {
-			token, err = jwt.ParseWithClaims(accessJWT, &JWTClaims{}, ValidateAccessJWT)
-			if err != nil {
-				// error parsing JWT
-				c.AbortWithStatus(http.StatusUnauthorized)
-				return
-			}
-
+			jwtPayload.AccessJWT = accessJWT
 			goto VerifyClaims
 		}
 
@@ -99,15 +94,16 @@ func JWT() gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
+		jwtPayload.AccessJWT = vals[1]
 
-		token, err = jwt.ParseWithClaims(vals[1], &JWTClaims{}, ValidateAccessJWT)
+	VerifyClaims:
+		token, err = jwt.ParseWithClaims(jwtPayload.AccessJWT, &JWTClaims{}, ValidateAccessJWT)
 		if err != nil {
 			// error parsing JWT
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
-	VerifyClaims:
 		if claims, ok := token.Claims.(*JWTClaims); ok && token.Valid {
 			c.Set("authID", claims.AuthID)
 			c.Set("email", claims.Email)
