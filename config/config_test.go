@@ -315,7 +315,8 @@ func TestErrorGetConfig(t *testing.T) {
 		Value string
 	}{
 		{
-			Key: "MIN_PASS_LENGTH",
+			Key:   "MIN_PASS_LENGTH",
+			Value: "text",
 		},
 		{
 			Key: "ACCESS_KEY_TTL",
