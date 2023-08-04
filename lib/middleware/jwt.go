@@ -84,14 +84,16 @@ func JWT() gin.HandlerFunc {
 		// accessJWT is not available in the cookie
 		// try to read the Authorization header
 		val = c.Request.Header.Get("Authorization")
-		if len(val) == 0 || !strings.Contains(val, "Bearer ") {
+		if len(val) == 0 || !strings.Contains(val, "Bearer") {
 			// no vals or no bearer found
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, "token missing")
 			return
 		}
 		vals = strings.Split(val, " ")
-		if len(vals) != 2 {
-			c.AbortWithStatus(http.StatusUnauthorized)
+		// Authorization: Bearer {access} => length is 2
+		// Authorization: Bearer {access} {refresh} => length is 3
+		if len(vals) < 2 {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, "token missing")
 			return
 		}
 		jwtPayload.AccessJWT = vals[1]
@@ -100,7 +102,7 @@ func JWT() gin.HandlerFunc {
 		token, err = jwt.ParseWithClaims(jwtPayload.AccessJWT, &JWTClaims{}, ValidateAccessJWT)
 		if err != nil {
 			// error parsing JWT
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -140,23 +142,28 @@ func RefreshJWT() gin.HandlerFunc {
 		// refreshJWT is not available in the cookie
 		// try to read the Authorization header
 		val = c.Request.Header.Get("Authorization")
-		if len(val) == 0 || !strings.Contains(val, "Bearer ") {
+		if len(val) == 0 || !strings.Contains(val, "Bearer") {
 			// no vals or no bearer found
 			goto CheckReqBody
 		}
 		vals = strings.Split(val, " ")
-		if len(vals) != 2 {
-			c.AbortWithStatus(http.StatusUnauthorized)
+		// Authorization: Bearer {refresh} => length is 2
+		// Authorization: Bearer {access} {refresh} => length is 3
+		if len(vals) < 2 {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, "token missing")
 			return
 		}
 		jwtPayload.RefreshJWT = vals[1]
+		if len(vals) == 3 {
+			jwtPayload.RefreshJWT = vals[2]
+		}
 		goto VerifyClaims
 
 	CheckReqBody:
 		// refreshJWT is not available in the cookie or Authorization header
 		// try to read the request body
 		if err := c.ShouldBindJSON(&jwtPayload); err != nil {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, err.Error())
 			return
 		}
 		jwtPayload.RefreshJWT = strings.TrimSpace(jwtPayload.RefreshJWT)
@@ -165,7 +172,7 @@ func RefreshJWT() gin.HandlerFunc {
 		token, err := jwt.ParseWithClaims(jwtPayload.RefreshJWT, &JWTClaims{}, ValidateRefreshJWT)
 		if err != nil {
 			// error parsing JWT
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -187,67 +194,68 @@ func RefreshJWT() gin.HandlerFunc {
 	}
 }
 
+// ValidateHMACAccess - validate hash based access token
+func ValidateHMACAccess(token *jwt.Token) (interface{}, error) {
+	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+	}
+	return JWTParams.AccessKey, nil
+}
+
+// ValidateHMACRefresh - validate hash based refresh token
+func ValidateHMACRefresh(token *jwt.Token) (interface{}, error) {
+	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+	}
+	return JWTParams.RefreshKey, nil
+}
+
+// ValidateECDSA - validate elliptic curve digital signature algorithm based token
+func ValidateECDSA(token *jwt.Token) (interface{}, error) {
+	if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+	}
+	return JWTParams.PubKeyECDSA, nil
+}
+
+// ValidateRSA - validate Rivest–Shamir–Adleman cryptosystem based token
+func ValidateRSA(token *jwt.Token) (interface{}, error) {
+	if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+	}
+	return JWTParams.PubKeyRSA, nil
+}
+
 // ValidateAccessJWT - verify the access JWT's signature, and validate its claims
 func ValidateAccessJWT(token *jwt.Token) (interface{}, error) {
 	alg := JWTParams.Algorithm
 
-	// HMAC
-	if alg == "HS256" || alg == "HS384" || alg == "HS512" {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return JWTParams.AccessKey, nil
+	switch alg {
+	case "HS256", "HS384", "HS512":
+		return ValidateHMACAccess(token)
+	case "ES256", "ES384", "ES512":
+		return ValidateECDSA(token)
+	case "RS256", "RS384", "RS512":
+		return ValidateRSA(token)
+	default:
+		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 	}
-
-	// ECDSA
-	if alg == "ES256" || alg == "ES384" || alg == "ES512" {
-		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return JWTParams.PubKeyECDSA, nil
-	}
-
-	// RSA
-	if alg == "RS256" || alg == "RS384" || alg == "RS512" {
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return JWTParams.PubKeyRSA, nil
-	}
-
-	return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 }
 
 // ValidateRefreshJWT - verify the refresh JWT's signature, and validate its claims
 func ValidateRefreshJWT(token *jwt.Token) (interface{}, error) {
 	alg := JWTParams.Algorithm
 
-	// HMAC
-	if alg == "HS256" || alg == "HS384" || alg == "HS512" {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return JWTParams.RefreshKey, nil
+	switch alg {
+	case "HS256", "HS384", "HS512":
+		return ValidateHMACRefresh(token)
+	case "ES256", "ES384", "ES512":
+		return ValidateECDSA(token)
+	case "RS256", "RS384", "RS512":
+		return ValidateRSA(token)
+	default:
+		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 	}
-
-	// ECDSA
-	if alg == "ES256" || alg == "ES384" || alg == "ES512" {
-		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return JWTParams.PubKeyECDSA, nil
-	}
-
-	// RSA
-	if alg == "RS256" || alg == "RS384" || alg == "RS512" {
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return JWTParams.PubKeyRSA, nil
-	}
-
-	return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-
 }
 
 // GetJWT - issue new tokens
