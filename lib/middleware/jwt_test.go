@@ -629,6 +629,11 @@ func TestRefreshJWTAuthHeader(t *testing.T) {
 			authorization:  "Bearer " + refreshJWT,
 			expectedStatus: http.StatusOK,
 		},
+		{
+			name:           "valid authorization header with access and refresh tokens",
+			authorization:  "Bearer " + accessJWT + " " + refreshJWT,
+			expectedStatus: http.StatusOK,
+		},
 	}
 
 	// set up a gin router and handler

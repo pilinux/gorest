@@ -90,7 +90,9 @@ func JWT() gin.HandlerFunc {
 			return
 		}
 		vals = strings.Split(val, " ")
-		if len(vals) != 2 {
+		// Authorization: Bearer {access} => length is 2
+		// Authorization: Bearer {access} {refresh} => length is 3
+		if len(vals) < 2 {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
@@ -145,11 +147,16 @@ func RefreshJWT() gin.HandlerFunc {
 			goto CheckReqBody
 		}
 		vals = strings.Split(val, " ")
-		if len(vals) != 2 {
+		// Authorization: Bearer {refresh} => length is 2
+		// Authorization: Bearer {access} {refresh} => length is 3
+		if len(vals) < 2 {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 		jwtPayload.RefreshJWT = vals[1]
+		if len(vals) == 3 {
+			jwtPayload.RefreshJWT = vals[2]
+		}
 		goto VerifyClaims
 
 	CheckReqBody:
