@@ -84,16 +84,16 @@ func JWT() gin.HandlerFunc {
 		// accessJWT is not available in the cookie
 		// try to read the Authorization header
 		val = c.Request.Header.Get("Authorization")
-		if len(val) == 0 || !strings.Contains(val, "Bearer ") {
+		if len(val) == 0 || !strings.Contains(val, "Bearer") {
 			// no vals or no bearer found
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, "token missing")
 			return
 		}
 		vals = strings.Split(val, " ")
 		// Authorization: Bearer {access} => length is 2
 		// Authorization: Bearer {access} {refresh} => length is 3
 		if len(vals) < 2 {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, "token missing")
 			return
 		}
 		jwtPayload.AccessJWT = vals[1]
@@ -102,7 +102,7 @@ func JWT() gin.HandlerFunc {
 		token, err = jwt.ParseWithClaims(jwtPayload.AccessJWT, &JWTClaims{}, ValidateAccessJWT)
 		if err != nil {
 			// error parsing JWT
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -142,7 +142,7 @@ func RefreshJWT() gin.HandlerFunc {
 		// refreshJWT is not available in the cookie
 		// try to read the Authorization header
 		val = c.Request.Header.Get("Authorization")
-		if len(val) == 0 || !strings.Contains(val, "Bearer ") {
+		if len(val) == 0 || !strings.Contains(val, "Bearer") {
 			// no vals or no bearer found
 			goto CheckReqBody
 		}
@@ -150,7 +150,7 @@ func RefreshJWT() gin.HandlerFunc {
 		// Authorization: Bearer {refresh} => length is 2
 		// Authorization: Bearer {access} {refresh} => length is 3
 		if len(vals) < 2 {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, "token missing")
 			return
 		}
 		jwtPayload.RefreshJWT = vals[1]
@@ -163,7 +163,7 @@ func RefreshJWT() gin.HandlerFunc {
 		// refreshJWT is not available in the cookie or Authorization header
 		// try to read the request body
 		if err := c.ShouldBindJSON(&jwtPayload); err != nil {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, err.Error())
 			return
 		}
 		jwtPayload.RefreshJWT = strings.TrimSpace(jwtPayload.RefreshJWT)
@@ -172,7 +172,7 @@ func RefreshJWT() gin.HandlerFunc {
 		token, err := jwt.ParseWithClaims(jwtPayload.RefreshJWT, &JWTClaims{}, ValidateRefreshJWT)
 		if err != nil {
 			// error parsing JWT
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, err.Error())
 			return
 		}
 
