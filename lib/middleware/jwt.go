@@ -187,67 +187,68 @@ func RefreshJWT() gin.HandlerFunc {
 	}
 }
 
+// ValidateHMACAccess - validate hash based access token
+func ValidateHMACAccess(token *jwt.Token) (interface{}, error) {
+	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+	}
+	return JWTParams.AccessKey, nil
+}
+
+// ValidateHMACRefresh - validate hash based refresh token
+func ValidateHMACRefresh(token *jwt.Token) (interface{}, error) {
+	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+	}
+	return JWTParams.RefreshKey, nil
+}
+
+// ValidateECDSA - validate elliptic curve digital signature algorithm based token
+func ValidateECDSA(token *jwt.Token) (interface{}, error) {
+	if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+	}
+	return JWTParams.PubKeyECDSA, nil
+}
+
+// ValidateRSA - validate Rivest–Shamir–Adleman cryptosystem based token
+func ValidateRSA(token *jwt.Token) (interface{}, error) {
+	if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+	}
+	return JWTParams.PubKeyRSA, nil
+}
+
 // ValidateAccessJWT - verify the access JWT's signature, and validate its claims
 func ValidateAccessJWT(token *jwt.Token) (interface{}, error) {
 	alg := JWTParams.Algorithm
 
-	// HMAC
-	if alg == "HS256" || alg == "HS384" || alg == "HS512" {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return JWTParams.AccessKey, nil
+	switch alg {
+	case "HS256", "HS384", "HS512":
+		return ValidateHMACAccess(token)
+	case "ES256", "ES384", "ES512":
+		return ValidateECDSA(token)
+	case "RS256", "RS384", "RS512":
+		return ValidateRSA(token)
+	default:
+		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 	}
-
-	// ECDSA
-	if alg == "ES256" || alg == "ES384" || alg == "ES512" {
-		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return JWTParams.PubKeyECDSA, nil
-	}
-
-	// RSA
-	if alg == "RS256" || alg == "RS384" || alg == "RS512" {
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return JWTParams.PubKeyRSA, nil
-	}
-
-	return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 }
 
 // ValidateRefreshJWT - verify the refresh JWT's signature, and validate its claims
 func ValidateRefreshJWT(token *jwt.Token) (interface{}, error) {
 	alg := JWTParams.Algorithm
 
-	// HMAC
-	if alg == "HS256" || alg == "HS384" || alg == "HS512" {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return JWTParams.RefreshKey, nil
+	switch alg {
+	case "HS256", "HS384", "HS512":
+		return ValidateHMACRefresh(token)
+	case "ES256", "ES384", "ES512":
+		return ValidateECDSA(token)
+	case "RS256", "RS384", "RS512":
+		return ValidateRSA(token)
+	default:
+		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 	}
-
-	// ECDSA
-	if alg == "ES256" || alg == "ES384" || alg == "ES512" {
-		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return JWTParams.PubKeyECDSA, nil
-	}
-
-	// RSA
-	if alg == "RS256" || alg == "RS384" || alg == "RS512" {
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return JWTParams.PubKeyRSA, nil
-	}
-
-	return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-
 }
 
 // GetJWT - issue new tokens

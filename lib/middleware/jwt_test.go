@@ -1070,6 +1070,52 @@ func TestValidateRefreshJWT(t *testing.T) {
 	}
 }
 
+func TestValidateFailure(t *testing.T) {
+	// mock a JWT token with an unsupported signing method (e.g., "PS256" - RSASSA-PSS using SHA-256)
+	token := jwt.New(jwt.GetSigningMethod("PS256"))
+
+	testCases := []struct {
+		testName  string
+		validator func(*jwt.Token) (interface{}, error)
+	}{
+		{
+			testName:  "HMAC-Access",
+			validator: middleware.ValidateHMACAccess,
+		},
+		{
+			testName:  "HMAC-Refresh",
+			validator: middleware.ValidateHMACRefresh,
+		},
+		{
+			testName:  "ECDSA",
+			validator: middleware.ValidateECDSA,
+		},
+		{
+			testName:  "RSA",
+			validator: middleware.ValidateRSA,
+		},
+	}
+
+	// loop through the test cases
+	for _, tc := range testCases {
+		t.Run(tc.testName, func(t *testing.T) {
+			// call the respective validator function based on the test case
+			_, err := tc.validator(token)
+
+			// the test should fail since the token has an unsupported signing method
+			if err == nil {
+				t.Errorf("expected an error, but got nil")
+			}
+
+			// check the specific error message
+			expectedErrorMessage := "unexpected signing method: PS256"
+			if err.Error() != expectedErrorMessage {
+				t.Errorf("Expected error message: '%s', but got: '%s'", expectedErrorMessage, err.Error())
+			}
+		})
+	}
+}
+
 // set params
 func setParamsJWT() {
 	middleware.JWTParams.Algorithm = "HS256"
