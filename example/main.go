@@ -72,7 +72,7 @@ func main() {
 		return
 	}
 	// Attaches the router to a http.Server and starts listening and serving HTTP requests
-	err = r.Run(":" + configure.Server.ServerPort)
+	err = r.Run(configure.Server.ServerHost + ":" + configure.Server.ServerPort)
 	if err != nil {
 		fmt.Println(err)
 		return

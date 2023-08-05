@@ -551,6 +551,7 @@ func security() (securityConfig SecurityConfig, err error) {
 
 // server - port and env
 func server() (serverConfig ServerConfig, err error) {
+	serverConfig.ServerHost = strings.TrimSpace(os.Getenv("APP_HOST"))
 	serverConfig.ServerPort = strings.TrimSpace(os.Getenv("APP_PORT"))
 	serverConfig.ServerEnv = strings.TrimSpace(os.Getenv("APP_ENV"))
 

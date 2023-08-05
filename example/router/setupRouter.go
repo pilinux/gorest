@@ -15,7 +15,7 @@ import (
 // SetupRouter sets up all the routes
 func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 	if configure.Server.ServerEnv == "production" {
-		gin.SetMode(gin.ReleaseMode) // Omit this line to enable debug mode
+		gin.SetMode(gin.ReleaseMode)
 	}
 
 	// Write log file

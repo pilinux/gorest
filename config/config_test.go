@@ -137,6 +137,7 @@ func TestGetConfig(t *testing.T) {
 	}
 	expected.Logger.SentryDsn = "https://xyz.ingest.sentry.io/123456"
 
+	expected.Server.ServerHost = "localhost"
 	expected.Server.ServerPort = "3000"
 	expected.Server.ServerEnv = "development"
 
