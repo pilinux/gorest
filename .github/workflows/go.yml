@@ -28,16 +28,46 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Examine source code
-        run: go vet -v ./...
+      - name: Examine source code for Linux AMD
+        run: GOOS=linux GOARCH=amd64 go vet -v ./...
+
+      - name: Examine source code for MacOS AMD
+        run: GOOS=darwin GOARCH=amd64 go vet -v ./...
+
+      - name: Examine source code for Windows AMD
+        run: GOOS=windows GOARCH=amd64 go vet -v ./...
+
+      - name: Examine source code for Linux ARM
+        run: GOOS=linux GOARCH=arm64 go vet -v ./...
+
+      - name: Examine source code for MacOS ARM
+        run: GOOS=darwin GOARCH=arm64 go vet -v ./...
+
+      - name: Examine source code for Windows ARM
+        run: GOOS=windows GOARCH=arm64 go vet -v ./...
 
       - name: Gosec security scanner
         uses: securego/gosec@master
         with:
           args: -include=G102,G103,G104,G106,G107,G108,G109,G110,G111,G112,G113,G114,G201,G202,G203,G204,G205 ./...
 
-      - name: Build
-        run: go build -v ./...
+      - name: Build for Linux AMD
+        run: GOOS=linux GOARCH=amd64 go build -v ./...
+
+      - name: Build for MacOS AMD
+        run: GOOS=darwin GOARCH=amd64 go build -v ./...
+
+      - name: Build for Windows AMD
+        run: GOOS=windows GOARCH=amd64 go build -v ./...
+
+      - name: Build for Linux ARM
+        run: GOOS=linux GOARCH=arm64 go build -v ./...
+
+      - name: Build for MacOS ARM
+        run: GOOS=darwin GOARCH=arm64 go build -v ./...
+
+      - name: Build for Windows ARM
+        run: GOOS=windows GOARCH=arm64 go build -v ./...
 
       - name: Test
         if: github.event_name == 'push'
