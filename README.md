@@ -56,7 +56,8 @@ _Note:_ gorest uses [GORM][21] as its ORM
 - [x] basic auth
 - [x] two-factor authentication
 - [x] JWT using [golang-jwt/jwt][16]
-- [x] password hashing with `Argon2id`
+- [x] password hashing using `Argon2id` with optional secret (NIST 800-63B
+  recommends using a secret value of at least 112 bits)
 - [x] JSON protection from hijacking
 - [x] simple firewall (whitelist/blacklist IP)
 - [x] email validation (pattern + MX lookup)
@@ -130,6 +131,26 @@ RS512:
 ```
 openssl genpkey -algorithm RSA -out private-key.pem -pkeyopt rsa_keygen_bits:4096
 openssl rsa -in private-key.pem -pubout -out public-key.pem
+```
+
+## Example docker compose file
+
+```yml
+# syntax=docker/dockerfile:1
+
+version: '3.9'
+name: go
+services:
+  goapi:
+    image: golang:latest
+    container_name: goapi
+    working_dir: /app/
+    restart: unless-stopped:10s
+    command: /app/goapi
+    ports:
+      - '127.0.0.1:8000:8999'
+    volumes:
+      - ./app:/app/
 ```
 
 ## Start building

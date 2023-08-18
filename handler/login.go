@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/alexedwards/argon2id"
+	"github.com/pilinux/argon2"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/pilinux/gorest/config"
@@ -44,7 +44,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 		}
 	}
 
-	verifyPass, err := argon2id.ComparePasswordAndHash(payload.Password, v.Password)
+	verifyPass, err := argon2.ComparePasswordAndHash(payload.Password, configSecurity.HashSec, v.Password)
 	if err != nil {
 		log.WithError(err).Error("error code: 1011")
 		httpResponse.Message = "internal server error"

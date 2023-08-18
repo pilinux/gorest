@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
+	"github.com/pilinux/argon2"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/pilinux/gorest/config"
@@ -61,7 +61,7 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
-	verifyPass, err := argon2id.ComparePasswordAndHash(authPayload.Password, v.Password)
+	verifyPass, err := argon2.ComparePasswordAndHash(authPayload.Password, configSecurity.HashSec, v.Password)
 	if err != nil {
 		log.WithError(err).Error("error code: 1031")
 		httpResponse.Message = "internal server error"
@@ -561,7 +561,7 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 		return
 	}
 	// verify password
-	verifyPass, err := argon2id.ComparePasswordAndHash(authPayload.Password, v.Password)
+	verifyPass, err := argon2.ComparePasswordAndHash(authPayload.Password, configSecurity.HashSec, v.Password)
 	if err != nil {
 		log.WithError(err).Error("error code: 1036")
 		httpResponse.Message = "internal server error"

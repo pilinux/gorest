@@ -74,7 +74,7 @@ func (v *Auth) UnmarshalJSON(b []byte) error {
 		SaltLength:  configSecurity.HashPass.SaltLength,
 		KeyLength:   configSecurity.HashPass.KeyLength,
 	}
-	pass, err := lib.HashPass(config, aux.Password)
+	pass, err := lib.HashPass(config, aux.Password, configSecurity.HashSec)
 	if err != nil {
 		return err
 	}

@@ -356,6 +356,7 @@ func security() (securityConfig SecurityConfig, err error) {
 		if err != nil {
 			return
 		}
+		securityConfig.HashSec = strings.TrimSpace(os.Getenv("HASH_SECRET"))
 	}
 
 	// Email verification and password recovery

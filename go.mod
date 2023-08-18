@@ -3,7 +3,6 @@ module github.com/pilinux/gorest
 go 1.19
 
 require (
-	github.com/alexedwards/argon2id v0.0.0-20230305115115-4b3c3280a736
 	github.com/flosch/pongo2/v6 v6.0.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-sql-driver/mysql v1.7.1
@@ -14,6 +13,7 @@ require (
 	github.com/mediocregopher/radix/v4 v4.1.3
 	github.com/mrz1836/postmark v1.6.1
 	github.com/onrik/logrus v0.11.0
+	github.com/pilinux/argon2 v0.2.0
 	github.com/pilinux/libgo v0.0.5
 	github.com/pilinux/structs v1.1.1
 	github.com/qiniu/qmgo v1.1.8
@@ -22,7 +22,7 @@ require (
 	go.mongodb.org/mongo-driver v1.12.1
 	gorm.io/driver/mysql v1.5.1
 	gorm.io/driver/postgres v1.5.2
-	gorm.io/driver/sqlite v1.5.2
+	gorm.io/driver/sqlite v1.5.3
 	gorm.io/gorm v1.25.3
 )
 
@@ -66,11 +66,11 @@ require (
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
 	golang.org/x/arch v0.4.0 // indirect
-	golang.org/x/crypto v0.11.0 // indirect
+	golang.org/x/crypto v0.12.0 // indirect
 	golang.org/x/net v0.12.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
-	golang.org/x/sys v0.10.0 // indirect
-	golang.org/x/text v0.11.0 // indirect
+	golang.org/x/sys v0.11.0 // indirect
+	golang.org/x/text v0.12.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

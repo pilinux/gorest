@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
 	"github.com/mediocregopher/radix/v4"
+	"github.com/pilinux/argon2"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/pilinux/gorest/config"
@@ -129,7 +129,7 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 		SaltLength:  configSecurity.HashPass.SaltLength,
 		KeyLength:   configSecurity.HashPass.KeyLength,
 	}
-	pass, err := lib.HashPass(configHash, authPayload.PassNew)
+	pass, err := lib.HashPass(configHash, authPayload.PassNew, configSecurity.HashSec)
 	if err != nil {
 		log.WithError(err).Error("error code: 1083")
 		httpResponse.Message = "internal server error"
@@ -349,7 +349,7 @@ func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayl
 	}
 
 	// verify given pass against pass saved in DB
-	verifyPass, err := argon2id.ComparePasswordAndHash(authPayload.Password, auth.Password)
+	verifyPass, err := argon2.ComparePasswordAndHash(authPayload.Password, configSecurity.HashSec, auth.Password)
 	if err != nil {
 		log.WithError(err).Error("error code: 1091")
 		httpResponse.Message = "internal server error"
@@ -379,7 +379,7 @@ func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayl
 		SaltLength:  configSecurity.HashPass.SaltLength,
 		KeyLength:   configSecurity.HashPass.KeyLength,
 	}
-	pass, err := lib.HashPass(configHash, authPayload.PassNew)
+	pass, err := lib.HashPass(configHash, authPayload.PassNew, configSecurity.HashSec)
 	if err != nil {
 		log.WithError(err).Error("error code: 1092")
 		httpResponse.Message = "internal server error"

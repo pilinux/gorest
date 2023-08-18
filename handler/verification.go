@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alexedwards/argon2id"
 	"github.com/mediocregopher/radix/v4"
+	"github.com/pilinux/argon2"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/pilinux/gorest/config"
@@ -123,7 +123,7 @@ func CreateVerificationEmail(payload model.AuthPayload) (httpResponse model.HTTP
 	}
 
 	// verify password
-	verifyPass, err := argon2id.ComparePasswordAndHash(payload.Password, v.Password)
+	verifyPass, err := argon2.ComparePasswordAndHash(payload.Password, config.GetConfig().Security.HashSec, v.Password)
 	if err != nil {
 		log.WithError(err).Error("error code: 1071")
 		httpResponse.Message = "internal server error"

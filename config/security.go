@@ -33,6 +33,7 @@ type SecurityConfig struct {
 
 	MustHash string
 	HashPass lib.HashPassConfig
+	HashSec  string // optional secret for argon2id hashing
 
 	VerifyEmail bool
 	RecoverPass bool

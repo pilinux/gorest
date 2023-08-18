@@ -195,6 +195,7 @@ func TestGetConfig(t *testing.T) {
 	expected.Security.HashPass.Parallelism = 2
 	expected.Security.HashPass.SaltLength = 16
 	expected.Security.HashPass.KeyLength = 32
+	expected.Security.HashSec = "s€cr$t"
 
 	expected.Security.VerifyEmail = true
 	if !config.IsEmailVerificationService() {
@@ -345,6 +346,9 @@ func TestErrorGetConfig(t *testing.T) {
 		},
 		{
 			Key: "HASHPASSKEYLENGTH",
+		},
+		{
+			Key: "HASH_SECRET",
 		},
 		{
 			Key: "TWO_FA_DIGITS",
