@@ -348,9 +348,6 @@ func TestErrorGetConfig(t *testing.T) {
 			Key: "HASHPASSKEYLENGTH",
 		},
 		{
-			Key: "HASH_SECRET",
-		},
-		{
 			Key: "TWO_FA_DIGITS",
 		},
 		{
