@@ -17,7 +17,7 @@ type TwoFA struct {
 	UUIDSHA   string         `json:"-"`
 	UUIDEnc   string         `json:"-"`
 	Status    string         `json:"-"`
-	IDAuth    uint64         `json:"-"`
+	IDAuth    uint64         `gorm:"index" json:"-"`
 }
 
 // Secret2FA - save encoded secrets in RAM temporarily
