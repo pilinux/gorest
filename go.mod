@@ -14,6 +14,7 @@ require (
 	github.com/mrz1836/postmark v1.6.1
 	github.com/onrik/logrus v0.11.0
 	github.com/pilinux/argon2 v0.2.0
+	github.com/pilinux/crypt v0.0.0
 	github.com/pilinux/libgo v0.0.5
 	github.com/pilinux/structs v1.1.1
 	github.com/qiniu/qmgo v1.1.8

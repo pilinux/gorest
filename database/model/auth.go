@@ -40,6 +40,9 @@ type Auth struct {
 	UpdatedAt   time.Time      `json:"updatedAt,omitempty"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 	Email       string         `gorm:"index" json:"email"`
+	EmailCipher string         `json:"-"`
+	EmailNonce  string         `json:"-"`
+	EmailHash   string         `gorm:"index" json:"-"`
 	Password    string         `json:"password"`
 	VerifyEmail int8           `json:"-"`
 }

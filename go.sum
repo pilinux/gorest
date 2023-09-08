@@ -109,6 +109,8 @@ github.com/pelletier/go-toml/v2 v2.0.9 h1:uH2qQXheeefCCkuBBSLi7jCiSmj3VRh2+Goq2N
 github.com/pelletier/go-toml/v2 v2.0.9/go.mod h1:tJU2Z3ZkXwnxa4DPO899bsyIoywizdUvyaeZurnPPDc=
 github.com/pilinux/argon2 v0.2.0 h1:AOehJb9ePuZBSvDfW6Pbx2eF5vtq+T6RVp7cPGMD8iQ=
 github.com/pilinux/argon2 v0.2.0/go.mod h1:1SecKCy+vtV93BAHN0XvA7cOA3EzG4mT86yRQeYyxE8=
+github.com/pilinux/crypt v0.0.0 h1:ABjJ4zLYmpU/7I8vMsdW7qz3fOLZPxL8kuuc3EcPBE4=
+github.com/pilinux/crypt v0.0.0/go.mod h1:QpmiDvNSbruXWf9EyCXcV3WWDAklwXKyUVKKgIT9VWA=
 github.com/pilinux/libgo v0.0.5 h1:vvCIeZbPhhtGHcosWYNQ0wIuM06DDtbUPl8PnXqAiGM=
 github.com/pilinux/libgo v0.0.5/go.mod h1:dRkAmsF0HiyctSiYgBMbn6nxRbyavlipm2lIzRjMFdE=
 github.com/pilinux/structs v1.1.1 h1:oab30yWZjsxSWCA8bHdCB4yUcB0qMSE8QVvgGSPEYxY=
