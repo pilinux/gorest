@@ -324,8 +324,8 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 
 // PasswordUpdate handles jobs for controller.PasswordUpdate
 func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
-	// check user validity
-	ok := service.ValidateUserID(claims.AuthID, claims.Email)
+	// check auth validity
+	ok := service.ValidateAuthID(claims.AuthID)
 	if !ok {
 		httpResponse.Message = "validation failed - access denied"
 		httpStatusCode = http.StatusUnauthorized
