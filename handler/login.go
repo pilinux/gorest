@@ -25,7 +25,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 		return
 	}
 
-	v, err := service.GetUserByEmail(payload.Email)
+	v, err := service.GetUserByEmail(payload.Email, false)
 	if err != nil {
 		httpResponse.Message = "email not found"
 		httpStatusCode = http.StatusNotFound
