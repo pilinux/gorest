@@ -69,10 +69,25 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 	db := database.GetDB()
 	auth := model.Auth{}
 
-	if err := db.Where("email = ?", data.value).First(&auth).Error; err != nil {
-		httpResponse.Message = "unknown user"
-		httpStatusCode = http.StatusUnauthorized
-		return
+	// is data.value an email or hash of an email
+	isEmail := false
+	if lib.ValidateEmail(data.value) {
+		isEmail = true
+	}
+
+	if isEmail {
+		if err := db.Where("email = ?", data.value).First(&auth).Error; err != nil {
+			httpResponse.Message = "unknown user"
+			httpStatusCode = http.StatusUnauthorized
+			return
+		}
+	}
+	if !isEmail {
+		if err := db.Where("email_hash = ?", data.value).First(&auth).Error; err != nil {
+			httpResponse.Message = "unknown user"
+			httpStatusCode = http.StatusUnauthorized
+			return
+		}
 	}
 
 	if auth.VerifyEmail == model.EmailVerified {
