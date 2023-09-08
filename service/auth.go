@@ -5,6 +5,7 @@ package service
 import (
 	"encoding/hex"
 
+	"github.com/pilinux/crypt"
 	"golang.org/x/crypto/blake2b"
 
 	"github.com/pilinux/gorest/config"
@@ -12,8 +13,8 @@ import (
 	"github.com/pilinux/gorest/database/model"
 )
 
-// GetUserByEmail ...
-func GetUserByEmail(email string) (*model.Auth, error) {
+// GetUserByEmail fetches auth info by email or hash of the email
+func GetUserByEmail(email string, decryptEmail bool) (*model.Auth, error) {
 	db := database.GetDB()
 	var err error
 
@@ -37,6 +38,26 @@ func GetUserByEmail(email string) (*model.Auth, error) {
 
 		// email must be unique
 		if err = db.Where("email_hash = ?", emailHash).First(&auth).Error; err == nil {
+			if decryptEmail {
+				nonce, err := hex.DecodeString(auth.EmailNonce)
+				if err != nil {
+					return nil, err
+				}
+				cipherEmail, err := hex.DecodeString(auth.EmailCipher)
+				if err != nil {
+					return nil, err
+				}
+
+				auth.Email, err = crypt.DecryptChacha20poly1305(
+					config.GetConfig().Security.CipherKey,
+					nonce,
+					cipherEmail,
+				)
+				if err != nil {
+					return nil, err
+				}
+			}
+
 			return &auth, nil
 		}
 	}
