@@ -5,7 +5,9 @@ package config
 
 import (
 	"crypto"
+	"crypto/sha256"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -15,6 +17,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/joho/godotenv"
+	"golang.org/x/crypto/sha3"
+
 	"github.com/pilinux/gorest/lib"
 	"github.com/pilinux/gorest/lib/middleware"
 )
@@ -357,6 +361,28 @@ func security() (securityConfig SecurityConfig, err error) {
 			return
 		}
 		securityConfig.HashSec = strings.TrimSpace(os.Getenv("HASH_SECRET"))
+	}
+
+	// config for ChaCha20-Poly1305 encryption and blake2b hashing
+	activateCipher := strings.TrimSpace(os.Getenv("ACTIVATE_CIPHER"))
+	if activateCipher == Activated {
+		securityConfig.MustCipher = true
+
+		cipherKey := strings.TrimSpace(os.Getenv("CIPHER_KEY"))
+		if cipherKey == "" {
+			err = fmt.Errorf("CIPHER_KEY is missing")
+			return
+		}
+		cipherKeyHash2 := sha256.Sum256([]byte(cipherKey)) // sha2-256
+		cipherKeyHash3 := sha3.Sum256(cipherKeyHash2[:])   // sha3-256
+		securityConfig.CipherKey = cipherKeyHash3[:]
+
+		blake2bSec := strings.TrimSpace(os.Getenv("BLAKE2B_SECRET"))
+		if blake2bSec == "" {
+			securityConfig.Blake2bSec = nil
+		} else {
+			securityConfig.Blake2bSec = []byte(blake2bSec)
+		}
 	}
 
 	// Email verification and password recovery

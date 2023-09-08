@@ -30,6 +30,11 @@ func IsHashPass() bool {
 	return GetConfig().Security.MustHash == Activated
 }
 
+// IsCipher returns true when encryption at rest is enabled in .env
+func IsCipher() bool {
+	return GetConfig().Security.MustCipher
+}
+
 // Is2FA returns true when two-factor authentication is enabled in .env
 func Is2FA() bool {
 	return GetConfig().Security.Must2FA == Activated

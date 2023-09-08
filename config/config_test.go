@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"crypto"
+	"crypto/sha256"
 	"io"
 	"net/http"
 	"os"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/pilinux/gorest/config"
 	"github.com/pilinux/gorest/lib/middleware"
+	"golang.org/x/crypto/sha3"
 )
 
 func TestEnv(t *testing.T) {
@@ -197,6 +199,16 @@ func TestGetConfig(t *testing.T) {
 	expected.Security.HashPass.KeyLength = 32
 	expected.Security.HashSec = "s€cr$t"
 
+	expected.Security.MustCipher = true
+	if !config.IsCipher() {
+		t.Errorf("expected IsCipher() to return true, but got false")
+	}
+	exCipherKey := "cipher_key_secret"
+	exCipherKeyHash2 := sha256.Sum256([]byte(exCipherKey)) // sha2-256
+	exCipherKeyHash3 := sha3.Sum256(exCipherKeyHash2[:])   // sha3-256
+	expected.Security.CipherKey = exCipherKeyHash3[:]
+	expected.Security.Blake2bSec = []byte("blake2b_secret")
+
 	expected.Security.VerifyEmail = true
 	if !config.IsEmailVerificationService() {
 		t.Errorf("expected IsEmailVerificationService() to return true, but got false")
@@ -346,6 +358,9 @@ func TestErrorGetConfig(t *testing.T) {
 		},
 		{
 			Key: "HASHPASSKEYLENGTH",
+		},
+		{
+			Key: "CIPHER_KEY",
 		},
 		{
 			Key: "TWO_FA_DIGITS",
