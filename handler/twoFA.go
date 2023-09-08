@@ -3,6 +3,7 @@ package handler
 import (
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"net/http"
 	"os"
 	"strings"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pilinux/argon2"
+	"github.com/pilinux/crypt"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/pilinux/gorest/config"
@@ -22,8 +24,8 @@ import (
 
 // Setup2FA handles jobs for controller.Setup2FA
 func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
-	// check user validity
-	ok := service.ValidateUserID(claims.AuthID, claims.Email)
+	// check auth validity
+	ok := service.ValidateAuthID(claims.AuthID)
 	if !ok {
 		httpResponse.Message = "access denied"
 		httpStatusCode = http.StatusUnauthorized
@@ -52,15 +54,17 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 		}
 	}
 
-	// start OTP setup procedure
-	//
-	// step 1: verify user pass
-	v, err := service.GetUserByEmail(claims.Email)
-	if err != nil {
+	// retrieve user email
+	v := model.Auth{}
+	if err := db.Where("auth_id = ?", claims.AuthID).First(&v).Error; err != nil {
 		httpResponse.Message = "user not found"
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
+
+	// start OTP setup procedure
+	//
+	// step 1: verify user pass
 	verifyPass, err := argon2.ComparePasswordAndHash(authPayload.Password, configSecurity.HashSec, v.Password)
 	if err != nil {
 		log.WithError(err).Error("error code: 1031")
@@ -73,10 +77,39 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
+	// get user email
+	if !lib.ValidateEmail(v.Email) {
+		nonce, err := hex.DecodeString(v.EmailNonce)
+		if err != nil {
+			log.WithError(err).Error("error code: 1031.1")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
+		}
+		cipherEmail, err := hex.DecodeString(v.EmailCipher)
+		if err != nil {
+			log.WithError(err).Error("error code: 1031.2")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
+		}
+
+		v.Email, err = crypt.DecryptChacha20poly1305(
+			config.GetConfig().Security.CipherKey,
+			nonce,
+			cipherEmail,
+		)
+		if err != nil {
+			log.WithError(err).Error("error code: 1031.3")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
+		}
+	}
 
 	// step 2: create new TOTP object
 	otpByte, err := lib.NewTOTP(
-		claims.Email,
+		v.Email,
 		configSecurity.TwoFA.Issuer,
 		configSecurity.TwoFA.Crypto,
 		configSecurity.TwoFA.Digits,
@@ -138,8 +171,8 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 
 // Activate2FA handles jobs for controller.Activate2FA
 func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
-	// check user validity
-	ok := service.ValidateUserID(claims.AuthID, claims.Email)
+	// check auth validity
+	ok := service.ValidateAuthID(claims.AuthID)
 	if !ok {
 		httpResponse.Message = "validation failed - access denied"
 		httpStatusCode = http.StatusUnauthorized
@@ -351,8 +384,8 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 
 // Validate2FA handles jobs for controller.Validate2FA
 func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
-	// check user validity
-	ok := service.ValidateUserID(claims.AuthID, claims.Email)
+	// check auth validity
+	ok := service.ValidateAuthID(claims.AuthID)
 	if !ok {
 		httpResponse.Message = "validation failed - access denied"
 		httpStatusCode = http.StatusUnauthorized
@@ -554,12 +587,14 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 	}
 
 	// find user
-	v, err := service.GetUserByEmail(claims.Email)
-	if err != nil {
+	db := database.GetDB()
+	v := model.Auth{}
+	if err := db.Where("auth_id = ?", claims.AuthID).First(&v).Error; err != nil {
 		httpResponse.Message = "unknown user"
 		httpStatusCode = http.StatusNotFound
 		return
 	}
+
 	// verify password
 	verifyPass, err := argon2.ComparePasswordAndHash(authPayload.Password, configSecurity.HashSec, v.Password)
 	if err != nil {
@@ -575,7 +610,6 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 	}
 
 	// get 2FA info from database
-	db := database.GetDB()
 	twoFA := model.TwoFA{}
 
 	err = db.Where("id_auth = ?", v.AuthID).First(&twoFA).Error
