@@ -35,6 +35,11 @@ func GetClaims(c *gin.Context) middleware.MyCustomClaims {
 	return claims
 }
 
+// ValidateAuthID - check whether authID is missing
+func ValidateAuthID(authID uint64) bool {
+	return authID != 0
+}
+
 // ValidateUserID - check whether authID or email is missing
 func ValidateUserID(authID uint64, email string) bool {
 	email = strings.TrimSpace(email)

@@ -60,7 +60,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 	// custom claims
 	claims := middleware.MyCustomClaims{}
 	claims.AuthID = v.AuthID
-	claims.Email = v.Email
+	// claims.Email
 	// claims.Role
 	// claims.Scope
 	// claims.TwoFA
@@ -120,7 +120,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 func Refresh(claims middleware.MyCustomClaims) (httpResponse model.HTTPResponse, httpStatusCode int) {
 
 	// check validity
-	ok := service.ValidateUserID(claims.AuthID, claims.Email)
+	ok := service.ValidateAuthID(claims.AuthID)
 	if !ok {
 		httpResponse.Message = "access denied"
 		httpStatusCode = http.StatusUnauthorized
