@@ -123,6 +123,21 @@ func SendEmail(email string, emailType int) bool {
 	}
 	data.value = email
 
+	// when encryption at rest is used
+	if config.IsCipher() {
+		var err error
+
+		// hash of the email in hexadecimal string format
+		data.value, err = CalcEmailHash(
+			email,
+			config.GetConfig().Security.Blake2bSec,
+		)
+		if err != nil {
+			log.WithError(err).Error("error code: 406.1")
+			return false
+		}
+	}
+
 	// save in redis with expiry time
 	client := *database.GetRedis()
 	redisConnTTL := appConfig.Database.REDIS.Conn.ConnTTL
@@ -134,9 +149,11 @@ func SendEmail(email string, emailType int) bool {
 	r1 := ""
 	if err := client.Do(ctx, radix.FlatCmd(&r1, "SET", data.key, data.value)); err != nil {
 		log.WithError(err).Error("error code: 401")
+		return false
 	}
 	if r1 != "OK" {
 		log.Error("error code: 402")
+		return false
 	}
 
 	// Set expiry time
@@ -178,9 +195,10 @@ func SendEmail(email string, emailType int) bool {
 		res, err := Postmark(params)
 		if err != nil {
 			log.WithError(err).Error("error code: 405")
+			return false
 		}
 		if res.Message != "OK" {
-			log.Error(res)
+			return false
 		}
 	}
 

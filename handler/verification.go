@@ -108,7 +108,7 @@ func CreateVerificationEmail(payload model.AuthPayload) (httpResponse model.HTTP
 		return
 	}
 
-	v, err := service.GetUserByEmail(payload.Email)
+	v, err := service.GetUserByEmail(payload.Email, true)
 	if err != nil {
 		httpResponse.Message = "user not found"
 		httpStatusCode = http.StatusNotFound
