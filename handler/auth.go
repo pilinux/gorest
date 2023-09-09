@@ -58,8 +58,8 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 		var err error
 
 		// hash of the email in hexadecimal string format
-		authFinal.EmailHash, err = service.CalcHash(
-			auth.Email,
+		emailHash, err := service.CalcHash(
+			[]byte(auth.Email),
 			config.GetConfig().Security.Blake2bSec,
 		)
 		if err != nil {
@@ -68,6 +68,7 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 			httpStatusCode = http.StatusInternalServerError
 			return
 		}
+		authFinal.EmailHash = hex.EncodeToString(emailHash)
 
 		// email must be unique
 		if err = db.Where("email_hash = ?", authFinal.EmailHash).First(&auth).Error; err == nil {

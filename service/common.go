@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/hex"
 	"strconv"
 	"strings"
 	"time"
@@ -128,14 +129,15 @@ func SendEmail(email string, emailType int) bool {
 		var err error
 
 		// hash of the email in hexadecimal string format
-		data.value, err = CalcHash(
-			email,
+		value, err := CalcHash(
+			[]byte(email),
 			config.GetConfig().Security.Blake2bSec,
 		)
 		if err != nil {
 			log.WithError(err).Error("error code: 406.1")
 			return false
 		}
+		data.value = hex.EncodeToString(value)
 	}
 
 	// save in redis with expiry time
