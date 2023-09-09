@@ -128,7 +128,7 @@ func SendEmail(email string, emailType int) bool {
 		var err error
 
 		// hash of the email in hexadecimal string format
-		data.value, err = CalcEmailHash(
+		data.value, err = CalcHash(
 			email,
 			config.GetConfig().Security.Blake2bSec,
 		)

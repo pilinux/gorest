@@ -28,7 +28,7 @@ func GetUserByEmail(email string, decryptEmail bool) (*model.Auth, error) {
 	// encryption at rest
 	if config.IsCipher() {
 		// hash of the email in hexadecimal string format
-		emailHash, err := CalcEmailHash(
+		emailHash, err := CalcHash(
 			email,
 			config.GetConfig().Security.Blake2bSec,
 		)
@@ -65,14 +65,14 @@ func GetUserByEmail(email string, decryptEmail bool) (*model.Auth, error) {
 	return nil, err
 }
 
-// CalcEmailHash generates a fixed-sized BLAKE2b-256 hash of the email
-func CalcEmailHash(email string, keyOptional []byte) (emailHash string, err error) {
+// CalcHash generates a fixed-sized BLAKE2b-256 hash of the given text
+func CalcHash(plaintext string, keyOptional []byte) (hashedText string, err error) {
 	blake2b256Hash, err := blake2b.New256(keyOptional)
 	if err != nil {
 		return
 	}
 
-	_, err = blake2b256Hash.Write([]byte(email))
+	_, err = blake2b256Hash.Write([]byte(plaintext))
 	if err != nil {
 		return
 	}
@@ -80,7 +80,7 @@ func CalcEmailHash(email string, keyOptional []byte) (emailHash string, err erro
 	blake2b256Sum := blake2b256Hash.Sum(nil)
 
 	// hash of the email in hexadecimal string format
-	emailHash = hex.EncodeToString(blake2b256Sum)
+	hashedText = hex.EncodeToString(blake2b256Sum)
 
 	return
 }

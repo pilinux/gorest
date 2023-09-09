@@ -46,7 +46,7 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 		var err error
 
 		// hash of the email in hexadecimal string format
-		authFinal.EmailHash, err = service.CalcEmailHash(
+		authFinal.EmailHash, err = service.CalcHash(
 			auth.Email,
 			config.GetConfig().Security.Blake2bSec,
 		)
