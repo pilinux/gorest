@@ -1,8 +1,10 @@
 package config_test
 
 import (
+	"bytes"
 	"crypto"
 	"crypto/sha256"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -44,9 +46,15 @@ func TestEnv(t *testing.T) {
 }
 
 func TestConfig(t *testing.T) {
+	// this should return error
+	err := config.Config()
+	if err == nil {
+		t.Errorf("expected error, got nil")
+	}
+
 	// download a file from a remote location and save it
 	fileUrl := strings.TrimSpace(os.Getenv("TEST_ENV_URL"))
-	err := downloadFile(".env", fileUrl)
+	err = downloadFile(".env", fileUrl)
 	if err != nil {
 		t.Error(err)
 	}
@@ -428,7 +436,7 @@ func TestErrorGetConfig(t *testing.T) {
 			// set new value
 			err = os.Setenv(tc.Key, tc.Value)
 			if err != nil {
-				t.Errorf("got error %v when setting %v", err, tc.Key)
+				t.Errorf("got error '%v' when setting %v", err, tc.Key)
 			}
 
 			err = config.Config()
@@ -439,7 +447,7 @@ func TestErrorGetConfig(t *testing.T) {
 			// set old value
 			err = os.Setenv(tc.Key, currentValue)
 			if err != nil {
-				t.Errorf("got error %v when setting %v", err, tc.Key)
+				t.Errorf("got error '%v' when setting %v", err, tc.Key)
 			}
 		})
 	}
@@ -449,6 +457,458 @@ func TestErrorGetConfig(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+}
+
+func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
+	testCases := []struct {
+		Key       string
+		TestNo    int
+		FileName  string
+		SetValue  string
+		ExpErr    error
+		ExpValue1 bool
+		ExpValue2 http.SameSite
+		ExpValue3 []byte
+		ExpValue4 crypto.Hash
+		ExpValue5 []middleware.CORSPolicy
+		ExpValue6 string
+	}{
+		{
+			Key:       "EMAIL_TRACK_OPENS",
+			TestNo:    1,
+			SetValue:  "yes",
+			ExpValue1: true,
+		},
+		{
+			Key:       "AUTH_COOKIE_SameSite",
+			TestNo:    2,
+			SetValue:  "lax",
+			ExpValue2: http.SameSiteLaxMode,
+		},
+		{
+			Key:       "AUTH_COOKIE_SameSite",
+			TestNo:    3,
+			SetValue:  "none",
+			ExpValue2: http.SameSiteNoneMode,
+		},
+		{
+			Key:       "BLAKE2B_SECRET",
+			TestNo:    4,
+			SetValue:  "",
+			ExpValue3: nil,
+		},
+		{
+			Key:       "TWO_FA_CRYPTO",
+			TestNo:    5,
+			SetValue:  "256",
+			ExpValue4: crypto.SHA256,
+		},
+		{
+			Key:       "TWO_FA_CRYPTO",
+			TestNo:    6,
+			SetValue:  "512",
+			ExpValue4: crypto.SHA512,
+		},
+		{
+			Key:      "CORS_HSTS",
+			TestNo:   7,
+			SetValue: "max-age=63072000; includeSubDomains; preload",
+			ExpValue5: []middleware.CORSPolicy{
+				{
+					Key:   "Access-Control-Allow-Origin",
+					Value: "*",
+				},
+				{
+					Key:   "Access-Control-Allow-Credentials",
+					Value: "true",
+				},
+				{
+					Key:   "Access-Control-Allow-Headers",
+					Value: "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Accept, Origin, Cache-Control, X-Requested-With",
+				},
+				{
+					Key:   "Access-Control-Expose-Headers",
+					Value: "Content-Length",
+				},
+				{
+					Key:   "Access-Control-Allow-Methods",
+					Value: "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+				},
+				{
+					Key:   "Access-Control-Max-Age",
+					Value: "3600",
+				},
+				{
+					Key:   "X-Content-Type-Options",
+					Value: "nosniff",
+				},
+				{
+					Key:   "X-Frame-Options",
+					Value: "DENY",
+				},
+				{
+					Key:   "Referrer-Policy",
+					Value: "strict-origin-when-cross-origin",
+				},
+				{
+					Key:   "Content-Security-Policy",
+					Value: "default-src 'none'; script-src 'self'; connect-src 'self'; img-src 'self'; style-src 'self'; base-uri 'self'; form-action 'self'",
+				},
+				{
+					Key:   "Timing-Allow-Origin",
+					Value: "*",
+				},
+				{
+					Key:   "Strict-Transport-Security",
+					Value: "max-age=63072000; includeSubDomains; preload",
+				},
+			},
+		},
+		{
+			Key:       "JWT_ALG",
+			TestNo:    8,
+			SetValue:  "",
+			ExpValue6: "HS256",
+		},
+		{
+			Key:      "JWT_ALG",
+			TestNo:   9,
+			SetValue: "any",
+		},
+		{
+			Key:      "PRIV_KEY_FILE_PATH",
+			TestNo:   10,
+			SetValue: "./wrong_path",
+		},
+		{
+			Key:      "PUB_KEY_FILE_PATH",
+			TestNo:   11,
+			SetValue: "./wrong_path",
+		},
+		{
+			// test private key for ES256
+			Key:      "PRIV_KEY_FILE_PATH",
+			TestNo:   12,
+			FileName: "private-keyES256.pem",
+			SetValue: "./private-keyES256.pem",
+		},
+		{
+			// test private key for RS256
+			Key:      "PRIV_KEY_FILE_PATH",
+			TestNo:   13,
+			FileName: "private-keyRS256.pem",
+			SetValue: "./private-keyRS256.pem",
+		},
+		{
+			// test public key for ES256
+			Key:      "PUB_KEY_FILE_PATH",
+			TestNo:   14,
+			FileName: "public-keyES256.pem",
+			SetValue: "./public-keyES256.pem",
+		},
+		{
+			// test public key for RS256
+			Key:      "PUB_KEY_FILE_PATH",
+			TestNo:   15,
+			FileName: "public-keyRS256.pem",
+			SetValue: "./public-keyRS256.pem",
+		},
+		{
+			// fail test - no private key present for ES256 or RS256
+			Key:      "PRIV_KEY_FILE_PATH",
+			TestNo:   16,
+			SetValue: "./private-keyES256.pem",
+		},
+		{
+			// fail test - no public key present for ES256 or RS256
+			Key:      "PUB_KEY_FILE_PATH",
+			TestNo:   17,
+			SetValue: "./public-keyES256.pem",
+		},
+		{
+			// fail test - wrong private key for ES256
+			Key:      "PRIV_KEY_FILE_PATH",
+			TestNo:   18,
+			FileName: "private-keyRS256.pem",
+			SetValue: "./private-keyRS256.pem",
+		},
+		{
+			// fail test - wrong private key for RS256
+			Key:      "PRIV_KEY_FILE_PATH",
+			TestNo:   19,
+			FileName: "private-keyES256.pem",
+			SetValue: "./private-keyES256.pem",
+		},
+		{
+			// fail test - wrong public key for ES256
+			Key:      "PUB_KEY_FILE_PATH",
+			TestNo:   20,
+			FileName: "public-keyRS256.pem",
+			SetValue: "./public-keyRS256.pem",
+		},
+		{
+			// fail test - wrong public key for RS256
+			Key:      "PUB_KEY_FILE_PATH",
+			TestNo:   21,
+			FileName: "public-keyES256.pem",
+			SetValue: "./public-keyES256.pem",
+		},
+	}
+
+	// download a file from a remote location and save it
+	fileUrl := strings.TrimSpace(os.Getenv("TEST_ENV_URL"))
+	err := downloadFile(".env", fileUrl)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// remote location for private-public key file
+	testKeyFilePath := strings.TrimSpace(os.Getenv("TEST_KEY_FILE_LOCATION"))
+
+	err = config.Env()
+	if err != nil {
+		t.Errorf("got error when calling config.Env(): %v", err)
+	}
+
+	for _, tc := range testCases {
+		t.Run("Setting "+tc.Key, func(t *testing.T) {
+			currentValue := os.Getenv(tc.Key)
+
+			// set new value
+			err = os.Setenv(tc.Key, tc.SetValue)
+			if err != nil {
+				t.Errorf("got error '%v' when setting %v", err, tc.Key)
+			}
+
+			if tc.TestNo == 12 || tc.TestNo == 13 || tc.TestNo == 14 || tc.TestNo == 15 ||
+				tc.TestNo == 18 || tc.TestNo == 19 || tc.TestNo == 20 || tc.TestNo == 21 {
+				// download private-public key file from a remote location and save it
+				fmt.Println("downloading...", tc.FileName)
+				err := downloadFile(tc.FileName, testKeyFilePath+"/"+tc.FileName)
+				if err != nil {
+					t.Error(err)
+				}
+			}
+
+			if tc.TestNo == 12 || tc.TestNo == 14 {
+				// test with keys for ES256
+				fmt.Println("test with keys for ES256")
+				err = os.Setenv("JWT_ALG", "ES256")
+				if err != nil {
+					t.Errorf("got error '%v' when setting JWT_ALG for test no: '%v'", err, tc.TestNo)
+				}
+			}
+
+			if tc.TestNo == 13 || tc.TestNo == 15 {
+				// test with keys for RS256
+				fmt.Println("test with keys for RS256")
+				err = os.Setenv("JWT_ALG", "RS256")
+				if err != nil {
+					t.Errorf("got error '%v' when setting JWT_ALG for test no: '%v'", err, tc.TestNo)
+				}
+			}
+
+			if tc.TestNo == 18 || tc.TestNo == 20 {
+				// test with wrong keys for ES256
+				fmt.Println("test with wrong keys for ES256")
+				err = os.Setenv("JWT_ALG", "ES256")
+				if err != nil {
+					t.Errorf("got error '%v' when setting JWT_ALG for test no: '%v'", err, tc.TestNo)
+				}
+			}
+
+			if tc.TestNo == 19 || tc.TestNo == 21 {
+				// test with wrong keys for RS256
+				fmt.Println("test with wrong keys for RS256")
+				err = os.Setenv("JWT_ALG", "RS256")
+				if err != nil {
+					t.Errorf("got error '%v' when setting JWT_ALG for test no: '%v'", err, tc.TestNo)
+				}
+			}
+
+			err = config.Config()
+
+			if tc.TestNo == 1 {
+				if err != nil {
+					t.Errorf("got error '%v' when setting %v", err, tc.Key)
+				}
+				if !config.GetConfig().EmailConf.TrackOpens {
+					t.Errorf("expected true, got false when setting %v", tc.Key)
+				}
+			}
+
+			if tc.TestNo == 2 || tc.TestNo == 3 {
+				if err != nil {
+					t.Errorf("got error '%v' when setting %v", err, tc.Key)
+				}
+				got := config.GetConfig().Security.AuthCookieSameSite
+				if got != tc.ExpValue2 {
+					t.Errorf("expected %v, got %v when setting %v", tc.ExpValue2, got, tc.Key)
+				}
+			}
+			if tc.TestNo == 4 {
+				if err != nil {
+					t.Errorf("got error '%v' when setting %v", err, tc.Key)
+				}
+				got := config.GetConfig().Security.Blake2bSec
+				if !bytes.Equal(got, tc.ExpValue3) {
+					t.Errorf("expected %v, got %v when setting %v", tc.ExpValue3, got, tc.Key)
+				}
+			}
+
+			if tc.TestNo == 5 || tc.TestNo == 6 {
+				if err != nil {
+					t.Errorf("got error '%v' when setting %v", err, tc.Key)
+				}
+				got := config.GetConfig().Security.TwoFA.Crypto
+				if got != tc.ExpValue4 {
+					t.Errorf("expected %v, got %v when setting %v", tc.ExpValue4, got, tc.Key)
+				}
+			}
+
+			if tc.TestNo == 7 {
+				if err != nil {
+					t.Errorf("got error '%v' when setting %v", err, tc.Key)
+				}
+				got := config.GetConfig().Security.CORS
+				if !compareSlice(got, tc.ExpValue5) {
+					t.Errorf("expected\n %v\n, got\n %v\n when setting %v", tc.ExpValue5, got, tc.Key)
+				}
+			}
+
+			if tc.TestNo == 8 {
+				if err != nil {
+					t.Errorf("got error '%v' when setting %v", err, tc.Key)
+				}
+				got := config.GetConfig().Security.JWT.Algorithm
+				if got != tc.ExpValue6 {
+					t.Errorf("expected %v, got %v when setting %v", tc.ExpValue6, got, tc.Key)
+				}
+			}
+
+			if tc.TestNo == 9 {
+				if err == nil {
+					t.Errorf("expected error, got nil when setting %v", tc.Key)
+				}
+			}
+
+			if tc.TestNo == 10 || tc.TestNo == 11 {
+				if err == nil {
+					t.Errorf("expected error, got nil when setting %v", tc.Key)
+				}
+			}
+
+			// test with keys for ES256
+			if tc.TestNo == 12 || tc.TestNo == 14 {
+				if err != nil {
+					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				}
+				// reset value
+				os.Setenv("JWT_ALG", "HS256")
+				os.Setenv("PRIV_KEY_FILE_PATH", "")
+				os.Setenv("PUB_KEY_FILE_PATH", "")
+				// remove the downloaded file at the end of the test
+				fmt.Println("deleting...", tc.SetValue)
+				err = os.RemoveAll(tc.SetValue)
+				if err != nil {
+					t.Error(err)
+				}
+			}
+
+			// test with keys for RS256
+			if tc.TestNo == 13 || tc.TestNo == 15 {
+				if err != nil {
+					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				}
+				// reset value
+				os.Setenv("JWT_ALG", "HS256")
+				os.Setenv("PRIV_KEY_FILE_PATH", "")
+				os.Setenv("PUB_KEY_FILE_PATH", "")
+				// remove the downloaded file at the end of the test
+				fmt.Println("deleting...", tc.SetValue)
+				err = os.RemoveAll(tc.SetValue)
+				if err != nil {
+					t.Error(err)
+				}
+			}
+
+			// fail test - without keys of ES256 or RS256
+			if tc.TestNo == 16 || tc.TestNo == 17 {
+				if err == nil {
+					t.Errorf("expected error, got nil when setting '%v' for test no: '%v'", tc.Key, tc.TestNo)
+				}
+			}
+
+			// fail test with wrong keys for ES256
+			if tc.TestNo == 18 || tc.TestNo == 20 {
+				if err == nil {
+					t.Errorf("expected error, got nil when setting '%v' for test no: '%v'", tc.Key, tc.TestNo)
+				}
+				// reset value
+				os.Setenv("JWT_ALG", "HS256")
+				os.Setenv("PRIV_KEY_FILE_PATH", "")
+				os.Setenv("PUB_KEY_FILE_PATH", "")
+				// remove the downloaded file at the end of the test
+				fmt.Println("deleting...", tc.SetValue)
+				err = os.RemoveAll(tc.SetValue)
+				if err != nil {
+					t.Error(err)
+				}
+			}
+
+			// fail test with wrong keys for RS256
+			if tc.TestNo == 19 || tc.TestNo == 21 {
+				if err == nil {
+					t.Errorf("expected error, got nil when setting '%v' for test no: '%v'", tc.Key, tc.TestNo)
+				}
+				// reset value
+				os.Setenv("JWT_ALG", "HS256")
+				os.Setenv("PRIV_KEY_FILE_PATH", "")
+				os.Setenv("PUB_KEY_FILE_PATH", "")
+				// remove the downloaded file at the end of the test
+				fmt.Println("deleting...", tc.SetValue)
+				err = os.RemoveAll(tc.SetValue)
+				if err != nil {
+					t.Error(err)
+				}
+			}
+
+			// set old value
+			err = os.Setenv(tc.Key, currentValue)
+			if err != nil {
+				t.Errorf("got error '%v' when setting %v", err, tc.Key)
+			}
+		})
+	}
+
+	// remove the downloaded file at the end of the test
+	err = os.RemoveAll(".env")
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+// compareSlice compares two slices of middleware.CORSPolicy
+// for equality, ignoring order
+func compareSlice(a, b []middleware.CORSPolicy) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	// create maps to store elements from both slices
+	aMap := make(map[middleware.CORSPolicy]struct{}, len(a))
+	bMap := make(map[middleware.CORSPolicy]struct{}, len(b))
+
+	// populate maps with elements from slices
+	for _, policy := range a {
+		aMap[policy] = struct{}{}
+	}
+	for _, policy := range b {
+		bMap[policy] = struct{}{}
+	}
+
+	// compare maps to check for equality
+	return reflect.DeepEqual(aMap, bMap)
 }
 
 // downloadFile will download from a url and save it to a local file.
