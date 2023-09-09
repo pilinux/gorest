@@ -68,18 +68,14 @@ func Config() (err error) {
 	if err != nil {
 		return
 	}
-	configuration.Logger, err = logger()
-	if err != nil {
-		return
-	}
+	configuration.Logger = logger()
+
 	configuration.Security, err = security()
 	if err != nil {
 		return
 	}
-	configuration.Server, err = server()
-	if err != nil {
-		return
-	}
+	configuration.Server = server()
+
 	configuration.ViewConfig, err = view()
 	if err != nil {
 		return
@@ -276,7 +272,7 @@ func email() (emailConfig EmailConfig, err error) {
 }
 
 // logger - config for sentry.io
-func logger() (loggerConfig LoggerConfig, err error) {
+func logger() (loggerConfig LoggerConfig) {
 	loggerConfig.Activate = strings.TrimSpace(os.Getenv("ACTIVATE_SENTRY"))
 	if loggerConfig.Activate == Activated {
 		loggerConfig.SentryDsn = strings.TrimSpace(os.Getenv("SentryDSN"))
@@ -577,7 +573,7 @@ func security() (securityConfig SecurityConfig, err error) {
 }
 
 // server - port and env
-func server() (serverConfig ServerConfig, err error) {
+func server() (serverConfig ServerConfig) {
 	serverConfig.ServerHost = strings.TrimSpace(os.Getenv("APP_HOST"))
 	serverConfig.ServerPort = strings.TrimSpace(os.Getenv("APP_PORT"))
 	serverConfig.ServerEnv = strings.TrimSpace(os.Getenv("APP_ENV"))
