@@ -359,7 +359,7 @@ func security() (securityConfig SecurityConfig, err error) {
 		securityConfig.HashSec = strings.TrimSpace(os.Getenv("HASH_SECRET"))
 	}
 
-	// config for ChaCha20-Poly1305 encryption and blake2b hashing
+	// config for ChaCha20-Poly1305 encryption
 	activateCipher := strings.TrimSpace(os.Getenv("ACTIVATE_CIPHER"))
 	if activateCipher == Activated {
 		securityConfig.MustCipher = true
@@ -373,12 +373,14 @@ func security() (securityConfig SecurityConfig, err error) {
 		cipherKeyHash3 := sha3.Sum256(cipherKeyHash2[:])   // sha3-256
 		securityConfig.CipherKey = cipherKeyHash3[:]
 
-		blake2bSec := strings.TrimSpace(os.Getenv("BLAKE2B_SECRET"))
-		if blake2bSec == "" {
-			securityConfig.Blake2bSec = nil
-		} else {
-			securityConfig.Blake2bSec = []byte(blake2bSec)
-		}
+	}
+
+	// config for blake2b hashing
+	blake2bSec := strings.TrimSpace(os.Getenv("BLAKE2B_SECRET"))
+	if blake2bSec == "" {
+		securityConfig.Blake2bSec = nil
+	} else {
+		securityConfig.Blake2bSec = []byte(blake2bSec)
 	}
 
 	// Email verification and password recovery
