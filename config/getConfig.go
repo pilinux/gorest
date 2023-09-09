@@ -40,6 +40,11 @@ func Is2FA() bool {
 	return GetConfig().Security.Must2FA == Activated
 }
 
+// Is2FADoubleHash returns true when double hashing is enabled in .env
+func Is2FADoubleHash() bool {
+	return GetConfig().Security.TwoFA.DoubleHash
+}
+
 // IsWAF returns true when app firewall is enabled in .env
 func IsWAF() bool {
 	return GetConfig().Security.MustFW == Activated

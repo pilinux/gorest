@@ -315,6 +315,9 @@ func TestGetConfig(t *testing.T) {
 	expected.Security.TwoFA.Digits = 6
 	expected.Security.TwoFA.PathQR = "tmp"
 	expected.Security.TwoFA.DoubleHash = true
+	if !config.Is2FADoubleHash() {
+		t.Errorf("expected Is2FADoubleHash() to return true, but got false")
+	}
 
 	expected.Security.TwoFA.Status.Verified = "verified"
 	expected.Security.TwoFA.Status.On = "on"
