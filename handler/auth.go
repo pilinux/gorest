@@ -40,6 +40,18 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 		return
 	}
 
+	// downgrade must be avoided to prevent creating duplicate accounts
+	// valid: non-encryption mode -> upgrade to encryption mode
+	// invalid: encryption mode -> downgrade to non-encryption mode
+	if !config.IsCipher() {
+		if err := db.Where("email_hash IS NOT NULL AND email_hash != ?", "").First(&auth).Error; err == nil {
+			log.Error("check env: ACTIVATE_CIPHER")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
+		}
+	}
+
 	// generate a fixed-sized BLAKE2b-256 hash of the email, used for auth purpose
 	// when encryption at rest is used
 	if config.IsCipher() {
