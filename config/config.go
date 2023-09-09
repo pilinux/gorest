@@ -436,6 +436,13 @@ func security() (securityConfig SecurityConfig, err error) {
 				}
 			}
 		}
+
+		// false: sha2_256()
+		// true: blake2b(sha2_256())
+		doubleHashTwoFA := strings.TrimSpace(os.Getenv("TWO_FA_DOUBLE_HASH"))
+		if doubleHashTwoFA == Activated {
+			securityConfig.TwoFA.DoubleHash = true
+		}
 	}
 
 	// App firewall

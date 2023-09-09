@@ -62,6 +62,8 @@ type SecurityConfig struct {
 
 		Status Status2FA
 		PathQR string
+
+		DoubleHash bool
 	}
 }
 

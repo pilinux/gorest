@@ -314,6 +314,7 @@ func TestGetConfig(t *testing.T) {
 	expected.Security.TwoFA.Crypto = crypto.SHA1
 	expected.Security.TwoFA.Digits = 6
 	expected.Security.TwoFA.PathQR = "tmp"
+	expected.Security.TwoFA.DoubleHash = true
 
 	expected.Security.TwoFA.Status.Verified = "verified"
 	expected.Security.TwoFA.Status.On = "on"
