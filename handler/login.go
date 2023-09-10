@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"crypto/sha256"
 	"net/http"
 	"strings"
 
@@ -79,12 +78,18 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 
 			// 2FA ON
 			if twoFA.Status == configSecurity.TwoFA.Status.On {
-				// hash user's pass in sha256
-				hashPass := sha256.Sum256([]byte(payload.Password))
+				// hash user's pass
+				hashPass, err := service.GetHash([]byte(payload.Password))
+				if err != nil {
+					log.WithError(err).Error("error code: 1011.1")
+					httpResponse.Message = "internal server error"
+					httpStatusCode = http.StatusInternalServerError
+					return
+				}
 
 				// save the hashed pass in memory for OTP validation step
 				data2FA := model.Secret2FA{}
-				data2FA.PassSHA = hashPass[:]
+				data2FA.PassSHA = hashPass
 				model.InMemorySecret2FA[claims.AuthID] = data2FA
 			}
 		}

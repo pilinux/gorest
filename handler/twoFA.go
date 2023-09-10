@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"net/http"
@@ -142,8 +141,14 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 		return
 	}
 
-	// step 5: hash user's pass in sha256
-	hashPass := sha256.Sum256([]byte(authPayload.Password))
+	// step 5: hash user's pass
+	hashPass, err := service.GetHash([]byte(authPayload.Password))
+	if err != nil {
+		log.WithError(err).Error("error code: 1034.1")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 
 	// step 6: check if client secret is available in memory
 	data2FA, ok := model.InMemorySecret2FA[claims.AuthID]
@@ -158,7 +163,7 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	}
 
 	// step 7: save the secrets in memory for validation
-	data2FA.PassSHA = hashPass[:]
+	data2FA.PassSHA = hashPass
 	data2FA.Secret = otpByte
 	data2FA.Image = img
 	model.InMemorySecret2FA[claims.AuthID] = data2FA
@@ -274,10 +279,16 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	keyRecovery := uuid.NewString()
 	keyRecovery = strings.ReplaceAll(keyRecovery, "-", "")
 	keyRecovery = keyRecovery[len(keyRecovery)-configSecurity.TwoFA.Digits:]
-	keyRecoveryHash := sha256.Sum256([]byte(keyRecovery))
+	keyRecoveryHash, err := service.GetHash([]byte(keyRecovery))
+	if err != nil {
+		log.WithError(err).Error("error code: 1043.1")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 
 	// step 7: encrypt secret using hash of recovery key
-	keyBackupCipherByte, err := lib.Encrypt(otpByte, keyRecoveryHash[:])
+	keyBackupCipherByte, err := lib.Encrypt(otpByte, keyRecoveryHash)
 	if err != nil {
 		log.WithError(err).Error("error code: 1044")
 		httpResponse.Message = "internal server error"
@@ -288,10 +299,16 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	// step 8: generate new UUID code
 	uuidPlaintext := uuid.NewString()
 	uuidPlaintextByte := []byte(uuidPlaintext)
-	uuidSHA256 := sha256.Sum256(uuidPlaintextByte)
-	uuidSHA := base64.StdEncoding.EncodeToString(uuidSHA256[:])
+	uuidSHA, err := service.GetHash(uuidPlaintextByte)
+	if err != nil {
+		log.WithError(err).Error("error code: 1044.1")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+	uuidSHAStr := base64.StdEncoding.EncodeToString(uuidSHA)
 
-	uuidEncByte, err := lib.Encrypt(uuidPlaintextByte, keyRecoveryHash[:])
+	uuidEncByte, err := lib.Encrypt(uuidPlaintextByte, keyRecoveryHash)
 	if err != nil {
 		log.WithError(err).Error("error code: 1045")
 		httpResponse.Message = "internal server error"
@@ -305,7 +322,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	twoFA.UUIDEnc = base64.StdEncoding.EncodeToString(uuidEncByte)
 
 	// step 10: save in DB
-	twoFA.UUIDSHA = uuidSHA
+	twoFA.UUIDSHA = uuidSHAStr
 	twoFA.Status = configSecurity.TwoFA.Status.On
 	twoFA.IDAuth = claims.AuthID
 
