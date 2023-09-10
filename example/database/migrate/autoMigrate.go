@@ -14,6 +14,7 @@ import (
 // Load all the models
 type auth gmodel.Auth
 type twoFA gmodel.TwoFA
+type twoFABackup gmodel.TwoFABackup
 type user model.User
 type post model.Post
 type hobby model.Hobby
@@ -28,6 +29,7 @@ func DropAllTables() error {
 		&hobby{},
 		&post{},
 		&user{},
+		&twoFABackup{},
 		&twoFA{},
 		&auth{},
 	); err != nil {
@@ -51,6 +53,7 @@ func StartMigration(configure gconfig.Configuration) error {
 		if err := db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(
 			&auth{},
 			&twoFA{},
+			&twoFABackup{},
 			&user{},
 			&post{},
 			&hobby{},
@@ -65,6 +68,7 @@ func StartMigration(configure gconfig.Configuration) error {
 	if err := db.AutoMigrate(
 		&auth{},
 		&twoFA{},
+		&twoFABackup{},
 		&user{},
 		&post{},
 		&hobby{},

@@ -12,12 +12,14 @@ import (
 // Load all the models
 type auth model.Auth
 type twoFA model.TwoFA
+type twoFABackup model.TwoFABackup
 
 // DropAllTables - careful! It will drop all the tables!
 func DropAllTables() error {
 	db := database.GetDB()
 
 	if err := db.Migrator().DropTable(
+		&twoFABackup{},
 		&twoFA{},
 		&auth{},
 	); err != nil {
@@ -41,6 +43,7 @@ func StartMigration(configure config.Configuration) error {
 		if err := db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(
 			&auth{},
 			&twoFA{},
+			&twoFABackup{},
 		); err != nil {
 			return err
 		}
@@ -52,6 +55,7 @@ func StartMigration(configure config.Configuration) error {
 	if err := db.AutoMigrate(
 		&auth{},
 		&twoFA{},
+		&twoFABackup{},
 	); err != nil {
 		return err
 	}
