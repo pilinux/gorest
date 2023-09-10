@@ -694,3 +694,130 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 	httpStatusCode = http.StatusOK
 	return
 }
+
+// CreateBackup2FA receives task from controller.CreateBackup2FA.
+// If 2FA is already enabled for the user, it generates secret
+// backup codes for the user.
+//
+// Required: valid JWT with parameter "twoFA": "verified"
+//
+// Accepted JSON payload:
+//
+// `{"password":"..."}`
+func CreateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
+	// check auth validity
+	ok := service.ValidateAuthID(claims.AuthID)
+	if !ok {
+		httpResponse.Message = "access denied"
+		httpStatusCode = http.StatusUnauthorized
+		return
+	}
+
+	// is 2FA enabled
+	configSecurity := config.GetConfig().Security
+	if claims.TwoFA != configSecurity.TwoFA.Status.Verified {
+		httpResponse.Message = "access denied"
+		httpStatusCode = http.StatusUnauthorized
+		return
+	}
+
+	// retrieve user auth
+	db := database.GetDB()
+	v := model.Auth{}
+	if err := db.Where("auth_id = ?", claims.AuthID).First(&v).Error; err != nil {
+		httpResponse.Message = "user not found"
+		httpStatusCode = http.StatusUnauthorized
+		return
+	}
+
+	// step 1: verify user pass
+	verifyPass, err := argon2.ComparePasswordAndHash(authPayload.Password, configSecurity.HashSec, v.Password)
+	if err != nil {
+		log.WithError(err).Error("error code: 1066.1")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+	if !verifyPass {
+		httpResponse.Message = "wrong credentials"
+		httpStatusCode = http.StatusUnauthorized
+		return
+	}
+
+	// step 2: generate 10 backup codes
+	var codes [10]string
+	for i := 0; i < len(codes); i++ {
+		for {
+			code, err := service.GenerateCode(16)
+			if err != nil {
+				continue // retry generating a valid code
+			}
+			codes[i] = code
+			break // exit the inner loop when a code is generated successfully
+		}
+	}
+
+	// step 3: generate hashes of the codes
+	var codeHashes [len(codes)]string
+	for i := 0; i < len(codes); i++ {
+		codeHash, err := service.CalcHash(
+			[]byte(codes[i]),
+			configSecurity.Blake2bSec,
+		)
+		if err != nil {
+			log.WithError(err).Error("error code: 1066.2")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
+		}
+		codeHashes[i] = hex.EncodeToString(codeHash)
+	}
+
+	// step 4: delete all existing codes of this user
+	twoFABackup := []model.TwoFABackup{}
+
+	if err := db.Where("id_auth = ?", claims.AuthID).Find(&twoFABackup).Error; err != nil {
+		log.WithError(err).Error("error code: 1066.3")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+	if len(twoFABackup) > 0 {
+		tx := db.Begin()
+		if err := tx.Delete(&twoFABackup).Error; err != nil {
+			tx.Rollback()
+			log.WithError(err).Error("error code: 1066.4")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
+		}
+		tx.Commit()
+	}
+
+	// step 5: save the hashes in database
+	twoFABackup = []model.TwoFABackup{} // reset
+	timeNow := time.Now().Local()
+
+	for i := 0; i < len(codeHashes); i++ {
+		backup := model.TwoFABackup{}
+		backup.CreatedAt = timeNow
+		backup.CodeHash = codeHashes[i]
+		backup.IDAuth = claims.AuthID
+		twoFABackup = append(twoFABackup, backup)
+	}
+
+	tx := db.Begin()
+	if err := tx.Create(&twoFABackup).Error; err != nil {
+		tx.Rollback()
+		log.WithError(err).Error("error code: 1066.5")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+	tx.Commit()
+
+	// return the plaintext codes to the user
+	httpResponse.Message = codes
+	httpStatusCode = http.StatusOK
+	return
+}

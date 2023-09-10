@@ -161,6 +161,8 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 						configure.Security.TwoFA.Status.Verified,
 					))
 				}
+				// get 2FA backup codes
+				r2FA.POST("create-backup-codes", gcontroller.CreateBackup2FA)
 				// disable 2FA
 				r2FA.POST("deactivate", gcontroller.Deactivate2FA)
 			}

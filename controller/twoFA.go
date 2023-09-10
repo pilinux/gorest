@@ -300,3 +300,38 @@ func Deactivate2FA(c *gin.Context) {
 
 	renderer.Render(c, resp.Message, statusCode)
 }
+
+// CreateBackup2FA - get new set of 2FA backup codes
+func CreateBackup2FA(c *gin.Context) {
+	// verify that RDBMS is enabled in .env
+	if !config.IsRDBMS() {
+		renderer.Render(c, gin.H{"message": "relational database not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that JWT service is enabled in .env
+	if !config.IsJWT() {
+		renderer.Render(c, gin.H{"message": "JWT service not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that two-factor authentication service is enabled in .env
+	if !config.Is2FA() {
+		renderer.Render(c, gin.H{"message": "two-factor authentication service not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// get claims
+	claims := service.GetClaims(c)
+
+	// bind JSON
+	password := model.AuthPayload{}
+	if err := c.ShouldBindJSON(&password); err != nil {
+		renderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
+		return
+	}
+
+	resp, statusCode := handler.CreateBackup2FA(claims, password)
+
+	renderer.Render(c, resp, statusCode)
+}
