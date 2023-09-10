@@ -37,7 +37,7 @@ func GetUserByEmail(email string, decryptEmail bool) (*model.Auth, error) {
 		}
 
 		// email must be unique
-		if err = db.Where("email_hash = ?", emailHash).First(&auth).Error; err == nil {
+		if err = db.Where("email_hash = ?", hex.EncodeToString(emailHash)).First(&auth).Error; err == nil {
 			if decryptEmail {
 				nonce, err := hex.DecodeString(auth.EmailNonce)
 				if err != nil {
