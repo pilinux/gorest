@@ -182,7 +182,7 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 				// step 1: hash recovery key
 				hashRecoveryKey, err := service.GetHash([]byte(authPayload.RecoveryKey))
 				if err != nil {
-					log.WithError(err).Error("error code: 1091.1")
+					log.WithError(err).Error("error code: 1084.1")
 					httpResponse.Message = "internal server error"
 					httpStatusCode = http.StatusInternalServerError
 					return
@@ -191,7 +191,7 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 				// step 2: decode base64 encoded AES-256 encrypted uuid secret
 				uuidCipherByte, err := base64.StdEncoding.DecodeString(twoFA.UUIDEnc)
 				if err != nil {
-					log.WithError(err).Error("error code: 1091.2")
+					log.WithError(err).Error("error code: 1084.2")
 					httpResponse.Message = "internal server error"
 					httpStatusCode = http.StatusInternalServerError
 					return
@@ -208,7 +208,7 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 				// hash of decrypted uuid secret
 				uuidPlaintextSHA, err := service.GetHash(uuidPlaintextByte)
 				if err != nil {
-					log.WithError(err).Error("error code: 1091.3")
+					log.WithError(err).Error("error code: 1084.3")
 					httpResponse.Message = "internal server error"
 					httpStatusCode = http.StatusInternalServerError
 					return
@@ -226,7 +226,7 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 				// step 4: decode base64 encoded backup key
 				keyBackupCipherByte, err := base64.StdEncoding.DecodeString(twoFA.KeyBackup)
 				if err != nil {
-					log.WithError(err).Error("error code: 1092")
+					log.WithError(err).Error("error code: 1085")
 					httpResponse.Message = "internal server error"
 					httpStatusCode = http.StatusInternalServerError
 					return
@@ -235,7 +235,7 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 				// step 5: decrypt (AES-256) backup key with hash of given recovery key
 				keyBackupPlaintextByte, err := lib.Decrypt(keyBackupCipherByte, hashRecoveryKey)
 				if err != nil {
-					log.WithError(err).Error("error code: 1093")
+					log.WithError(err).Error("error code: 1086")
 					httpResponse.Message = "internal server error"
 					httpStatusCode = http.StatusInternalServerError
 					return
@@ -247,7 +247,7 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 				keyRecovery = keyRecovery[len(keyRecovery)-configSecurity.TwoFA.Digits:]
 				keyRecoveryHash, err := service.GetHash([]byte(keyRecovery))
 				if err != nil {
-					log.WithError(err).Error("error code: 1094.1")
+					log.WithError(err).Error("error code: 1087.1")
 					httpResponse.Message = "internal server error"
 					httpStatusCode = http.StatusInternalServerError
 					return
@@ -256,7 +256,7 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 				// step 7: encrypt secret (or backup key) with hash of new recovery key
 				keyBackupCipherByte, err = lib.Encrypt(keyBackupPlaintextByte, keyRecoveryHash)
 				if err != nil {
-					log.WithError(err).Error("error code: 1094.2")
+					log.WithError(err).Error("error code: 1087.2")
 					httpResponse.Message = "internal server error"
 					httpStatusCode = http.StatusInternalServerError
 					return
@@ -265,14 +265,14 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 				// step 8: encrypt (AES-256) secret using hash of user's new pass
 				passSHA, err := service.GetHash([]byte(authPayload.PassNew))
 				if err != nil {
-					log.WithError(err).Error("error code: 1094.3")
+					log.WithError(err).Error("error code: 1087.3")
 					httpResponse.Message = "internal server error"
 					httpStatusCode = http.StatusInternalServerError
 					return
 				}
 				keyMainCipherByte, err := lib.Encrypt(keyBackupPlaintextByte, passSHA)
 				if err != nil {
-					log.WithError(err).Error("error code: 1095")
+					log.WithError(err).Error("error code: 1087.4")
 					httpResponse.Message = "internal server error"
 					httpStatusCode = http.StatusInternalServerError
 					return
@@ -283,7 +283,7 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 				uuidPlaintextByte = []byte(uuidPlaintext)
 				uuidSHA, err := service.GetHash(uuidPlaintextByte)
 				if err != nil {
-					log.WithError(err).Error("error code: 1096.1")
+					log.WithError(err).Error("error code: 1087.5")
 					httpResponse.Message = "internal server error"
 					httpStatusCode = http.StatusInternalServerError
 					return
@@ -292,7 +292,7 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 
 				uuidEncByte, err := lib.Encrypt(uuidPlaintextByte, keyRecoveryHash)
 				if err != nil {
-					log.WithError(err).Error("error code: 1096.2")
+					log.WithError(err).Error("error code: 1087.6")
 					httpResponse.Message = "internal server error"
 					httpStatusCode = http.StatusInternalServerError
 					return
@@ -310,7 +310,7 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 				tx := db.Begin()
 				if err := tx.Save(&twoFA).Error; err != nil {
 					tx.Rollback()
-					log.WithError(err).Error("error code: 1097")
+					log.WithError(err).Error("error code: 1088")
 					httpResponse.Message = "internal server error"
 					httpStatusCode = http.StatusInternalServerError
 					return
@@ -328,7 +328,7 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 	tx := db.Begin()
 	if err := tx.Save(&auth).Error; err != nil {
 		tx.Rollback()
-		log.WithError(err).Error("error code: 1084")
+		log.WithError(err).Error("error code: 1089.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -338,11 +338,11 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 	// delete key from redis
 	result = 0
 	if err := client.Do(ctx, radix.FlatCmd(&result, "DEL", data.key)); err != nil {
-		log.WithError(err).Error("error code: 1085")
+		log.WithError(err).Error("error code: 1089.2")
 	}
 	if result == 0 {
 		err := errors.New("failed to delete recovery key from redis")
-		log.WithError(err).Error("error code: 1086")
+		log.WithError(err).Error("error code: 1089.3")
 	}
 
 	response.Message = "password updated"
