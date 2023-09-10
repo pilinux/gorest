@@ -6,6 +6,7 @@ import (
 
 // StrArrHTMLModel first slices a string into all substrings separated by `;`
 // and then slices each substring separated by `:` for `HTMLModel` function
+//
 // Example: StrArrHTMLModel(key1:value1,key2:value2,key3:value3)
 // will return [key1 value1 key2 value2 key3 value3]
 func StrArrHTMLModel(s string) []string {

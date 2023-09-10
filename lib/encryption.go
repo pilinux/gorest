@@ -1,4 +1,5 @@
 // Package lib provides additional functionalities to the application:
+//
 // - AES encryption-decryption
 // - Argon2id hashing
 // - SHA hashing
@@ -15,9 +16,10 @@ import (
 )
 
 // Encrypt using AES algorithm
-// AES128 key size: 16 bytes
-// AES192 key size: 24 bytes
-// AES256 key size: 32 bytes
+//
+// - AES128 key size: 16 bytes
+// - AES192 key size: 24 bytes
+// - AES256 key size: 32 bytes
 func Encrypt(plaintext []byte, key []byte) ([]byte, error) {
 	c, err := aes.NewCipher(key)
 	if err != nil {

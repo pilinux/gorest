@@ -14,7 +14,12 @@ import (
 )
 
 // PasswordForgot sends secret code for resetting a forgotten password
+//
 // dependency: relational database, Redis, email service
+//
+// Accepted JSON payload:
+//
+// `{"email":"..."}`
 func PasswordForgot(c *gin.Context) {
 	// delete existing auth cookie if present
 	_, errAccessJWT := c.Cookie("accessJWT")
@@ -60,7 +65,14 @@ func PasswordForgot(c *gin.Context) {
 }
 
 // PasswordRecover resets a forgotten password
+//
 // dependency: relational database, Redis
+//
+// Accepted JSON payload:
+//
+// `{"secretCode":"...", "passNew":"...", "passRepeat":"...", "recoveryKey":"..."}`
+//
+// - `recoveryKey` is required if 2FA is enabled for the user account
 func PasswordRecover(c *gin.Context) {
 	// delete existing auth cookie if present
 	_, errAccessJWT := c.Cookie("accessJWT")
@@ -99,7 +111,12 @@ func PasswordRecover(c *gin.Context) {
 }
 
 // PasswordUpdate - change password in logged-in state
+//
 // dependency: relational database, JWT
+//
+// Accepted JSON payload:
+//
+// `{"password":"...", "passNew":"...", "passRepeat":"..."}`
 func PasswordUpdate(c *gin.Context) {
 	// verify that RDBMS is enabled in .env
 	if !config.IsRDBMS() {

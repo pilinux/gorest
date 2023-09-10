@@ -1,4 +1,4 @@
-// Package migrate to migrate the schema
+// Package migrate to migrate the schema for the example application
 package migrate
 
 import (
@@ -41,6 +41,7 @@ func DropAllTables() error {
 }
 
 // StartMigration - automatically migrate all the tables
+//
 // - Only create tables with missing columns and missing indexes
 // - Will not change/delete any existing columns and their types
 func StartMigration(configure gconfig.Configuration) error {

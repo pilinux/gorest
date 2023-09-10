@@ -15,7 +15,8 @@ import (
 	"github.com/pilinux/gorest/service"
 )
 
-// Login handles jobs for controller.Login
+// Login receives tasks from controller.Login.
+// After authentication, it returns new access and refresh tokens.
 func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	payload.Email = strings.TrimSpace(payload.Email)
 	if !lib.ValidateEmail(payload.Email) {
@@ -121,9 +122,9 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 	return
 }
 
-// Refresh handles jobs for controller.Refresh
+// Refresh receives tasks from controller.Refresh and
+// returns new pair of tokens (access and refresh tokens).
 func Refresh(claims middleware.MyCustomClaims) (httpResponse model.HTTPResponse, httpStatusCode int) {
-
 	// check validity
 	ok := service.ValidateAuthID(claims.AuthID)
 	if !ok {

@@ -72,6 +72,7 @@ func DelMem2FA(authID uint64) {
 }
 
 // SendEmail sends a verification/password recovery email if
+//
 // - required by the application
 // - an external email service is configured
 // - a redis database is configured

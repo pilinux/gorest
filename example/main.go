@@ -1,4 +1,4 @@
-// main function of the application
+// main function of the example application
 package main
 
 import (

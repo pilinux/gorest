@@ -13,7 +13,12 @@ import (
 )
 
 // VerifyEmail - verify email address
+//
 // dependency: email verification service, Redis
+//
+// Accepted JSON payload:
+//
+// `{"verificationCode":"..."}`
 func VerifyEmail(c *gin.Context) {
 	// delete existing auth cookie if present
 	_, errAccessJWT := c.Cookie("accessJWT")
@@ -52,7 +57,12 @@ func VerifyEmail(c *gin.Context) {
 }
 
 // CreateVerificationEmail issues new verification code upon request
+//
 // dependency: email service, email verification service, Redis
+//
+// Accepted JSON payload:
+//
+// `{"email":"...", "password":"..."}`
 func CreateVerificationEmail(c *gin.Context) {
 	// delete existing auth cookie if present
 	_, errAccessJWT := c.Cookie("accessJWT")

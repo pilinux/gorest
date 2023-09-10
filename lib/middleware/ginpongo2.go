@@ -15,9 +15,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Pongo2 - uses the Pongo2 template library
+// Pongo2 uses the Pongo2 template library
 // https://github.com/flosch/pongo2
 // to render templates
+//
 // Example: baseDirectory = "templates/"
 func Pongo2(baseDirectory string) gin.HandlerFunc {
 	return func(c *gin.Context) {

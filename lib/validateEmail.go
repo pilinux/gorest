@@ -10,6 +10,7 @@ var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z
 
 // ValidateEmail - check if the email provided passes the required structure
 // and length test. It also checks the domain has a valid MX record.
+//
 // Credit: Edd Turtle
 func ValidateEmail(e string) bool {
 	if len(e) < 3 || len(e) > 254 {

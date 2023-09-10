@@ -14,8 +14,15 @@ import (
 	"github.com/pilinux/gorest/lib/renderer"
 )
 
-// CreateUserAuth - POST /register
+// CreateUserAuth - register a new user account
+//
+// [POST]: /register
+//
 // dependency: relational database
+//
+// Accepted JSON payload:
+//
+// `{"email":"...", "password":"..."}`
 func CreateUserAuth(c *gin.Context) {
 	// delete existing auth cookie if present
 	_, errAccessJWT := c.Cookie("accessJWT")

@@ -700,10 +700,6 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 // backup codes for the user.
 //
 // Required: valid JWT with parameter "twoFA": "verified"
-//
-// Accepted JSON payload:
-//
-// `{"password":"..."}`
 func CreateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	// check auth validity
 	ok := service.ValidateAuthID(claims.AuthID)

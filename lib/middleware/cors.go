@@ -1,4 +1,5 @@
 // Package middleware contains:
+//
 // - CORS
 // - Application firewall
 // - Pongo2 template engine

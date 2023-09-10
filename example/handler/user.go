@@ -1,4 +1,4 @@
-// Package handler ...
+// Package handler of the example application
 package handler
 
 import (

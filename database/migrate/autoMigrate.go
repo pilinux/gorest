@@ -31,6 +31,7 @@ func DropAllTables() error {
 }
 
 // StartMigration - automatically migrate all the tables
+//
 // - Only create tables with missing columns and missing indexes
 // - Will not change/delete any existing columns and their types
 func StartMigration(configure config.Configuration) error {

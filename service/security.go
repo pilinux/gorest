@@ -15,6 +15,7 @@ import (
 )
 
 // IsTokenAllowed returns true when the token is not in the blacklist
+//
 // Dependency: JWT, Redis database + enable 'INVALIDATE_JWT' in .env
 func IsTokenAllowed(jti string) bool {
 	// verify that JWT service is enabled in .env

@@ -66,9 +66,10 @@ func MongoGetByFilter(c *gin.Context) {
 }
 
 // MongoUpdateByID - update a document
-// edit existing fields
-// add new fields
-// do not remove any existing field
+//
+// - edit existing fields
+// - add new fields
+// - do not remove any existing field
 func MongoUpdateByID(c *gin.Context) {
 	req := model.Geocoding{}
 	if err := c.ShouldBindJSON(&req); err != nil {

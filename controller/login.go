@@ -16,7 +16,14 @@ import (
 )
 
 // Login - issue new JWTs after user:pass verification
+//
+// [POST]: /login
+//
 // dependency: relational database, JWT
+//
+// Accepted JSON payload:
+//
+// `{"email":"...", "password":"..."}`
 func Login(c *gin.Context) {
 	// verify that RDBMS is enabled in .env
 	if !config.IsRDBMS() {
@@ -89,6 +96,7 @@ func Login(c *gin.Context) {
 }
 
 // Refresh - issue new JWTs after validation
+//
 // dependency: JWT
 func Refresh(c *gin.Context) {
 	// verify that JWT service is enabled in .env

@@ -12,8 +12,10 @@ import (
 )
 
 // Logout -
-// if 'AUTH_COOKIE_ACTIVATE=yes', ddelete tokens from client browser
-// if Redis is enabled, save invalid tokens in Redis up until the expiry time
+//
+// - if 'AUTH_COOKIE_ACTIVATE=yes', delete tokens from client browser.
+// - if Redis is enabled, save invalid tokens in Redis up until the expiry time.
+//
 // dependency: JWT
 func Logout(c *gin.Context) {
 	// verify that JWT service is enabled in .env

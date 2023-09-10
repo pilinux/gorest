@@ -17,8 +17,14 @@ import (
 )
 
 // Setup2FA - get secret to activate 2FA
-// possible for accounts without 2FA-ON
+//
+// - possible for accounts without 2FA-ON
+//
 // dependency: relational database, JWT, 2FA service
+//
+// Accepted JSON payload:
+//
+// `{"password":"..."}`
 func Setup2FA(c *gin.Context) {
 	// verify that RDBMS is enabled in .env
 	if !config.IsRDBMS() {
@@ -60,8 +66,14 @@ func Setup2FA(c *gin.Context) {
 }
 
 // Activate2FA - activate 2FA upon validation
-// possible for accounts without 2FA-ON
+//
+// - possible for accounts without 2FA-ON
+//
 // dependency: relational database, JWT, 2FA service
+//
+// Accepted JSON payload:
+//
+// `{"otp":"..."}`
 func Activate2FA(c *gin.Context) {
 	// verify that RDBMS is enabled in .env
 	if !config.IsRDBMS() {
@@ -141,8 +153,14 @@ func Activate2FA(c *gin.Context) {
 }
 
 // Validate2FA - issue new JWTs upon 2FA validation
-// required for accounts with 2FA-ON
+//
+// - required for accounts with 2FA-ON
+//
 // dependency: relational database, JWT, 2FA service
+//
+// Accepted JSON payload:
+//
+// `{"otp":"..."}`
 func Validate2FA(c *gin.Context) {
 	// verify that RDBMS is enabled in .env
 	if !config.IsRDBMS() {
@@ -222,7 +240,12 @@ func Validate2FA(c *gin.Context) {
 }
 
 // Deactivate2FA - disable 2FA for user account
+//
 // dependency: relational database, JWT, 2FA service
+//
+// Accepted JSON payload:
+//
+// `{"password":"..."}`
 func Deactivate2FA(c *gin.Context) {
 	// verify that RDBMS is enabled in .env
 	if !config.IsRDBMS() {
@@ -302,6 +325,14 @@ func Deactivate2FA(c *gin.Context) {
 }
 
 // CreateBackup2FA - get new set of 2FA backup codes
+//
+// - 2FA must already be enabled for the user account
+//
+// dependency: relational database, JWT, 2FA service
+//
+// Accepted JSON payload:
+//
+// `{"password":"..."}`
 func CreateBackup2FA(c *gin.Context) {
 	// verify that RDBMS is enabled in .env
 	if !config.IsRDBMS() {

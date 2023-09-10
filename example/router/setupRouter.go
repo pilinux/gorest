@@ -1,4 +1,4 @@
-// Package router contains all routes
+// Package router contains all routes of the example application
 package router
 
 import (

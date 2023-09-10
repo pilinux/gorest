@@ -1,4 +1,4 @@
-// Package handler ...
+// Package handler sits in between controller and database services.
 package handler
 
 import (
@@ -16,7 +16,10 @@ import (
 	"github.com/pilinux/gorest/service"
 )
 
-// CreateUserAuth handles tasks for controller.CreateUserAuth
+// CreateUserAuth receives tasks from controller.CreateUserAuth.
+// After email validation, it creates a new user account. It
+// supports both the legacy way of saving user email in plaintext
+// and the recommended way of applying encryption at rest.
 func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	db := database.GetDB()
 
