@@ -151,7 +151,7 @@ func Refresh(c *gin.Context) {
 		}
 
 		if !ok {
-			log.Error("error code: 1021.1")
+			log.Error("error code: 1012.1")
 			resp.Message = "failed to prepare auth cookie"
 			statusCode = http.StatusInternalServerError
 		}

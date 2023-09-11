@@ -230,7 +230,7 @@ func Validate2FA(c *gin.Context) {
 		}
 
 		if !ok {
-			log.Error("error code: 1051.1")
+			log.Error("error code: 1042.1")
 			resp.Message = "failed to prepare auth cookie"
 			statusCode = http.StatusInternalServerError
 		}
@@ -315,7 +315,7 @@ func Deactivate2FA(c *gin.Context) {
 		}
 
 		if !ok {
-			log.Error("error code: 1036.1")
+			log.Error("error code: 1043.1")
 			resp.Message = "failed to prepare auth cookie"
 			statusCode = http.StatusInternalServerError
 		}
@@ -443,7 +443,7 @@ func ValidateBackup2FA(c *gin.Context) {
 		}
 
 		if !ok {
-			log.Error("error code: 1051.6")
+			log.Error("error code: 1044.1")
 			resp.Message = "failed to prepare auth cookie"
 			statusCode = http.StatusInternalServerError
 		}

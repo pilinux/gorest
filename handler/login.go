@@ -46,7 +46,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 
 	verifyPass, err := argon2.ComparePasswordAndHash(payload.Password, configSecurity.HashSec, v.Password)
 	if err != nil {
-		log.WithError(err).Error("error code: 1011")
+		log.WithError(err).Error("error code: 1013.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -82,7 +82,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 				// hash user's pass
 				hashPass, err := service.GetHash([]byte(payload.Password))
 				if err != nil {
-					log.WithError(err).Error("error code: 1011.1")
+					log.WithError(err).Error("error code: 1013.2")
 					httpResponse.Message = "internal server error"
 					httpStatusCode = http.StatusInternalServerError
 					return
@@ -99,14 +99,14 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 	// issue new tokens
 	accessJWT, _, err := middleware.GetJWT(claims, "access")
 	if err != nil {
-		log.WithError(err).Error("error code: 1012")
+		log.WithError(err).Error("error code: 1013.3")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
 	if err != nil {
-		log.WithError(err).Error("error code: 1013")
+		log.WithError(err).Error("error code: 1013.4")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -136,14 +136,14 @@ func Refresh(claims middleware.MyCustomClaims) (httpResponse model.HTTPResponse,
 	// issue new tokens
 	accessJWT, _, err := middleware.GetJWT(claims, "access")
 	if err != nil {
-		log.WithError(err).Error("error code: 1021")
+		log.WithError(err).Error("error code: 1014.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
 	if err != nil {
-		log.WithError(err).Error("error code: 1022")
+		log.WithError(err).Error("error code: 1014.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return

@@ -197,6 +197,22 @@ _Note:_ For **MySQL** driver, please [check issue: 7][42]
 /user/location/database.db
 ```
 
+## Debugging with Error Codes
+
+| package | file | error code range |
+| ------- | ---- | ---------------- |
+| controller | login.go | `1011 - 1012` |
+| controller | twoFA.go | `1041 - 1044` |
+| database | dbConnect.go | `150 - 155`, `161` |
+| handler | auth.go | `1001` |
+| handler | login.go | `1013 - 1014` |
+| handler | logout.go | `1016` |
+| handler | passwordReset.go | `1021 - 1030` |
+| handler | twoFA.go | `1051 - 1056` |
+| handler | verification.go | `1061 - 1062` |
+| service | common.go | `401 - 406` |
+| service | security.go | `501` |
+
 ## Contributing
 
 Please see [CONTRIBUTING][61] to join this amazing project.

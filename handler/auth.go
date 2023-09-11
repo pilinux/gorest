@@ -66,7 +66,7 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 			config.GetConfig().Security.Blake2bSec,
 		)
 		if err != nil {
-			log.WithError(err).Error("error code: 1002.1")
+			log.WithError(err).Error("error code: 1001.1")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -95,7 +95,7 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 			auth.Email,
 		)
 		if err != nil {
-			log.WithError(err).Error("error code: 1003.1")
+			log.WithError(err).Error("error code: 1001.2")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -111,7 +111,7 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 	tx := db.Begin()
 	if err := tx.Create(&authFinal).Error; err != nil {
 		tx.Rollback()
-		log.WithError(err).Error("error code: 1001")
+		log.WithError(err).Error("error code: 1001.3")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return

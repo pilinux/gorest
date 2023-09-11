@@ -66,7 +66,7 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	// step 1: verify user pass
 	verifyPass, err := argon2.ComparePasswordAndHash(authPayload.Password, configSecurity.HashSec, v.Password)
 	if err != nil {
-		log.WithError(err).Error("error code: 1031")
+		log.WithError(err).Error("error code: 1051.11")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -80,14 +80,14 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	if !lib.ValidateEmail(v.Email) {
 		nonce, err := hex.DecodeString(v.EmailNonce)
 		if err != nil {
-			log.WithError(err).Error("error code: 1031.1")
+			log.WithError(err).Error("error code: 1051.12")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
 		}
 		cipherEmail, err := hex.DecodeString(v.EmailCipher)
 		if err != nil {
-			log.WithError(err).Error("error code: 1031.2")
+			log.WithError(err).Error("error code: 1051.13")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -99,7 +99,7 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 			cipherEmail,
 		)
 		if err != nil {
-			log.WithError(err).Error("error code: 1031.3")
+			log.WithError(err).Error("error code: 1051.14")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -114,7 +114,7 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 		configSecurity.TwoFA.Digits,
 	)
 	if err != nil {
-		log.WithError(err).Error("error code: 1032")
+		log.WithError(err).Error("error code: 1051.21")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -126,7 +126,7 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 		configSecurity.TwoFA.Issuer,
 	)
 	if err != nil {
-		log.WithError(err).Error("error code: 1033")
+		log.WithError(err).Error("error code: 1051.31")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -135,7 +135,7 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	// step 4: generate QR in PNG format and save on disk
 	img, err := lib.ByteToPNG(qrByte, configSecurity.TwoFA.PathQR+"/")
 	if err != nil {
-		log.WithError(err).Error("error code: 1034")
+		log.WithError(err).Error("error code: 1051.41")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -144,7 +144,7 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	// step 5: hash user's pass
 	hashPass, err := service.GetHash([]byte(authPayload.Password))
 	if err != nil {
-		log.WithError(err).Error("error code: 1034.1")
+		log.WithError(err).Error("error code: 1051.51")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -157,7 +157,7 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 		if lib.FileExist(configSecurity.TwoFA.PathQR + "/" + data2FA.Image) {
 			err := os.Remove(configSecurity.TwoFA.PathQR + "/" + data2FA.Image)
 			if err != nil {
-				log.WithError(err).Error("error code: 1035")
+				log.WithError(err).Error("error code: 1051.61")
 			}
 		}
 	}
@@ -233,7 +233,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 		}
 
 		// internal error
-		log.WithError(err).Error("error code: 1041")
+		log.WithError(err).Error("error code: 1052.31")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -253,7 +253,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 			if lib.FileExist(configSecurity.TwoFA.PathQR + "/" + data2FA.Image) {
 				err := os.Remove(configSecurity.TwoFA.PathQR + "/" + data2FA.Image)
 				if err != nil {
-					log.WithError(err).Error("error code: 1042")
+					log.WithError(err).Error("error code: 1052.41")
 				}
 			}
 
@@ -269,7 +269,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	// step 5: encrypt (AES-256) secret using hash of user's pass
 	keyMainCipherByte, err := lib.Encrypt(otpByte, data2FA.PassSHA)
 	if err != nil {
-		log.WithError(err).Error("error code: 1043")
+		log.WithError(err).Error("error code: 1052.51")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -281,7 +281,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	keyRecovery = keyRecovery[len(keyRecovery)-configSecurity.TwoFA.Digits:]
 	keyRecoveryHash, err := service.GetHash([]byte(keyRecovery))
 	if err != nil {
-		log.WithError(err).Error("error code: 1043.1")
+		log.WithError(err).Error("error code: 1052.61")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -290,7 +290,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	// step 7: encrypt secret using hash of recovery key
 	keyBackupCipherByte, err := lib.Encrypt(otpByte, keyRecoveryHash)
 	if err != nil {
-		log.WithError(err).Error("error code: 1044")
+		log.WithError(err).Error("error code: 1052.71")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -301,7 +301,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	uuidPlaintextByte := []byte(uuidPlaintext)
 	uuidSHA, err := service.GetHash(uuidPlaintextByte)
 	if err != nil {
-		log.WithError(err).Error("error code: 1044.1")
+		log.WithError(err).Error("error code: 1052.81")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -310,7 +310,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 
 	uuidEncByte, err := lib.Encrypt(uuidPlaintextByte, keyRecoveryHash)
 	if err != nil {
-		log.WithError(err).Error("error code: 1045")
+		log.WithError(err).Error("error code: 1052.82")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -335,7 +335,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 		if err := tx.Save(&twoFA).Error; err != nil {
 			tx.Rollback()
 			txOK = false
-			log.WithError(err).Error("error code: 1046")
+			log.WithError(err).Error("error code: 1052.100")
 		} else {
 			tx.Commit()
 		}
@@ -345,7 +345,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 		if err := tx.Create(&twoFA).Error; err != nil {
 			tx.Rollback()
 			txOK = false
-			log.WithError(err).Error("error code: 1047")
+			log.WithError(err).Error("error code: 1052.101")
 		} else {
 			tx.Commit()
 		}
@@ -361,7 +361,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	if lib.FileExist(configSecurity.TwoFA.PathQR + "/" + data2FA.Image) {
 		err = os.Remove(configSecurity.TwoFA.PathQR + "/" + data2FA.Image)
 		if err != nil {
-			log.WithError(err).Error("error code: 1048")
+			log.WithError(err).Error("error code: 1052.111")
 		}
 	}
 
@@ -375,14 +375,14 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	//
 	accessJWT, _, err := middleware.GetJWT(claims, "access")
 	if err != nil {
-		log.WithError(err).Error("error code: 1049")
+		log.WithError(err).Error("error code: 1052.131")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
 	if err != nil {
-		log.WithError(err).Error("error code: 1050")
+		log.WithError(err).Error("error code: 1052.132")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -473,7 +473,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 		// decode base64 encoded secret key
 		keyMainCipherByte, err := base64.StdEncoding.DecodeString(twoFA.KeyMain)
 		if err != nil {
-			log.WithError(err).Error("error code: 1051")
+			log.WithError(err).Error("error code: 1053.31")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -482,7 +482,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 		// decrypt (AES-256) secret using hash of user's pass
 		keyMainPlaintextByte, err := lib.Decrypt(keyMainCipherByte, data2FA.PassSHA)
 		if err != nil {
-			log.WithError(err).Error("error code: 1052")
+			log.WithError(err).Error("error code: 1053.32")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -509,7 +509,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 			// encrypt (AES-256) secret using hash of user's pass
 			keyMainCipherByte, err := lib.Encrypt(otpByte, data2FA.PassSHA)
 			if err != nil {
-				log.WithError(err).Error("error code: 1053")
+				log.WithError(err).Error("error code: 1053.41")
 			}
 			// encode in base64
 			twoFA.KeyMain = base64.StdEncoding.EncodeToString(keyMainCipherByte)
@@ -519,7 +519,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 			tx := db.Begin()
 			if err := tx.Save(&twoFA).Error; err != nil {
 				tx.Rollback()
-				log.WithError(err).Error("error code: 1054")
+				log.WithError(err).Error("error code: 1053.42")
 			} else {
 				tx.Commit()
 			}
@@ -531,7 +531,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 		}
 
 		// internal error
-		log.WithError(err).Error("error code: 1055")
+		log.WithError(err).Error("error code: 1053.43")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -542,7 +542,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	// encrypt (AES-256) secret using hash of user's pass
 	keyMainCipherByte, err := lib.Encrypt(otpByte, data2FA.PassSHA)
 	if err != nil {
-		log.WithError(err).Error("error code: 1056")
+		log.WithError(err).Error("error code: 1053.51")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -555,7 +555,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	tx := db.Begin()
 	if err := tx.Save(&twoFA).Error; err != nil {
 		tx.Rollback()
-		log.WithError(err).Error("error code: 1057")
+		log.WithError(err).Error("error code: 1053.52")
 	} else {
 		tx.Commit()
 	}
@@ -568,14 +568,14 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	// issue new tokens
 	accessJWT, _, err := middleware.GetJWT(claims, "access")
 	if err != nil {
-		log.WithError(err).Error("error code: 1058")
+		log.WithError(err).Error("error code: 1053.53")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
 	if err != nil {
-		log.WithError(err).Error("error code: 1059")
+		log.WithError(err).Error("error code: 1053.54")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -615,7 +615,7 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 	// verify password
 	verifyPass, err := argon2.ComparePasswordAndHash(authPayload.Password, configSecurity.HashSec, v.Password)
 	if err != nil {
-		log.WithError(err).Error("error code: 1036")
+		log.WithError(err).Error("error code: 1054.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -657,7 +657,7 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 			tx := db.Begin()
 			if err := tx.Save(&twoFA).Error; err != nil {
 				tx.Rollback()
-				log.WithError(err).Error("error code: 1037")
+				log.WithError(err).Error("error code: 1054.2")
 				httpResponse.Message = "internal server error"
 				httpStatusCode = http.StatusInternalServerError
 				return
@@ -672,14 +672,14 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 	// generate new tokens
 	accessJWT, _, err := middleware.GetJWT(claims, "access")
 	if err != nil {
-		log.WithError(err).Error("error code: 1038")
+		log.WithError(err).Error("error code: 1054.3")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
 	if err != nil {
-		log.WithError(err).Error("error code: 1039")
+		log.WithError(err).Error("error code: 1054.4")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -729,7 +729,7 @@ func CreateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPay
 	// step 1: verify user pass
 	verifyPass, err := argon2.ComparePasswordAndHash(authPayload.Password, configSecurity.HashSec, v.Password)
 	if err != nil {
-		log.WithError(err).Error("error code: 1066.1")
+		log.WithError(err).Error("error code: 1055.11")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -761,7 +761,7 @@ func CreateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPay
 			configSecurity.Blake2bSec,
 		)
 		if err != nil {
-			log.WithError(err).Error("error code: 1066.2")
+			log.WithError(err).Error("error code: 1055.31")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -773,7 +773,7 @@ func CreateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPay
 	twoFABackup := []model.TwoFABackup{}
 
 	if err := db.Where("id_auth = ?", claims.AuthID).Find(&twoFABackup).Error; err != nil {
-		log.WithError(err).Error("error code: 1066.3")
+		log.WithError(err).Error("error code: 1055.41")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -782,7 +782,7 @@ func CreateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPay
 		tx := db.Begin()
 		if err := tx.Delete(&twoFABackup).Error; err != nil {
 			tx.Rollback()
-			log.WithError(err).Error("error code: 1066.4")
+			log.WithError(err).Error("error code: 1055.42")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -805,7 +805,7 @@ func CreateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPay
 	tx := db.Begin()
 	if err := tx.Create(&twoFABackup).Error; err != nil {
 		tx.Rollback()
-		log.WithError(err).Error("error code: 1066.5")
+		log.WithError(err).Error("error code: 1055.51")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -861,7 +861,7 @@ func ValidateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthP
 	twoFABackup := []model.TwoFABackup{}
 
 	if err := db.Where("id_auth = ?", claims.AuthID).Find(&twoFABackup).Error; err != nil {
-		log.WithError(err).Error("error code: 1067.1")
+		log.WithError(err).Error("error code: 1056.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -878,7 +878,7 @@ func ValidateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthP
 		configSecurity.Blake2bSec,
 	)
 	if err != nil {
-		log.WithError(err).Error("error code: 1067.2")
+		log.WithError(err).Error("error code: 1056.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -908,7 +908,7 @@ func ValidateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthP
 	tx := db.Begin()
 	if err := tx.Delete(&twoFABackupUsed).Error; err != nil {
 		tx.Rollback()
-		log.WithError(err).Error("error code: 1067.3")
+		log.WithError(err).Error("error code: 1056.3")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -921,14 +921,14 @@ func ValidateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthP
 	// issue new tokens
 	accessJWT, _, err := middleware.GetJWT(claims, "access")
 	if err != nil {
-		log.WithError(err).Error("error code: 1067.4")
+		log.WithError(err).Error("error code: 1056.4")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
 	if err != nil {
-		log.WithError(err).Error("error code: 1067.5")
+		log.WithError(err).Error("error code: 1056.5")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return

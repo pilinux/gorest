@@ -35,7 +35,7 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 	// is key available in redis
 	result := 0
 	if err := client.Do(ctx, radix.FlatCmd(&result, "EXISTS", data.key)); err != nil {
-		log.WithError(err).Error("error code: 1061")
+		log.WithError(err).Error("error code: 1061.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -49,7 +49,7 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 
 	// find key in redis
 	if err := client.Do(ctx, radix.FlatCmd(&data.value, "GET", data.key)); err != nil {
-		log.WithError(err).Error("error code: 1062")
+		log.WithError(err).Error("error code: 1061.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -58,11 +58,11 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 	// delete key from redis
 	result = 0
 	if err := client.Do(ctx, radix.FlatCmd(&result, "DEL", data.key)); err != nil {
-		log.WithError(err).Error("error code: 1063")
+		log.WithError(err).Error("error code: 1061.3")
 	}
 	if result == 0 {
 		err := errors.New("failed to delete recovery key from redis")
-		log.WithError(err).Error("error code: 1064")
+		log.WithError(err).Error("error code: 1061.4")
 	}
 
 	// update verification status in database
@@ -102,7 +102,7 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 	tx := db.Begin()
 	if err := tx.Save(&auth).Error; err != nil {
 		tx.Rollback()
-		log.WithError(err).Error("error code: 1065")
+		log.WithError(err).Error("error code: 1061.5")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -140,7 +140,7 @@ func CreateVerificationEmail(payload model.AuthPayload) (httpResponse model.HTTP
 	// verify password
 	verifyPass, err := argon2.ComparePasswordAndHash(payload.Password, config.GetConfig().Security.HashSec, v.Password)
 	if err != nil {
-		log.WithError(err).Error("error code: 1071")
+		log.WithError(err).Error("error code: 1062.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
