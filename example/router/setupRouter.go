@@ -154,6 +154,7 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 				r2FA.POST("setup", gcontroller.Setup2FA)
 				r2FA.POST("activate", gcontroller.Activate2FA)
 				r2FA.POST("validate", gcontroller.Validate2FA)
+				r2FA.POST("validate-backup-code", gcontroller.ValidateBackup2FA)
 				if configure.Security.Must2FA == gconfig.Activated {
 					r2FA.Use(gmiddleware.TwoFA(
 						configure.Security.TwoFA.Status.On,

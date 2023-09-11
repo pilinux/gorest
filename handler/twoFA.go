@@ -817,3 +817,129 @@ func CreateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPay
 	httpStatusCode = http.StatusOK
 	return
 }
+
+// ValidateBackup2FA receives task from controller.ValidateBackup2FA.
+// User with 2FA enabled account can verify using their secret backup
+// code when they do not have access to their OTP generator app or
+// device.
+//
+// Required: valid JWT with parameter "twoFA": "on"
+func ValidateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
+	// check auth validity
+	ok := service.ValidateAuthID(claims.AuthID)
+	if !ok {
+		httpResponse.Message = "validation failed - access denied"
+		httpStatusCode = http.StatusUnauthorized
+		return
+	}
+
+	// check preconditions
+	//
+	// already verified!
+	configSecurity := config.GetConfig().Security
+	if claims.TwoFA == configSecurity.TwoFA.Status.Verified {
+		httpResponse.Message = configSecurity.TwoFA.Status.Verified
+		httpStatusCode = http.StatusOK
+		return
+	}
+	// user needs to log in again / 2FA is disabled for this account
+	if claims.TwoFA != configSecurity.TwoFA.Status.On {
+		httpResponse.Message = "unexpected request (1): 2-fa is OFF / log in again"
+		httpStatusCode = http.StatusBadRequest
+		return
+	}
+
+	authPayload.OTP = strings.TrimSpace(authPayload.OTP)
+	if authPayload.OTP == "" {
+		httpResponse.Message = "required 2-fa backup code"
+		httpStatusCode = http.StatusUnauthorized
+		return
+	}
+
+	// retrieve existing 2FA backup codes
+	db := database.GetDB()
+	twoFABackup := []model.TwoFABackup{}
+
+	if err := db.Where("id_auth = ?", claims.AuthID).Find(&twoFABackup).Error; err != nil {
+		log.WithError(err).Error("error code: 1067.1")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+	if len(twoFABackup) == 0 {
+		httpResponse.Message = "user has no unused valid backup code"
+		httpStatusCode = http.StatusUnauthorized
+		return
+	}
+
+	// calculate hash of the given code
+	otpByte, err := service.CalcHash(
+		[]byte(authPayload.OTP),
+		configSecurity.Blake2bSec,
+	)
+	if err != nil {
+		log.WithError(err).Error("error code: 1067.2")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+	otpHash := hex.EncodeToString(otpByte)
+
+	// compare with existing valid hashes
+	isOtpValid := false
+	validOtpID := uint64(0)
+	for _, backup := range twoFABackup {
+		if backup.CodeHash == otpHash {
+			isOtpValid = true
+			validOtpID = backup.ID
+			break
+		}
+	}
+
+	if !isOtpValid {
+		httpResponse.Message = "invalid 2-fa backup code"
+		httpStatusCode = http.StatusUnauthorized
+		return
+	}
+
+	// delete used code from database
+	twoFABackupUsed := model.TwoFABackup{}
+	twoFABackupUsed.ID = validOtpID
+	tx := db.Begin()
+	if err := tx.Delete(&twoFABackupUsed).Error; err != nil {
+		tx.Rollback()
+		log.WithError(err).Error("error code: 1067.3")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+	tx.Commit()
+
+	// set 2FA claim
+	claims.TwoFA = configSecurity.TwoFA.Status.Verified
+	//
+	// issue new tokens
+	accessJWT, _, err := middleware.GetJWT(claims, "access")
+	if err != nil {
+		log.WithError(err).Error("error code: 1067.4")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
+	if err != nil {
+		log.WithError(err).Error("error code: 1067.5")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+
+	jwtPayload := middleware.JWTPayload{}
+	jwtPayload.AccessJWT = accessJWT
+	jwtPayload.RefreshJWT = refreshJWT
+	jwtPayload.TwoAuth = claims.TwoFA
+
+	httpResponse.Message = jwtPayload
+	httpStatusCode = http.StatusOK
+	return
+}
