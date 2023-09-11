@@ -50,6 +50,7 @@ _Note:_ gorest uses [GORM][21] as its ORM
 ## Features
 
 - [x] built on top of [Gin][12]
+- [x] option to enable encryption at rest for user private information
 - [x] use the supported databases without writing any extra configuration files
 - [x] environment variables using [GoDotEnv][51]
 - [x] CORS policy
@@ -212,6 +213,19 @@ _Note:_ For **MySQL** driver, please [check issue: 7][42]
 | handler | verification.go | `1061 - 1062` |
 | service | common.go | `401 - 406` |
 | service | security.go | `501` |
+
+## Development
+
+For testing:
+
+```bash
+export TEST_ENV_URL="https://s3.nl-ams.scw.cloud/ci.config/github.action/gorest.pilinux/.env"
+export TEST_INDEX_HTML_URL="https://s3.nl-ams.scw.cloud/ci.config/github.action/gorest.pilinux/index.html"
+export TEST_KEY_FILE_LOCATION="https://s3.nl-ams.scw.cloud/ci.config/github.action/gorest.pilinux"
+export TEST_SENTRY_DSN="please_set_your_sentry_dns_here"
+
+go test -v -cover ./...
+```
 
 ## Contributing
 
