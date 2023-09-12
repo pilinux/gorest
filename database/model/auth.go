@@ -114,3 +114,18 @@ type AuthPayload struct {
 	PassNew    string `json:"passNew,omitempty"`
 	PassRepeat string `json:"passRepeat,omitempty"`
 }
+
+// TempEmail - 'temp_emails' table to hold data temporarily
+// during the process of replacing a user's email address
+// with a new one
+type TempEmail struct {
+	ID          uint64    `gorm:"primaryKey" json:"-"`
+	CreatedAt   time.Time `json:"createdAt,omitempty"`
+	UpdatedAt   time.Time `json:"updatedAt,omitempty"`
+	Email       string    `json:"email"`
+	Password    string    `gorm:"-" json:"password"`
+	EmailCipher string    `json:"-"`
+	EmailNonce  string    `json:"-"`
+	EmailHash   string    `json:"-"`
+	IDAuth      uint64    `gorm:"index" json:"-"`
+}

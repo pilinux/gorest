@@ -13,12 +13,14 @@ import (
 type auth model.Auth
 type twoFA model.TwoFA
 type twoFABackup model.TwoFABackup
+type tempEmail model.TempEmail
 
 // DropAllTables - careful! It will drop all the tables!
 func DropAllTables() error {
 	db := database.GetDB()
 
 	if err := db.Migrator().DropTable(
+		&tempEmail{},
 		&twoFABackup{},
 		&twoFA{},
 		&auth{},
@@ -45,6 +47,7 @@ func StartMigration(configure config.Configuration) error {
 			&auth{},
 			&twoFA{},
 			&twoFABackup{},
+			&tempEmail{},
 		); err != nil {
 			return err
 		}
@@ -57,6 +60,7 @@ func StartMigration(configure config.Configuration) error {
 		&auth{},
 		&twoFA{},
 		&twoFABackup{},
+		&tempEmail{},
 	); err != nil {
 		return err
 	}

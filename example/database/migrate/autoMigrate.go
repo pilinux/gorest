@@ -15,6 +15,7 @@ import (
 type auth gmodel.Auth
 type twoFA gmodel.TwoFA
 type twoFABackup gmodel.TwoFABackup
+type tempEmail gmodel.TempEmail
 type user model.User
 type post model.Post
 type hobby model.Hobby
@@ -29,6 +30,7 @@ func DropAllTables() error {
 		&hobby{},
 		&post{},
 		&user{},
+		&tempEmail{},
 		&twoFABackup{},
 		&twoFA{},
 		&auth{},
@@ -55,6 +57,7 @@ func StartMigration(configure gconfig.Configuration) error {
 			&auth{},
 			&twoFA{},
 			&twoFABackup{},
+			&tempEmail{},
 			&user{},
 			&post{},
 			&hobby{},
@@ -70,6 +73,7 @@ func StartMigration(configure gconfig.Configuration) error {
 		&auth{},
 		&twoFA{},
 		&twoFABackup{},
+		&tempEmail{},
 		&user{},
 		&post{},
 		&hobby{},
