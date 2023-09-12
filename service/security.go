@@ -74,7 +74,7 @@ func JWTBlacklistChecker() gin.HandlerFunc {
 
 	CheckBlackList:
 		if !IsTokenAllowed(jti) {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, "invalid token")
 			return
 		}
 

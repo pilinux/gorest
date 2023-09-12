@@ -47,7 +47,7 @@ func SentryCapture(sentryDsn string, v ...string) gin.HandlerFunc {
 		})
 		if err != nil {
 			// middleware -> sentry NewHook failed
-			c.AbortWithStatus(http.StatusInternalServerError)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, "internal server error")
 			return
 		}
 		sentryHook.AddTag("method", c.Request.Method)

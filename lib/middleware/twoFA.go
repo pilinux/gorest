@@ -47,12 +47,12 @@ func TwoFA(keywordOn, keywordOff, keywordVerified string) gin.HandlerFunc {
 		}
 
 		if !statusChecked {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, "2-fa: status unknown")
 			return
 		}
 
 		if !requestAllowed {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, "2-fa: required valid OTP")
 			return
 		}
 

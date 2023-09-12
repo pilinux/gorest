@@ -20,14 +20,14 @@ func Firewall(listType string, ipList string) gin.HandlerFunc {
 		if !strings.Contains(ipList, "*") {
 			if listType == "whitelist" {
 				if !strings.Contains(ipList, clientIP) {
-					c.AbortWithStatus(http.StatusUnauthorized)
+					c.AbortWithStatusJSON(http.StatusUnauthorized, "IP blocked")
 					return
 				}
 			}
 
 			if listType == "blacklist" {
 				if strings.Contains(ipList, clientIP) {
-					c.AbortWithStatus(http.StatusUnauthorized)
+					c.AbortWithStatusJSON(http.StatusUnauthorized, "IP blocked")
 					return
 				}
 			}
@@ -35,7 +35,7 @@ func Firewall(listType string, ipList string) gin.HandlerFunc {
 
 		if strings.Contains(ipList, "*") {
 			if listType == "blacklist" {
-				c.AbortWithStatus(http.StatusUnauthorized)
+				c.AbortWithStatusJSON(http.StatusUnauthorized, "IP blocked")
 				return
 			}
 		}
