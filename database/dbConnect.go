@@ -37,6 +37,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// RecordNotFound record not found error message
+const RecordNotFound string = "record not found"
+
 // dbClient variable to access gorm
 var dbClient *gorm.DB
 

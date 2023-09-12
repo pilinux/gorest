@@ -37,7 +37,17 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 
 	// for backward compatibility
 	// email must be unique
-	if err := db.Where("email = ?", auth.Email).First(&auth).Error; err == nil {
+	err := db.Where("email = ?", auth.Email).First(&auth).Error
+	if err != nil {
+		if err.Error() != database.RecordNotFound {
+			// db read error
+			log.WithError(err).Error("error code: 1002.1")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
+		}
+	}
+	if err == nil {
 		httpResponse.Message = "email already registered"
 		httpStatusCode = http.StatusForbidden
 		return
@@ -47,7 +57,17 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 	// valid: non-encryption mode -> upgrade to encryption mode
 	// invalid: encryption mode -> downgrade to non-encryption mode
 	if !config.IsCipher() {
-		if err := db.Where("email_hash IS NOT NULL AND email_hash != ?", "").First(&auth).Error; err == nil {
+		err := db.Where("email_hash IS NOT NULL AND email_hash != ?", "").First(&auth).Error
+		if err != nil {
+			if err.Error() != database.RecordNotFound {
+				// db read error
+				log.WithError(err).Error("error code: 1002.2")
+				httpResponse.Message = "internal server error"
+				httpStatusCode = http.StatusInternalServerError
+				return
+			}
+		}
+		if err == nil {
 			log.Error("check env: ACTIVATE_CIPHER")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
@@ -74,7 +94,17 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 		authFinal.EmailHash = hex.EncodeToString(emailHash)
 
 		// email must be unique
-		if err = db.Where("email_hash = ?", authFinal.EmailHash).First(&auth).Error; err == nil {
+		err = db.Where("email_hash = ?", authFinal.EmailHash).First(&auth).Error
+		if err != nil {
+			if err.Error() != database.RecordNotFound {
+				// db read error
+				log.WithError(err).Error("error code: 1002.3")
+				httpResponse.Message = "internal server error"
+				httpStatusCode = http.StatusInternalServerError
+				return
+			}
+		}
+		if err == nil {
 			httpResponse.Message = "email already registered"
 			httpStatusCode = http.StatusForbidden
 			return

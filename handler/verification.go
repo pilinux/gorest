@@ -77,6 +77,14 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 
 	if isEmail {
 		if err := db.Where("email = ?", data.value).First(&auth).Error; err != nil {
+			if err.Error() != database.RecordNotFound {
+				// db read error
+				log.WithError(err).Error("error code: 1061.5")
+				httpResponse.Message = "internal server error"
+				httpStatusCode = http.StatusInternalServerError
+				return
+			}
+
 			httpResponse.Message = "unknown user"
 			httpStatusCode = http.StatusUnauthorized
 			return
@@ -84,6 +92,14 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 	}
 	if !isEmail {
 		if err := db.Where("email_hash = ?", data.value).First(&auth).Error; err != nil {
+			if err.Error() != database.RecordNotFound {
+				// db read error
+				log.WithError(err).Error("error code: 1061.6")
+				httpResponse.Message = "internal server error"
+				httpStatusCode = http.StatusInternalServerError
+				return
+			}
+
 			httpResponse.Message = "unknown user"
 			httpStatusCode = http.StatusUnauthorized
 			return
@@ -102,7 +118,7 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 	tx := db.Begin()
 	if err := tx.Save(&auth).Error; err != nil {
 		tx.Rollback()
-		log.WithError(err).Error("error code: 1061.5")
+		log.WithError(err).Error("error code: 1061.7")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -125,6 +141,14 @@ func CreateVerificationEmail(payload model.AuthPayload) (httpResponse model.HTTP
 
 	v, err := service.GetUserByEmail(payload.Email, true)
 	if err != nil {
+		if err.Error() != database.RecordNotFound {
+			// db read error
+			log.WithError(err).Error("error code: 1062.1")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
+		}
+
 		httpResponse.Message = "user not found"
 		httpStatusCode = http.StatusNotFound
 		return
@@ -140,7 +164,7 @@ func CreateVerificationEmail(payload model.AuthPayload) (httpResponse model.HTTP
 	// verify password
 	verifyPass, err := argon2.ComparePasswordAndHash(payload.Password, config.GetConfig().Security.HashSec, v.Password)
 	if err != nil {
-		log.WithError(err).Error("error code: 1062.1")
+		log.WithError(err).Error("error code: 1062.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return

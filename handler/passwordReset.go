@@ -35,6 +35,14 @@ func PasswordForgot(authPayload model.AuthPayload) (httpResponse model.HTTPRespo
 	// find user
 	v, err := service.GetUserByEmail(authPayload.Email, true)
 	if err != nil {
+		if err.Error() != database.RecordNotFound {
+			// db read error
+			log.WithError(err).Error("error code: 1030.1")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
+		}
+
 		httpResponse.Message = "user not found"
 		httpStatusCode = http.StatusNotFound
 		return
@@ -148,6 +156,14 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 
 	if isEmail {
 		if err := db.Where("email = ?", data.value).First(&auth).Error; err != nil {
+			if err.Error() != database.RecordNotFound {
+				// db read error
+				log.WithError(err).Error("error code: 1021.4")
+				httpResponse.Message = "internal server error"
+				httpStatusCode = http.StatusInternalServerError
+				return
+			}
+
 			httpResponse.Message = "unknown user"
 			httpStatusCode = http.StatusUnauthorized
 			return
@@ -155,6 +171,14 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 	}
 	if !isEmail {
 		if err := db.Where("email_hash = ?", data.value).First(&auth).Error; err != nil {
+			if err.Error() != database.RecordNotFound {
+				// db read error
+				log.WithError(err).Error("error code: 1021.5")
+				httpResponse.Message = "internal server error"
+				httpStatusCode = http.StatusInternalServerError
+				return
+			}
+
 			httpResponse.Message = "unknown user"
 			httpStatusCode = http.StatusUnauthorized
 			return
@@ -169,7 +193,17 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 		authPayload.RecoveryKey = lib.RemoveAllSpace(authPayload.RecoveryKey)
 		twoFA := model.TwoFA{}
 		// is user account protected by 2FA
-		if err := db.Where("id_auth = ?", auth.AuthID).First(&twoFA).Error; err == nil {
+		err := db.Where("id_auth = ?", auth.AuthID).First(&twoFA).Error
+		if err != nil {
+			if err.Error() != database.RecordNotFound {
+				// db read error
+				log.WithError(err).Error("error code: 1021.6")
+				httpResponse.Message = "internal server error"
+				httpStatusCode = http.StatusInternalServerError
+				return
+			}
+		}
+		if err == nil {
 			if twoFA.Status == configSecurity.TwoFA.Status.On {
 				// check recovery key length
 				if len(authPayload.RecoveryKey) != configSecurity.TwoFA.Digits {
@@ -387,6 +421,14 @@ func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayl
 
 	// auth info
 	if err := db.Where("auth_id = ?", claims.AuthID).First(&auth).Error; err != nil {
+		if err.Error() != database.RecordNotFound {
+			// db read error
+			log.WithError(err).Error("error code: 1026.1")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
+		}
+
 		httpResponse.Message = "unknown user"
 		httpStatusCode = http.StatusUnauthorized
 		return
@@ -395,7 +437,7 @@ func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayl
 	// verify given pass against pass saved in DB
 	verifyPass, err := argon2.ComparePasswordAndHash(authPayload.Password, configSecurity.HashSec, auth.Password)
 	if err != nil {
-		log.WithError(err).Error("error code: 1026.1")
+		log.WithError(err).Error("error code: 1026.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -408,7 +450,17 @@ func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayl
 
 	// 2-FA info
 	if configSecurity.Must2FA == config.Activated {
-		if err := db.Where("id_auth = ?", claims.AuthID).First(&twoFA).Error; err == nil {
+		err := db.Where("id_auth = ?", claims.AuthID).First(&twoFA).Error
+		if err != nil {
+			if err.Error() != database.RecordNotFound {
+				// db read error
+				log.WithError(err).Error("error code: 1026.3")
+				httpResponse.Message = "internal server error"
+				httpStatusCode = http.StatusInternalServerError
+				return
+			}
+		}
+		if err == nil {
 			if twoFA.Status == configSecurity.TwoFA.Status.On {
 				process2FA = true
 			}
@@ -425,7 +477,7 @@ func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayl
 	}
 	pass, err := lib.HashPass(configHash, authPayload.PassNew, configSecurity.HashSec)
 	if err != nil {
-		log.WithError(err).Error("error code: 1026.2")
+		log.WithError(err).Error("error code: 1026.4")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -502,7 +554,7 @@ func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayl
 	tx := db.Begin()
 	if err := tx.Save(&auth).Error; err != nil {
 		tx.Rollback()
-		log.WithError(err).Error("error code: 1030.1")
+		log.WithError(err).Error("error code: 1029.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return

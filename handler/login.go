@@ -27,6 +27,14 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 
 	v, err := service.GetUserByEmail(payload.Email, false)
 	if err != nil {
+		if err.Error() != database.RecordNotFound {
+			// db read error
+			log.WithError(err).Error("error code: 1013.1")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
+		}
+
 		httpResponse.Message = "email not found"
 		httpStatusCode = http.StatusNotFound
 		return
@@ -46,7 +54,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 
 	verifyPass, err := argon2.ComparePasswordAndHash(payload.Password, configSecurity.HashSec, v.Password)
 	if err != nil {
-		log.WithError(err).Error("error code: 1013.1")
+		log.WithError(err).Error("error code: 1013.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -74,7 +82,17 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 		twoFA := model.TwoFA{}
 
 		// have the user configured 2FA
-		if err := db.Where("id_auth = ?", v.AuthID).First(&twoFA).Error; err == nil {
+		err := db.Where("id_auth = ?", v.AuthID).First(&twoFA).Error
+		if err != nil {
+			if err.Error() != database.RecordNotFound {
+				// db read error
+				log.WithError(err).Error("error code: 1013.3")
+				httpResponse.Message = "internal server error"
+				httpStatusCode = http.StatusInternalServerError
+				return
+			}
+		}
+		if err == nil {
 			claims.TwoFA = twoFA.Status
 
 			// 2FA ON
@@ -82,7 +100,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 				// hash user's pass
 				hashPass, err := service.GetHash([]byte(payload.Password))
 				if err != nil {
-					log.WithError(err).Error("error code: 1013.2")
+					log.WithError(err).Error("error code: 1013.4")
 					httpResponse.Message = "internal server error"
 					httpStatusCode = http.StatusInternalServerError
 					return
@@ -99,14 +117,14 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 	// issue new tokens
 	accessJWT, _, err := middleware.GetJWT(claims, "access")
 	if err != nil {
-		log.WithError(err).Error("error code: 1013.3")
+		log.WithError(err).Error("error code: 1013.5")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
 	if err != nil {
-		log.WithError(err).Error("error code: 1013.4")
+		log.WithError(err).Error("error code: 1013.6")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
