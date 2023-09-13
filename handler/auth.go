@@ -342,7 +342,7 @@ func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpRes
 	}
 
 	// step 9: send a verification email if required by the application
-	emailDelivered, err := service.SendEmail(req.Email, model.EmailTypeVerification)
+	emailDelivered, err := service.SendEmail(req.Email, model.VerifyUpdatedEmail)
 	if err != nil {
 		log.WithError(err).Error("error code: 1003.91")
 		httpResponse.Message = "email delivery service failed"

@@ -247,6 +247,10 @@ func email() (emailConfig EmailConfig, err error) {
 		if err != nil {
 			return
 		}
+		emailConfig.EmailUpdateVerifyTemplateID, err = strconv.ParseInt(strings.TrimSpace(os.Getenv("EMAIL_UPDATE_VERIFY_TEMPLATE_ID")), 10, 64)
+		if err != nil {
+			return
+		}
 		emailConfig.EmailVerificationCodeLength, err = strconv.ParseUint(strings.TrimSpace(os.Getenv("EMAIL_VERIFY_CODE_LENGTH")), 10, 32)
 		if err != nil {
 			return

@@ -13,6 +13,7 @@ type EmailConfig struct {
 	// for templated email
 	EmailVerificationTemplateID int64
 	PasswordRecoverTemplateID   int64
+	EmailUpdateVerifyTemplateID int64
 	EmailVerificationCodeLength uint64
 	PasswordRecoverCodeLength   uint64
 	EmailVerificationTag        string

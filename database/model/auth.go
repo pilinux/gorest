@@ -25,6 +25,7 @@ const (
 const (
 	EmailTypeVerification int = 1
 	EmailTypePassRecovery int = 2
+	VerifyUpdatedEmail    int = 3
 )
 
 // Redis key prefixes

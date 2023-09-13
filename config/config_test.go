@@ -133,6 +133,7 @@ func TestGetConfig(t *testing.T) {
 
 	expected.EmailConf.EmailVerificationTemplateID = 0
 	expected.EmailConf.PasswordRecoverTemplateID = 0
+	expected.EmailConf.EmailUpdateVerifyTemplateID = 0
 	expected.EmailConf.EmailVerificationCodeLength = 8
 	expected.EmailConf.PasswordRecoverCodeLength = 12
 	expected.EmailConf.EmailVerificationTag = "emailVerification"
@@ -406,6 +407,9 @@ func TestErrorGetConfig(t *testing.T) {
 		},
 		{
 			Key: "EMAIL_PASS_RECOVER_TEMPLATE_ID",
+		},
+		{
+			Key: "EMAIL_UPDATE_VERIFY_TEMPLATE_ID",
 		},
 		{
 			Key: "EMAIL_VERIFY_CODE_LENGTH",
