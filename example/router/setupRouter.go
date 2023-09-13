@@ -188,6 +188,18 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			// change password while logged in
 			rPass.POST("edit", gcontroller.PasswordUpdate)
 
+			// Change existing email
+			rEmail := v1.Group("email")
+			rEmail.Use(gmiddleware.JWT()).Use(gservice.JWTBlacklistChecker())
+			if configure.Security.Must2FA == gconfig.Activated {
+				rPass.Use(gmiddleware.TwoFA(
+					configure.Security.TwoFA.Status.On,
+					configure.Security.TwoFA.Status.Off,
+					configure.Security.TwoFA.Status.Verified,
+				))
+			}
+			rEmail.POST("update", gcontroller.UpdateEmail)
+
 			// User
 			rUsers := v1.Group("users")
 			rUsers.GET("", controller.GetUsers)    // Non-protected

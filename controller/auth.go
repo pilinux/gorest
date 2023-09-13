@@ -12,6 +12,7 @@ import (
 	"github.com/pilinux/gorest/database/model"
 	"github.com/pilinux/gorest/handler"
 	"github.com/pilinux/gorest/lib/renderer"
+	"github.com/pilinux/gorest/service"
 )
 
 // CreateUserAuth - register a new user account
@@ -54,4 +55,40 @@ func CreateUserAuth(c *gin.Context) {
 	}
 
 	renderer.Render(c, resp.Message, statusCode)
+}
+
+// UpdateEmail - update existing user email
+//
+// dependency: relational database, JWT
+//
+// Accepted JSON payload:
+//
+// `{"emailNew":"...", "password":"..."}`
+func UpdateEmail(c *gin.Context) {
+	// verify that RDBMS is enabled in .env
+	if !config.IsRDBMS() {
+		renderer.Render(c, gin.H{"message": "relational database not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that JWT service is enabled in .env
+	if !config.IsJWT() {
+		renderer.Render(c, gin.H{"message": "JWT service not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// get claims
+	claims := service.GetClaims(c)
+
+	req := model.TempEmail{}
+
+	// bind JSON
+	if err := c.ShouldBindJSON(&req); err != nil {
+		renderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
+		return
+	}
+
+	resp, statusCode := handler.UpdateEmail(claims, req)
+
+	renderer.Render(c, resp, statusCode)
 }

@@ -205,7 +205,7 @@ _Note:_ For **MySQL** driver, please [check issue: 7][42]
 | controller | login.go | `1011 - 1012` |
 | controller | twoFA.go | `1041 - 1044` |
 | database | dbConnect.go | `150 - 155`, `161` |
-| handler | auth.go | `1001 - 1002` |
+| handler | auth.go | `1001 - 1003` |
 | handler | login.go | `1013 - 1014` |
 | handler | logout.go | `1016` |
 | handler | passwordReset.go | `1021 - 1030` |
