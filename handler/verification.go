@@ -176,10 +176,19 @@ func CreateVerificationEmail(payload model.AuthPayload) (httpResponse model.HTTP
 	}
 
 	// issue new verification code
-	if !service.SendEmail(v.Email, model.EmailTypeVerification) {
-		httpResponse.Message = "failed to send verification email"
-		httpStatusCode = http.StatusServiceUnavailable
+	emailDelivered, err := service.SendEmail(v.Email, model.EmailTypeVerification)
+	if err != nil {
+		log.WithError(err).Error("error code: 1062.3")
+		httpResponse.Message = "email delivery service failed"
+		httpStatusCode = http.StatusInternalServerError
 		return
+	}
+	if err == nil {
+		if !emailDelivered {
+			httpResponse.Message = "failed to send verification email"
+			httpStatusCode = http.StatusServiceUnavailable
+			return
+		}
 	}
 
 	httpResponse.Message = "sent verification email"

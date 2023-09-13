@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"strconv"
 	"strings"
 	"time"
@@ -74,15 +75,23 @@ func DelMem2FA(authID uint64) {
 // SendEmail sends a verification/password recovery email if
 //
 // - required by the application
+//
 // - an external email service is configured
+//
 // - a redis database is configured
-func SendEmail(email string, emailType int) bool {
+//
+// {true, nil} => email delivered successfully
+//
+// {false, nil} => email delivery not required/service not configured
+//
+// {false, error} => email delivery failed
+func SendEmail(email string, emailType int) (bool, error) {
 	// send email if required by the application
 	appConfig := config.GetConfig()
 
 	// is external email service activated
 	if appConfig.EmailConf.Activate != config.Activated {
-		return false
+		return false, nil
 	}
 
 	// is verification/password recovery email required
@@ -94,12 +103,12 @@ func SendEmail(email string, emailType int) bool {
 		doSendEmail = true
 	}
 	if !doSendEmail {
-		return false
+		return false, nil
 	}
 
 	// is redis database activated
 	if appConfig.Database.REDIS.Activate != config.Activated {
-		return false
+		return false, nil
 	}
 
 	data := struct {
@@ -136,7 +145,7 @@ func SendEmail(email string, emailType int) bool {
 		)
 		if err != nil {
 			log.WithError(err).Error("error code: 406.1")
-			return false
+			return false, err
 		}
 		data.value = hex.EncodeToString(value)
 	}
@@ -152,11 +161,11 @@ func SendEmail(email string, emailType int) bool {
 	r1 := ""
 	if err := client.Do(ctx, radix.FlatCmd(&r1, "SET", data.key, data.value)); err != nil {
 		log.WithError(err).Error("error code: 401")
-		return false
+		return false, err
 	}
 	if r1 != "OK" {
 		log.Error("error code: 402")
-		return false
+		return false, errors.New("failed to save in redis")
 	}
 
 	// Set expiry time
@@ -198,12 +207,18 @@ func SendEmail(email string, emailType int) bool {
 		res, err := Postmark(params)
 		if err != nil {
 			log.WithError(err).Error("error code: 405")
-			return false
+			return false, err
 		}
 		if res.Message != "OK" {
-			return false
+			return false, errors.New("email delivery failed")
 		}
+
+		return true, nil
 	}
 
-	return true
+	e := errors.New(
+		"email delivery service provider: '" + appConfig.EmailConf.Provider + "' is unknown",
+	)
+	log.WithError(e).Error("error code: 406")
+	return false, e
 }

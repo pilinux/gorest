@@ -112,8 +112,17 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 	}
 
 	// send a verification email if required by the application
-	if service.SendEmail(authFinal.Email, model.EmailTypeVerification) {
-		authFinal.VerifyEmail = model.EmailNotVerified
+	emailDelivered, err := service.SendEmail(authFinal.Email, model.EmailTypeVerification)
+	if err != nil {
+		log.WithError(err).Error("error code: 1002.4")
+		httpResponse.Message = "email delivery service failed"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+	if err == nil {
+		if emailDelivered {
+			authFinal.VerifyEmail = model.EmailNotVerified
+		}
 	}
 
 	// encryption at rest for user email, mainly needed by system in future

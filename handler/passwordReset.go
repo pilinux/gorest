@@ -56,10 +56,19 @@ func PasswordForgot(authPayload model.AuthPayload) (httpResponse model.HTTPRespo
 	}
 
 	// send email with secret code
-	if !service.SendEmail(v.Email, model.EmailTypePassRecovery) {
-		httpResponse.Message = "sending password recovery email not possible"
-		httpStatusCode = http.StatusServiceUnavailable
+	emailDelivered, err := service.SendEmail(v.Email, model.EmailTypePassRecovery)
+	if err != nil {
+		log.WithError(err).Error("error code: 1030.2")
+		httpResponse.Message = "email delivery service failed"
+		httpStatusCode = http.StatusInternalServerError
 		return
+	}
+	if err == nil {
+		if !emailDelivered {
+			httpResponse.Message = "sending password recovery email not possible"
+			httpStatusCode = http.StatusServiceUnavailable
+			return
+		}
 	}
 
 	httpResponse.Message = "sent password recovery email"
