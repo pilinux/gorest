@@ -195,7 +195,7 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 	}
 
 	// current time
-	timeNow := time.Now().Local()
+	timeNow := time.Now()
 
 	// is OTP required
 	if configSecurity.Must2FA == config.Activated {
@@ -494,7 +494,7 @@ func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayl
 	auth.Password = pass
 
 	// current time
-	timeNow := time.Now().Local()
+	timeNow := time.Now()
 
 	// process 2-FA
 	if process2FA {

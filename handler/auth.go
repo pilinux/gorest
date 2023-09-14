@@ -301,7 +301,7 @@ func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpRes
 	}
 
 	// step 8: populate model with data to be processed in database
-	timeNow := time.Now().Local()
+	timeNow := time.Now()
 
 	// create new data
 	if tEmailDB.ID == 0 {

@@ -359,7 +359,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	txOK := true
 
 	if available {
-		twoFA.UpdatedAt = time.Now().Local()
+		twoFA.UpdatedAt = time.Now()
 
 		if err := tx.Save(&twoFA).Error; err != nil {
 			tx.Rollback()
@@ -551,7 +551,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 			// encode in base64
 			twoFA.KeyMain = base64.StdEncoding.EncodeToString(keyMainCipherByte)
 			// updateAt
-			twoFA.UpdatedAt = time.Now().Local()
+			twoFA.UpdatedAt = time.Now()
 			// write in DB
 			tx := db.Begin()
 			if err := tx.Save(&twoFA).Error; err != nil {
@@ -587,7 +587,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	// encode in base64
 	twoFA.KeyMain = base64.StdEncoding.EncodeToString(keyMainCipherByte)
 	// updateAt
-	twoFA.UpdatedAt = time.Now().Local()
+	twoFA.UpdatedAt = time.Now()
 	// write in DB
 	tx := db.Begin()
 	if err := tx.Save(&twoFA).Error; err != nil {
@@ -700,7 +700,7 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 		// 2FA is active
 		if twoFA.Status == configSecurity.TwoFA.Status.On {
 			// remove 2FA keys from DB
-			twoFA.UpdatedAt = time.Now().Local()
+			twoFA.UpdatedAt = time.Now()
 			twoFA.KeyMain = ""
 			twoFA.KeyBackup = ""
 			twoFA.UUIDSHA = ""
@@ -853,7 +853,7 @@ func CreateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPay
 
 	// step 5: save the hashes in database
 	twoFABackup = []model.TwoFABackup{} // reset
-	timeNow := time.Now().Local()
+	timeNow := time.Now()
 
 	for i := 0; i < len(codeHashes); i++ {
 		backup := model.TwoFABackup{}

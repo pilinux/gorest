@@ -113,7 +113,7 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 	}
 
 	auth.VerifyEmail = model.EmailVerified
-	auth.UpdatedAt = time.Now().Local()
+	auth.UpdatedAt = time.Now()
 
 	tx := db.Begin()
 	if err := tx.Save(&auth).Error; err != nil {
