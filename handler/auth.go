@@ -53,7 +53,7 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 	}
 	if err == nil {
 		httpResponse.Message = "email already registered"
-		httpStatusCode = http.StatusForbidden
+		httpStatusCode = http.StatusBadRequest
 		return
 	}
 
@@ -110,7 +110,7 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 		}
 		if err == nil {
 			httpResponse.Message = "email already registered"
-			httpStatusCode = http.StatusForbidden
+			httpStatusCode = http.StatusBadRequest
 			return
 		}
 	}
