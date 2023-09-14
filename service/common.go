@@ -96,13 +96,13 @@ func SendEmail(email string, emailType int) (bool, error) {
 
 	// is verification/password recovery email required
 	doSendEmail := false
-	if appConfig.Security.VerifyEmail && emailType == model.EmailTypeVerification {
+	if appConfig.Security.VerifyEmail && emailType == model.EmailTypeVerifyEmailNewAcc {
 		doSendEmail = true
 	}
 	if appConfig.Security.RecoverPass && emailType == model.EmailTypePassRecovery {
 		doSendEmail = true
 	}
-	if appConfig.Security.VerifyEmail && emailType == model.VerifyUpdatedEmail {
+	if appConfig.Security.VerifyEmail && emailType == model.EmailTypeVerifyUpdatedEmail {
 		doSendEmail = true
 	}
 	if !doSendEmail {
@@ -123,7 +123,7 @@ func SendEmail(email string, emailType int) (bool, error) {
 	var code uint64
 
 	// generate verification/password recovery code
-	if emailType == model.EmailTypeVerification || emailType == model.VerifyUpdatedEmail {
+	if emailType == model.EmailTypeVerifyEmailNewAcc || emailType == model.EmailTypeVerifyUpdatedEmail {
 		code = lib.SecureRandomNumber(appConfig.EmailConf.EmailVerificationCodeLength)
 		data.key = model.EmailVerificationKeyPrefix + strconv.FormatUint(code, 10)
 		keyTTL = appConfig.EmailConf.EmailVerifyValidityPeriod
@@ -190,7 +190,7 @@ func SendEmail(email string, emailType int) (bool, error) {
 		params := PostmarkParams{}
 		params.ServerToken = appConfig.EmailConf.APIToken
 
-		if emailType == model.EmailTypeVerification {
+		if emailType == model.EmailTypeVerifyEmailNewAcc {
 			params.TemplateID = appConfig.EmailConf.EmailVerificationTemplateID
 		}
 
@@ -198,7 +198,7 @@ func SendEmail(email string, emailType int) (bool, error) {
 			params.TemplateID = appConfig.EmailConf.PasswordRecoverTemplateID
 		}
 
-		if emailType == model.VerifyUpdatedEmail {
+		if emailType == model.EmailTypeVerifyUpdatedEmail {
 			params.TemplateID = appConfig.EmailConf.EmailUpdateVerifyTemplateID
 		}
 

@@ -176,7 +176,7 @@ func CreateVerificationEmail(payload model.AuthPayload) (httpResponse model.HTTP
 	}
 
 	// issue new verification code
-	emailDelivered, err := service.SendEmail(v.Email, model.EmailTypeVerification)
+	emailDelivered, err := service.SendEmail(v.Email, model.EmailTypeVerifyEmailNewAcc)
 	if err != nil {
 		log.WithError(err).Error("error code: 1062.3")
 		httpResponse.Message = "email delivery service failed"

@@ -116,7 +116,7 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 	}
 
 	// send a verification email if required by the application
-	emailDelivered, err := service.SendEmail(authFinal.Email, model.EmailTypeVerification)
+	emailDelivered, err := service.SendEmail(authFinal.Email, model.EmailTypeVerifyEmailNewAcc)
 	if err != nil {
 		log.WithError(err).Error("error code: 1002.4")
 		httpResponse.Message = "email delivery service failed"
@@ -342,7 +342,7 @@ func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpRes
 	}
 
 	// step 9: send a verification email if required by the application
-	emailDelivered, err := service.SendEmail(req.Email, model.VerifyUpdatedEmail)
+	emailDelivered, err := service.SendEmail(req.Email, model.EmailTypeVerifyUpdatedEmail)
 	if err != nil {
 		log.WithError(err).Error("error code: 1003.91")
 		httpResponse.Message = "email delivery service failed"

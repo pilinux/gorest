@@ -23,9 +23,9 @@ const (
 
 // Email type
 const (
-	EmailTypeVerification int = 1
-	EmailTypePassRecovery int = 2
-	VerifyUpdatedEmail    int = 3
+	EmailTypeVerifyEmailNewAcc  int = 1 // verify email of newly registered user
+	EmailTypePassRecovery       int = 2 // password recovery code
+	EmailTypeVerifyUpdatedEmail int = 3 // verify request of updating user email
 )
 
 // Redis key prefixes
