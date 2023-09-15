@@ -76,12 +76,25 @@ func InitDB() *gorm.DB {
 
 	switch driver {
 	case "mysql":
-		dsn := username + ":" + password + "@tcp(" + host + ":" + port + ")/" + database + "?charset=utf8mb4&parseTime=True&loc=Local"
+		address := host
+		if port != "" {
+			address += ":" + port
+		}
+		dsn := username + ":" + password + "@tcp(" + address + ")/" + database + "?charset=utf8mb4&parseTime=True&loc=Local"
 		if sslmode != "disable" {
-			dsn += "&tls=custom"
-			err = InitTLSMySQL()
-			if err != nil {
-				log.WithError(err).Panic("panic code: 150")
+			// use host machine's root CAs to verify
+			if sslmode == "require" {
+				dsn += "&tls=true"
+			}
+
+			// perform comprehensive SSL/TLS certificate validation using
+			// certificate signed by a recognized CA or by a self-signed certificate
+			if sslmode == "verify-ca" || sslmode == "verify-full" {
+				dsn += "&tls=custom"
+				err = InitTLSMySQL()
+				if err != nil {
+					log.WithError(err).Panic("panic code: 150")
+				}
 			}
 		}
 		sqlDB, err = sql.Open(driver, dsn)
@@ -106,7 +119,11 @@ func InitDB() *gorm.DB {
 		}
 
 	case "postgres":
-		dsn := "host=" + host + " port=" + port + " user=" + username + " dbname=" + database + " password=" + password + " sslmode=" + sslmode + " TimeZone=" + timeZone
+		address := "host=" + host
+		if port != "" {
+			address += " port=" + port
+		}
+		dsn := address + " user=" + username + " dbname=" + database + " password=" + password + " sslmode=" + sslmode + " TimeZone=" + timeZone
 		sqlDB, err = sql.Open(driver, dsn)
 		if err != nil {
 			log.WithError(err).Panic("panic code: 153")
