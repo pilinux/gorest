@@ -50,7 +50,7 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 
 	if result == 0 {
 		httpResponse.Message = "wrong/expired verification code"
-		httpStatusCode = http.StatusUnauthorized
+		httpStatusCode = http.StatusBadRequest
 		return
 	}
 
@@ -92,8 +92,10 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 				return
 			}
 
-			httpResponse.Message = "unknown user"
-			httpStatusCode = http.StatusUnauthorized
+			// email was in redis but not in relational db => missing data
+			log.WithError(err).Error("error code: 1061.6")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
 			return
 		}
 	}
@@ -101,14 +103,16 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 		if err := db.Where("email_hash = ?", data.value).First(&auth).Error; err != nil {
 			if err.Error() != database.RecordNotFound {
 				// db read error
-				log.WithError(err).Error("error code: 1061.6")
+				log.WithError(err).Error("error code: 1061.7")
 				httpResponse.Message = "internal server error"
 				httpStatusCode = http.StatusInternalServerError
 				return
 			}
 
-			httpResponse.Message = "unknown user"
-			httpStatusCode = http.StatusUnauthorized
+			// email hash was in redis but not in relational db => missing data
+			log.WithError(err).Error("error code: 1061.8")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
 			return
 		}
 	}
@@ -125,7 +129,7 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 	tx := db.Begin()
 	if err := tx.Save(&auth).Error; err != nil {
 		tx.Rollback()
-		log.WithError(err).Error("error code: 1061.7")
+		log.WithError(err).Error("error code: 1061.9")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -178,7 +182,7 @@ func CreateVerificationEmail(payload model.AuthPayload) (httpResponse model.HTTP
 	}
 	if !verifyPass {
 		httpResponse.Message = "wrong credentials"
-		httpStatusCode = http.StatusUnauthorized
+		httpStatusCode = http.StatusBadRequest
 		return
 	}
 
@@ -241,7 +245,7 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 
 	if result == 0 {
 		httpResponse.Message = "wrong/expired verification code"
-		httpStatusCode = http.StatusUnauthorized
+		httpStatusCode = http.StatusBadRequest
 		return
 	}
 
