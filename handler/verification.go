@@ -20,6 +20,13 @@ import (
 
 // VerifyEmail handles jobs for controller.VerifyEmail
 func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
+	payload.VerificationCode = strings.TrimSpace(payload.VerificationCode)
+	if payload.VerificationCode == "" {
+		httpResponse.Message = "required a valid email verification code"
+		httpStatusCode = http.StatusBadRequest
+		return
+	}
+
 	data := struct {
 		key   string
 		value string
