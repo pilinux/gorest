@@ -105,3 +105,45 @@ func CreateVerificationEmail(c *gin.Context) {
 
 	renderer.Render(c, resp, statusCode)
 }
+
+// VerifyUpdatedEmail - verify request to modify user's email address
+//
+// dependency: email verification service, relational database, redis
+//
+// Accepted JSON payload:
+//
+// `{"verificationCode":"..."}`
+func VerifyUpdatedEmail(c *gin.Context) {
+	// verify that email verification service is enabled in .env
+	if !config.IsEmailVerificationService() {
+		renderer.Render(c, gin.H{"message": "email verification service not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that RDBMS is enabled in .env
+	if !config.IsRDBMS() {
+		renderer.Render(c, gin.H{"message": "relational database not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that Redis is enabled in .env
+	if !config.IsRedis() {
+		renderer.Render(c, gin.H{"message": "Redis not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	payload := model.AuthPayload{}
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		renderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
+		return
+	}
+
+	resp, statusCode := handler.VerifyUpdatedEmail(payload)
+
+	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+		renderer.Render(c, resp, statusCode)
+		return
+	}
+
+	renderer.Render(c, resp, statusCode)
+}

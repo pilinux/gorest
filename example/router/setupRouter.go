@@ -127,6 +127,7 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 				if configure.Database.REDIS.Activate == gconfig.Activated {
 					v1.POST("verify", gcontroller.VerifyEmail)
 					v1.POST("resend-verification-email", gcontroller.CreateVerificationEmail)
+					v1.POST("verify-updated-email", gcontroller.VerifyUpdatedEmail)
 				}
 			}
 

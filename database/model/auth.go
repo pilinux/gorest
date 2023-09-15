@@ -123,10 +123,10 @@ type TempEmail struct {
 	ID          uint64    `gorm:"primaryKey" json:"-"`
 	CreatedAt   time.Time `json:"createdAt,omitempty"`
 	UpdatedAt   time.Time `json:"updatedAt,omitempty"`
-	Email       string    `json:"emailNew"`
+	Email       string    `gorm:"index" json:"emailNew"`
 	Password    string    `gorm:"-" json:"password"`
 	EmailCipher string    `json:"-"`
 	EmailNonce  string    `json:"-"`
-	EmailHash   string    `json:"-"`
+	EmailHash   string    `gorm:"index" json:"-"`
 	IDAuth      uint64    `gorm:"index" json:"-"`
 }

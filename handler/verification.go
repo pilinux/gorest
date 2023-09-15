@@ -202,3 +202,155 @@ func CreateVerificationEmail(payload model.AuthPayload) (httpResponse model.HTTP
 	httpStatusCode = http.StatusOK
 	return
 }
+
+// VerifyUpdatedEmail receives tasks from controller.VerifyUpdatedEmail
+//
+// - verify newly added email address
+//
+// - update user email address
+//
+// - delete temporary data from database after verification process is done
+func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
+	payload.VerificationCode = strings.TrimSpace(payload.VerificationCode)
+	if payload.VerificationCode == "" {
+		httpResponse.Message = "required a valid email verification code"
+		httpStatusCode = http.StatusBadRequest
+		return
+	}
+
+	data := struct {
+		key   string
+		value string
+	}{}
+	data.key = model.EmailVerificationKeyPrefix + payload.VerificationCode
+
+	// get redis client
+	client := *database.GetRedis()
+	rConnTTL := config.GetConfig().Database.REDIS.Conn.ConnTTL
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
+	defer cancel()
+
+	// is key available in redis
+	result := 0
+	if err := client.Do(ctx, radix.FlatCmd(&result, "EXISTS", data.key)); err != nil {
+		log.WithError(err).Error("error code: 1063.1")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+
+	if result == 0 {
+		httpResponse.Message = "wrong/expired verification code"
+		httpStatusCode = http.StatusUnauthorized
+		return
+	}
+
+	// find key in redis
+	if err := client.Do(ctx, radix.FlatCmd(&data.value, "GET", data.key)); err != nil {
+		log.WithError(err).Error("error code: 1063.2")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+
+	// delete key from redis
+	result = 0
+	if err := client.Do(ctx, radix.FlatCmd(&result, "DEL", data.key)); err != nil {
+		log.WithError(err).Error("error code: 1063.3")
+	}
+	if result == 0 {
+		err := errors.New("failed to delete recovery key from redis")
+		log.WithError(err).Error("error code: 1063.4")
+	}
+
+	// update user email in database
+	db := database.GetDB()
+	auth := model.Auth{}
+	tempEmail := model.TempEmail{}
+
+	// is data.value an email or hash of an email
+	isEmail := false
+	if lib.ValidateEmail(data.value) {
+		isEmail = true
+	}
+
+	if isEmail {
+		// check 'temp_emails' with the email in plaintext
+		if err := db.Where("email = ?", data.value).First(&tempEmail).Error; err != nil {
+			if err.Error() != database.RecordNotFound {
+				// db read error
+				log.WithError(err).Error("error code: 1063.5")
+				httpResponse.Message = "internal server error"
+				httpStatusCode = http.StatusInternalServerError
+				return
+			}
+
+			// data was in redis but not in relational db
+			// most probably using another verification code, the email was updated
+			// hence, expire this request
+			httpResponse.Message = "wrong/expired verification code"
+			httpStatusCode = http.StatusInternalServerError
+			return
+		}
+	}
+	if !isEmail {
+		// check 'temp_emails' with hash of the email
+		if err := db.Where("email_hash = ?", data.value).First(&tempEmail).Error; err != nil {
+			if err.Error() != database.RecordNotFound {
+				// db read error
+				log.WithError(err).Error("error code: 1063.6")
+				httpResponse.Message = "internal server error"
+				httpStatusCode = http.StatusInternalServerError
+				return
+			}
+
+			// data was in redis but not in relational db
+			// most probably using another verification code, the email was updated
+			// hence, expire this request
+			httpResponse.Message = "wrong/expired verification code"
+			httpStatusCode = http.StatusInternalServerError
+			return
+		}
+	}
+
+	// check 'auths'
+	if err := db.Where("auth_id = ?", tempEmail.IDAuth).First(&auth).Error; err != nil {
+		// auth_id mismatch!
+		log.WithError(err).Error("error code: 1063.7")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+
+	// update model
+	timeNow := time.Now()
+	auth.UpdatedAt = timeNow
+	auth.Email = tempEmail.Email
+	auth.EmailCipher = tempEmail.EmailCipher
+	auth.EmailNonce = tempEmail.EmailNonce
+	auth.EmailHash = tempEmail.EmailHash
+
+	// delete data from 'temp_emails'
+	tx := db.Begin()
+	if err := tx.Delete(&tempEmail).Error; err != nil {
+		tx.Rollback()
+		log.WithError(err).Error("error code: 1063.8")
+	} else {
+		tx.Commit()
+	}
+
+	// update data in 'auths'
+	tx = db.Begin()
+	if err := tx.Save(&auth).Error; err != nil {
+		tx.Rollback()
+		log.WithError(err).Error("error code: 1063.9")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+	tx.Commit()
+
+	httpResponse.Message = "email address updated"
+	httpStatusCode = http.StatusOK
+	return
+}
