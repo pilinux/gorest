@@ -39,7 +39,7 @@ func GetUserByEmail(email string, decryptEmail bool) (*model.Auth, error) {
 		// email must be unique
 		if err = db.Where("email_hash = ?", hex.EncodeToString(emailHash)).First(&auth).Error; err == nil {
 			if decryptEmail {
-				auth.Email, err = DecryptEmail(auth)
+				auth.Email, err = DecryptEmail(auth.EmailNonce, auth.EmailCipher)
 				if err != nil {
 					return nil, err
 				}
@@ -69,13 +69,13 @@ func CalcHash(plaintext, keyOptional []byte) ([]byte, error) {
 	return blake2b256Sum, nil
 }
 
-// DecryptEmail returns the plaintext email from the given cipher
-func DecryptEmail(authEncrypted model.Auth) (email string, err error) {
-	nonce, err := hex.DecodeString(authEncrypted.EmailNonce)
+// DecryptEmail returns the plaintext email from the given cipher and nonce
+func DecryptEmail(emailNonce, emailCipher string) (email string, err error) {
+	nonce, err := hex.DecodeString(emailNonce)
 	if err != nil {
 		return
 	}
-	cipherEmail, err := hex.DecodeString(authEncrypted.EmailCipher)
+	cipherEmail, err := hex.DecodeString(emailCipher)
 	if err != nil {
 		return
 	}
