@@ -422,3 +422,76 @@ func GetUnverifiedEmail(claims middleware.MyCustomClaims) (httpResponse model.HT
 	httpStatusCode = http.StatusOK
 	return
 }
+
+// ResendVerificationCodeToModifyActiveEmail receives tasks from controller.ResendVerificationCodeToModifyActiveEmail
+func ResendVerificationCodeToModifyActiveEmail(claims middleware.MyCustomClaims) (httpResponse model.HTTPResponse, httpStatusCode int) {
+	// check auth validity
+	ok := service.ValidateAuthID(claims.AuthID)
+	if !ok {
+		httpResponse.Message = "validation failed - access denied"
+		httpStatusCode = http.StatusUnauthorized
+		return
+	}
+
+	// read DB
+	db := database.GetDB()
+	tempEmail := model.TempEmail{}
+
+	// check 'temp_emails'
+	err := db.Where("id_auth = ?", claims.AuthID).First(&tempEmail).Error
+	if err != nil {
+		if err.Error() != database.RecordNotFound {
+			// db read error
+			log.WithError(err).Error("error code: 1065.1")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
+		}
+
+		httpResponse.Message = "no pending request"
+		httpStatusCode = http.StatusBadRequest
+		return
+	}
+
+	// verification is pending to modify current email
+	if err == nil {
+		// decipher
+		if tempEmail.Email == "" {
+			if !config.IsCipher() {
+				e := errors.New("check env: ACTIVATE_CIPHER")
+				log.WithError(e).Error("error code: 1065.2")
+				httpResponse.Message = "internal server error"
+				httpStatusCode = http.StatusInternalServerError
+				return
+			}
+
+			tempEmail.Email, err = service.DecryptEmail(tempEmail.EmailNonce, tempEmail.EmailCipher)
+			if err != nil {
+				log.WithError(err).Error("error code: 1065.3")
+				httpResponse.Message = "internal server error"
+				httpStatusCode = http.StatusInternalServerError
+				return
+			}
+		}
+	}
+
+	// issue new verification code
+	emailDelivered, err := service.SendEmail(tempEmail.Email, model.EmailTypeVerifyUpdatedEmail)
+	if err != nil {
+		log.WithError(err).Error("error code: 1065.4")
+		httpResponse.Message = "email delivery service failed"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+	if err == nil {
+		if !emailDelivered {
+			httpResponse.Message = "failed to send verification email"
+			httpStatusCode = http.StatusServiceUnavailable
+			return
+		}
+	}
+
+	httpResponse.Message = "sent verification email"
+	httpStatusCode = http.StatusOK
+	return
+}

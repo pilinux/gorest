@@ -180,3 +180,46 @@ func GetUnverifiedEmail(c *gin.Context) {
 
 	renderer.Render(c, resp, statusCode)
 }
+
+// ResendVerificationCodeToModifyActiveEmail issues new verification code upon request
+//
+// dependency: email service, email verification service, Redis,
+// relational database, JWT
+func ResendVerificationCodeToModifyActiveEmail(c *gin.Context) {
+	// verify that email service is enabled in .env
+	if !config.IsEmailService() {
+		renderer.Render(c, gin.H{"message": "email service not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that email verification service is enabled in .env
+	if !config.IsEmailVerificationService() {
+		renderer.Render(c, gin.H{"message": "email verification service not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that Redis is enabled in .env
+	if !config.IsRedis() {
+		renderer.Render(c, gin.H{"message": "Redis not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that RDBMS is enabled in .env
+	if !config.IsRDBMS() {
+		renderer.Render(c, gin.H{"message": "relational database not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that JWT service is enabled in .env
+	if !config.IsJWT() {
+		renderer.Render(c, gin.H{"message": "JWT service not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// get claims
+	claims := service.GetClaims(c)
+
+	resp, statusCode := handler.ResendVerificationCodeToModifyActiveEmail(claims)
+
+	renderer.Render(c, resp, statusCode)
+}

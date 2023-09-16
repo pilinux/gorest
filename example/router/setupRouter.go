@@ -203,6 +203,8 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			rEmail.POST("update", gcontroller.UpdateEmail)
 			// retrieve the email which needs to be verified
 			rEmail.GET("unverified", gcontroller.GetUnverifiedEmail)
+			// resend verification code to verify the modified email address
+			rEmail.POST("resend-verification-email", gcontroller.ResendVerificationCodeToModifyActiveEmail)
 
 			// User
 			rUsers := v1.Group("users")
