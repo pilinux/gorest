@@ -199,7 +199,10 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 					configure.Security.TwoFA.Status.Verified,
 				))
 			}
+			// add new email to replace the existing one
 			rEmail.POST("update", gcontroller.UpdateEmail)
+			// retrieve the email which needs to be verified
+			rEmail.GET("unverified", gcontroller.GetUnverifiedEmail)
 
 			// User
 			rUsers := v1.Group("users")

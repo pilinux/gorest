@@ -15,6 +15,7 @@ import (
 	"github.com/pilinux/gorest/database"
 	"github.com/pilinux/gorest/database/model"
 	"github.com/pilinux/gorest/lib"
+	"github.com/pilinux/gorest/lib/middleware"
 	"github.com/pilinux/gorest/service"
 )
 
@@ -355,6 +356,69 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 	tx.Commit()
 
 	httpResponse.Message = "email address updated"
+	httpStatusCode = http.StatusOK
+	return
+}
+
+// GetUnverifiedEmail receives tasks from controller.GetUnverifiedEmail
+//
+// It retrieves unverified email information for a given user.
+func GetUnverifiedEmail(claims middleware.MyCustomClaims) (httpResponse model.HTTPResponse, httpStatusCode int) {
+	// check auth validity
+	ok := service.ValidateAuthID(claims.AuthID)
+	if !ok {
+		httpResponse.Message = "validation failed - access denied"
+		httpStatusCode = http.StatusUnauthorized
+		return
+	}
+
+	// read DB
+	db := database.GetDB()
+	tempEmail := model.TempEmail{}
+
+	// check 'temp_emails'
+	err := db.Where("id_auth = ?", claims.AuthID).First(&tempEmail).Error
+	if err != nil {
+		if err.Error() != database.RecordNotFound {
+			// db read error
+			log.WithError(err).Error("error code: 1064.1")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
+		}
+
+		httpResponse.Message = "no pending request"
+	}
+
+	// verification is pending to modify current email
+	if err == nil {
+		// decipher
+		if tempEmail.Email == "" {
+			if !config.IsCipher() {
+				e := errors.New("check env: ACTIVATE_CIPHER")
+				log.WithError(e).Error("error code: 1064.2")
+				httpResponse.Message = "internal server error"
+				httpStatusCode = http.StatusInternalServerError
+				return
+			}
+
+			tempEmail.Email, err = service.DecryptEmail(tempEmail.EmailNonce, tempEmail.EmailCipher)
+			if err != nil {
+				log.WithError(err).Error("error code: 1064.3")
+				httpResponse.Message = "internal server error"
+				httpStatusCode = http.StatusInternalServerError
+				return
+			}
+		}
+
+		// clear cipher data
+		tempEmail.EmailCipher = ""
+		tempEmail.EmailNonce = ""
+		tempEmail.EmailHash = ""
+
+		httpResponse.Message = tempEmail
+	}
+
 	httpStatusCode = http.StatusOK
 	return
 }

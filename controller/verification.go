@@ -10,6 +10,7 @@ import (
 	"github.com/pilinux/gorest/database/model"
 	"github.com/pilinux/gorest/handler"
 	"github.com/pilinux/gorest/lib/renderer"
+	"github.com/pilinux/gorest/service"
 )
 
 // VerifyEmail - verify email address
@@ -144,6 +145,38 @@ func VerifyUpdatedEmail(c *gin.Context) {
 		renderer.Render(c, resp, statusCode)
 		return
 	}
+
+	renderer.Render(c, resp, statusCode)
+}
+
+// GetUnverifiedEmail - if any email is yet to be verified, return it to the logged-in user
+//
+// When this email is verified, it will replace the existing active email of the user.
+//
+// dependency: email verification service, relational database, JWT
+func GetUnverifiedEmail(c *gin.Context) {
+	// verify that email verification service is enabled in .env
+	if !config.IsEmailVerificationService() {
+		renderer.Render(c, gin.H{"message": "email verification service not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that RDBMS is enabled in .env
+	if !config.IsRDBMS() {
+		renderer.Render(c, gin.H{"message": "relational database not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// verify that JWT service is enabled in .env
+	if !config.IsJWT() {
+		renderer.Render(c, gin.H{"message": "JWT service not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
+	// get claims
+	claims := service.GetClaims(c)
+
+	resp, statusCode := handler.GetUnverifiedEmail(claims)
 
 	renderer.Render(c, resp, statusCode)
 }

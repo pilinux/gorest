@@ -124,7 +124,7 @@ type TempEmail struct {
 	CreatedAt   time.Time `json:"createdAt,omitempty"`
 	UpdatedAt   time.Time `json:"updatedAt,omitempty"`
 	Email       string    `gorm:"index" json:"emailNew"`
-	Password    string    `gorm:"-" json:"password"`
+	Password    string    `gorm:"-" json:"password,omitempty"`
 	EmailCipher string    `json:"-"`
 	EmailNonce  string    `json:"-"`
 	EmailHash   string    `gorm:"index" json:"-"`
