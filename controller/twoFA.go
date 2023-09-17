@@ -56,7 +56,7 @@ func Setup2FA(c *gin.Context) {
 
 	resp, statusCode := handler.Setup2FA(claims, password)
 
-	if statusCode != 201 {
+	if statusCode != http.StatusCreated {
 		renderer.Render(c, resp, statusCode)
 		return
 	}
@@ -105,7 +105,8 @@ func Activate2FA(c *gin.Context) {
 
 	resp, statusCode := handler.Activate2FA(claims, otp)
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	// 2FA activation failed
+	if statusCode != http.StatusOK {
 		renderer.Render(c, resp, statusCode)
 		return
 	}
@@ -147,6 +148,11 @@ func Activate2FA(c *gin.Context) {
 			resp.Message = "failed to prepare auth cookie"
 			statusCode = http.StatusInternalServerError
 		}
+	}
+
+	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+		renderer.Render(c, resp, statusCode)
+		return
 	}
 
 	renderer.Render(c, resp.Message, statusCode)
@@ -192,7 +198,14 @@ func Validate2FA(c *gin.Context) {
 
 	resp, statusCode := handler.Validate2FA(claims, otp)
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	// 2FA validation failed
+	if statusCode != http.StatusOK {
+		renderer.Render(c, resp, statusCode)
+		return
+	}
+
+	// JWT already verified, no need to issue new tokens
+	if resp.Message == "twoFA: "+config.GetConfig().Security.TwoFA.Status.Verified {
 		renderer.Render(c, resp, statusCode)
 		return
 	}
@@ -236,6 +249,11 @@ func Validate2FA(c *gin.Context) {
 		}
 	}
 
+	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+		renderer.Render(c, resp, statusCode)
+		return
+	}
+
 	renderer.Render(c, resp.Message, statusCode)
 }
 
@@ -277,7 +295,14 @@ func Deactivate2FA(c *gin.Context) {
 
 	resp, statusCode := handler.Deactivate2FA(claims, password)
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	// 2FA deactivation failed
+	if statusCode != http.StatusOK {
+		renderer.Render(c, resp, statusCode)
+		return
+	}
+
+	// based on JWT, 2FA is already disabled
+	if resp.Message == "twoFA: "+config.GetConfig().Security.TwoFA.Status.Off {
 		renderer.Render(c, resp, statusCode)
 		return
 	}
@@ -319,6 +344,11 @@ func Deactivate2FA(c *gin.Context) {
 			resp.Message = "failed to prepare auth cookie"
 			statusCode = http.StatusInternalServerError
 		}
+	}
+
+	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+		renderer.Render(c, resp, statusCode)
+		return
 	}
 
 	renderer.Render(c, resp.Message, statusCode)
@@ -405,7 +435,14 @@ func ValidateBackup2FA(c *gin.Context) {
 
 	resp, statusCode := handler.ValidateBackup2FA(claims, authPayload)
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	// 2FA validation with backup code failed
+	if statusCode != http.StatusOK {
+		renderer.Render(c, resp, statusCode)
+		return
+	}
+
+	// JWT already verified, no need to issue new tokens
+	if resp.Message == "twoFA: "+config.GetConfig().Security.TwoFA.Status.Verified {
 		renderer.Render(c, resp, statusCode)
 		return
 	}

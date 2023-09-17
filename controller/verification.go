@@ -2,7 +2,6 @@ package controller
 
 import (
 	"net/http"
-	"reflect"
 
 	"github.com/gin-gonic/gin"
 
@@ -13,7 +12,7 @@ import (
 	"github.com/pilinux/gorest/service"
 )
 
-// VerifyEmail - verify email address
+// VerifyEmail - verify email address of a newly registered user account
 //
 // dependency: email verification service, Redis
 //
@@ -48,11 +47,6 @@ func VerifyEmail(c *gin.Context) {
 	}
 
 	resp, statusCode := handler.VerifyEmail(payload)
-
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
-		renderer.Render(c, resp, statusCode)
-		return
-	}
 
 	renderer.Render(c, resp, statusCode)
 }
@@ -99,11 +93,6 @@ func CreateVerificationEmail(c *gin.Context) {
 
 	resp, statusCode := handler.CreateVerificationEmail(payload)
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
-		renderer.Render(c, resp, statusCode)
-		return
-	}
-
 	renderer.Render(c, resp, statusCode)
 }
 
@@ -140,11 +129,6 @@ func VerifyUpdatedEmail(c *gin.Context) {
 	}
 
 	resp, statusCode := handler.VerifyUpdatedEmail(payload)
-
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
-		renderer.Render(c, resp, statusCode)
-		return
-	}
 
 	renderer.Render(c, resp, statusCode)
 }

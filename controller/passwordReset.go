@@ -15,7 +15,7 @@ import (
 
 // PasswordForgot sends secret code for resetting a forgotten password
 //
-// dependency: relational database, Redis, email service
+// dependency: relational database, Redis, email service, password recovery service
 //
 // Accepted JSON payload:
 //
@@ -47,6 +47,12 @@ func PasswordForgot(c *gin.Context) {
 		return
 	}
 
+	// verify that password recovery service is enabled in .env
+	if !config.IsPassRecoveryService() {
+		renderer.Render(c, gin.H{"message": "password recovery service not enabled"}, http.StatusNotImplemented)
+		return
+	}
+
 	email := model.AuthPayload{}
 
 	if err := c.ShouldBindJSON(&email); err != nil {
@@ -55,11 +61,6 @@ func PasswordForgot(c *gin.Context) {
 	}
 
 	resp, statusCode := handler.PasswordForgot(email)
-
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
-		renderer.Render(c, resp, statusCode)
-		return
-	}
 
 	renderer.Render(c, resp, statusCode)
 }
@@ -140,11 +141,6 @@ func PasswordUpdate(c *gin.Context) {
 	}
 
 	resp, statusCode := handler.PasswordUpdate(claims, payload)
-
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
-		renderer.Render(c, resp, statusCode)
-		return
-	}
 
 	renderer.Render(c, resp, statusCode)
 }

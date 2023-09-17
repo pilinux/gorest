@@ -443,7 +443,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	// already verified!
 	configSecurity := config.GetConfig().Security
 	if claims.TwoFA == configSecurity.TwoFA.Status.Verified {
-		httpResponse.Message = configSecurity.TwoFA.Status.Verified
+		httpResponse.Message = "twoFA: " + configSecurity.TwoFA.Status.Verified
 		httpStatusCode = http.StatusOK
 		return
 	}
@@ -635,7 +635,7 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 
 	// token confirms that 2FA is disabled
 	if claims.TwoFA == "" || claims.TwoFA == configSecurity.TwoFA.Status.Off {
-		httpResponse.Message = "twoFA is " + configSecurity.TwoFA.Status.Off
+		httpResponse.Message = "twoFA: " + configSecurity.TwoFA.Status.Off
 		httpStatusCode = http.StatusOK
 		return
 	}
@@ -899,7 +899,7 @@ func ValidateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthP
 	// already verified!
 	configSecurity := config.GetConfig().Security
 	if claims.TwoFA == configSecurity.TwoFA.Status.Verified {
-		httpResponse.Message = configSecurity.TwoFA.Status.Verified
+		httpResponse.Message = "twoFA: " + configSecurity.TwoFA.Status.Verified
 		httpStatusCode = http.StatusOK
 		return
 	}

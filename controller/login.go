@@ -45,11 +45,13 @@ func Login(c *gin.Context) {
 
 	resp, statusCode := handler.Login(payload)
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	// auth verification failed
+	if statusCode != http.StatusOK {
 		renderer.Render(c, resp, statusCode)
 		return
 	}
 
+	// auth verification OK
 	// set cookie if the feature is enabled in app settings
 	configSecurity := config.GetConfig().Security
 	if configSecurity.AuthCookieActivate {
@@ -92,6 +94,11 @@ func Login(c *gin.Context) {
 		}
 	}
 
+	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+		renderer.Render(c, resp, statusCode)
+		return
+	}
+
 	renderer.Render(c, resp.Message, statusCode)
 }
 
@@ -110,11 +117,13 @@ func Refresh(c *gin.Context) {
 
 	resp, statusCode := handler.Refresh(claims)
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	// JWT verification failed
+	if statusCode != http.StatusOK {
 		renderer.Render(c, resp, statusCode)
 		return
 	}
 
+	// JWT verification OK
 	// set cookie if the feature is enabled in app settings
 	configSecurity := config.GetConfig().Security
 	if configSecurity.AuthCookieActivate {
@@ -155,6 +164,11 @@ func Refresh(c *gin.Context) {
 			resp.Message = "failed to prepare auth cookie"
 			statusCode = http.StatusInternalServerError
 		}
+	}
+
+	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+		renderer.Render(c, resp, statusCode)
+		return
 	}
 
 	renderer.Render(c, resp.Message, statusCode)

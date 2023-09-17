@@ -2,7 +2,6 @@ package controller
 
 import (
 	"net/http"
-	"reflect"
 
 	"github.com/gin-gonic/gin"
 
@@ -14,6 +13,7 @@ import (
 // Logout -
 //
 // - if 'AUTH_COOKIE_ACTIVATE=yes', delete tokens from client browser.
+//
 // - if Redis is enabled, save invalid tokens in Redis up until the expiry time.
 //
 // dependency: JWT
@@ -58,10 +58,5 @@ func Logout(c *gin.Context) {
 
 	resp, statusCode := handler.Logout(jtiAccess, jtiRefresh, expAccess, expRefresh)
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
-		renderer.Render(c, resp, statusCode)
-		return
-	}
-
-	renderer.Render(c, resp.Message, statusCode)
+	renderer.Render(c, resp, statusCode)
 }
