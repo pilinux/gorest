@@ -173,8 +173,9 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 				return
 			}
 
+			// most likely system admin manually deleted this account?
 			httpResponse.Message = "unknown user"
-			httpStatusCode = http.StatusUnauthorized
+			httpStatusCode = http.StatusBadRequest
 			return
 		}
 	}
@@ -188,8 +189,9 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 				return
 			}
 
+			// most likely system admin manually deleted this account?
 			httpResponse.Message = "unknown user"
-			httpStatusCode = http.StatusUnauthorized
+			httpStatusCode = http.StatusBadRequest
 			return
 		}
 	}
@@ -430,16 +432,10 @@ func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayl
 
 	// auth info
 	if err := db.Where("auth_id = ?", claims.AuthID).First(&auth).Error; err != nil {
-		if err.Error() != database.RecordNotFound {
-			// db read error
-			log.WithError(err).Error("error code: 1026.1")
-			httpResponse.Message = "internal server error"
-			httpStatusCode = http.StatusInternalServerError
-			return
-		}
-
-		httpResponse.Message = "unknown user"
-		httpStatusCode = http.StatusUnauthorized
+		// most likely db read error
+		log.WithError(err).Error("error code: 1026.1")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 
@@ -453,7 +449,7 @@ func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayl
 	}
 	if !verifyPass {
 		httpResponse.Message = "wrong credentials"
-		httpStatusCode = http.StatusUnauthorized
+		httpStatusCode = http.StatusBadRequest
 		return
 	}
 
