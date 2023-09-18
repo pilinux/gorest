@@ -294,7 +294,7 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 			// most probably using another verification code, the email was updated
 			// hence, expire this request
 			httpResponse.Message = "wrong/expired verification code"
-			httpStatusCode = http.StatusInternalServerError
+			httpStatusCode = http.StatusBadRequest
 			return
 		}
 	}
@@ -313,7 +313,7 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 			// most probably using another verification code, the email was updated
 			// hence, expire this request
 			httpResponse.Message = "wrong/expired verification code"
-			httpStatusCode = http.StatusInternalServerError
+			httpStatusCode = http.StatusBadRequest
 			return
 		}
 	}

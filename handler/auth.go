@@ -3,6 +3,7 @@ package handler
 
 import (
 	"encoding/hex"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -72,7 +73,8 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 			}
 		}
 		if err == nil {
-			log.Error("check env: ACTIVATE_CIPHER")
+			e := errors.New("check env: ACTIVATE_CIPHER")
+			log.WithError(e).Error("error code: 1002.3")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -102,7 +104,7 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 		if err != nil {
 			if err.Error() != database.RecordNotFound {
 				// db read error
-				log.WithError(err).Error("error code: 1002.3")
+				log.WithError(err).Error("error code: 1002.4")
 				httpResponse.Message = "internal server error"
 				httpStatusCode = http.StatusInternalServerError
 				return
@@ -118,7 +120,7 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 	// send a verification email if required by the application
 	emailDelivered, err := service.SendEmail(authFinal.Email, model.EmailTypeVerifyEmailNewAcc)
 	if err != nil {
-		log.WithError(err).Error("error code: 1002.4")
+		log.WithError(err).Error("error code: 1002.5")
 		httpResponse.Message = "email delivery service failed"
 		httpStatusCode = http.StatusInternalServerError
 		return
