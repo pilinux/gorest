@@ -26,8 +26,6 @@ jobs:
         uses: actions/cache@v3.3.2
         with:
           path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
             **/go.sum
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
