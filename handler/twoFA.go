@@ -722,17 +722,35 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 		}
 	}
 
+	// delete 2FA backup codes from DB if exists
+	twoFABackup := []model.TwoFABackup{}
+	err = db.Where("id_auth = ?", v.AuthID).Find(&twoFABackup).Error
+	if err != nil {
+		log.WithError(err).Error("error code: 1054.5")
+	}
+	if err == nil {
+		if len(twoFABackup) > 0 {
+			tx := db.Begin()
+			if err := tx.Delete(&twoFABackup).Error; err != nil {
+				tx.Rollback()
+				log.WithError(err).Error("error code: 1054.6")
+			} else {
+				tx.Commit()
+			}
+		}
+	}
+
 	// generate new tokens
 	accessJWT, _, err := middleware.GetJWT(claims, "access")
 	if err != nil {
-		log.WithError(err).Error("error code: 1054.5")
+		log.WithError(err).Error("error code: 1054.7")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
 	if err != nil {
-		log.WithError(err).Error("error code: 1054.6")
+		log.WithError(err).Error("error code: 1054.8")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
