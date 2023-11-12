@@ -319,11 +319,59 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 	}
 
 	// check 'auths'
+	// verify that this email is not used by another user
+	if isEmail {
+		err := db.Where("email = ?", tempEmail.Email).First(&auth).Error
+
+		if err == nil {
+			httpResponse.Message = "email already in use"
+			httpStatusCode = http.StatusBadRequest
+			return
+		}
+
+		if err != nil {
+			if err.Error() != database.RecordNotFound {
+				// db read error
+				log.WithError(err).Error("error code: 1063.71")
+				httpResponse.Message = "internal server error"
+				httpStatusCode = http.StatusInternalServerError
+				return
+			}
+		}
+	}
+	if !isEmail {
+		err := db.Where("email_hash = ?", tempEmail.EmailHash).First(&auth).Error
+
+		if err == nil {
+			httpResponse.Message = "email already in use"
+			httpStatusCode = http.StatusBadRequest
+			return
+		}
+
+		if err != nil {
+			if err.Error() != database.RecordNotFound {
+				// db read error
+				log.WithError(err).Error("error code: 1063.72")
+				httpResponse.Message = "internal server error"
+				httpStatusCode = http.StatusInternalServerError
+				return
+			}
+		}
+	}
+
+	// fetch auth data
 	if err := db.Where("auth_id = ?", tempEmail.IDAuth).First(&auth).Error; err != nil {
+		if err.Error() != database.RecordNotFound {
+			// db read error
+			log.WithError(err).Error("error code: 1063.73")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
+		}
+
 		// auth_id mismatch!
-		log.WithError(err).Error("error code: 1063.7")
-		httpResponse.Message = "internal server error"
-		httpStatusCode = http.StatusInternalServerError
+		httpResponse.Message = "wrong/expired verification code"
+		httpStatusCode = http.StatusBadRequest
 		return
 	}
 
