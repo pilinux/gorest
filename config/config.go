@@ -94,7 +94,7 @@ func GetConfig() *Configuration {
 // database - all DB variables
 func database() (databaseConfig DatabaseConfig, err error) {
 	// RDBMS
-	activateRDBMS := strings.TrimSpace(os.Getenv("ACTIVATE_RDBMS"))
+	activateRDBMS := strings.ToLower(strings.TrimSpace(os.Getenv("ACTIVATE_RDBMS")))
 	if activateRDBMS == Activated {
 		dbRDBMS, errThis := databaseRDBMS()
 		if errThis != nil {
@@ -106,7 +106,7 @@ func database() (databaseConfig DatabaseConfig, err error) {
 	databaseConfig.RDBMS.Activate = activateRDBMS
 
 	// REDIS
-	activateRedis := strings.TrimSpace(os.Getenv("ACTIVATE_REDIS"))
+	activateRedis := strings.ToLower(strings.TrimSpace(os.Getenv("ACTIVATE_REDIS")))
 	if activateRedis == Activated {
 		dbRedis, errThis := databaseRedis()
 		if errThis != nil {
@@ -118,7 +118,7 @@ func database() (databaseConfig DatabaseConfig, err error) {
 	databaseConfig.REDIS.Activate = activateRedis
 
 	// MongoDB
-	activateMongo := strings.TrimSpace(os.Getenv("ACTIVATE_MONGO"))
+	activateMongo := strings.ToLower(strings.TrimSpace(os.Getenv("ACTIVATE_MONGO")))
 	if activateMongo == Activated {
 		dbMongo, errThis := databaseMongo()
 		if errThis != nil {
@@ -135,7 +135,7 @@ func database() (databaseConfig DatabaseConfig, err error) {
 // databaseRDBMS - all RDBMS variables
 func databaseRDBMS() (databaseConfig DatabaseConfig, err error) {
 	// Env
-	databaseConfig.RDBMS.Env.Driver = strings.TrimSpace(os.Getenv("DBDRIVER"))
+	databaseConfig.RDBMS.Env.Driver = strings.ToLower(strings.TrimSpace(os.Getenv("DBDRIVER")))
 	databaseConfig.RDBMS.Env.Host = strings.TrimSpace(os.Getenv("DBHOST"))
 	databaseConfig.RDBMS.Env.Port = strings.TrimSpace(os.Getenv("DBPORT"))
 	databaseConfig.RDBMS.Env.TimeZone = strings.TrimSpace(os.Getenv("DBTIMEZONE"))
@@ -224,9 +224,9 @@ func databaseMongo() (databaseConfig DatabaseConfig, err error) {
 
 // email - config for using external email services
 func email() (emailConfig EmailConfig, err error) {
-	emailConfig.Activate = strings.TrimSpace(os.Getenv("ACTIVATE_EMAIL_SERVICE"))
+	emailConfig.Activate = strings.ToLower(strings.TrimSpace(os.Getenv("ACTIVATE_EMAIL_SERVICE")))
 	if emailConfig.Activate == Activated {
-		emailConfig.Provider = strings.TrimSpace(os.Getenv("EMAIL_SERVICE_PROVIDER"))
+		emailConfig.Provider = strings.ToLower(strings.TrimSpace(os.Getenv("EMAIL_SERVICE_PROVIDER")))
 		emailConfig.APIToken = strings.TrimSpace(os.Getenv("EMAIL_API_TOKEN"))
 		emailConfig.AddrFrom = strings.TrimSpace(os.Getenv("EMAIL_FROM"))
 
@@ -277,7 +277,7 @@ func email() (emailConfig EmailConfig, err error) {
 
 // logger - config for sentry.io
 func logger() (loggerConfig LoggerConfig) {
-	loggerConfig.Activate = strings.TrimSpace(os.Getenv("ACTIVATE_SENTRY"))
+	loggerConfig.Activate = strings.ToLower(strings.TrimSpace(os.Getenv("ACTIVATE_SENTRY")))
 	if loggerConfig.Activate == Activated {
 		loggerConfig.SentryDsn = strings.TrimSpace(os.Getenv("SentryDSN"))
 	}
@@ -299,14 +299,14 @@ func security() (securityConfig SecurityConfig, err error) {
 	}
 
 	// Basic auth
-	securityConfig.MustBasicAuth = strings.TrimSpace(os.Getenv("ACTIVATE_BASIC_AUTH"))
+	securityConfig.MustBasicAuth = strings.ToLower(strings.TrimSpace(os.Getenv("ACTIVATE_BASIC_AUTH")))
 	if securityConfig.MustBasicAuth == Activated {
 		securityConfig.BasicAuth.Username = strings.TrimSpace(os.Getenv("USERNAME"))
 		securityConfig.BasicAuth.Password = strings.TrimSpace(os.Getenv("PASSWORD"))
 	}
 
 	// JWT
-	securityConfig.MustJWT = strings.TrimSpace(os.Getenv("ACTIVATE_JWT"))
+	securityConfig.MustJWT = strings.ToLower(strings.TrimSpace(os.Getenv("ACTIVATE_JWT")))
 	if securityConfig.MustJWT == Activated {
 		securityConfig.JWT, err = getParamsJWT()
 		if err != nil {
@@ -318,24 +318,24 @@ func security() (securityConfig SecurityConfig, err error) {
 	}
 
 	// When user logs off, invalidate the tokens
-	securityConfig.InvalidateJWT = strings.TrimSpace(os.Getenv("INVALIDATE_JWT"))
+	securityConfig.InvalidateJWT = strings.ToLower(strings.TrimSpace(os.Getenv("INVALIDATE_JWT")))
 
 	// Cookie for authentication and authorization
-	authCookieActivate := strings.TrimSpace(os.Getenv("AUTH_COOKIE_ACTIVATE"))
+	authCookieActivate := strings.ToLower(strings.TrimSpace(os.Getenv("AUTH_COOKIE_ACTIVATE")))
 	if authCookieActivate == Activated {
 		securityConfig.AuthCookieActivate = true
 		securityConfig.AuthCookiePath = strings.TrimSpace(os.Getenv("AUTH_COOKIE_PATH"))
 		securityConfig.AuthCookieDomain = strings.TrimSpace(os.Getenv("AUTH_COOKIE_DOMAIN"))
 
-		if strings.TrimSpace(os.Getenv("AUTH_COOKIE_SECURE")) == Activated {
+		if strings.ToLower(strings.TrimSpace(os.Getenv("AUTH_COOKIE_SECURE"))) == Activated {
 			securityConfig.AuthCookieSecure = true
 		}
 
-		if strings.TrimSpace(os.Getenv("AUTH_COOKIE_HttpOnly")) == Activated {
+		if strings.ToLower(strings.TrimSpace(os.Getenv("AUTH_COOKIE_HttpOnly"))) == Activated {
 			securityConfig.AuthCookieHTTPOnly = true
 		}
 
-		authCookieSameSite := strings.TrimSpace(os.Getenv("AUTH_COOKIE_SameSite"))
+		authCookieSameSite := strings.ToLower(strings.TrimSpace(os.Getenv("AUTH_COOKIE_SameSite")))
 		if len(authCookieSameSite) > 0 {
 			if authCookieSameSite == "strict" {
 				securityConfig.AuthCookieSameSite = http.SameSiteStrictMode
@@ -348,13 +348,13 @@ func security() (securityConfig SecurityConfig, err error) {
 			}
 		}
 
-		if strings.TrimSpace(os.Getenv("SERVE_JWT_AS_RESPONSE_BODY")) != "no" {
+		if strings.ToLower(strings.TrimSpace(os.Getenv("SERVE_JWT_AS_RESPONSE_BODY"))) != "no" {
 			securityConfig.ServeJwtAsResBody = true
 		}
 	}
 
 	// Hashing passwords
-	securityConfig.MustHash = strings.TrimSpace(os.Getenv("ACTIVATE_HASHING"))
+	securityConfig.MustHash = strings.ToLower(strings.TrimSpace(os.Getenv("ACTIVATE_HASHING")))
 	if securityConfig.MustHash == Activated {
 		securityConfig.HashPass, err = getParamsHash()
 		if err != nil {
@@ -364,7 +364,7 @@ func security() (securityConfig SecurityConfig, err error) {
 	}
 
 	// config for ChaCha20-Poly1305 encryption
-	activateCipher := strings.TrimSpace(os.Getenv("ACTIVATE_CIPHER"))
+	activateCipher := strings.ToLower(strings.TrimSpace(os.Getenv("ACTIVATE_CIPHER")))
 	if activateCipher == Activated {
 		securityConfig.MustCipher = true
 
@@ -390,15 +390,15 @@ func security() (securityConfig SecurityConfig, err error) {
 	// Email verification and password recovery
 	securityConfig.VerifyEmail = false
 	securityConfig.RecoverPass = false
-	if strings.TrimSpace(os.Getenv("VERIFY_EMAIL")) == "yes" {
+	if strings.ToLower(strings.TrimSpace(os.Getenv("VERIFY_EMAIL"))) == Activated {
 		securityConfig.VerifyEmail = true
 	}
-	if strings.TrimSpace(os.Getenv("RECOVER_PASSWORD")) == "yes" {
+	if strings.ToLower(strings.TrimSpace(os.Getenv("RECOVER_PASSWORD"))) == Activated {
 		securityConfig.RecoverPass = true
 	}
 
 	// Two-factor authentication
-	securityConfig.Must2FA = strings.TrimSpace(os.Getenv("ACTIVATE_2FA"))
+	securityConfig.Must2FA = strings.ToLower(strings.TrimSpace(os.Getenv("ACTIVATE_2FA")))
 	if securityConfig.Must2FA == Activated {
 		securityConfig.TwoFA.Issuer = strings.TrimSpace(os.Getenv("TWO_FA_ISSUER"))
 
@@ -443,21 +443,21 @@ func security() (securityConfig SecurityConfig, err error) {
 
 		// false: sha2_256()
 		// true: blake2b(sha2_256())
-		doubleHashTwoFA := strings.TrimSpace(os.Getenv("TWO_FA_DOUBLE_HASH"))
+		doubleHashTwoFA := strings.ToLower(strings.TrimSpace(os.Getenv("TWO_FA_DOUBLE_HASH")))
 		if doubleHashTwoFA == Activated {
 			securityConfig.TwoFA.DoubleHash = true
 		}
 	}
 
 	// App firewall
-	securityConfig.MustFW = strings.TrimSpace(os.Getenv("ACTIVATE_FIREWALL"))
+	securityConfig.MustFW = strings.ToLower(strings.TrimSpace(os.Getenv("ACTIVATE_FIREWALL")))
 	if securityConfig.MustFW == Activated {
 		securityConfig.Firewall.ListType = strings.TrimSpace(os.Getenv("LISTTYPE"))
 		securityConfig.Firewall.IP = strings.TrimSpace(os.Getenv("IP"))
 	}
 
 	// CORS
-	securityConfig.MustCORS = strings.TrimSpace(os.Getenv("ACTIVATE_CORS"))
+	securityConfig.MustCORS = strings.ToLower(strings.TrimSpace(os.Getenv("ACTIVATE_CORS")))
 	if securityConfig.MustCORS == Activated {
 		cp := middleware.CORSPolicy{}
 
@@ -589,14 +589,14 @@ func security() (securityConfig SecurityConfig, err error) {
 func server() (serverConfig ServerConfig) {
 	serverConfig.ServerHost = strings.TrimSpace(os.Getenv("APP_HOST"))
 	serverConfig.ServerPort = strings.TrimSpace(os.Getenv("APP_PORT"))
-	serverConfig.ServerEnv = strings.TrimSpace(os.Getenv("APP_ENV"))
+	serverConfig.ServerEnv = strings.ToLower(strings.TrimSpace(os.Getenv("APP_ENV")))
 
 	return
 }
 
 // view - HTML renderer
 func view() (viewConfig ViewConfig, err error) {
-	viewConfig.Activate = strings.TrimSpace(os.Getenv("ACTIVATE_VIEW"))
+	viewConfig.Activate = strings.ToLower(strings.TrimSpace(os.Getenv("ACTIVATE_VIEW")))
 	if viewConfig.Activate == Activated {
 		viewConfig.Directory = strings.TrimRight(strings.TrimSpace(os.Getenv("TEMPLATE_DIR")), "/")
 

@@ -1,10 +1,8 @@
 package config
 
-import "strings"
-
 // IsProd returns true when app is running in production mode
 func IsProd() bool {
-	return strings.ToLower(GetConfig().Server.ServerEnv) == "production"
+	return GetConfig().Server.ServerEnv == "production"
 }
 
 // IsSentry returns true when sentry logger is enabled in .env
