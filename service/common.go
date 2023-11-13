@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -85,7 +86,7 @@ func DelMem2FA(authID uint64) {
 // {false, nil} => email delivery not required/service not configured
 //
 // {false, error} => email delivery failed
-func SendEmail(email string, emailType int) (bool, error) {
+func SendEmail(email string, emailType int, opts ...string) (bool, error) {
 	// send email if required by the application
 	appConfig := config.GetConfig()
 
@@ -186,6 +187,14 @@ func SendEmail(email string, emailType int) (bool, error) {
 		htmlModel := lib.HTMLModel(lib.StrArrHTMLModel(appConfig.EmailConf.HTMLModel))
 		htmlModel["secret_code"] = code
 		htmlModel["email_validity_period"] = timestring.HourMinuteSecond(keyTTL)
+
+		optsLen := len(opts)
+		if optsLen > 0 {
+			for i := 0; i < optsLen; i++ {
+				key := fmt.Sprintf("additional_info_%d", i)
+				htmlModel[key] = opts[i]
+			}
+		}
 
 		params := PostmarkParams{}
 		params.ServerToken = appConfig.EmailConf.APIToken
