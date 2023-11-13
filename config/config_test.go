@@ -77,6 +77,9 @@ func TestGetConfig(t *testing.T) {
 
 	expected := &config.Configuration{}
 
+	if config.IsProd() {
+		t.Errorf("expected IsProd() to return false, but got true")
+	}
 	expected.Version = "d591c29"
 
 	expected.Database.RDBMS.Activate = config.Activated
