@@ -17,8 +17,8 @@ require (
 	github.com/pilinux/crypt v0.0.0
 	github.com/pilinux/libgo v0.0.5
 	github.com/pilinux/structs v1.1.1
+	github.com/pilinux/twofactor v1.1.1
 	github.com/qiniu/qmgo v1.1.8
-	github.com/sec51/twofactor v1.0.0
 	github.com/sirupsen/logrus v1.9.3
 	go.mongodb.org/mongo-driver v1.13.0
 	golang.org/x/crypto v0.15.0
@@ -55,11 +55,9 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.9 // indirect
+	github.com/pilinux/cryptoengine v0.1.1 // indirect
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/sec51/convert v1.0.2 // indirect
-	github.com/sec51/cryptoengine v0.0.0-20180911112225-2306d105a49e // indirect
-	github.com/sec51/gf256 v0.0.0-20160126143050-2454accbeb9e // indirect
-	github.com/sec51/qrcode v0.0.0-20160126144534-b7779abbcaf1 // indirect
 	github.com/tilinna/clock v1.1.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
@@ -69,9 +67,10 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
 	golang.org/x/arch v0.4.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/sync v0.3.0 // indirect
+	golang.org/x/sync v0.5.0 // indirect
 	golang.org/x/sys v0.14.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	rsc.io/qr v0.2.0 // indirect
 )

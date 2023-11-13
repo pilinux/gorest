@@ -4,7 +4,7 @@ import (
 	"crypto"
 	"testing"
 
-	"github.com/sec51/twofactor"
+	"github.com/pilinux/twofactor"
 
 	"github.com/pilinux/gorest/lib"
 )

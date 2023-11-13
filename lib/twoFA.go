@@ -3,7 +3,7 @@ package lib
 import (
 	"crypto"
 
-	"github.com/sec51/twofactor"
+	"github.com/pilinux/twofactor"
 )
 
 // NewTOTP - creates a new TOTP object
