@@ -14,7 +14,8 @@ import (
 
 // SetupRouter sets up all the routes
 func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
-	if configure.Server.ServerEnv == "production" {
+	// Set Gin mode
+	if gconfig.IsProd() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
@@ -85,12 +86,12 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 	r.TrustedPlatform = trustedPlatform
 
 	// CORS
-	if configure.Security.MustCORS == gconfig.Activated {
+	if gconfig.IsCORS() {
 		r.Use(gmiddleware.CORS(configure.Security.CORS))
 	}
 
 	// Sentry.io
-	if configure.Logger.Activate == gconfig.Activated {
+	if gconfig.IsSentry() {
 		r.Use(gmiddleware.SentryCapture(
 			configure.Logger.SentryDsn,
 			configure.Server.ServerEnv,
@@ -99,7 +100,7 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 	}
 
 	// WAF
-	if configure.Security.MustFW == gconfig.Activated {
+	if gconfig.IsWAF() {
 		r.Use(gmiddleware.Firewall(
 			configure.Security.Firewall.ListType,
 			configure.Security.Firewall.IP,
@@ -107,7 +108,7 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 	}
 
 	// Render HTML
-	if configure.ViewConfig.Activate == gconfig.Activated {
+	if gconfig.IsTemplatingEngine() {
 		r.Use(gmiddleware.Pongo2(configure.ViewConfig.Directory))
 	}
 
@@ -118,13 +119,13 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 	v1 := r.Group("/api/v1/")
 	{
 		// RDBMS
-		if configure.Database.RDBMS.Activate == gconfig.Activated {
+		if gconfig.IsRDBMS() {
 			// Register - no JWT required
 			v1.POST("register", gcontroller.CreateUserAuth)
 
 			// Verify email
 			if configure.Security.VerifyEmail {
-				if configure.Database.REDIS.Activate == gconfig.Activated {
+				if gconfig.IsRedis() {
 					v1.POST("verify", gcontroller.VerifyEmail)
 					v1.POST("resend-verification-email", gcontroller.CreateVerificationEmail)
 					v1.POST("verify-updated-email", gcontroller.VerifyUpdatedEmail)
@@ -149,14 +150,14 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			rJWT.POST("", gcontroller.Refresh)
 
 			// Double authentication
-			if configure.Security.Must2FA == gconfig.Activated {
+			if gconfig.Is2FA() {
 				r2FA := v1.Group("2fa")
 				r2FA.Use(gmiddleware.JWT()).Use(gservice.JWTBlacklistChecker())
 				r2FA.POST("setup", gcontroller.Setup2FA)
 				r2FA.POST("activate", gcontroller.Activate2FA)
 				r2FA.POST("validate", gcontroller.Validate2FA)
 				r2FA.POST("validate-backup-code", gcontroller.ValidateBackup2FA)
-				if configure.Security.Must2FA == gconfig.Activated {
+				if gconfig.Is2FA() {
 					r2FA.Use(gmiddleware.TwoFA(
 						configure.Security.TwoFA.Status.On,
 						configure.Security.TwoFA.Status.Off,
@@ -172,14 +173,14 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			// Update/reset password
 			rPass := v1.Group("password")
 			// Reset forgotten password
-			if configure.EmailConf.Activate == gconfig.Activated {
+			if gconfig.IsEmailService() {
 				// send password recovery email
 				rPass.POST("forgot", gcontroller.PasswordForgot)
 				// recover account and set new password
 				rPass.POST("reset", gcontroller.PasswordRecover)
 			}
 			rPass.Use(gmiddleware.JWT()).Use(gservice.JWTBlacklistChecker())
-			if configure.Security.Must2FA == gconfig.Activated {
+			if gconfig.Is2FA() {
 				rPass.Use(gmiddleware.TwoFA(
 					configure.Security.TwoFA.Status.On,
 					configure.Security.TwoFA.Status.Off,
@@ -192,7 +193,7 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			// Change existing email
 			rEmail := v1.Group("email")
 			rEmail.Use(gmiddleware.JWT()).Use(gservice.JWTBlacklistChecker())
-			if configure.Security.Must2FA == gconfig.Activated {
+			if gconfig.Is2FA() {
 				rPass.Use(gmiddleware.TwoFA(
 					configure.Security.TwoFA.Status.On,
 					configure.Security.TwoFA.Status.Off,
@@ -211,7 +212,7 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			rUsers.GET("", controller.GetUsers)    // Non-protected
 			rUsers.GET("/:id", controller.GetUser) // Non-protected
 			rUsers.Use(gmiddleware.JWT()).Use(gservice.JWTBlacklistChecker())
-			if configure.Security.Must2FA == gconfig.Activated {
+			if gconfig.Is2FA() {
 				rUsers.Use(gmiddleware.TwoFA(
 					configure.Security.TwoFA.Status.On,
 					configure.Security.TwoFA.Status.Off,
@@ -227,7 +228,7 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			rPosts.GET("", controller.GetPosts)    // Non-protected
 			rPosts.GET("/:id", controller.GetPost) // Non-protected
 			rPosts.Use(gmiddleware.JWT()).Use(gservice.JWTBlacklistChecker())
-			if configure.Security.Must2FA == gconfig.Activated {
+			if gconfig.Is2FA() {
 				rPosts.Use(gmiddleware.TwoFA(
 					configure.Security.TwoFA.Status.On,
 					configure.Security.TwoFA.Status.Off,
@@ -245,7 +246,7 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			// Test JWT
 			rTestJWT := v1.Group("test-jwt")
 			rTestJWT.Use(gmiddleware.JWT()).Use(gservice.JWTBlacklistChecker())
-			if configure.Security.Must2FA == gconfig.Activated {
+			if gconfig.Is2FA() {
 				rTestJWT.Use(gmiddleware.TwoFA(
 					configure.Security.TwoFA.Status.On,
 					configure.Security.TwoFA.Status.Off,
@@ -256,7 +257,7 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 		}
 
 		// REDIS Playground
-		if configure.Database.REDIS.Activate == gconfig.Activated {
+		if gconfig.IsRedis() {
 			rPlayground := v1.Group("playground")
 			rPlayground.GET("/redis_read", controller.RedisRead)        // Non-protected
 			rPlayground.POST("/redis_create", controller.RedisCreate)   // Non-protected
@@ -268,7 +269,7 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 		}
 
 		// Mongo Playground
-		if configure.Database.MongoDB.Activate == gconfig.Activated {
+		if gconfig.IsMongo() {
 			rPlaygroundMongo := v1.Group("playground-mongo")
 			rPlaygroundMongo.POST("/mongo_create_one", controller.MongoCreateOne)                 // Non-protected
 			rPlaygroundMongo.GET("/mongo_get_all", controller.MongoGetAll)                        // Non-protected
@@ -280,7 +281,7 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 		}
 
 		// Basic Auth demo
-		if configure.Security.MustBasicAuth == gconfig.Activated {
+		if gconfig.IsBasicAuth() {
 			user := configure.Security.BasicAuth.Username
 			pass := configure.Security.BasicAuth.Password
 			rBasicAuth := v1.Group("access_resources")
