@@ -33,6 +33,8 @@ Version `1.6.x` contains breaking changes!
 
 _Note:_ For version `1.4.5`: [v1.4.5](https://github.com/pilinux/gorest/tree/v1.4.5)
 
+For all projects, it is recommended to use version `1.6.x` or higher.
+
 ## Requirement
 
 `Go 1.19+`
@@ -84,52 +86,55 @@ _Note:_ gorest uses [GORM][21] as its ORM
 
 Procedures to generate public-private key pair using openssl:
 
-#### ECDSA
+### ECDSA
 
-ES256:
+#### ES256
+
 - prime256v1: X9.62/SECG curve over a 256 bit prime field, also known as P-256 or NIST P-256
 - widely used, recommended for general-purpose cryptographic operations
 
-```
+```bash
 openssl ecparam -name prime256v1 -genkey -noout -out private-key.pem
 openssl ec -in private-key.pem -pubout -out public-key.pem
 ```
 
-ES384:
+#### ES384
+
 - secp384r1: NIST/SECG curve over a 384 bit prime field
 
-```
+```bash
 openssl ecparam -name secp384r1 -genkey -noout -out private-key.pem
 openssl ec -in private-key.pem -pubout -out public-key.pem
 ```
 
-ES512:
+#### ES512
+
 - secp521r1: NIST/SECG curve over a 521 bit prime field
 
-```
+```bash
 openssl ecparam -name secp521r1 -genkey -noout -out private-key.pem
 openssl ec -in private-key.pem -pubout -out public-key.pem
 ```
 
-#### RSA
+### RSA
 
-RS256:
+#### RS256
 
-```
+```bash
 openssl genpkey -algorithm RSA -out private-key.pem -pkeyopt rsa_keygen_bits:2048
 openssl rsa -in private-key.pem -pubout -out public-key.pem
 ```
 
-RS384:
+#### RS384
 
-```
+```bash
 openssl genpkey -algorithm RSA -out private-key.pem -pkeyopt rsa_keygen_bits:3072
 openssl rsa -in private-key.pem -pubout -out public-key.pem
 ```
 
-RS512:
+#### RS512
 
-```
+```bash
 openssl genpkey -algorithm RSA -out private-key.pem -pkeyopt rsa_keygen_bits:4096
 openssl rsa -in private-key.pem -pubout -out public-key.pem
 ```
@@ -164,7 +169,7 @@ _Tutorials:_
 
 For version `1.6.x`, please check the project in [example](example)
 
-For version `1.4.x` and `1.5.x`, [Wiki][10]
+For version `1.4.x` and `1.5.x`, [Wiki][10] (obsolete)
 
 - convention over configuration
 
