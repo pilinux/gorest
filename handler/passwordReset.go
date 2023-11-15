@@ -386,7 +386,7 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 		log.WithError(err).Error("error code: 1025.2")
 	}
 	if result == 0 {
-		err := errors.New("failed to delete recovery key from redis")
+		err := errors.New("failed to delete password recovery secret key from redis")
 		log.WithError(err).Error("error code: 1025.3")
 	}
 
