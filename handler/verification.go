@@ -415,7 +415,7 @@ func GetUnverifiedEmail(claims middleware.MyCustomClaims) (httpResponse model.HT
 	// check auth validity
 	ok := service.ValidateAuthID(claims.AuthID)
 	if !ok {
-		httpResponse.Message = "validation failed - access denied"
+		httpResponse.Message = "access denied"
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
@@ -476,7 +476,7 @@ func ResendVerificationCodeToModifyActiveEmail(claims middleware.MyCustomClaims)
 	// check auth validity
 	ok := service.ValidateAuthID(claims.AuthID)
 	if !ok {
-		httpResponse.Message = "validation failed - access denied"
+		httpResponse.Message = "access denied"
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}

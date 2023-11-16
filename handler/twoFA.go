@@ -33,9 +33,16 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 
 	// 2FA already enabled
 	configSecurity := config.GetConfig().Security
-	if claims.TwoFA == configSecurity.TwoFA.Status.Verified || claims.TwoFA == configSecurity.TwoFA.Status.On {
-		httpResponse.Message = "2-fa activated already"
+	if claims.TwoFA == configSecurity.TwoFA.Status.Verified {
+		// JWT: 2FA verified, abort setup
+		httpResponse.Message = "twoFA: " + configSecurity.TwoFA.Status.Verified
 		httpStatusCode = http.StatusOK
+		return
+	}
+	if claims.TwoFA == configSecurity.TwoFA.Status.On {
+		// JWT: 2FA ON, abort setup
+		httpResponse.Message = "twoFA: " + configSecurity.TwoFA.Status.On
+		httpStatusCode = http.StatusBadRequest
 		return
 	}
 
@@ -56,8 +63,8 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	}
 	if err == nil {
 		if twoFA.Status == configSecurity.TwoFA.Status.On {
-			// 2FA ON
-			httpResponse.Message = "2-fa activated already, log in again"
+			// DB: 2FA ON, abort setup
+			httpResponse.Message = "twoFA: " + configSecurity.TwoFA.Status.On
 			httpStatusCode = http.StatusBadRequest
 			return
 		}
@@ -92,7 +99,7 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	}
 	if !verifyPass {
 		httpResponse.Message = "wrong credentials"
-		httpStatusCode = http.StatusUnauthorized
+		httpStatusCode = http.StatusBadRequest
 		return
 	}
 	// get user email
@@ -198,19 +205,21 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	// check auth validity
 	ok := service.ValidateAuthID(claims.AuthID)
 	if !ok {
-		httpResponse.Message = "validation failed - access denied"
+		httpResponse.Message = "access denied"
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
 
 	configSecurity := config.GetConfig().Security
-	if claims.TwoFA == configSecurity.TwoFA.Status.On {
-		httpResponse.Message = "2-fa activated already, log in again"
+	if claims.TwoFA == configSecurity.TwoFA.Status.Verified {
+		// JWT: 2FA verified, abort setup
+		httpResponse.Message = "twoFA: " + configSecurity.TwoFA.Status.Verified
 		httpStatusCode = http.StatusBadRequest
 		return
 	}
-	if claims.TwoFA == configSecurity.TwoFA.Status.Verified {
-		httpResponse.Message = "2-fa activated already"
+	if claims.TwoFA == configSecurity.TwoFA.Status.On {
+		// JWT: 2FA ON, abort setup
+		httpResponse.Message = "twoFA: " + configSecurity.TwoFA.Status.On
 		httpStatusCode = http.StatusBadRequest
 		return
 	}
@@ -220,6 +229,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	// step 1: check if client secret is available in memory
 	data2FA, ok := model.InMemorySecret2FA[claims.AuthID]
 	if !ok {
+		// request user to visit setup endpoint first
 		httpResponse.Message = "request for a new 2-fa secret"
 		httpStatusCode = http.StatusBadRequest
 		return
@@ -229,7 +239,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	authPayload.OTP = lib.RemoveAllSpace(authPayload.OTP)
 	if len(authPayload.OTP) != configSecurity.TwoFA.Digits {
 		httpResponse.Message = "wrong one-time password"
-		httpStatusCode = http.StatusUnauthorized
+		httpStatusCode = http.StatusBadRequest
 		return
 	}
 
@@ -247,7 +257,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 			model.InMemorySecret2FA[claims.AuthID] = data2FA
 
 			httpResponse.Message = "wrong one-time password"
-			httpStatusCode = http.StatusUnauthorized
+			httpStatusCode = http.StatusBadRequest
 			return
 		}
 
@@ -289,7 +299,8 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 			// delete secrets from memory
 			service.DelMem2FA(claims.AuthID)
 
-			httpResponse.Message = "2-fa activated already, log in again"
+			// DB: 2FA ON, abort setup
+			httpResponse.Message = "twoFA: " + configSecurity.TwoFA.Status.On
 			httpStatusCode = http.StatusBadRequest
 			return
 		}
@@ -433,7 +444,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	// check auth validity
 	ok := service.ValidateAuthID(claims.AuthID)
 	if !ok {
-		httpResponse.Message = "validation failed - access denied"
+		httpResponse.Message = "access denied"
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
@@ -460,7 +471,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	data2FA, ok := model.InMemorySecret2FA[claims.AuthID]
 	if !ok {
 		httpResponse.Message = "log in again"
-		httpStatusCode = http.StatusUnauthorized
+		httpStatusCode = http.StatusBadRequest
 		return
 	}
 
@@ -468,7 +479,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	authPayload.OTP = lib.RemoveAllSpace(authPayload.OTP)
 	if len(authPayload.OTP) != configSecurity.TwoFA.Digits {
 		httpResponse.Message = "wrong one-time password"
-		httpStatusCode = http.StatusUnauthorized
+		httpStatusCode = http.StatusBadRequest
 		return
 	}
 
@@ -494,12 +505,14 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 			return
 		}
 
+		// 2FA never configured before for this account
 		httpResponse.Message = "unexpected request (2): 2-fa is OFF / log in again"
 		httpStatusCode = http.StatusBadRequest
 		return
 	}
 	// if 2FA is not ON
 	if twoFA.Status != configSecurity.TwoFA.Status.On {
+		// 2FA is disabled for this account
 		httpResponse.Message = "unexpected request (3): 2-fa is OFF / log in again"
 		httpStatusCode = http.StatusBadRequest
 		return
@@ -563,7 +576,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 
 			// response to the client
 			httpResponse.Message = "wrong one-time password"
-			httpStatusCode = http.StatusUnauthorized
+			httpStatusCode = http.StatusBadRequest
 			return
 		}
 
@@ -652,8 +665,8 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 			return
 		}
 
-		httpResponse.Message = "unknown user"
-		httpStatusCode = http.StatusNotFound
+		httpResponse.Message = "user not found"
+		httpStatusCode = http.StatusUnauthorized
 		return
 	}
 
@@ -667,7 +680,7 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 	}
 	if !verifyPass {
 		httpResponse.Message = "wrong credentials"
-		httpStatusCode = http.StatusUnauthorized
+		httpStatusCode = http.StatusBadRequest
 		return
 	}
 
@@ -815,7 +828,7 @@ func CreateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPay
 	}
 	if !verifyPass {
 		httpResponse.Message = "wrong credentials"
-		httpStatusCode = http.StatusUnauthorized
+		httpStatusCode = http.StatusBadRequest
 		return
 	}
 
@@ -907,7 +920,7 @@ func ValidateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthP
 	// check auth validity
 	ok := service.ValidateAuthID(claims.AuthID)
 	if !ok {
-		httpResponse.Message = "validation failed - access denied"
+		httpResponse.Message = "access denied"
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
@@ -917,6 +930,7 @@ func ValidateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthP
 	// already verified!
 	configSecurity := config.GetConfig().Security
 	if claims.TwoFA == configSecurity.TwoFA.Status.Verified {
+		// JWT: 2FA verified
 		httpResponse.Message = "twoFA: " + configSecurity.TwoFA.Status.Verified
 		httpStatusCode = http.StatusOK
 		return
@@ -931,7 +945,7 @@ func ValidateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthP
 	authPayload.OTP = strings.TrimSpace(authPayload.OTP)
 	if authPayload.OTP == "" {
 		httpResponse.Message = "required 2-fa backup code"
-		httpStatusCode = http.StatusUnauthorized
+		httpStatusCode = http.StatusBadRequest
 		return
 	}
 
@@ -947,7 +961,7 @@ func ValidateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthP
 	}
 	if len(twoFABackup) == 0 {
 		httpResponse.Message = "user has no unused valid backup code"
-		httpStatusCode = http.StatusUnauthorized
+		httpStatusCode = http.StatusBadRequest
 		return
 	}
 
@@ -977,7 +991,7 @@ func ValidateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthP
 
 	if !isOtpValid {
 		httpResponse.Message = "invalid 2-fa backup code"
-		httpStatusCode = http.StatusUnauthorized
+		httpStatusCode = http.StatusBadRequest
 		return
 	}
 

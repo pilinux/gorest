@@ -401,7 +401,7 @@ func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayl
 	// check auth validity
 	ok := service.ValidateAuthID(claims.AuthID)
 	if !ok {
-		httpResponse.Message = "validation failed - access denied"
+		httpResponse.Message = "access denied"
 		httpStatusCode = http.StatusUnauthorized
 		return
 	}
