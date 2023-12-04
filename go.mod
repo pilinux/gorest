@@ -12,10 +12,10 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/mediocregopher/radix/v4 v4.1.4
 	github.com/mrz1836/postmark v1.6.1
-	github.com/onrik/logrus v0.11.0
 	github.com/pilinux/argon2 v0.6.0
 	github.com/pilinux/crypt v0.0.0
 	github.com/pilinux/libgo v0.0.5
+	github.com/pilinux/logrus v0.11.1
 	github.com/pilinux/structs v1.1.1
 	github.com/pilinux/twofactor v1.1.1
 	github.com/qiniu/qmgo v1.1.8
@@ -32,7 +32,7 @@ require (
 	github.com/bytedance/sonic v1.9.2 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
-	github.com/getsentry/sentry-go v0.21.0 // indirect
+	github.com/getsentry/sentry-go v0.25.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
@@ -49,7 +49,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/leodido/go-urn v1.2.4 // indirect
 	github.com/lib/pq v1.10.9 // indirect
-	github.com/mattn/go-isatty v0.0.19 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-sqlite3 v1.14.17 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
