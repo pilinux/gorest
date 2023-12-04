@@ -31,6 +31,7 @@ const (
 // Redis key prefixes
 const (
 	EmailVerificationKeyPrefix string = "gorest-email-verification-"
+	EmailUpdateKeyPrefix       string = "gorest-email-update-"
 	PasswordRecoveryKeyPrefix  string = "gorest-pass-recover-"
 )
 

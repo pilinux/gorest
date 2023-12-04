@@ -227,7 +227,7 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 		key   string
 		value string
 	}{}
-	data.key = model.EmailVerificationKeyPrefix + payload.VerificationCode
+	data.key = model.EmailUpdateKeyPrefix + payload.VerificationCode
 
 	// get redis client
 	client := *database.GetRedis()

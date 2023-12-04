@@ -127,13 +127,20 @@ func SendEmail(email string, emailType int, opts ...string) (bool, error) {
 
 	// generate verification/password recovery code
 	if emailType == model.EmailTypeVerifyEmailNewAcc || emailType == model.EmailTypeVerifyUpdatedEmail {
+		if emailType == model.EmailTypeVerifyEmailNewAcc {
+			data.key = model.EmailVerificationKeyPrefix
+		}
+		if emailType == model.EmailTypeVerifyUpdatedEmail {
+			data.key = model.EmailUpdateKeyPrefix
+		}
+
 		if config.IsEmailVerificationCodeUUIDv4() {
 			codeUUIDv4 = uuid.NewString()
-			data.key = model.EmailVerificationKeyPrefix + codeUUIDv4
+			data.key += codeUUIDv4
 		}
 		if !config.IsEmailVerificationCodeUUIDv4() {
 			code = lib.SecureRandomNumber(appConfig.EmailConf.EmailVerificationCodeLength)
-			data.key = model.EmailVerificationKeyPrefix + strconv.FormatUint(code, 10)
+			data.key += strconv.FormatUint(code, 10)
 		}
 		keyTTL = appConfig.EmailConf.EmailVerifyValidityPeriod
 		emailTag = appConfig.EmailConf.EmailVerificationTag
