@@ -22,7 +22,7 @@ func main() {
 	// read configs
 	configure := gconfig.GetConfig()
 
-	if configure.Database.RDBMS.Activate == gconfig.Activated {
+	if gconfig.IsRDBMS() {
 		// Initialize RDBMS client
 		if err := gdatabase.InitDB().Error; err != nil {
 			fmt.Println(err)
@@ -50,7 +50,7 @@ func main() {
 		}
 	}
 
-	if configure.Database.REDIS.Activate == gconfig.Activated {
+	if gconfig.IsRedis() {
 		// Initialize REDIS client
 		if _, err := gdatabase.InitRedis(); err != nil {
 			fmt.Println(err)
@@ -58,7 +58,7 @@ func main() {
 		}
 	}
 
-	if configure.Database.MongoDB.Activate == gconfig.Activated {
+	if gconfig.IsMongo() {
 		// Initialize MONGO client
 		if _, err := gdatabase.InitMongo(); err != nil {
 			fmt.Println(err)

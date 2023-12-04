@@ -126,7 +126,7 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			v1.POST("register", gcontroller.CreateUserAuth)
 
 			// Verify email
-			if configure.Security.VerifyEmail {
+			if gconfig.IsEmailVerificationService() {
 				if gconfig.IsRedis() {
 					v1.POST("verify", gcontroller.VerifyEmail)
 					v1.POST("resend-verification-email", gcontroller.CreateVerificationEmail)
@@ -159,13 +159,12 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 				r2FA.POST("activate", gcontroller.Activate2FA)
 				r2FA.POST("validate", gcontroller.Validate2FA)
 				r2FA.POST("validate-backup-code", gcontroller.ValidateBackup2FA)
-				if gconfig.Is2FA() {
-					r2FA.Use(gmiddleware.TwoFA(
-						configure.Security.TwoFA.Status.On,
-						configure.Security.TwoFA.Status.Off,
-						configure.Security.TwoFA.Status.Verified,
-					))
-				}
+
+				r2FA.Use(gmiddleware.TwoFA(
+					configure.Security.TwoFA.Status.On,
+					configure.Security.TwoFA.Status.Off,
+					configure.Security.TwoFA.Status.Verified,
+				))
 				// get 2FA backup codes
 				r2FA.POST("create-backup-codes", gcontroller.CreateBackup2FA)
 				// disable 2FA
