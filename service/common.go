@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/mediocregopher/radix/v4"
 	log "github.com/sirupsen/logrus"
 
@@ -122,17 +123,30 @@ func SendEmail(email string, emailType int, opts ...string) (bool, error) {
 	var keyTTL uint64
 	var emailTag string
 	var code uint64
+	var codeUUIDv4 string
 
 	// generate verification/password recovery code
 	if emailType == model.EmailTypeVerifyEmailNewAcc || emailType == model.EmailTypeVerifyUpdatedEmail {
-		code = lib.SecureRandomNumber(appConfig.EmailConf.EmailVerificationCodeLength)
-		data.key = model.EmailVerificationKeyPrefix + strconv.FormatUint(code, 10)
+		if config.IsEmailVerificationCodeUUIDv4() {
+			codeUUIDv4 = uuid.NewString()
+			data.key = model.EmailVerificationKeyPrefix + codeUUIDv4
+		}
+		if !config.IsEmailVerificationCodeUUIDv4() {
+			code = lib.SecureRandomNumber(appConfig.EmailConf.EmailVerificationCodeLength)
+			data.key = model.EmailVerificationKeyPrefix + strconv.FormatUint(code, 10)
+		}
 		keyTTL = appConfig.EmailConf.EmailVerifyValidityPeriod
 		emailTag = appConfig.EmailConf.EmailVerificationTag
 	}
 	if emailType == model.EmailTypePassRecovery {
-		code = lib.SecureRandomNumber(appConfig.EmailConf.PasswordRecoverCodeLength)
-		data.key = model.PasswordRecoveryKeyPrefix + strconv.FormatUint(code, 10)
+		if config.IsPasswordRecoverCodeUUIDv4() {
+			codeUUIDv4 = uuid.NewString()
+			data.key = model.PasswordRecoveryKeyPrefix + codeUUIDv4
+		}
+		if !config.IsPasswordRecoverCodeUUIDv4() {
+			code = lib.SecureRandomNumber(appConfig.EmailConf.PasswordRecoverCodeLength)
+			data.key = model.PasswordRecoveryKeyPrefix + strconv.FormatUint(code, 10)
+		}
 		keyTTL = appConfig.EmailConf.PassRecoverValidityPeriod
 		emailTag = appConfig.EmailConf.PasswordRecoverTag
 	}
@@ -185,7 +199,12 @@ func SendEmail(email string, emailType int, opts ...string) (bool, error) {
 	// for Postmark
 	if appConfig.EmailConf.Provider == "postmark" {
 		htmlModel := lib.HTMLModel(lib.StrArrHTMLModel(appConfig.EmailConf.HTMLModel))
-		htmlModel["secret_code"] = code
+		if code != 0 {
+			htmlModel["secret_code"] = code
+		}
+		if code == 0 {
+			htmlModel["secret_code"] = codeUUIDv4
+		}
 		htmlModel["email_validity_period"] = timestring.HourMinuteSecond(keyTTL)
 
 		optsLen := len(opts)

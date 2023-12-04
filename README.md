@@ -31,7 +31,7 @@ under the [MIT license][13] and is free for any personal or commercial project.
 
 Version `1.6.x` contains breaking changes!
 
-_Note:_ For version `1.4.5`: [v1.4.5](https://github.com/pilinux/gorest/tree/v1.4.5)
+_Note:_ For version `1.4.5` (obsolete): [v1.4.5](https://github.com/pilinux/gorest/tree/v1.4.5)
 
 For all projects, it is recommended to use version `1.6.x` or higher.
 

@@ -664,6 +664,18 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 			FileName: "public-keyES256.pem",
 			SetValue: "./public-keyES256.pem",
 		},
+		{
+			Key:       "EMAIL_VERIFY_USE_UUIDv4",
+			TestNo:    22,
+			SetValue:  "yes",
+			ExpValue1: true,
+		},
+		{
+			Key:       "EMAIL_PASS_RECOVER_USE_UUIDv4",
+			TestNo:    23,
+			SetValue:  "yes",
+			ExpValue1: true,
+		},
 	}
 
 	// download a file from a remote location and save it
@@ -881,6 +893,24 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 				err = os.RemoveAll(tc.SetValue)
 				if err != nil {
 					t.Error(err)
+				}
+			}
+
+			if tc.TestNo == 22 {
+				if err != nil {
+					t.Errorf("got error '%v' when setting %v", err, tc.Key)
+				}
+				if !config.IsEmailVerificationCodeUUIDv4() {
+					t.Errorf("expected true, got false when setting %v", tc.Key)
+				}
+			}
+
+			if tc.TestNo == 23 {
+				if err != nil {
+					t.Errorf("got error '%v' when setting %v", err, tc.Key)
+				}
+				if !config.IsPasswordRecoverCodeUUIDv4() {
+					t.Errorf("expected true, got false when setting %v", tc.Key)
 				}
 			}
 

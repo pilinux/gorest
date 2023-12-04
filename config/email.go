@@ -14,7 +14,9 @@ type EmailConfig struct {
 	EmailVerificationTemplateID int64
 	PasswordRecoverTemplateID   int64
 	EmailUpdateVerifyTemplateID int64
+	EmailVerificationCodeUUIDv4 bool
 	EmailVerificationCodeLength uint64
+	PasswordRecoverCodeUUIDv4   bool
 	PasswordRecoverCodeLength   uint64
 	EmailVerificationTag        string
 	PasswordRecoverTag          string

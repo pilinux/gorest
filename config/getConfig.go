@@ -94,3 +94,13 @@ func IsEmailVerificationService() bool {
 func IsPassRecoveryService() bool {
 	return GetConfig().Security.RecoverPass
 }
+
+// IsEmailVerificationCodeUUIDv4 returns true when it is enabled in .env
+func IsEmailVerificationCodeUUIDv4() bool {
+	return GetConfig().EmailConf.EmailVerificationCodeUUIDv4
+}
+
+// IsPasswordRecoverCodeUUIDv4 returns true when it is enabled in .env
+func IsPasswordRecoverCodeUUIDv4() bool {
+	return GetConfig().EmailConf.PasswordRecoverCodeUUIDv4
+}

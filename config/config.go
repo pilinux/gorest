@@ -232,7 +232,7 @@ func email() (emailConfig EmailConfig, err error) {
 
 		emailConfig.TrackOpens = false
 		trackOpens := strings.TrimSpace(os.Getenv("EMAIL_TRACK_OPENS"))
-		if trackOpens == "yes" {
+		if trackOpens == Activated {
 			emailConfig.TrackOpens = true
 		}
 
@@ -251,13 +251,24 @@ func email() (emailConfig EmailConfig, err error) {
 		if err != nil {
 			return
 		}
-		emailConfig.EmailVerificationCodeLength, err = strconv.ParseUint(strings.TrimSpace(os.Getenv("EMAIL_VERIFY_CODE_LENGTH")), 10, 32)
-		if err != nil {
-			return
+
+		useUUIDv4EmailVerificationCode := strings.ToLower(strings.TrimSpace(os.Getenv("EMAIL_VERIFY_USE_UUIDv4")))
+		if useUUIDv4EmailVerificationCode == Activated {
+			emailConfig.EmailVerificationCodeUUIDv4 = true
+		} else {
+			emailConfig.EmailVerificationCodeLength, err = strconv.ParseUint(strings.TrimSpace(os.Getenv("EMAIL_VERIFY_CODE_LENGTH")), 10, 32)
+			if err != nil {
+				return
+			}
 		}
-		emailConfig.PasswordRecoverCodeLength, err = strconv.ParseUint(strings.TrimSpace(os.Getenv("EMAIL_PASS_RECOVER_CODE_LENGTH")), 10, 32)
-		if err != nil {
-			return
+		useUUIDv4PasswordRecoverCode := strings.ToLower(strings.TrimSpace(os.Getenv("EMAIL_PASS_RECOVER_USE_UUIDv4")))
+		if useUUIDv4PasswordRecoverCode == Activated {
+			emailConfig.PasswordRecoverCodeUUIDv4 = true
+		} else {
+			emailConfig.PasswordRecoverCodeLength, err = strconv.ParseUint(strings.TrimSpace(os.Getenv("EMAIL_PASS_RECOVER_CODE_LENGTH")), 10, 32)
+			if err != nil {
+				return
+			}
 		}
 		emailConfig.EmailVerificationTag = strings.TrimSpace(os.Getenv("EMAIL_VERIFY_TAG"))
 		emailConfig.PasswordRecoverTag = strings.TrimSpace(os.Getenv("EMAIL_PASS_RECOVER_TAG"))
