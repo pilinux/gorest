@@ -291,6 +291,8 @@ func logger() (loggerConfig LoggerConfig) {
 	loggerConfig.Activate = strings.ToLower(strings.TrimSpace(os.Getenv("ACTIVATE_SENTRY")))
 	if loggerConfig.Activate == Activated {
 		loggerConfig.SentryDsn = strings.TrimSpace(os.Getenv("SentryDSN"))
+		loggerConfig.PerformanceTracing = strings.ToLower(strings.TrimSpace(os.Getenv("SENTRY_ENABLE_TRACING")))
+		loggerConfig.TracesSampleRate = strings.TrimSpace(os.Getenv("SENTRY_TRACES_SAMPLE_RATE"))
 	}
 
 	return

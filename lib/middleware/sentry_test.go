@@ -23,7 +23,7 @@ func TestSentryCapture(t *testing.T) {
 
 	// register middleware with valid sentry dsn
 	sentryDSN := os.Getenv("TEST_SENTRY_DSN")
-	router.Use(middleware.SentryCapture(sentryDSN, "production", "v0.0.1"))
+	router.Use(middleware.SentryCapture(sentryDSN, "production", "v0.0.1", "yes", "1.0"))
 
 	// define test route
 	router.GET("/", func(c *gin.Context) {
@@ -38,6 +38,8 @@ func TestSentryCapture(t *testing.T) {
 		t.Errorf("failed to create an HTTP request")
 		return
 	}
+	req.Host = "localhost"
+	req.RemoteAddr = "192.168.0.1"
 	req.Header.Set("User-Agent", "Test-User-Agent")
 	res := httptest.NewRecorder()
 

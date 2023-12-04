@@ -150,6 +150,8 @@ func TestGetConfig(t *testing.T) {
 		t.Errorf("expected IsSentry() to return true, but got false")
 	}
 	expected.Logger.SentryDsn = "https://xyz.ingest.sentry.io/123456"
+	expected.Logger.PerformanceTracing = "yes"
+	expected.Logger.TracesSampleRate = "1.0"
 
 	expected.Server.ServerHost = "localhost"
 	expected.Server.ServerPort = "3000"

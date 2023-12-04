@@ -96,6 +96,8 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			configure.Logger.SentryDsn,
 			configure.Server.ServerEnv,
 			configure.Version,
+			configure.Logger.PerformanceTracing,
+			configure.Logger.TracesSampleRate,
 		))
 	}
 
