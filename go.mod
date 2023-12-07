@@ -20,7 +20,7 @@ require (
 	github.com/pilinux/twofactor v1.1.1
 	github.com/qiniu/qmgo v1.1.8
 	github.com/sirupsen/logrus v1.9.3
-	go.mongodb.org/mongo-driver v1.13.0
+	go.mongodb.org/mongo-driver v1.13.1
 	golang.org/x/crypto v0.16.0
 	gorm.io/driver/mysql v1.5.2
 	gorm.io/driver/postgres v1.5.4
