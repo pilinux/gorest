@@ -20,6 +20,7 @@ require (
 	github.com/pilinux/twofactor v1.1.1
 	github.com/qiniu/qmgo v1.1.8
 	github.com/sirupsen/logrus v1.9.3
+	github.com/ulule/limiter/v3 v3.11.2
 	go.mongodb.org/mongo-driver v1.13.1
 	golang.org/x/crypto v0.18.0
 	gorm.io/driver/mysql v1.5.2
@@ -45,7 +46,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.16.0 // indirect
+	github.com/klauspost/compress v1.16.3 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/leodido/go-urn v1.2.4 // indirect
 	github.com/lib/pq v1.10.9 // indirect
@@ -56,6 +57,7 @@ require (
 	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.9 // indirect
 	github.com/pilinux/cryptoengine v0.1.1 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/sec51/convert v1.0.2 // indirect
 	github.com/tilinna/clock v1.1.0 // indirect

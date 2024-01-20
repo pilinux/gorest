@@ -595,6 +595,9 @@ func security() (securityConfig SecurityConfig, err error) {
 	// Validate origin of the request
 	securityConfig.CheckOrigin = strings.ToLower(strings.TrimSpace(os.Getenv("ACTIVATE_ORIGIN_VALIDATION")))
 
+	// IP-based rate limiter
+	securityConfig.RateLimit = strings.ToUpper(strings.TrimSpace(os.Getenv("RATE_LIMIT")))
+
 	// Important for getting real client IP
 	securityConfig.TrustedPlatform = strings.TrimSpace(os.Getenv("TRUSTED_PLATFORM"))
 

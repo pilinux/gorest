@@ -314,6 +314,10 @@ func TestGetConfig(t *testing.T) {
 	if !config.IsOriginCheck() {
 		t.Errorf("expected IsOriginCheck() to return true, but got false")
 	}
+	expected.Security.RateLimit = "100-M"
+	if !config.IsRateLimit() {
+		t.Errorf("expected IsRateLimit() to return true, but got false")
+	}
 	expected.Security.TrustedPlatform = "X-Real-Ip"
 
 	expected.Security.Must2FA = config.Activated

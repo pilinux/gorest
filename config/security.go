@@ -53,6 +53,7 @@ type SecurityConfig struct {
 	CORS     []middleware.CORSPolicy
 
 	CheckOrigin     string
+	RateLimit       string
 	TrustedPlatform string
 
 	Must2FA string

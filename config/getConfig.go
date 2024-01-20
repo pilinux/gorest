@@ -65,6 +65,11 @@ func IsOriginCheck() bool {
 	return GetConfig().Security.CheckOrigin == Activated
 }
 
+// IsRateLimit returns true when rate limiting is enabled in .env
+func IsRateLimit() bool {
+	return GetConfig().Security.RateLimit != ""
+}
+
 // IsTemplatingEngine returns true when serving HTML is enabled in .env
 func IsTemplatingEngine() bool {
 	return GetConfig().ViewConfig.Activate == Activated
