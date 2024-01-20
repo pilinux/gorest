@@ -60,6 +60,11 @@ func IsCORS() bool {
 	return GetConfig().Security.MustCORS == Activated
 }
 
+// IsOriginCheck returns true when origin check is enabled in .env
+func IsOriginCheck() bool {
+	return GetConfig().Security.CheckOrigin == Activated
+}
+
 // IsTemplatingEngine returns true when serving HTML is enabled in .env
 func IsTemplatingEngine() bool {
 	return GetConfig().ViewConfig.Activate == Activated

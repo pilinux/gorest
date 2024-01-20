@@ -90,6 +90,11 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 		r.Use(gmiddleware.CORS(configure.Security.CORS))
 	}
 
+	// Origin
+	if gconfig.IsOriginCheck() {
+		r.Use(gmiddleware.CheckOrigin())
+	}
+
 	// Sentry.io
 	if gconfig.IsSentry() {
 		r.Use(gmiddleware.SentryCapture(

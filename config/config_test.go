@@ -310,6 +310,10 @@ func TestGetConfig(t *testing.T) {
 		},
 	)
 
+	expected.Security.CheckOrigin = config.Activated
+	if !config.IsOriginCheck() {
+		t.Errorf("expected IsOriginCheck() to return true, but got false")
+	}
 	expected.Security.TrustedPlatform = "X-Real-Ip"
 
 	expected.Security.Must2FA = config.Activated
