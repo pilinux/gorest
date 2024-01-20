@@ -6,6 +6,7 @@ import (
 
 	gconfig "github.com/pilinux/gorest/config"
 	gcontroller "github.com/pilinux/gorest/controller"
+	glib "github.com/pilinux/gorest/lib"
 	gmiddleware "github.com/pilinux/gorest/lib/middleware"
 	gservice "github.com/pilinux/gorest/service"
 
@@ -112,6 +113,19 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			configure.Security.Firewall.ListType,
 			configure.Security.Firewall.IP,
 		))
+	}
+
+	// Rate Limiter
+	if gconfig.IsRateLimit() {
+		// create a rate limiter instance
+		limiterInstance, err := glib.InitRateLimiter(
+			configure.Security.RateLimit,
+			trustedPlatform,
+		)
+		if err != nil {
+			return r, err
+		}
+		r.Use(gmiddleware.RateLimit(limiterInstance))
 	}
 
 	// Render HTML
