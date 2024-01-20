@@ -70,6 +70,8 @@ _Note:_ gorest uses [GORM][21] as its ORM
 - [x] forward error logs and crash reports to [sentry.io][17]
 - [x] handle authentication tokens on client devices' cookies
 - [x] logout (individually enable option - delete tokens from cookies, ban active tokens)
+- [x] rate limiting (IP-based)
+- [x] option to validate origin of the request
 - [x] super easy to learn and use - lots of example codes
 
 ## Supported JWT signing algorithms
