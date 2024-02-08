@@ -23,7 +23,7 @@ require (
 	github.com/ulule/limiter/v3 v3.11.2
 	go.mongodb.org/mongo-driver v1.13.1
 	golang.org/x/crypto v0.18.0
-	gorm.io/driver/mysql v1.5.2
+	gorm.io/driver/mysql v1.5.4
 	gorm.io/driver/postgres v1.5.4
 	gorm.io/driver/sqlite v1.5.4
 	gorm.io/gorm v1.25.7
