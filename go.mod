@@ -21,7 +21,7 @@ require (
 	github.com/qiniu/qmgo v1.1.8
 	github.com/sirupsen/logrus v1.9.3
 	github.com/ulule/limiter/v3 v3.11.2
-	go.mongodb.org/mongo-driver v1.13.1
+	go.mongodb.org/mongo-driver v1.13.2
 	golang.org/x/crypto v0.19.0
 	gorm.io/driver/mysql v1.5.4
 	gorm.io/driver/postgres v1.5.6
