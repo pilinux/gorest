@@ -124,7 +124,7 @@ func InitDB() *gorm.DB {
 			address += " port=" + port
 		}
 		dsn := address + " user=" + username + " dbname=" + database + " password=" + password + " sslmode=" + sslmode + " TimeZone=" + timeZone
-		sqlDB, err = sql.Open(driver, dsn)
+		sqlDB, err = sql.Open("pgx", dsn)
 		if err != nil {
 			log.WithError(err).Panic("panic code: 153")
 		}
