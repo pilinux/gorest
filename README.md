@@ -197,12 +197,17 @@ _Note:_ For **MySQL** driver, please [check issue: 7][42]
 
 **Note For SQLite3:**
 
-- `DBUSER`, `DBPASS`, `DBHOST` and `DBPORT` environment variables
-  should be left unchanged.
-- `DBNAME` must contain the full path and the database file name; i.e,
+- `DBUSER`, `DBPASS`, `DBHOST` and `DBPORT` environment variables are not required.
+- `DBNAME` must contain the full or relative path of the database file name; i.e,
 
 ```env
 /user/location/database.db
+```
+
+or,
+
+```env
+./database.db
 ```
 
 ## Debugging with Error Codes
@@ -244,7 +249,7 @@ Please see [this][62] document.
 
 ## License
 
-© Mahir Hasan 2019 - 2023
+© Mahir Hasan 2019 - 2024
 
 Released under the [MIT license][13]
 
