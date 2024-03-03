@@ -195,12 +195,10 @@ func CreateVerificationEmail(payload model.AuthPayload) (httpResponse model.HTTP
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
-	if err == nil {
-		if !emailDelivered {
-			httpResponse.Message = "failed to send verification email"
-			httpStatusCode = http.StatusServiceUnavailable
-			return
-		}
+	if !emailDelivered {
+		httpResponse.Message = "failed to send verification email"
+		httpStatusCode = http.StatusServiceUnavailable
+		return
 	}
 
 	httpResponse.Message = "sent verification email"
@@ -323,12 +321,6 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 	if isEmail {
 		err := db.Where("email = ?", tempEmail.Email).First(&auth).Error
 
-		if err == nil {
-			httpResponse.Message = "email already in use"
-			httpStatusCode = http.StatusBadRequest
-			return
-		}
-
 		if err != nil {
 			if err.Error() != database.RecordNotFound {
 				// db read error
@@ -338,15 +330,14 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 				return
 			}
 		}
-	}
-	if !isEmail {
-		err := db.Where("email_hash = ?", tempEmail.EmailHash).First(&auth).Error
-
 		if err == nil {
 			httpResponse.Message = "email already in use"
 			httpStatusCode = http.StatusBadRequest
 			return
 		}
+	}
+	if !isEmail {
+		err := db.Where("email_hash = ?", tempEmail.EmailHash).First(&auth).Error
 
 		if err != nil {
 			if err.Error() != database.RecordNotFound {
@@ -356,6 +347,11 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 				httpStatusCode = http.StatusInternalServerError
 				return
 			}
+		}
+		if err == nil {
+			httpResponse.Message = "email already in use"
+			httpStatusCode = http.StatusBadRequest
+			return
 		}
 	}
 
@@ -500,26 +496,23 @@ func ResendVerificationCodeToModifyActiveEmail(claims middleware.MyCustomClaims)
 		httpStatusCode = http.StatusBadRequest
 		return
 	}
-
 	// verification is pending to modify current email
-	if err == nil {
-		// decipher
-		if tempEmail.Email == "" {
-			if !config.IsCipher() {
-				e := errors.New("check env: ACTIVATE_CIPHER")
-				log.WithError(e).Error("error code: 1065.2")
-				httpResponse.Message = "internal server error"
-				httpStatusCode = http.StatusInternalServerError
-				return
-			}
+	// decipher
+	if tempEmail.Email == "" {
+		if !config.IsCipher() {
+			e := errors.New("check env: ACTIVATE_CIPHER")
+			log.WithError(e).Error("error code: 1065.2")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
+		}
 
-			tempEmail.Email, err = service.DecryptEmail(tempEmail.EmailNonce, tempEmail.EmailCipher)
-			if err != nil {
-				log.WithError(err).Error("error code: 1065.3")
-				httpResponse.Message = "internal server error"
-				httpStatusCode = http.StatusInternalServerError
-				return
-			}
+		tempEmail.Email, err = service.DecryptEmail(tempEmail.EmailNonce, tempEmail.EmailCipher)
+		if err != nil {
+			log.WithError(err).Error("error code: 1065.3")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
 		}
 	}
 
@@ -531,12 +524,10 @@ func ResendVerificationCodeToModifyActiveEmail(claims middleware.MyCustomClaims)
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
-	if err == nil {
-		if !emailDelivered {
-			httpResponse.Message = "failed to send verification email"
-			httpStatusCode = http.StatusServiceUnavailable
-			return
-		}
+	if !emailDelivered {
+		httpResponse.Message = "failed to send verification email"
+		httpStatusCode = http.StatusServiceUnavailable
+		return
 	}
 
 	httpResponse.Message = "sent verification email"

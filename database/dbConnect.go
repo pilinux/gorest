@@ -190,9 +190,7 @@ func InitRedis() (*radix.Client, error) {
 		return &rClient, err
 	}
 	// Only for debugging
-	if err == nil {
-		fmt.Println("REDIS pool connection successful!")
-	}
+	fmt.Println("REDIS pool connection successful!")
 
 	redisClient = &rClient
 

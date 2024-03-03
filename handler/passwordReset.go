@@ -63,12 +63,10 @@ func PasswordForgot(authPayload model.AuthPayload) (httpResponse model.HTTPRespo
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
-	if err == nil {
-		if !emailDelivered {
-			httpResponse.Message = "sending password recovery email not possible"
-			httpStatusCode = http.StatusServiceUnavailable
-			return
-		}
+	if !emailDelivered {
+		httpResponse.Message = "sending password recovery email not possible"
+		httpStatusCode = http.StatusServiceUnavailable
+		return
 	}
 
 	httpResponse.Message = "sent password recovery email"

@@ -125,10 +125,8 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
-	if err == nil {
-		if emailDelivered {
-			authFinal.VerifyEmail = model.EmailNotVerified
-		}
+	if emailDelivered {
+		authFinal.VerifyEmail = model.EmailNotVerified
 	}
 
 	// encryption at rest for user email, mainly needed by system in future
@@ -206,11 +204,6 @@ func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpRes
 
 	// step 2: verify that this email is not registered to anyone
 	_, err := service.GetUserByEmail(req.Email, false)
-	if err == nil {
-		httpResponse.Message = "email already registered"
-		httpStatusCode = http.StatusBadRequest
-		return
-	}
 	if err != nil {
 		if err.Error() != database.RecordNotFound {
 			// db read error
@@ -219,8 +212,13 @@ func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpRes
 			httpStatusCode = http.StatusInternalServerError
 			return
 		}
-		// ok: email is not registered yet, continue.
 	}
+	if err == nil {
+		httpResponse.Message = "email already registered"
+		httpStatusCode = http.StatusBadRequest
+		return
+	}
+	// ok: email is not registered yet, continue...
 
 	// db connection
 	db := database.GetDB()
@@ -351,44 +349,43 @@ func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpRes
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
-	if err == nil {
-		// verification code sent
-		if emailDelivered {
-			tx := db.Begin()
-			if err := tx.Save(&tEmailDB).Error; err != nil {
-				tx.Rollback()
-				log.WithError(err).Error("error code: 1003.92")
-				httpResponse.Message = "internal server error"
-				httpStatusCode = http.StatusInternalServerError
-				return
-			}
-			tx.Commit()
 
-			httpResponse.Message = "verification email delivered"
-			httpStatusCode = http.StatusOK
+	// verification code sent
+	if emailDelivered {
+		tx := db.Begin()
+		if err := tx.Save(&tEmailDB).Error; err != nil {
+			tx.Rollback()
+			log.WithError(err).Error("error code: 1003.92")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
 		}
+		tx.Commit()
 
-		// verification code not required, update email immediately
-		if !emailDelivered {
-			auth.UpdatedAt = timeNow
-			auth.Email = tEmailDB.Email
-			auth.EmailCipher = tEmailDB.EmailCipher
-			auth.EmailNonce = tEmailDB.EmailNonce
-			auth.EmailHash = tEmailDB.EmailHash
+		httpResponse.Message = "verification email delivered"
+		httpStatusCode = http.StatusOK
+	}
 
-			tx := db.Begin()
-			if err := tx.Save(&auth).Error; err != nil {
-				tx.Rollback()
-				log.WithError(err).Error("error code: 1003.93")
-				httpResponse.Message = "internal server error"
-				httpStatusCode = http.StatusInternalServerError
-				return
-			}
-			tx.Commit()
+	// verification code not required, update email immediately
+	if !emailDelivered {
+		auth.UpdatedAt = timeNow
+		auth.Email = tEmailDB.Email
+		auth.EmailCipher = tEmailDB.EmailCipher
+		auth.EmailNonce = tEmailDB.EmailNonce
+		auth.EmailHash = tEmailDB.EmailHash
 
-			httpResponse.Message = "email updated"
-			httpStatusCode = http.StatusOK
+		tx := db.Begin()
+		if err := tx.Save(&auth).Error; err != nil {
+			tx.Rollback()
+			log.WithError(err).Error("error code: 1003.93")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
 		}
+		tx.Commit()
+
+		httpResponse.Message = "email updated"
+		httpStatusCode = http.StatusOK
 	}
 
 	return
