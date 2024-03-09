@@ -107,8 +107,8 @@ github.com/mrz1836/postmark v1.6.4 h1:x5g0zjFE1q1wOgZ3N22rtGMyfKd3GBo4O874cAUw6b
 github.com/mrz1836/postmark v1.6.4/go.mod h1:6z5MxAH00Kj44owtQaryv9Pbqp5OKT3wWcRSydB0p0A=
 github.com/pelletier/go-toml/v2 v2.0.9 h1:uH2qQXheeefCCkuBBSLi7jCiSmj3VRh2+Goq2N7Xxu0=
 github.com/pelletier/go-toml/v2 v2.0.9/go.mod h1:tJU2Z3ZkXwnxa4DPO899bsyIoywizdUvyaeZurnPPDc=
-github.com/pilinux/argon2 v0.10.0 h1:Q9pV0R0/VPiopr8QujFx1Sm6rP/FN0LlASzmnN/bBfE=
-github.com/pilinux/argon2 v0.10.0/go.mod h1:uBPk02LXmzN7647JV4Ez8UXzY2fSwOOO/zZ2qkl8kak=
+github.com/pilinux/argon2 v0.11.0 h1:b/colozka9j7rWlMEH00VcS33LkbGGJZQwbeFNMlLmg=
+github.com/pilinux/argon2 v0.11.0/go.mod h1:tpriePrt/9iwbw3G1Ic6WFJZOf/ZGXkGIZS2WYJkryQ=
 github.com/pilinux/crypt v0.0.5 h1:/AL9Cud37utDcWiXF6cCFSxSIvXhzFORKkRl6j+hw88=
 github.com/pilinux/crypt v0.0.5/go.mod h1:OsB9Rv+1UBxbXUd0FJvgvQI7HmRXfg4fWvAmawFAVYc=
 github.com/pilinux/cryptoengine v0.1.1 h1:MmoSn5+TcsCqzP7U57JejxGy8TiRK2gVGttgWnTthos=
