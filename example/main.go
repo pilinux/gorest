@@ -6,6 +6,7 @@ import (
 
 	gconfig "github.com/pilinux/gorest/config"
 	gdatabase "github.com/pilinux/gorest/database"
+	"github.com/qiniu/qmgo/options"
 
 	"github.com/pilinux/gorest/example/database/migrate"
 	"github.com/pilinux/gorest/example/router"
@@ -61,6 +62,43 @@ func main() {
 	if gconfig.IsMongo() {
 		// Initialize MONGO client
 		if _, err := gdatabase.InitMongo(); err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		// Example of dropping index "countryCode" from collection "geocodes" in database "map"
+		/*
+			indexes := []string{"countryCode"}
+			if err := gdatabase.MongoDropIndex("map", "geocodes", indexes); err != nil {
+				fmt.Println(err)
+				return
+			}
+		*/
+
+		// Example of dropping all indexes from collection "geocodes" in database "map"
+		/*
+			if err := gdatabase.MongoDropAllIndexes("map", "geocodes"); err != nil {
+				fmt.Println(err)
+				return
+			}
+		*/
+
+		// Create new index for "countryCode" field
+		index := options.IndexModel{
+			Key: []string{"countryCode"},
+		}
+		// Example of creating many indexes
+		/*
+			indexes := []options.IndexModel{
+				{
+					Key: []string{"state"},
+				},
+				{
+					Key: []string{"countryCode"},
+				},
+			}
+		*/
+		if err := gdatabase.MongoCreateIndex("map", "geocodes", index); err != nil {
 			fmt.Println(err)
 			return
 		}
