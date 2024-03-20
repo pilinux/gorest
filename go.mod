@@ -17,7 +17,7 @@ require (
 	github.com/pilinux/libgo v0.0.5
 	github.com/pilinux/logrus v0.11.2
 	github.com/pilinux/structs v1.1.1
-	github.com/pilinux/twofactor v1.1.1
+	github.com/pilinux/twofactor v1.1.2
 	github.com/qiniu/qmgo v1.1.8
 	github.com/sirupsen/logrus v1.9.3
 	github.com/ulule/limiter/v3 v3.11.2
@@ -31,8 +31,9 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/bytedance/sonic v1.9.2 // indirect
-	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
+	github.com/bytedance/sonic v1.11.2 // indirect
+	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
+	github.com/chenzhuoyu/iasm v0.9.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/getsentry/sentry-go v0.27.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
@@ -59,7 +60,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.9 // indirect
-	github.com/pilinux/cryptoengine v0.1.1 // indirect
+	github.com/pilinux/cryptoengine v0.1.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/sec51/convert v1.0.2 // indirect
@@ -70,9 +71,9 @@ require (
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
-	golang.org/x/arch v0.4.0 // indirect
-	golang.org/x/net v0.21.0 // indirect
-	golang.org/x/sync v0.5.0 // indirect
+	golang.org/x/arch v0.7.0 // indirect
+	golang.org/x/net v0.22.0 // indirect
+	golang.org/x/sync v0.6.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
