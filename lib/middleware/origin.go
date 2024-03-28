@@ -11,28 +11,23 @@ import (
 func CheckOrigin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// get Access-Control-Allow-Origin from CORS header
-		origin := c.Writer.Header().Get("Access-Control-Allow-Origin")
-		origin = strings.TrimSpace(origin)
-		origin = strings.ToLower(origin)
+		originAllowed := c.Writer.Header().Get("Access-Control-Allow-Origin")
+		originAllowed = strings.TrimSpace(originAllowed)
+		originAllowed = strings.ToLower(originAllowed)
 
 		// if Access-Control-Allow-Origin is *, null or empty, continue
-		if origin == "*" || origin == "null" || origin == "" {
+		if originAllowed == "*" || originAllowed == "null" || originAllowed == "" {
 			c.Next()
 			return
 		}
 
-		// Access-Control-Allow-Origin is not *, null or empty
-		if strings.HasPrefix(origin, "http://") || strings.HasPrefix(origin, "https://") {
-			origin = strings.Split(origin, "//")[1]
-		}
-
-		// get host from the request
-		host := c.Request.Host
-		host = strings.TrimSpace(host)
-		host = strings.ToLower(host)
+		// get origin from request header
+		origin := c.GetHeader("Origin")
+		origin = strings.TrimSpace(origin)
+		origin = strings.ToLower(origin)
 
 		// if origin and host are different, abort
-		if origin != host {
+		if origin != originAllowed {
 			c.AbortWithStatusJSON(http.StatusForbidden, "origin not allowed")
 			return
 		}
