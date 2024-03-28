@@ -128,6 +128,11 @@ func TestGetJWT(t *testing.T) {
 				t.Errorf("expected non-empty JWT values, got access: %s, refresh: %s", accessJWT, refreshJWT)
 			}
 
+			// invalid token type
+			_, _, err = middleware.GetJWT(customClaims, "invalid")
+			if err == nil {
+				t.Errorf("expected error, got nil")
+			}
 		})
 	}
 }

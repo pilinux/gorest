@@ -261,36 +261,29 @@ func ValidateRefreshJWT(token *jwt.Token) (interface{}, error) {
 // GetJWT - issue new tokens
 func GetJWT(customClaims MyCustomClaims, tokenType string) (string, string, error) {
 	var (
-		key          []byte
-		privKeyECDSA *ecdsa.PrivateKey
-		privKeyRSA   *rsa.PrivateKey
-		ttl          int
-		nbf          int
+		key     []byte
+		privKey interface{}
+		ttl     int
+		nbf     int
 	)
 
-	if tokenType == "access" {
+	switch tokenType {
+	case "access":
 		key = JWTParams.AccessKey
 		ttl = JWTParams.AccessKeyTTL
 		nbf = JWTParams.AccNbf
-	}
-	if tokenType == "refresh" {
+	case "refresh":
 		key = JWTParams.RefreshKey
 		ttl = JWTParams.RefreshKeyTTL
 		nbf = JWTParams.RefNbf
+	default:
+		return "", "", fmt.Errorf("invalid token type")
 	}
+
 	// Create the Claims
 	claims := JWTClaims{
-		MyCustomClaims{
-			AuthID:  customClaims.AuthID,
-			Email:   customClaims.Email,
-			Role:    customClaims.Role,
-			Scope:   customClaims.Scope,
-			TwoFA:   customClaims.TwoFA,
-			SiteLan: customClaims.SiteLan,
-			Custom1: customClaims.Custom1,
-			Custom2: customClaims.Custom2,
-		},
-		jwt.RegisteredClaims{
+		MyCustomClaims: customClaims,
+		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * time.Duration(ttl))),
 			ID:        uuid.NewString(),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -307,47 +300,32 @@ func GetJWT(customClaims MyCustomClaims, tokenType string) (string, string, erro
 	}
 
 	var token *jwt.Token
-	alg := JWTParams.Algorithm
+	alg := jwt.GetSigningMethod(JWTParams.Algorithm)
 
-	switch alg {
-	case "HS256":
-		token = jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	case "HS384":
-		token = jwt.NewWithClaims(jwt.SigningMethodHS384, claims)
-	case "HS512":
-		token = jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
-	case "ES256":
-		privKeyECDSA = JWTParams.PrivKeyECDSA
-		token = jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-	case "ES384":
-		privKeyECDSA = JWTParams.PrivKeyECDSA
-		token = jwt.NewWithClaims(jwt.SigningMethodES384, claims)
-	case "ES512":
-		privKeyECDSA = JWTParams.PrivKeyECDSA
-		token = jwt.NewWithClaims(jwt.SigningMethodES512, claims)
-	case "RS256":
-		privKeyRSA = JWTParams.PrivKeyRSA
-		token = jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-	case "RS384":
-		privKeyRSA = JWTParams.PrivKeyRSA
-		token = jwt.NewWithClaims(jwt.SigningMethodRS384, claims)
-	case "RS512":
-		privKeyRSA = JWTParams.PrivKeyRSA
-		token = jwt.NewWithClaims(jwt.SigningMethodRS512, claims)
+	switch JWTParams.Algorithm {
+	case "HS256", "HS384", "HS512":
+		token = jwt.NewWithClaims(alg, claims)
+		privKey = key
+	case "ES256", "ES384", "ES512":
+		token = jwt.NewWithClaims(alg, claims)
+		privKey = JWTParams.PrivKeyECDSA
+	case "RS256", "RS384", "RS512":
+		token = jwt.NewWithClaims(alg, claims)
+		privKey = JWTParams.PrivKeyRSA
 	default:
 		token = jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	}
 
-	var jwtValue string
-	var err error
-
 	// HMAC
-	if alg == "HS256" || alg == "HS384" || alg == "HS512" {
-		jwtValue, err = token.SignedString(key)
-		if err != nil {
-			return "", "", err
-		}
-	}
+	//
+	// HS256
+	// openssl rand -base64 32
+	//
+	// HS384
+	// openssl rand -base64 48
+	//
+	// HS512
+	// openssl rand -base64 64
 
 	// ECDSA
 	//
@@ -366,13 +344,6 @@ func GetJWT(customClaims MyCustomClaims, tokenType string) (string, string, erro
 	// secp521r1: NIST/SECG curve over a 521 bit prime field
 	// openssl ecparam -name secp521r1 -genkey -noout -out private-key.pem
 	// openssl ec -in private-key.pem -pubout -out public-key.pem
-	if alg == "ES256" || alg == "ES384" || alg == "ES512" {
-		jwtValue, err = token.SignedString(privKeyECDSA)
-		if err != nil {
-			return "", "", err
-		}
-
-	}
 
 	// RSA
 	//
@@ -387,11 +358,10 @@ func GetJWT(customClaims MyCustomClaims, tokenType string) (string, string, erro
 	// RS512
 	// openssl genpkey -algorithm RSA -out private-key.pem -pkeyopt rsa_keygen_bits:4096
 	// openssl rsa -in private-key.pem -pubout -out public-key.pem
-	if alg == "RS256" || alg == "RS384" || alg == "RS512" {
-		jwtValue, err = token.SignedString(privKeyRSA)
-		if err != nil {
-			return "", "", err
-		}
+
+	jwtValue, err := token.SignedString(privKey)
+	if err != nil {
+		return "", "", err
 	}
 
 	return jwtValue, claims.ID, nil
