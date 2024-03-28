@@ -86,6 +86,12 @@ _Note:_ gorest uses [GORM][21] as its ORM
 - [x] RS384: RSA Signature with SHA-384
 - [x] RS512: RSA Signature with SHA-512
 
+Procedures to generate HS256, HS384, HS512 keys using openssl:
+
+- HS256: `openssl rand -base64 32`
+- HS384: `openssl rand -base64 48`
+- HS512: `openssl rand -base64 64`
+
 Procedures to generate public-private key pair using openssl:
 
 ### ECDSA
