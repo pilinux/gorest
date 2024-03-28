@@ -276,8 +276,8 @@ Released under the [MIT license][13]
 [16]: https://github.com/golang-jwt/jwt
 [17]: https://sentry.io/
 [21]: https://gorm.io
-[41]: https://github.com/piLinux/HowtoCode/blob/master/Golang/1.Intro/Installation.md
-[42]: https://github.com/piLinux/GoREST/issues/7
+[41]: https://github.com/pilinux/HowtoCode/blob/master/Golang/1.Intro/Installation.md
+[42]: https://github.com/pilinux/gorest/issues/7
 [51]: https://github.com/joho/godotenv
 [61]: CONTRIBUTING.md
 [62]: CODE_OF_CONDUCT.md
