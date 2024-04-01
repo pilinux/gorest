@@ -18,7 +18,7 @@ import (
 	"gorm.io/driver/mysql"
 
 	// Import PostgreSQL database driver
-	_ "github.com/jinzhu/gorm/dialects/postgres"
+	// _ "github.com/jinzhu/gorm/dialects/postgres"
 	"gorm.io/driver/postgres"
 
 	// Import SQLite3 database driver
@@ -81,6 +81,9 @@ func InitDB() *gorm.DB {
 			address += ":" + port
 		}
 		dsn := username + ":" + password + "@tcp(" + address + ")/" + database + "?charset=utf8mb4&parseTime=True&loc=Local"
+		if sslmode == "" {
+			sslmode = "disable"
+		}
 		if sslmode != "disable" {
 			// use host machine's root CAs to verify
 			if sslmode == "require" {
@@ -123,7 +126,25 @@ func InitDB() *gorm.DB {
 		if port != "" {
 			address += " port=" + port
 		}
-		dsn := address + " user=" + username + " dbname=" + database + " password=" + password + " sslmode=" + sslmode + " TimeZone=" + timeZone
+		dsn := address + " user=" + username + " dbname=" + database + " password=" + password + " TimeZone=" + timeZone
+		if sslmode == "" {
+			sslmode = "disable"
+		}
+		if sslmode != "disable" {
+			if configureDB.Ssl.RootCA != "" {
+				dsn += " sslrootcert=" + configureDB.Ssl.RootCA
+			} else if configureDB.Ssl.ServerCert != "" {
+				dsn += " sslrootcert=" + configureDB.Ssl.ServerCert
+			}
+			if configureDB.Ssl.ClientCert != "" {
+				dsn += " sslcert=" + configureDB.Ssl.ClientCert
+			}
+			if configureDB.Ssl.ClientKey != "" {
+				dsn += " sslkey=" + configureDB.Ssl.ClientKey
+			}
+		}
+		dsn += " sslmode=" + sslmode
+
 		sqlDB, err = sql.Open("pgx", dsn)
 		if err != nil {
 			log.WithError(err).Panic("panic code: 153")
