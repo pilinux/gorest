@@ -25,8 +25,25 @@ func PasswordForgot(c *gin.Context) {
 	_, errAccessJWT := c.Cookie("accessJWT")
 	_, errRefreshJWT := c.Cookie("refreshJWT")
 	if errAccessJWT == nil || errRefreshJWT == nil {
-		c.SetCookie("accessJWT", "", -1, "", "", true, true)
-		c.SetCookie("refreshJWT", "", -1, "", "", true, true)
+		configSecurity := config.GetConfig().Security
+		c.SetCookie(
+			"accessJWT",
+			"",
+			-1,
+			configSecurity.AuthCookiePath,
+			configSecurity.AuthCookieDomain,
+			configSecurity.AuthCookieSecure,
+			configSecurity.AuthCookieHTTPOnly,
+		)
+		c.SetCookie(
+			"refreshJWT",
+			"",
+			-1,
+			configSecurity.AuthCookiePath,
+			configSecurity.AuthCookieDomain,
+			configSecurity.AuthCookieSecure,
+			configSecurity.AuthCookieHTTPOnly,
+		)
 	}
 
 	// verify that RDBMS is enabled in .env
@@ -79,8 +96,25 @@ func PasswordRecover(c *gin.Context) {
 	_, errAccessJWT := c.Cookie("accessJWT")
 	_, errRefreshJWT := c.Cookie("refreshJWT")
 	if errAccessJWT == nil || errRefreshJWT == nil {
-		c.SetCookie("accessJWT", "", -1, "", "", true, true)
-		c.SetCookie("refreshJWT", "", -1, "", "", true, true)
+		configSecurity := config.GetConfig().Security
+		c.SetCookie(
+			"accessJWT",
+			"",
+			-1,
+			configSecurity.AuthCookiePath,
+			configSecurity.AuthCookieDomain,
+			configSecurity.AuthCookieSecure,
+			configSecurity.AuthCookieHTTPOnly,
+		)
+		c.SetCookie(
+			"refreshJWT",
+			"",
+			-1,
+			configSecurity.AuthCookiePath,
+			configSecurity.AuthCookieDomain,
+			configSecurity.AuthCookieSecure,
+			configSecurity.AuthCookieHTTPOnly,
+		)
 	}
 
 	// verify that RDBMS is enabled in .env
