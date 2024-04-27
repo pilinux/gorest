@@ -9,7 +9,7 @@
 [![Go Reference][14]][15]
 [![Go Report Card](https://goreportcard.com/badge/github.com/pilinux/gorest)][01]
 [![CodeFactor](https://www.codefactor.io/repository/github/pilinux/gorest/badge)][06]
-[![codebeat badge](https://codebeat.co/badges/3e3573cc-2e9d-48bc-a8c5-4f054bfdfcf7)][03]
+[![codebeat badge](https://codebeat.co/badges/12c01a53-4745-4f90-ad2b-a95c94e4b432)][03]
 [![MIT license](https://img.shields.io/badge/license-MIT-brightgreen.svg)][13]
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)][62]
 
