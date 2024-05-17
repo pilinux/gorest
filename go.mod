@@ -12,7 +12,7 @@ require (
 	github.com/mediocregopher/radix/v4 v4.1.4
 	github.com/mrz1836/postmark v1.6.4
 	github.com/pilinux/argon2 v0.12.0
-	github.com/pilinux/crypt v0.0.6
+	github.com/pilinux/crypt v0.0.7
 	github.com/pilinux/libgo v0.0.5
 	github.com/pilinux/logrus v0.11.2
 	github.com/pilinux/structs v1.1.1
