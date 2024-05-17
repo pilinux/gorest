@@ -111,8 +111,8 @@ github.com/pilinux/logrus v0.11.2 h1:xE2rFraQwWKWZNY3nKLYD/xYW6RhRcdrXyU/zbbF1LA
 github.com/pilinux/logrus v0.11.2/go.mod h1:qLAPPAOLzJscxbFQE2Xq2ZCnknHC+QKKtOAX47oGjS0=
 github.com/pilinux/structs v1.1.1 h1:oab30yWZjsxSWCA8bHdCB4yUcB0qMSE8QVvgGSPEYxY=
 github.com/pilinux/structs v1.1.1/go.mod h1:Gm07WsM5mG+wZAqX2I4y5PoW4zvLhzDR+YoWm1c1BBk=
-github.com/pilinux/twofactor v1.1.3 h1:IRYAhMkWahQLdjmcB3pAMybP9uqow5/9VHTqs+xLmIQ=
-github.com/pilinux/twofactor v1.1.3/go.mod h1:Cx8BF/TnC1ZbRg0m91hwtRxm6XW6N/e2w0qPwxUOfps=
+github.com/pilinux/twofactor v1.1.4 h1:Q7Hh79ppHVpek3lrC5MUrHXqT/BX+WhBoekAXz2mZSg=
+github.com/pilinux/twofactor v1.1.4/go.mod h1:5s77kddlzeVjQA0PbkdHsvKdZt4mlpOIpw2cdm6TPuw=
 github.com/pingcap/errors v0.11.4 h1:lFuQV/oaUMGcD2tqt+01ROSmJs75VG1ToEOkZIZ4nE4=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=

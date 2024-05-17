@@ -16,7 +16,7 @@ require (
 	github.com/pilinux/libgo v0.0.5
 	github.com/pilinux/logrus v0.11.2
 	github.com/pilinux/structs v1.1.1
-	github.com/pilinux/twofactor v1.1.3
+	github.com/pilinux/twofactor v1.1.4
 	github.com/qiniu/qmgo v1.1.8
 	github.com/sirupsen/logrus v1.9.3
 	github.com/ulule/limiter/v3 v3.11.2
