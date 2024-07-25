@@ -37,7 +37,7 @@ For all projects, it is recommended to use version `1.6.x` or higher.
 
 ## Requirement
 
-`Go 1.19+`
+`Go 1.20+`
 
 ## Supported databases
 

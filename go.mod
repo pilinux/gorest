@@ -1,6 +1,6 @@
 module github.com/pilinux/gorest
 
-go 1.19
+go 1.20
 
 require (
 	github.com/flosch/pongo2/v6 v6.0.0
@@ -51,7 +51,6 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.17.7 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-sqlite3 v1.14.22 // indirect
@@ -61,7 +60,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
 	github.com/pilinux/cryptoengine v0.1.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/rogpeppe/go-internal v1.11.0 // indirect
+	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/sec51/convert v1.0.2 // indirect
 	github.com/tilinna/clock v1.1.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
