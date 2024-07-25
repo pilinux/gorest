@@ -4,3 +4,5 @@ ignore:
   - "example"
   - "handler"
   - "service"
+# validate codecov.yml
+# curl -X POST --data-binary @codecov.yml https://codecov.io/validate
