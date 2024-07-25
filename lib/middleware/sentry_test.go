@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pilinux/gorest/lib/middleware"
@@ -25,10 +26,43 @@ func TestSentryCapture(t *testing.T) {
 	sentryDSN := os.Getenv("TEST_SENTRY_DSN")
 	router.Use(middleware.SentryCapture(sentryDSN, "production", "v0.0.1", "yes", "1.0"))
 
+	// check sentry in a separate goroutine
+	var GoroutineLogger *log.Logger
+	sentryHook, err := middleware.InitSentry(
+		sentryDSN,
+		"production",
+		"v0.0.1",
+		"yes",
+		"1.0",
+	)
+	if err != nil {
+		t.Errorf("failed to initialize sentry for separate goroutines")
+	}
+	if err == nil {
+		defer sentryHook.Flush()
+		GoroutineLogger = log.New()
+		GoroutineLogger.AddHook(sentryHook)
+	}
+	go func() {
+		if sentryDSN != "" {
+			GoroutineLogger.
+				WithFields(log.Fields{
+					"time": time.Now().Format(time.RFC3339),
+					"ref":  "goroutine - 1",
+				}).
+				Info("testing sentry integration in a separate goroutine")
+		}
+	}()
+
 	// define test route
 	router.GET("/", func(c *gin.Context) {
 		// send log to sentry for testing
-		log.Info("testing sentry integration")
+		log.
+			WithFields(log.Fields{
+				"time": time.Now().Format(time.RFC3339),
+				"ref":  "middleware",
+			}).
+			Info("testing sentry integration in the middleware")
 		c.Status(http.StatusOK)
 	})
 
@@ -49,4 +83,16 @@ func TestSentryCapture(t *testing.T) {
 	if res.Code != http.StatusOK {
 		t.Errorf("expected response code %v, got '%v'", http.StatusOK, res.Code)
 	}
+
+	// check sentry in another goroutine
+	go func() {
+		if sentryDSN != "" {
+			GoroutineLogger.
+				WithFields(log.Fields{
+					"time": time.Now().Format(time.RFC3339),
+					"ref":  "goroutine - 2",
+				}).
+				Info("testing sentry integration in a separate goroutine")
+		}
+	}()
 }
