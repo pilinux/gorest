@@ -1,0 +1,6 @@
+ignore:
+  - "controller"
+  - "database"
+  - "example"
+  - "handler"
+  - "service"
