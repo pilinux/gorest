@@ -14,7 +14,7 @@ require (
 	github.com/pilinux/argon2 v0.14.0
 	github.com/pilinux/crypt v0.0.8
 	github.com/pilinux/libgo v0.0.5
-	github.com/pilinux/logrus v0.11.2
+	github.com/pilinux/logrus v0.11.3
 	github.com/pilinux/structs v1.1.1
 	github.com/pilinux/twofactor v1.1.5
 	github.com/qiniu/qmgo v1.1.8
@@ -35,7 +35,7 @@ require (
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
-	github.com/getsentry/sentry-go v0.27.0 // indirect
+	github.com/getsentry/sentry-go v0.28.1 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
@@ -49,7 +49,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.16.3 // indirect
+	github.com/klauspost/compress v1.17.7 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect

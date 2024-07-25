@@ -16,8 +16,8 @@ github.com/flosch/pongo2/v6 v6.0.0 h1:lsGru8IAzHgIAw6H2m4PCyleO58I40ow6apih0WprM
 github.com/flosch/pongo2/v6 v6.0.0/go.mod h1:CuDpFm47R0uGGE7z13/tTlt1Y6zdxvr2RLT5LJhsHEU=
 github.com/gabriel-vasile/mimetype v1.4.3 h1:in2uUcidCuFcDKtdcBxlR0rJ1+fsokWf+uqxgUFjbI0=
 github.com/gabriel-vasile/mimetype v1.4.3/go.mod h1:d8uq/6HKRL6CGdk+aubisF/M5GcPfT7nKyLpA0lbSSk=
-github.com/getsentry/sentry-go v0.27.0 h1:Pv98CIbtB3LkMWmXi4Joa5OOcwbmnX88sF5qbK3r3Ps=
-github.com/getsentry/sentry-go v0.27.0/go.mod h1:lc76E2QywIyW8WuBnwl8Lc4bkmQH4+w1gwTf25trprY=
+github.com/getsentry/sentry-go v0.28.1 h1:zzaSm/vHmGllRM6Tpx1492r0YDzauArdBfkJRtY6P5k=
+github.com/getsentry/sentry-go v0.28.1/go.mod h1:1fQZ+7l7eeJ3wYi82q5Hg8GqAPgefRq+FP/QhafYVgg=
 github.com/gin-contrib/sse v0.1.0 h1:Y/yl/+YNO8GZSjAhjMsSuLt29uWRFHdHYUb5lYOV9qE=
 github.com/gin-contrib/sse v0.1.0/go.mod h1:RHrZQHXnP2xjPF+u1gW/2HnVO7nvIa9PG3Gm+fLHvGI=
 github.com/gin-gonic/gin v1.10.0 h1:nTuyha1TYqgedzytsKYqna+DfLos46nTv2ygFy86HFU=
@@ -66,8 +66,8 @@ github.com/joho/godotenv v1.5.1/go.mod h1:f4LDr5Voq0i2e/R5DDNOoa2zzDfwtkZa6DnEwA
 github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnrnM=
 github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=
 github.com/klauspost/compress v1.13.6/go.mod h1:/3/Vjq9QcHkK5uEr5lBEmyoZ1iFhe47etQ6QUkpK6sk=
-github.com/klauspost/compress v1.16.3 h1:XuJt9zzcnaz6a16/OU53ZjWp/v7/42WcR5t2a0PcNQY=
-github.com/klauspost/compress v1.16.3/go.mod h1:ntbaceVETuRiXiv4DpjP66DpAtAGkEQskQzEyD//IeE=
+github.com/klauspost/compress v1.17.7 h1:ehO88t2UGzQK66LMdE8tibEd1ErmzZjNEqWkjLAKQQg=
+github.com/klauspost/compress v1.17.7/go.mod h1:Di0epgTjJY877eYKx5yC51cX2A2Vl2ibi7bDH9ttBbw=
 github.com/klauspost/cpuid/v2 v2.0.9/go.mod h1:FInQzS24/EEf25PyTYn52gqo7WaD8xa0213Md/qVLRg=
 github.com/klauspost/cpuid/v2 v2.2.7 h1:ZWSB3igEs+d0qvnxR/ZBzXVmxkgt8DdzP6m9pfuVLDM=
 github.com/klauspost/cpuid/v2 v2.2.7/go.mod h1:Lcz8mBdAVJIBVzewtcLocK12l3Y+JytZYpaMropDUws=
@@ -107,8 +107,8 @@ github.com/pilinux/cryptoengine v0.1.5 h1:CKDn+bTVb6+TsbGmrAo0HT00eVm55Y3kJQCdPC
 github.com/pilinux/cryptoengine v0.1.5/go.mod h1:5lFJoR5LN3WsWgltVjIGwj7Tm0PKV1VlHpabrL3Ibww=
 github.com/pilinux/libgo v0.0.5 h1:vvCIeZbPhhtGHcosWYNQ0wIuM06DDtbUPl8PnXqAiGM=
 github.com/pilinux/libgo v0.0.5/go.mod h1:dRkAmsF0HiyctSiYgBMbn6nxRbyavlipm2lIzRjMFdE=
-github.com/pilinux/logrus v0.11.2 h1:xE2rFraQwWKWZNY3nKLYD/xYW6RhRcdrXyU/zbbF1LA=
-github.com/pilinux/logrus v0.11.2/go.mod h1:qLAPPAOLzJscxbFQE2Xq2ZCnknHC+QKKtOAX47oGjS0=
+github.com/pilinux/logrus v0.11.3 h1:l0w7MOO8JtWLPO764MoUqyC63XvU6JhWfnDmIcFaUFE=
+github.com/pilinux/logrus v0.11.3/go.mod h1:XIpHEP1uyBgqQG1MIcRCaJ1J/rH3m66nzs+m/0nAlvc=
 github.com/pilinux/structs v1.1.1 h1:oab30yWZjsxSWCA8bHdCB4yUcB0qMSE8QVvgGSPEYxY=
 github.com/pilinux/structs v1.1.1/go.mod h1:Gm07WsM5mG+wZAqX2I4y5PoW4zvLhzDR+YoWm1c1BBk=
 github.com/pilinux/twofactor v1.1.5 h1:4NUXauRxKfoNPTdUsZbJuwRrEBzKFv/Mj+l2bajEU7U=
