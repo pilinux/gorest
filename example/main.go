@@ -104,6 +104,51 @@ func main() {
 		}
 	}
 
+	// example of using sentry in separate goroutines
+	/*
+		var GoroutineLogger *log.Logger
+		sentryHook, err := middleware.InitSentry(
+			configure.Logger.SentryDsn,
+			configure.Server.ServerEnv,
+			configure.Version,
+			configure.Logger.PerformanceTracing,
+			configure.Logger.TracesSampleRate,
+		)
+		if err != nil {
+			fmt.Println(err)
+		}
+		if err == nil {
+			sentryHook.SetFlushTimeout(5 * time.Second)
+			defer sentryHook.Flush()
+			GoroutineLogger = log.New()
+			GoroutineLogger.AddHook(sentryHook)
+		}
+		if GoroutineLogger == nil {
+			fmt.Println("failed to create a logger for separate goroutines")
+		}
+		if GoroutineLogger != nil {
+			if configure.Logger.SentryDsn != "" {
+				i := 0
+				for {
+					i++
+					ref := fmt.Sprintf("goroutine - %d", i)
+					fmt.Println("ref:", ref)
+					go func() {
+						fmt.Println("testing sentry integration in a separate goroutine")
+						GoroutineLogger.
+							WithFields(log.Fields{
+								"time": time.Now().Format(time.RFC3339),
+								"ref":  ref,
+							}).
+							Info("testing sentry integration in a separate goroutine")
+					}()
+
+					time.Sleep(5 * time.Second)
+				}
+			}
+		}
+	*/
+
 	r, err := router.SetupRouter(configure)
 	if err != nil {
 		fmt.Println(err)

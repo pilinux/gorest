@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -27,6 +28,7 @@ func TestSentryCapture(t *testing.T) {
 	router.Use(middleware.SentryCapture(sentryDSN, "production", "v0.0.1", "yes", "1.0"))
 
 	// check sentry in a separate goroutine
+	var wg sync.WaitGroup
 	var GoroutineLogger *log.Logger
 	sentryHook, err := middleware.InitSentry(
 		sentryDSN,
@@ -39,20 +41,30 @@ func TestSentryCapture(t *testing.T) {
 		t.Errorf("failed to initialize sentry for separate goroutines")
 	}
 	if err == nil {
+		sentryHook.SetFlushTimeout(5 * time.Second)
 		defer sentryHook.Flush()
 		GoroutineLogger = log.New()
 		GoroutineLogger.AddHook(sentryHook)
 	}
-	go func() {
+	if GoroutineLogger == nil {
+		t.Errorf("failed to create a logger for separate goroutines")
+	}
+
+	if GoroutineLogger != nil {
 		if sentryDSN != "" {
-			GoroutineLogger.
-				WithFields(log.Fields{
-					"time": time.Now().Format(time.RFC3339),
-					"ref":  "goroutine - 1",
-				}).
-				Info("testing sentry integration in a separate goroutine")
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				GoroutineLogger.
+					WithFields(log.Fields{
+						"time": time.Now().Format(time.RFC3339),
+						"ref":  "goroutine - 1",
+					}).
+					Info("testing sentry integration in a separate goroutine")
+			}()
+			wg.Wait()
 		}
-	}()
+	}
 
 	// define test route
 	router.GET("/", func(c *gin.Context) {
@@ -85,14 +97,19 @@ func TestSentryCapture(t *testing.T) {
 	}
 
 	// check sentry in another goroutine
-	go func() {
+	if GoroutineLogger != nil {
 		if sentryDSN != "" {
-			GoroutineLogger.
-				WithFields(log.Fields{
-					"time": time.Now().Format(time.RFC3339),
-					"ref":  "goroutine - 2",
-				}).
-				Info("testing sentry integration in a separate goroutine")
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				GoroutineLogger.
+					WithFields(log.Fields{
+						"time": time.Now().Format(time.RFC3339),
+						"ref":  "goroutine - 2",
+					}).
+					Info("testing sentry integration in a separate goroutine")
+			}()
+			wg.Wait()
 		}
-	}()
+	}
 }

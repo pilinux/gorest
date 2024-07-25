@@ -7,6 +7,7 @@ package middleware
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pilinux/logrus/sentry"
@@ -94,6 +95,7 @@ func SentryCapture(sentryDsn string, v ...string) gin.HandlerFunc {
 		sentryHook.AddTag("host", c.Request.Host)
 		sentryHook.AddTag("remote.addr", c.Request.RemoteAddr)
 		sentryHook.AddTag("user.agent", c.Request.UserAgent())
+		sentryHook.SetFlushTimeout(5 * time.Second)
 		defer sentryHook.Flush()
 
 		log.AddHook(sentryHook)
