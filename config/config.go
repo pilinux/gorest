@@ -7,7 +7,6 @@ import (
 	"crypto"
 	"crypto/sha256"
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -383,7 +382,7 @@ func security() (securityConfig SecurityConfig, err error) {
 
 		cipherKey := strings.TrimSpace(os.Getenv("CIPHER_KEY"))
 		if cipherKey == "" {
-			err = fmt.Errorf("CIPHER_KEY is missing")
+			err = errors.New("CIPHER_KEY is missing")
 			return
 		}
 		cipherKeyHash2 := sha256.Sum256([]byte(cipherKey)) // sha2-256

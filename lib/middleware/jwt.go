@@ -7,6 +7,7 @@ package middleware
 import (
 	"crypto/ecdsa"
 	"crypto/rsa"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -277,7 +278,7 @@ func GetJWT(customClaims MyCustomClaims, tokenType string) (string, string, erro
 		ttl = JWTParams.RefreshKeyTTL
 		nbf = JWTParams.RefNbf
 	default:
-		return "", "", fmt.Errorf("invalid token type")
+		return "", "", errors.New("invalid token type")
 	}
 
 	// Create the Claims
