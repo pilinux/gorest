@@ -117,15 +117,39 @@ func Refresh(c *gin.Context) {
 
 	resp, statusCode := handler.Refresh(claims)
 
+	configSecurity := config.GetConfig().Security
+
 	// JWT verification failed
 	if statusCode != http.StatusOK {
+		// if cookie is enabled, delete the cookie from client browser
+		if configSecurity.AuthCookieActivate {
+			c.SetSameSite(configSecurity.AuthCookieSameSite)
+			c.SetCookie(
+				"accessJWT",
+				"",
+				-1,
+				configSecurity.AuthCookiePath,
+				configSecurity.AuthCookieDomain,
+				configSecurity.AuthCookieSecure,
+				configSecurity.AuthCookieHTTPOnly,
+			)
+			c.SetCookie(
+				"refreshJWT",
+				"",
+				-1,
+				configSecurity.AuthCookiePath,
+				configSecurity.AuthCookieDomain,
+				configSecurity.AuthCookieSecure,
+				configSecurity.AuthCookieHTTPOnly,
+			)
+		}
+
 		renderer.Render(c, resp, statusCode)
 		return
 	}
 
 	// JWT verification OK
 	// set cookie if the feature is enabled in app settings
-	configSecurity := config.GetConfig().Security
 	if configSecurity.AuthCookieActivate {
 		tokens, ok := resp.Message.(middleware.JWTPayload)
 		if ok {

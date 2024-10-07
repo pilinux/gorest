@@ -4,6 +4,7 @@ package service
 
 import (
 	"encoding/hex"
+	"strings"
 
 	"github.com/pilinux/crypt"
 	"golang.org/x/crypto/blake2b"
@@ -50,6 +51,34 @@ func GetUserByEmail(email string, decryptEmail bool) (*model.Auth, error) {
 	}
 
 	return nil, err
+}
+
+// GetEmailByAuthID fetches user email by authID
+func GetEmailByAuthID(authID uint64) (string, error) {
+	db := database.GetDB()
+	var auth model.Auth
+
+	err := db.Where("auth_id = ?", authID).First(&auth).Error
+	if err != nil {
+		return "", err
+	}
+
+	auth.Email = strings.TrimSpace(auth.Email)
+	if auth.Email != "" {
+		return auth.Email, nil
+	}
+
+	// decrypt email
+	return DecryptEmail(auth.EmailNonce, auth.EmailCipher)
+}
+
+// IsAuthIDValid checks if the given authID is available in the database
+func IsAuthIDValid(authID uint64) bool {
+	db := database.GetDB()
+	var auth model.Auth
+
+	err := db.Where("auth_id = ?", authID).First(&auth).Error
+	return err == nil
 }
 
 // CalcHash generates a fixed-sized BLAKE2b-256 hash of the given text

@@ -41,7 +41,12 @@ func GetClaims(c *gin.Context) middleware.MyCustomClaims {
 
 // ValidateAuthID - check whether authID is missing
 func ValidateAuthID(authID uint64) bool {
-	return authID != 0
+	if authID == 0 {
+		return false
+	}
+
+	// does it exist in the database
+	return IsAuthIDValid(authID)
 }
 
 // ValidateUserID - check whether authID or email is missing
