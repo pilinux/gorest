@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
 
@@ -119,6 +119,17 @@ func JWT() gin.HandlerFunc {
 			c.Set("expAccess", claims.ExpiresAt.Unix()) // in UTC
 			c.Set("iatAccess", claims.IssuedAt.Unix())  // in UTC
 			c.Set("jtiAccess", claims.ID)
+
+			// set values from RegisteredClaims
+			//
+			// token issuer
+			c.Set("iss", claims.Issuer)
+			//
+			// token subject
+			c.Set("sub", claims.Subject)
+			//
+			// token audience
+			c.Set("aud", claims.Audience)
 		}
 
 		c.Next()
@@ -189,6 +200,17 @@ func RefreshJWT() gin.HandlerFunc {
 			c.Set("expRefresh", claims.ExpiresAt.Unix()) // in UTC
 			c.Set("iatRefresh", claims.IssuedAt.Unix())  // in UTC
 			c.Set("jtiRefresh", claims.ID)
+
+			// set values from RegisteredClaims
+			//
+			// token issuer
+			c.Set("iss", claims.Issuer)
+			//
+			// token subject
+			c.Set("sub", claims.Subject)
+			//
+			// token audience
+			c.Set("aud", claims.Audience)
 		}
 
 		c.Next()
