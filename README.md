@@ -33,11 +33,12 @@ Version `1.6.x` contains breaking changes!
 
 _Note:_ For version `1.4.5` (obsolete): [v1.4.5](https://github.com/pilinux/gorest/tree/v1.4.5)
 
-For all projects, it is recommended to use version `1.6.x` or higher.
+For all new projects, it is recommended to use version `1.7.x` or higher.
 
 ## Requirement
 
-`Go 1.20+`
+- `Go 1.21+` (for versions `1.7.x`)
+- `Go 1.20+` (for versions `1.6.x`)
 
 ## Supported databases
 
@@ -255,7 +256,7 @@ Please see [this][62] document.
 
 ## License
 
-© Mahir Hasan 2019 - 2024
+© Mahir Hasan 2019 - 2025
 
 Released under the [MIT license][13]
 
