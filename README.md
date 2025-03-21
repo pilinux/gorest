@@ -33,10 +33,11 @@ Version `1.6.x` contains breaking changes!
 
 _Note:_ For version `1.4.5` (obsolete): [v1.4.5](https://github.com/pilinux/gorest/tree/v1.4.5)
 
-For all new projects, it is recommended to use version `1.7.x` or higher.
+For all new projects, it is recommended to use version `1.8.x` or higher.
 
 ## Requirement
 
+- `Go 1.23+` (for versions `1.8.x`)
 - `Go 1.21+` (for versions `1.7.x`)
 - `Go 1.20+` (for versions `1.6.x`)
 
@@ -61,7 +62,7 @@ _Note:_ gorest uses [GORM][21] as its ORM
 - [x] two-factor authentication
 - [x] JWT using [golang-jwt/jwt][16]
 - [x] password hashing using `Argon2id` with optional secret (NIST 800-63B
-  recommends using a secret value of at least 112 bits)
+      recommends using a secret value of at least 112 bits)
 - [x] JSON protection from hijacking
 - [x] simple firewall (whitelist/blacklist IP)
 - [x] email validation (pattern + MX lookup)
@@ -153,7 +154,6 @@ openssl rsa -in private-key.pem -pubout -out public-key.pem
 ```yml
 # syntax=docker/dockerfile:1
 
-version: '3.9'
 name: go
 services:
   goapi:
@@ -163,7 +163,7 @@ services:
     restart: unless-stopped:10s
     command: /app/goapi
     ports:
-      - '127.0.0.1:8000:8999'
+      - "127.0.0.1:8000:8999"
     volumes:
       - ./app:/app/
 ```
@@ -219,19 +219,19 @@ or,
 
 ## Debugging with Error Codes
 
-| package | file | error code range |
-| ------- | ---- | ---------------- |
-| controller | login.go | `1011 - 1012` |
-| controller | twoFA.go | `1041 - 1044` |
-| database | dbConnect.go | `150 - 155`, `161` |
-| handler | auth.go | `1001 - 1003` |
-| handler | login.go | `1013 - 1014` |
-| handler | logout.go | `1016` |
-| handler | passwordReset.go | `1021 - 1030` |
-| handler | twoFA.go | `1051 - 1056` |
-| handler | verification.go | `1061 - 1065` |
-| service | common.go | `401 - 406` |
-| service | security.go | `501` |
+| package    | file             | error code range   |
+| ---------- | ---------------- | ------------------ |
+| controller | login.go         | `1011 - 1012`      |
+| controller | twoFA.go         | `1041 - 1044`      |
+| database   | dbConnect.go     | `150 - 155`, `161` |
+| handler    | auth.go          | `1001 - 1003`      |
+| handler    | login.go         | `1013 - 1014`      |
+| handler    | logout.go        | `1016`             |
+| handler    | passwordReset.go | `1021 - 1030`      |
+| handler    | twoFA.go         | `1051 - 1056`      |
+| handler    | verification.go  | `1061 - 1065`      |
+| service    | common.go        | `401 - 406`        |
+| service    | security.go      | `501`              |
 
 ## Development
 

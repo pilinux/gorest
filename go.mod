@@ -1,6 +1,6 @@
 module github.com/pilinux/gorest
 
-go 1.21
+go 1.23.0
 
 require (
 	github.com/flosch/pongo2/v6 v6.0.0
