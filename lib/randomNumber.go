@@ -17,14 +17,14 @@ func SecureRandomNumber(totalDigit uint64) uint64 {
 
 	var result *big.Int
 
-	min := big.NewInt(int64(math.Pow(10, float64(totalDigit)-1)))
-	max := big.NewInt(int64(math.Pow(10, float64(totalDigit)) - 1))
+	minVal := big.NewInt(int64(math.Pow(10, float64(totalDigit)-1)))
+	maxVal := big.NewInt(int64(math.Pow(10, float64(totalDigit)) - 1))
 
 	for {
-		x, err := rand.Int(rand.Reader, max)
+		x, err := rand.Int(rand.Reader, maxVal)
 
 		if err == nil {
-			if x.Cmp(min) == +1 {
+			if x.Cmp(minVal) == +1 {
 				result = x
 				break
 			}
