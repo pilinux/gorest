@@ -63,6 +63,14 @@ func NewSentryHook(sentryDsn string, v ...string) (*sentrylogrus.Hook, error) {
 	return createSentryHook(sentryDsn, v...)
 }
 
+// DestroySentry - destroy global sentry hook
+func DestroySentry() {
+	if globalSentryHook != nil {
+		globalSentryHook.Flush(5 * time.Second)
+		globalSentryHook = nil
+	}
+}
+
 func createSentryHook(sentryDsn string, v ...string) (*sentrylogrus.Hook, error) {
 	sentryDebugMode := true
 	environment := "development" // default

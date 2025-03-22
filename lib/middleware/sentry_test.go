@@ -124,3 +124,53 @@ func TestSentryCapture(t *testing.T) {
 		}
 	}
 }
+
+func TestInitSentryLogLevel(t *testing.T) {
+	// test case 1: when sentry dsn is wrong
+	t.Run("Sentry DSN wrong", func(t *testing.T) {
+		testLogLevel("mockDSN", []string{"development"}, log.DebugLevel, t)
+	})
+
+	// test case 2: when v[0] is "production", log level should be InfoLevel
+	t.Run("Log level production", func(t *testing.T) {
+		testLogLevel("https://username@sentry.io/project-id", []string{"production"}, log.InfoLevel, t)
+	})
+
+	// test case 3: when v[0] is not "production", log level should be DebugLevel
+	t.Run("Log level non-production", func(t *testing.T) {
+		testLogLevel("https://username@sentry.io/project-id", []string{"development"}, log.DebugLevel, t)
+	})
+
+	// test case 4: when v is empty, log level should default to DebugLevel
+	t.Run("Log level default", func(t *testing.T) {
+		testLogLevel("https://username@sentry.io/project-id", []string{}, log.DebugLevel, t)
+	})
+}
+
+// Helper function to test log level setting
+func testLogLevel(sentryDsn string, v []string, expectedLevel log.Level, t *testing.T) {
+	// destroy any existing global hook
+	middleware.DestroySentry()
+
+	// set the log level using the InitSentry function
+	_, err := middleware.InitSentry(sentryDsn, v...)
+	if err == nil && sentryDsn == "mockDSN" {
+		// if DSN is incorrect, expect an error
+		t.Fatalf("Expected error, but got nil")
+		return
+	}
+	if err != nil && sentryDsn != "mockDSN" {
+		// if DSN is correct, but there was an error
+		t.Fatalf("Error initializing sentry: %v", err)
+		return
+	}
+	if err != nil && sentryDsn == "mockDSN" {
+		// if DSN is incorrect and there was an error, stop the test here
+		return
+	}
+
+	// check if the log level was set correctly
+	if log.GetLevel() != expectedLevel {
+		t.Errorf("Expected log level %v, but got %v", expectedLevel, log.GetLevel())
+	}
+}
