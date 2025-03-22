@@ -124,9 +124,18 @@ func main() {
 				}()
 
 				GoroutineLogger = log.New()
+				GoroutineLogger.AddHook(sentryHook)
+				// this log level is independent of the global log level
 				GoroutineLogger.SetLevel(log.DebugLevel)
 				GoroutineLogger.SetFormatter(&log.JSONFormatter{})
-				GoroutineLogger.AddHook(sentryHook)
+
+				GoroutineLogger.
+					WithFields(log.Fields{
+						"time": time.Now().Format(time.RFC3339),
+						"ref":  "main",
+					}).
+					Debug("testing sentry integration in the main function")
+
 			}
 		}
 		if GoroutineLogger == nil {
