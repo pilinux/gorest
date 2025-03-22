@@ -33,10 +33,11 @@ Version `1.6.x` contains breaking changes!
 
 _Note:_ For version `1.4.5` (obsolete): [v1.4.5](https://github.com/pilinux/gorest/tree/v1.4.5)
 
-For all new projects, it is recommended to use version `1.8.x` or higher.
+For all new projects, it is recommended to use version `1.9.x` or higher.
 
 ## Requirement
 
+- `Go 1.23+` (for versions `1.9.x`)
 - `Go 1.23+` (for versions `1.8.x`)
 - `Go 1.21+` (for versions `1.7.x`)
 - `Go 1.20+` (for versions `1.6.x`)
