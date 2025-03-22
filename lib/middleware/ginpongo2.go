@@ -26,6 +26,8 @@ func Pongo2(baseDirectory string) gin.HandlerFunc {
 		defer func() {
 			if r := recover(); r != nil {
 				log.Error("panic msg: middleware -> pongo2 panicked")
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
 			}
 		}()
 

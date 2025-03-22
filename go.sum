@@ -15,8 +15,10 @@ github.com/flosch/pongo2/v6 v6.0.0 h1:lsGru8IAzHgIAw6H2m4PCyleO58I40ow6apih0WprM
 github.com/flosch/pongo2/v6 v6.0.0/go.mod h1:CuDpFm47R0uGGE7z13/tTlt1Y6zdxvr2RLT5LJhsHEU=
 github.com/gabriel-vasile/mimetype v1.4.3 h1:in2uUcidCuFcDKtdcBxlR0rJ1+fsokWf+uqxgUFjbI0=
 github.com/gabriel-vasile/mimetype v1.4.3/go.mod h1:d8uq/6HKRL6CGdk+aubisF/M5GcPfT7nKyLpA0lbSSk=
-github.com/getsentry/sentry-go v0.28.1 h1:zzaSm/vHmGllRM6Tpx1492r0YDzauArdBfkJRtY6P5k=
-github.com/getsentry/sentry-go v0.28.1/go.mod h1:1fQZ+7l7eeJ3wYi82q5Hg8GqAPgefRq+FP/QhafYVgg=
+github.com/getsentry/sentry-go v0.31.1 h1:ELVc0h7gwyhnXHDouXkhqTFSO5oslsRDk0++eyE0KJ4=
+github.com/getsentry/sentry-go v0.31.1/go.mod h1:CYNcMMz73YigoHljQRG+qPF+eMq8gG72XcGN/p71BAY=
+github.com/getsentry/sentry-go/logrus v0.31.1 h1:561777lxQWZl4qpte67Wp4zQB7V1oNVriZNN5hiOooI=
+github.com/getsentry/sentry-go/logrus v0.31.1/go.mod h1:UHhxir22yymjeM8dBN0LM+7Z98+cYFEev8V3AV1+UYU=
 github.com/gin-contrib/sse v0.1.0 h1:Y/yl/+YNO8GZSjAhjMsSuLt29uWRFHdHYUb5lYOV9qE=
 github.com/gin-contrib/sse v0.1.0/go.mod h1:RHrZQHXnP2xjPF+u1gW/2HnVO7nvIa9PG3Gm+fLHvGI=
 github.com/gin-gonic/gin v1.10.0 h1:nTuyha1TYqgedzytsKYqna+DfLos46nTv2ygFy86HFU=
@@ -104,8 +106,6 @@ github.com/pilinux/cryptoengine v0.1.9 h1:GSdhRlUBlZS/t6WJjxAI2bmYUJx/+tshTjYkvN
 github.com/pilinux/cryptoengine v0.1.9/go.mod h1:rdTQ4GMpsPtSThWrnpQrUm70qaj6x+SJ17LGLygIfR4=
 github.com/pilinux/libgo v0.0.5 h1:vvCIeZbPhhtGHcosWYNQ0wIuM06DDtbUPl8PnXqAiGM=
 github.com/pilinux/libgo v0.0.5/go.mod h1:dRkAmsF0HiyctSiYgBMbn6nxRbyavlipm2lIzRjMFdE=
-github.com/pilinux/logrus v0.11.3 h1:l0w7MOO8JtWLPO764MoUqyC63XvU6JhWfnDmIcFaUFE=
-github.com/pilinux/logrus v0.11.3/go.mod h1:XIpHEP1uyBgqQG1MIcRCaJ1J/rH3m66nzs+m/0nAlvc=
 github.com/pilinux/structs v1.1.1 h1:oab30yWZjsxSWCA8bHdCB4yUcB0qMSE8QVvgGSPEYxY=
 github.com/pilinux/structs v1.1.1/go.mod h1:Gm07WsM5mG+wZAqX2I4y5PoW4zvLhzDR+YoWm1c1BBk=
 github.com/pilinux/twofactor v1.1.8 h1:cTlRKLcqLJNmr/zqJGaqyPae9R7UWKai5HbHtv09fbw=
@@ -161,6 +161,8 @@ github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5t
 go.mongodb.org/mongo-driver v1.17.1/go.mod h1:wwWm/+BuOddhcq3n68LKRmgk2wXzmF6s0SFOa0GINL4=
 go.mongodb.org/mongo-driver v1.17.3 h1:TQyXhnsWfWtgAhMtOgtYHMTkZIfBTpMTsMnd9ZBeHxQ=
 go.mongodb.org/mongo-driver v1.17.3/go.mod h1:Hy04i7O2kC4RS06ZrhPRqj/u4DTYkFDAAccj+rVKqgQ=
+go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
+go.uber.org/goleak v1.3.0/go.mod h1:CoHD4mav9JJNrW/WLlf7HGZPjdw8EucARQHekz1X6bE=
 goji.io v2.0.2+incompatible h1:uIssv/elbKRLznFUy3Xj4+2Mz/qKhek/9aZQDUMae7c=
 goji.io v2.0.2+incompatible/go.mod h1:sbqFwrtqZACxLBTQcdgVjFh54yGVCvwq8+w49MVMMIk=
 golang.org/x/arch v0.0.0-20210923205945-b76863e36670/go.mod h1:5om86z9Hs0C8fWVUuoMHwpExlXzs5Tkyp9hOrfG7pp8=

@@ -25,12 +25,16 @@ func TestSentryCapture(t *testing.T) {
 
 	// register middleware with valid sentry dsn
 	sentryDSN := os.Getenv("TEST_SENTRY_DSN")
-	router.Use(middleware.SentryCapture(sentryDSN, "production", "v0.0.1", "yes", "1.0"))
+	_, err = middleware.InitSentry(sentryDSN, "production", "v0.0.1", "yes", "1.0")
+	if err != nil {
+		t.Errorf("failed to initialize sentry: %v", err)
+	}
+	router.Use(middleware.SentryCapture())
 
 	// check sentry in a separate goroutine
 	var wg sync.WaitGroup
 	var GoroutineLogger *log.Logger
-	sentryHook, err := middleware.InitSentry(
+	sentryHook, err := middleware.NewSentryHook(
 		sentryDSN,
 		"production",
 		"v0.0.1",
@@ -41,10 +45,17 @@ func TestSentryCapture(t *testing.T) {
 		t.Errorf("failed to initialize sentry for separate goroutines")
 	}
 	if err == nil {
-		sentryHook.SetFlushTimeout(5 * time.Second)
-		defer sentryHook.Flush()
-		GoroutineLogger = log.New()
-		GoroutineLogger.AddHook(sentryHook)
+		if sentryHook != nil {
+			t.Cleanup(func() {
+				// ensure sentry flushes all events before exiting
+				sentryHook.Flush(5 * time.Second)
+			})
+
+			GoroutineLogger = log.New()
+			GoroutineLogger.SetLevel(log.DebugLevel)
+			GoroutineLogger.SetFormatter(&log.JSONFormatter{})
+			GoroutineLogger.AddHook(sentryHook)
+		}
 	}
 	if GoroutineLogger == nil {
 		t.Errorf("failed to create a logger for separate goroutines")

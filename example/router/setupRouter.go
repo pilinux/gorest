@@ -98,13 +98,17 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 
 	// Sentry.io
 	if gconfig.IsSentry() {
-		r.Use(gmiddleware.SentryCapture(
+		_, err := gmiddleware.InitSentry(
 			configure.Logger.SentryDsn,
 			configure.Server.ServerEnv,
 			configure.Version,
 			configure.Logger.PerformanceTracing,
 			configure.Logger.TracesSampleRate,
-		))
+		)
+		if err != nil {
+			return r, err
+		}
+		r.Use(gmiddleware.SentryCapture())
 	}
 
 	// WAF

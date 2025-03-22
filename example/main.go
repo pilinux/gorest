@@ -107,7 +107,7 @@ func main() {
 	// example of using sentry in separate goroutines
 	/*
 		var GoroutineLogger *log.Logger
-		sentryHook, err := middleware.InitSentry(
+		sentryHook, err := middleware.NewSentryHook(
 			configure.Logger.SentryDsn,
 			configure.Server.ServerEnv,
 			configure.Version,
@@ -118,22 +118,30 @@ func main() {
 			fmt.Println(err)
 		}
 		if err == nil {
-			sentryHook.SetFlushTimeout(5 * time.Second)
-			defer sentryHook.Flush()
-			GoroutineLogger = log.New()
-			GoroutineLogger.AddHook(sentryHook)
+			if sentryHook != nil {
+				defer func() {
+					sentryHook.Flush(5 * time.Second)
+				}()
+
+				GoroutineLogger = log.New()
+				GoroutineLogger.SetLevel(log.DebugLevel)
+				GoroutineLogger.SetFormatter(&log.JSONFormatter{})
+				GoroutineLogger.AddHook(sentryHook)
+			}
 		}
 		if GoroutineLogger == nil {
 			fmt.Println("failed to create a logger for separate goroutines")
 		}
 		if GoroutineLogger != nil {
 			if configure.Logger.SentryDsn != "" {
-				i := 0
-				for {
-					i++
-					ref := fmt.Sprintf("goroutine - %d", i)
-					fmt.Println("ref:", ref)
-					go func() {
+				// Example goroutine to keep logging periodically
+				go func() {
+					i := 0
+					for {
+						i++
+						ref := fmt.Sprintf("goroutine - %d", i)
+						fmt.Println("ref:", ref)
+
 						fmt.Println("testing sentry integration in a separate goroutine")
 						GoroutineLogger.
 							WithFields(log.Fields{
@@ -141,10 +149,10 @@ func main() {
 								"ref":  ref,
 							}).
 							Info("testing sentry integration in a separate goroutine")
-					}()
 
-					time.Sleep(5 * time.Second)
-				}
+						time.Sleep(5 * time.Second)
+					}
+				}()
 			}
 		}
 	*/

@@ -4,6 +4,8 @@ go 1.23.0
 
 require (
 	github.com/flosch/pongo2/v6 v6.0.0
+	github.com/getsentry/sentry-go v0.31.1
+	github.com/getsentry/sentry-go/logrus v0.31.1
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-sql-driver/mysql v1.9.0
 	github.com/golang-jwt/jwt/v5 v5.2.1
@@ -14,7 +16,6 @@ require (
 	github.com/pilinux/argon2 v0.18.0
 	github.com/pilinux/crypt v0.0.13
 	github.com/pilinux/libgo v0.0.5
-	github.com/pilinux/logrus v0.11.3
 	github.com/pilinux/structs v1.1.1
 	github.com/pilinux/twofactor v1.1.8
 	github.com/qiniu/qmgo v1.1.9
@@ -35,7 +36,6 @@ require (
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
-	github.com/getsentry/sentry-go v0.28.1 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect

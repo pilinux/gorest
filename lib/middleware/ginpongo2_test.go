@@ -139,7 +139,7 @@ func TestPongo2(t *testing.T) {
 			map[string]interface{}{
 				"message": "Hello, World!",
 			},
-			http.StatusOK,
+			http.StatusInternalServerError,
 			"",
 		},
 	}
