@@ -78,11 +78,7 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 	auth := model.Auth{}
 
 	// is data.value an email or hash of an email
-	isEmail := false
-	if lib.ValidateEmail(data.value) {
-		isEmail = true
-	}
-
+	isEmail := lib.ValidateEmail(data.value)
 	if isEmail {
 		if err := db.Where("email = ?", data.value).First(&auth).Error; err != nil {
 			if err.Error() != database.RecordNotFound {
@@ -272,11 +268,7 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 	tempEmail := model.TempEmail{}
 
 	// is data.value an email or hash of an email
-	isEmail := false
-	if lib.ValidateEmail(data.value) {
-		isEmail = true
-	}
-
+	isEmail := lib.ValidateEmail(data.value)
 	if isEmail {
 		// check 'temp_emails' with the email in plaintext
 		if err := db.Where("email = ?", data.value).First(&tempEmail).Error; err != nil {

@@ -156,11 +156,7 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 	auth := model.Auth{}
 
 	// is data.value an email or hash of an email
-	isEmail := false
-	if lib.ValidateEmail(data.value) {
-		isEmail = true
-	}
-
+	isEmail := lib.ValidateEmail(data.value)
 	if isEmail {
 		if err := db.Where("email = ?", data.value).First(&auth).Error; err != nil {
 			if err.Error() != database.RecordNotFound {

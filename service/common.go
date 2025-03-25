@@ -102,16 +102,10 @@ func SendEmail(email string, emailType int, opts ...string) (bool, error) {
 	}
 
 	// is verification/password recovery email required
-	doSendEmail := false
-	if appConfig.Security.VerifyEmail && emailType == model.EmailTypeVerifyEmailNewAcc {
-		doSendEmail = true
-	}
-	if appConfig.Security.RecoverPass && emailType == model.EmailTypePassRecovery {
-		doSendEmail = true
-	}
-	if appConfig.Security.VerifyEmail && emailType == model.EmailTypeVerifyUpdatedEmail {
-		doSendEmail = true
-	}
+	doSendEmail := (appConfig.Security.VerifyEmail &&
+		(emailType == model.EmailTypeVerifyEmailNewAcc || emailType == model.EmailTypeVerifyUpdatedEmail)) ||
+
+		(appConfig.Security.RecoverPass && emailType == model.EmailTypePassRecovery)
 	if !doSendEmail {
 		return false, nil
 	}
