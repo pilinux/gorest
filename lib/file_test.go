@@ -13,7 +13,11 @@ func TestFileExist(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp file: %v", err)
 	}
-	defer os.Remove(tempFile.Name())
+	defer func() {
+		if e := os.Remove(tempFile.Name()); e != nil {
+			t.Errorf("failed to remove temp file: %v", e)
+		}
+	}()
 
 	// test with existing file
 	if !lib.FileExist(tempFile.Name()) {

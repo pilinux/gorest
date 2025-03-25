@@ -837,9 +837,18 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
 				}
 				// reset value
-				os.Setenv("JWT_ALG", "HS256")
-				os.Setenv("PRIV_KEY_FILE_PATH", "")
-				os.Setenv("PUB_KEY_FILE_PATH", "")
+				err = os.Setenv("JWT_ALG", "HS256")
+				if err != nil {
+					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				}
+				err = os.Setenv("PRIV_KEY_FILE_PATH", "")
+				if err != nil {
+					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				}
+				err = os.Setenv("PUB_KEY_FILE_PATH", "")
+				if err != nil {
+					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				}
 				// remove the downloaded file at the end of the test
 				fmt.Println("deleting...", tc.SetValue)
 				err = os.RemoveAll(tc.SetValue)
@@ -854,9 +863,18 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
 				}
 				// reset value
-				os.Setenv("JWT_ALG", "HS256")
-				os.Setenv("PRIV_KEY_FILE_PATH", "")
-				os.Setenv("PUB_KEY_FILE_PATH", "")
+				err = os.Setenv("JWT_ALG", "HS256")
+				if err != nil {
+					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				}
+				err = os.Setenv("PRIV_KEY_FILE_PATH", "")
+				if err != nil {
+					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				}
+				err = os.Setenv("PUB_KEY_FILE_PATH", "")
+				if err != nil {
+					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				}
 				// remove the downloaded file at the end of the test
 				fmt.Println("deleting...", tc.SetValue)
 				err = os.RemoveAll(tc.SetValue)
@@ -878,9 +896,18 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 					t.Errorf("expected error, got nil when setting '%v' for test no: '%v'", tc.Key, tc.TestNo)
 				}
 				// reset value
-				os.Setenv("JWT_ALG", "HS256")
-				os.Setenv("PRIV_KEY_FILE_PATH", "")
-				os.Setenv("PUB_KEY_FILE_PATH", "")
+				err = os.Setenv("JWT_ALG", "HS256")
+				if err != nil {
+					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				}
+				err = os.Setenv("PRIV_KEY_FILE_PATH", "")
+				if err != nil {
+					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				}
+				err = os.Setenv("PUB_KEY_FILE_PATH", "")
+				if err != nil {
+					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				}
 				// remove the downloaded file at the end of the test
 				fmt.Println("deleting...", tc.SetValue)
 				err = os.RemoveAll(tc.SetValue)
@@ -895,9 +922,18 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 					t.Errorf("expected error, got nil when setting '%v' for test no: '%v'", tc.Key, tc.TestNo)
 				}
 				// reset value
-				os.Setenv("JWT_ALG", "HS256")
-				os.Setenv("PRIV_KEY_FILE_PATH", "")
-				os.Setenv("PUB_KEY_FILE_PATH", "")
+				err = os.Setenv("JWT_ALG", "HS256")
+				if err != nil {
+					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				}
+				err = os.Setenv("PRIV_KEY_FILE_PATH", "")
+				if err != nil {
+					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				}
+				err = os.Setenv("PUB_KEY_FILE_PATH", "")
+				if err != nil {
+					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				}
 				// remove the downloaded file at the end of the test
 				fmt.Println("deleting...", tc.SetValue)
 				err = os.RemoveAll(tc.SetValue)
@@ -972,14 +1008,22 @@ func downloadFile(filepath string, url string) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func() {
+		if e := out.Close(); e != nil && err == nil {
+			err = e
+		}
+	}()
 
 	// get the data
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if e := resp.Body.Close(); e != nil && err == nil {
+			err = e
+		}
+	}()
 
 	// write the body to file
 	_, err = io.Copy(out, resp.Body)

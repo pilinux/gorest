@@ -217,14 +217,22 @@ func downloadFile(filepath string, url string) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func() {
+		if e := out.Close(); e != nil && err == nil {
+			err = e
+		}
+	}()
 
 	// get the data
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if e := resp.Body.Close(); e != nil && err == nil {
+			err = e
+		}
+	}()
 
 	// write the body to file
 	_, err = io.Copy(out, resp.Body)
