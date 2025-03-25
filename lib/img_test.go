@@ -17,7 +17,11 @@ func TestByteToPNG(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if e := os.RemoveAll(tempDir); e != nil {
+			t.Errorf("failed to remove temp dir: %v", e)
+		}
+	}()
 
 	// create a test image
 	testImg := image.NewRGBA(image.Rect(0, 0, 100, 100))
@@ -28,7 +32,7 @@ func TestByteToPNG(t *testing.T) {
 	}
 
 	// generate PNG from bytes and save to disk
-	filename, err := lib.ByteToPNG(buf.Bytes(), tempDir+"/")
+	filename, err := lib.ByteToPNG(buf.Bytes(), tempDir)
 	if err != nil {
 		t.Fatalf("ByteToPNG failed: %v", err)
 	}
@@ -44,7 +48,11 @@ func TestByteToPNG(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to open generated file: %v", err)
 	}
-	defer f.Close()
+	defer func() {
+		if e := f.Close(); e != nil {
+			t.Errorf("failed to close generated file: %v", e)
+		}
+	}()
 
 	_, err = png.Decode(f)
 	if err != nil {

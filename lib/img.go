@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/png"
 	"os"
+	"path/filepath"
 
 	"github.com/google/uuid"
 )
@@ -17,9 +18,17 @@ func ByteToPNG(imgByte []byte, path string) (string, error) {
 	}
 
 	newImg := "2fa-" + uuid.NewString() + ".png"
+	fullPath := filepath.Join(path, newImg)
 
-	out, _ := os.Create(path + newImg)
-	defer out.Close()
+	out, err := os.Create(fullPath)
+	if err != nil {
+		return "", err
+	}
+	defer func() {
+		if e := out.Close(); e != nil && err == nil {
+			err = e
+		}
+	}()
 
 	err = png.Encode(out, img)
 	if err != nil {
