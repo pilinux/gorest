@@ -20,6 +20,12 @@ func ByteToPNG(imgByte []byte, path string) (string, error) {
 	newImg := "2fa-" + uuid.NewString() + ".png"
 	fullPath := filepath.Join(path, newImg)
 
+	// prevent directory traversal attacks by validating the path
+	fullPath, err = ValidatePath(fullPath, path)
+	if err != nil {
+		return "", err
+	}
+
 	out, err := os.Create(fullPath)
 	if err != nil {
 		return "", err
