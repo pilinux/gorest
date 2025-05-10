@@ -274,3 +274,70 @@ func InitMongo() (*qmgo.Client, error) {
 func GetMongo() *qmgo.Client {
 	return mongoClient
 }
+
+// CloseAllDB - close all database connections
+func CloseAllDB() error {
+	err := CloseSQL()
+	if err != nil {
+		return err
+	}
+
+	err = CloseRedis()
+	if err != nil {
+		return err
+	}
+
+	err = CloseMongo()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CloseSQL - close connections to the SQL database
+func CloseSQL() error {
+	if dbClient != nil {
+		fmt.Println("Closing SQL DB connection...")
+		db, err := dbClient.DB()
+		if err != nil {
+			return err
+		}
+		if err := db.Close(); err != nil {
+			return err
+		}
+		dbClient = nil
+		sqlDB = nil
+		fmt.Println("SQL DB connection closed!")
+	}
+
+	return nil
+}
+
+// CloseRedis - close connections to the Redis database
+func CloseRedis() error {
+	if redisClient != nil {
+		fmt.Println("Closing Redis connection...")
+		if err := radix.Client.Close(*redisClient); err != nil {
+			return err
+		}
+		redisClient = nil
+		fmt.Println("Redis connection closed!")
+	}
+
+	return nil
+}
+
+// CloseMongo - close connections to the MongoDB database
+func CloseMongo() error {
+	if mongoClient != nil {
+		fmt.Println("Closing MongoDB connection...")
+		if err := mongoClient.Close(context.Background()); err != nil {
+			return err
+		}
+		mongoClient = nil
+		fmt.Println("MongoDB connection closed!")
+	}
+
+	return nil
+}
