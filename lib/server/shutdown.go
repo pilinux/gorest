@@ -48,6 +48,7 @@ func GracefulShutdown(srv *http.Server, timeout time.Duration, done chan struct{
 			}
 		}
 	case <-ctx.Done():
+		err = ctx.Err() // here, the primary error is the outer context error, e.g. context.DeadlineExceeded
 		// context deadline exceeded before the server could shutdown gracefully
 		log.Printf("graceful shutdown timed out, forcefully closing server: %v\n", err)
 		if eThis := srv.Close(); eThis != nil {
