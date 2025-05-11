@@ -3,9 +3,12 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	"time"
 
 	gconfig "github.com/pilinux/gorest/config"
 	gdatabase "github.com/pilinux/gorest/database"
+	gserver "github.com/pilinux/gorest/lib/server"
 	"github.com/qiniu/qmgo/options"
 
 	"github.com/pilinux/gorest/example/database/migrate"
@@ -171,10 +174,34 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	// Attaches the router to a http.Server and starts listening and serving HTTP requests
-	err = r.Run(configure.Server.ServerHost + ":" + configure.Server.ServerPort)
-	if err != nil {
-		fmt.Println(err)
-		return
+
+	// Attaches the router to a http.Server
+	srv := &http.Server{
+		Addr:    configure.Server.ServerHost + ":" + configure.Server.ServerPort,
+		Handler: r,
 	}
+
+	// Start shutdown watcher
+	const shutdownTimeout = 30 * time.Second
+	done := make(chan struct{})
+	// Wait for interrupt signal to gracefully shutdown the server
+	go func() {
+		err := gserver.GracefulShutdown(
+			srv,
+			shutdownTimeout,
+			done,
+			gdatabase.CloseAllDB,
+		)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
+
+	// Start the server
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		fmt.Printf("server error: %v\n", err)
+	}
+	// Wait for the graceful shutdown to complete
+	<-done
+	fmt.Println("server shutdown complete")
 }
