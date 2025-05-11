@@ -153,20 +153,20 @@ openssl rsa -in private-key.pem -pubout -out public-key.pem
 ## Example docker compose file
 
 ```yml
-# syntax=docker/dockerfile:1
-
-name: go
+name: dev
 services:
   goapi:
     image: golang:latest
     container_name: goapi
-    working_dir: /app/
-    restart: unless-stopped:10s
+    working_dir: /app
+    restart: unless-stopped
     command: /app/goapi
+    environment:
+      - TZ=Europe/Berlin
     ports:
       - "127.0.0.1:8000:8999"
     volumes:
-      - ./app:/app/
+      - ./app:/app
 ```
 
 ## Start building
@@ -177,7 +177,7 @@ and set the environment variables according to your own instance setup.
 
 _Tutorials:_
 
-For version `1.6.x`, please check the project in [example](example)
+For version `1.6.x` and above, please check the project in [example](example)
 
 For version `1.4.x` and `1.5.x`, [Wiki][10] (obsolete)
 
@@ -199,7 +199,6 @@ import (
 - set up an environment to compile the Go codes (a [quick tutorial][41]
   for any Debian based OS)
 - install `git`
-- check the [Wiki][10] and [example](example) for tutorials and implementations
 
 _Note:_ For **MySQL** driver, please [check issue: 7][42]
 
