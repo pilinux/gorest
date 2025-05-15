@@ -7,6 +7,7 @@
 ![Linter][08]
 [![Codecov][04]][05]
 [![Go Reference][14]][15]
+[![Ask DeepWiki][18]][19]
 [![Go Report Card](https://goreportcard.com/badge/github.com/pilinux/gorest)][01]
 [![CodeFactor](https://www.codefactor.io/repository/github/pilinux/gorest/badge)][06]
 [![codebeat badge](https://codebeat.co/badges/12c01a53-4745-4f90-ad2b-a95c94e4b432)][03]
@@ -276,6 +277,8 @@ Released under the [MIT license][13]
 [15]: https://pkg.go.dev/github.com/pilinux/gorest
 [16]: https://github.com/golang-jwt/jwt
 [17]: https://sentry.io/
+[18]: https://deepwiki.com/badge.svg
+[19]: https://deepwiki.com/pilinux/gorest
 [21]: https://gorm.io
 [41]: https://github.com/pilinux/HowtoCode/blob/master/Golang/1.Intro/Installation.md
 [42]: https://github.com/pilinux/gorest/issues/7
