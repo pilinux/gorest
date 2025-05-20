@@ -6,7 +6,7 @@ require (
 	github.com/flosch/pongo2/v6 v6.0.0
 	github.com/getsentry/sentry-go v0.33.0
 	github.com/getsentry/sentry-go/logrus v0.33.0
-	github.com/gin-gonic/gin v1.10.0
+	github.com/gin-gonic/gin v1.10.1
 	github.com/go-sql-driver/mysql v1.9.2
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/uuid v1.6.0
