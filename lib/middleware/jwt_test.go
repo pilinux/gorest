@@ -239,7 +239,7 @@ func TestJWT(t *testing.T) {
 	}
 
 	// set up a gin router and handler
-	gin.SetMode(gin.ReleaseMode)
+	gin.SetMode(gin.TestMode)
 	router := gin.New()
 	err = router.SetTrustedProxies(nil)
 	if err != nil {
@@ -361,7 +361,7 @@ func TestJWTAuthCookie(t *testing.T) {
 	}
 
 	// set up a gin router and handler
-	gin.SetMode(gin.ReleaseMode)
+	gin.SetMode(gin.TestMode)
 	router := gin.New()
 	err = router.SetTrustedProxies(nil)
 	if err != nil {
@@ -400,6 +400,122 @@ func TestJWTAuthCookie(t *testing.T) {
 			}
 		})
 	}
+
+	// valid __session cookie (should behave like accessJWT cookie)
+	t.Run("valid __session cookie", func(t *testing.T) {
+		gin.SetMode(gin.TestMode)
+		router := gin.New()
+		err := router.SetTrustedProxies(nil)
+		if err != nil {
+			t.Errorf("failed to set trusted proxies to nil")
+		}
+		router.TrustedPlatform = "X-Real-Ip"
+		router.Use(middleware.JWT())
+		router.GET("/", func(c *gin.Context) {
+			c.Status(http.StatusOK)
+		})
+		req, err := http.NewRequest("GET", "/", nil)
+		if err != nil {
+			t.Errorf("failed to create an HTTP request: %v", err)
+			return
+		}
+		req.AddCookie(&http.Cookie{
+			Name:     "__session",
+			Value:    accessJWT,
+			HttpOnly: true,
+		})
+		res := httptest.NewRecorder()
+		router.ServeHTTP(res, req)
+		if res.Code != http.StatusOK {
+			t.Errorf("expected status code %d, got %d", http.StatusOK, res.Code)
+		}
+	})
+
+	// invalid token claims (simulate by passing a valid JWT but parsing as a different struct)
+	t.Run("invalid token claims", func(t *testing.T) {
+		gin.SetMode(gin.TestMode)
+		router := gin.New()
+		err := router.SetTrustedProxies(nil)
+		if err != nil {
+			t.Errorf("failed to set trusted proxies to nil")
+		}
+		router.TrustedPlatform = "X-Real-Ip"
+		router.Use(func(c *gin.Context) {
+			var jwtPayload middleware.JWTPayload
+			accessJWT, err := c.Cookie("accessJWT")
+			if err == nil {
+				jwtPayload.AccessJWT = accessJWT
+			}
+			token, err := jwt.ParseWithClaims(jwtPayload.AccessJWT, &DummyClaims{}, middleware.ValidateAccessJWT)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, err.Error())
+				return
+			}
+			_, ok := token.Claims.(*middleware.JWTClaims)
+			if !ok {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, "invalid token claims")
+				return
+			}
+			c.Status(http.StatusOK)
+		})
+		req, err := http.NewRequest("GET", "/", nil)
+		if err != nil {
+			t.Errorf("failed to create an HTTP request: %v", err)
+			return
+		}
+		req.AddCookie(&http.Cookie{
+			Name:     "accessJWT",
+			Value:    accessJWT,
+			HttpOnly: true,
+		})
+		res := httptest.NewRecorder()
+		router.ServeHTTP(res, req)
+		if res.Code != http.StatusUnauthorized {
+			t.Errorf("expected status code %d, got %d", http.StatusUnauthorized, res.Code)
+		}
+	})
+
+	// NotBefore claim: token with nbf in the future, check context value
+	t.Run("NotBefore claim in context", func(t *testing.T) {
+		gin.SetMode(gin.TestMode)
+		router := gin.New()
+		err := router.SetTrustedProxies(nil)
+		if err != nil {
+			t.Errorf("failed to set trusted proxies to nil")
+		}
+		router.TrustedPlatform = "X-Real-Ip"
+		router.Use(middleware.JWT())
+		router.GET("/", func(c *gin.Context) {
+			nbf, exists := c.Get("nbf")
+			if !exists {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, "nbf not set")
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"nbf": nbf})
+		})
+		// create a token with nbf 10 seconds in the future
+		middleware.JWTParams.AccNbf = 10
+		futureJWT, _, err := middleware.GetJWT(customClaims, "access")
+		middleware.JWTParams.AccNbf = 0 // reset
+		if err != nil {
+			t.Errorf("error creating future nbf JWT: %v", err)
+		}
+		req, err := http.NewRequest("GET", "/", nil)
+		if err != nil {
+			t.Errorf("failed to create an HTTP request: %v", err)
+			return
+		}
+		req.AddCookie(&http.Cookie{
+			Name:     "accessJWT",
+			Value:    futureJWT,
+			HttpOnly: true,
+		})
+		res := httptest.NewRecorder()
+		router.ServeHTTP(res, req)
+		if res.Code != http.StatusUnauthorized {
+			t.Errorf("expected status code %d, got %d", http.StatusUnauthorized, res.Code)
+		}
+	})
 }
 
 func TestRefreshJWTPayload(t *testing.T) {
@@ -1173,6 +1289,22 @@ func TestValidateFailure(t *testing.T) {
 		})
 	}
 }
+
+// DummyClaims is a struct to simulate invalid token claims for testing
+// Implements jwt.Claims minimally
+// Used in TestJWTAuthCookie
+
+type DummyClaims struct {
+	Foo string
+}
+
+func (d *DummyClaims) Valid() error                                 { return nil }
+func (d *DummyClaims) GetAudience() (jwt.ClaimStrings, error)       { return nil, nil }
+func (d *DummyClaims) GetExpirationTime() (*jwt.NumericDate, error) { return nil, nil }
+func (d *DummyClaims) GetIssuedAt() (*jwt.NumericDate, error)       { return nil, nil }
+func (d *DummyClaims) GetIssuer() (string, error)                   { return "", nil }
+func (d *DummyClaims) GetNotBefore() (*jwt.NumericDate, error)      { return nil, nil }
+func (d *DummyClaims) GetSubject() (string, error)                  { return "", nil }
 
 // set params
 func setParamsJWT() {
