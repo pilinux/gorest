@@ -318,6 +318,16 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 		// QueryString demo
 		rQuery := v1.Group("query")
 		rQuery.GET("*q", controller.QueryString)
+
+		// if you want to use clerk.com auth provider:
+		// __session contains the JWT
+		// clerk uses RS256 algorithm for JWT token generation
+		// use the `sub` claim: c.GetString("sub") to get the user ID from JWT token
+		// and build relation in the database
+		rClerk := v1.Group("clerk")
+		rClerk.Use(gmiddleware.JWT())
+		rClerk.Use(gservice.JWTBlacklistChecker())
+		rClerk.GET("", controller.AccessResource) // Protected
 	}
 
 	return r, nil

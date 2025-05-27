@@ -47,6 +47,10 @@ type MyCustomClaims struct {
 	Role    string `json:"role,omitempty"`
 	Scope   string `json:"scope,omitempty"`
 	TwoFA   string `json:"twoFA,omitempty"`
+	Azp     string `json:"azp,omitempty"` // authorized party
+	Fva     []int  `json:"fva,omitempty"` // factor verification age
+	Sid     string `json:"sid,omitempty"` // session ID
+	V       int    `json:"v,omitempty"`   // version
 	SiteLan string `json:"siteLan,omitempty"`
 	Custom1 string `json:"custom1,omitempty"`
 	Custom2 string `json:"custom2,omitempty"`
@@ -81,6 +85,14 @@ func JWT() gin.HandlerFunc {
 			jwtPayload.AccessJWT = accessJWT
 			goto VerifyClaims
 		}
+		// accessJWT is not available in the cookie
+		// is __session available?
+		accessJWT, err = c.Cookie("__session")
+		// __session is available in the cookie
+		if err == nil {
+			jwtPayload.AccessJWT = accessJWT
+			goto VerifyClaims
+		}
 
 		// accessJWT is not available in the cookie
 		// try to read the Authorization header
@@ -106,31 +118,72 @@ func JWT() gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, err.Error())
 			return
 		}
-
-		if claims, ok := token.Claims.(*JWTClaims); ok && token.Valid {
-			c.Set("authID", claims.AuthID)
-			c.Set("email", claims.Email)
-			c.Set("role", claims.Role)
-			c.Set("scope", claims.Scope)
-			c.Set("tfa", claims.TwoFA)
-			c.Set("siteLan", claims.SiteLan)
-			c.Set("custom1", claims.Custom1)
-			c.Set("custom2", claims.Custom2)
-			c.Set("expAccess", claims.ExpiresAt.Unix()) // in UTC
-			c.Set("iatAccess", claims.IssuedAt.Unix())  // in UTC
-			c.Set("jtiAccess", claims.ID)
-
-			// set values from RegisteredClaims
-			//
-			// token issuer
-			c.Set("iss", claims.Issuer)
-			//
-			// token subject
-			c.Set("sub", claims.Subject)
-			//
-			// token audience
-			c.Set("aud", claims.Audience)
+		if token == nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, "token missing")
+			return
 		}
+
+		claims, ok := token.Claims.(*JWTClaims)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, "invalid token claims")
+			return
+		}
+
+		if !token.Valid {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, "invalid token")
+			return
+		}
+
+		c.Set("authID", claims.AuthID)
+		c.Set("email", claims.Email)
+		c.Set("role", claims.Role)
+		c.Set("scope", claims.Scope)
+		c.Set("tfa", claims.TwoFA)
+		c.Set("siteLan", claims.SiteLan)
+		c.Set("custom1", claims.Custom1)
+		c.Set("custom2", claims.Custom2)
+		if claims.ExpiresAt != nil {
+			c.Set("expAccess", claims.ExpiresAt.Unix()) // in Unix epoch time
+		}
+		if claims.IssuedAt != nil {
+			c.Set("iatAccess", claims.IssuedAt.Unix()) // in Unix epoch time
+		}
+		c.Set("jtiAccess", claims.ID)
+
+		// set values for external auth providers if available
+		c.Set("azp", claims.Azp) // authorized party
+		c.Set("fva", claims.Fva) // factor verification age
+		c.Set("sid", claims.Sid) // session ID
+		c.Set("v", claims.V)     // version
+
+		// set values from RegisteredClaims
+		//
+		// token issuer
+		c.Set("iss", claims.Issuer)
+		//
+		// token subject
+		c.Set("sub", claims.Subject)
+		//
+		// token audience
+		c.Set("aud", claims.Audience)
+		//
+		// token issued at
+		if claims.IssuedAt != nil {
+			c.Set("iat", claims.IssuedAt.Unix())
+		}
+		//
+		// token expiration time
+		if claims.ExpiresAt != nil {
+			c.Set("exp", claims.ExpiresAt.Unix())
+		}
+		//
+		// token not before time
+		if claims.NotBefore != nil {
+			c.Set("nbf", claims.NotBefore.Unix())
+		}
+		//
+		// token ID
+		c.Set("jti", claims.ID)
 
 		c.Next()
 	}
@@ -187,31 +240,72 @@ func RefreshJWT() gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, err.Error())
 			return
 		}
-
-		if claims, ok := token.Claims.(*JWTClaims); ok && token.Valid {
-			c.Set("authID", claims.AuthID)
-			c.Set("email", claims.Email)
-			c.Set("role", claims.Role)
-			c.Set("scope", claims.Scope)
-			c.Set("tfa", claims.TwoFA)
-			c.Set("siteLan", claims.SiteLan)
-			c.Set("custom1", claims.Custom1)
-			c.Set("custom2", claims.Custom2)
-			c.Set("expRefresh", claims.ExpiresAt.Unix()) // in UTC
-			c.Set("iatRefresh", claims.IssuedAt.Unix())  // in UTC
-			c.Set("jtiRefresh", claims.ID)
-
-			// set values from RegisteredClaims
-			//
-			// token issuer
-			c.Set("iss", claims.Issuer)
-			//
-			// token subject
-			c.Set("sub", claims.Subject)
-			//
-			// token audience
-			c.Set("aud", claims.Audience)
+		if token == nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, "token missing")
+			return
 		}
+
+		claims, ok := token.Claims.(*JWTClaims)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, "invalid token claims")
+			return
+		}
+
+		if !token.Valid {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, "invalid token")
+			return
+		}
+
+		c.Set("authID", claims.AuthID)
+		c.Set("email", claims.Email)
+		c.Set("role", claims.Role)
+		c.Set("scope", claims.Scope)
+		c.Set("tfa", claims.TwoFA)
+		c.Set("siteLan", claims.SiteLan)
+		c.Set("custom1", claims.Custom1)
+		c.Set("custom2", claims.Custom2)
+		if claims.ExpiresAt != nil {
+			c.Set("expRefresh", claims.ExpiresAt.Unix()) // in Unix epoch time
+		}
+		if claims.IssuedAt != nil {
+			c.Set("iatRefresh", claims.IssuedAt.Unix()) // in Unix epoch time
+		}
+		c.Set("jtiRefresh", claims.ID)
+
+		// set values for external auth providers if available
+		c.Set("azp", claims.Azp) // authorized party
+		c.Set("fva", claims.Fva) // factor verification age
+		c.Set("sid", claims.Sid) // session ID
+		c.Set("v", claims.V)     // version
+
+		// set values from RegisteredClaims
+		//
+		// token issuer
+		c.Set("iss", claims.Issuer)
+		//
+		// token subject
+		c.Set("sub", claims.Subject)
+		//
+		// token audience
+		c.Set("aud", claims.Audience)
+		//
+		// token issued at
+		if claims.IssuedAt != nil {
+			c.Set("iat", claims.IssuedAt.Unix())
+		}
+		//
+		// token expiration time
+		if claims.ExpiresAt != nil {
+			c.Set("exp", claims.ExpiresAt.Unix())
+		}
+		//
+		// token not before time
+		if claims.NotBefore != nil {
+			c.Set("nbf", claims.NotBefore.Unix())
+		}
+		//
+		// token ID
+		c.Set("jti", claims.ID)
 
 		c.Next()
 	}

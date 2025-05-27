@@ -90,10 +90,12 @@ func TestGetJWT(t *testing.T) {
 				}
 
 				// remove the downloaded file
-				err = os.RemoveAll(fileName)
-				if err != nil {
-					t.Error(err)
-				}
+				defer func() {
+					err = os.RemoveAll(fileName)
+					if err != nil {
+						t.Error(err)
+					}
+				}()
 
 				if tc.Algorithm == "ES256" || tc.Algorithm == "ES384" || tc.Algorithm == "ES512" {
 					privateKey, errThis := jwt.ParseECPrivateKeyFromPEM(privateKeyBytes)
@@ -168,6 +170,22 @@ func TestJWT(t *testing.T) {
 		t.Errorf("error creating expired access JWT: %v", err)
 	}
 
+	// invalid token (bad signature)
+	var invalidToken string
+	parts := strings.Split(accessJWT, ".")
+	if len(parts) == 3 {
+		// change a character in the middle of the signature
+		sig := []rune(parts[2])
+		mid := len(sig) / 2
+		if sig[mid] == 'x' {
+			sig[mid] = 'y'
+		} else {
+			sig[mid] = 'x'
+		}
+		parts[2] = string(sig)
+		invalidToken = strings.Join(parts, ".")
+	}
+
 	tests := []struct {
 		name           string
 		authorization  string
@@ -206,6 +224,11 @@ func TestJWT(t *testing.T) {
 		{
 			name:           "valid authorization header set to be valid 30 seconds in the future",
 			authorization:  "Bearer " + validInFutureAccessJWT,
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "invalid authorization header with bad signature",
+			authorization:  "Bearer " + invalidToken,
 			expectedStatus: http.StatusUnauthorized,
 		},
 		{
@@ -280,6 +303,22 @@ func TestJWTAuthCookie(t *testing.T) {
 		t.Errorf("error creating expired access JWT: %v", err)
 	}
 
+	// invalid token (bad signature)
+	var invalidToken string
+	parts := strings.Split(accessJWT, ".")
+	if len(parts) == 3 {
+		// change a character in the middle of the signature
+		sig := []rune(parts[2])
+		mid := len(sig) / 2
+		if sig[mid] == 'x' {
+			sig[mid] = 'y'
+		} else {
+			sig[mid] = 'x'
+		}
+		parts[2] = string(sig)
+		invalidToken = strings.Join(parts, ".")
+	}
+
 	tests := []struct {
 		name           string
 		accessJWT      string
@@ -307,6 +346,11 @@ func TestJWTAuthCookie(t *testing.T) {
 		{
 			name:           "valid access token set to be valid 30 seconds in the future",
 			accessJWT:      validInFutureAccessJWT,
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "invalid access token with bad signature",
+			accessJWT:      invalidToken,
 			expectedStatus: http.StatusUnauthorized,
 		},
 		{
@@ -771,10 +815,12 @@ func TestValidateAccessJWT(t *testing.T) {
 				}
 
 				// remove the downloaded file
-				err = os.RemoveAll(fileName)
-				if err != nil {
-					t.Error(err)
-				}
+				defer func() {
+					err = os.RemoveAll(fileName)
+					if err != nil {
+						t.Error(err)
+					}
+				}()
 
 				if tc.Algorithm == "ES256" || tc.Algorithm == "ES384" || tc.Algorithm == "ES512" {
 					publicKey, errThis := jwt.ParseECPublicKeyFromPEM(publicKeyBytes)
@@ -974,10 +1020,12 @@ func TestValidateRefreshJWT(t *testing.T) {
 				}
 
 				// remove the downloaded file
-				err = os.RemoveAll(fileName)
-				if err != nil {
-					t.Error(err)
-				}
+				defer func() {
+					err = os.RemoveAll(publicKeyFile)
+					if err != nil {
+						t.Error(err)
+					}
+				}()
 
 				if tc.Algorithm == "ES256" || tc.Algorithm == "ES384" || tc.Algorithm == "ES512" {
 					publicKey, errThis := jwt.ParseECPublicKeyFromPEM(publicKeyBytes)
@@ -1148,4 +1196,10 @@ func setParamsJWT() {
 	customClaims.SiteLan = "en"
 	customClaims.Custom1 = "custom value 1"
 	customClaims.Custom2 = "custom value 2"
+
+	customClaims.Azp = "https://example.com/azp"
+	customClaims.Fva = []int{1, 2, 3}
+	customClaims.Sid = "session-id-123"
+	customClaims.V = 2
+
 }
