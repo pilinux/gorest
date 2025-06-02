@@ -19,6 +19,8 @@ require (
 	github.com/pilinux/structs v1.1.1
 	github.com/pilinux/twofactor v1.1.9
 	github.com/qiniu/qmgo v1.1.9
+	github.com/rs/cors v1.11.1
+	github.com/rs/cors/wrapper/gin v0.0.0-20240830163046-1084d89a1692
 	github.com/sirupsen/logrus v1.9.3
 	github.com/ulule/limiter/v3 v3.11.2
 	go.mongodb.org/mongo-driver v1.17.3
