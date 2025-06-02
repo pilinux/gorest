@@ -232,12 +232,11 @@ func TestCORS(t *testing.T) {
 	}
 
 	// test each case
-	for _, c := range cases {
+	for i, c := range cases {
 		if c.headerKey == "error" {
 			gin.SetMode(gin.TestMode)
 			router := gin.New()
-			handler := middleware.CORS(c.cp)
-			router.Use(handler)
+			router.Use(middleware.CORS(c.cp))
 			router.GET("/", func(c *gin.Context) {
 				c.Status(http.StatusOK)
 			})
@@ -269,12 +268,7 @@ func TestCORS(t *testing.T) {
 			t.Errorf("failed to set trusted proxies to nil")
 		}
 		router.TrustedPlatform = "X-Real-Ip"
-
-		// define the handler function
-		handler := middleware.CORS(c.cp)
-
-		// add the handler to the router
-		router.Use(handler)
+		router.Use(middleware.CORS(c.cp))
 
 		router.GET("/", func(c *gin.Context) {
 			c.Status(http.StatusOK)
@@ -298,12 +292,61 @@ func TestCORS(t *testing.T) {
 
 		// check the status code
 		if w.Code != c.statusCode {
-			t.Errorf("expected status code %d, got %d", c.statusCode, w.Code)
+			t.Errorf("case %d: expected status code %d, got %d", i+1, c.statusCode, w.Code)
 		}
 
 		// check the header value
 		if c.headerKey != "" && w.Header().Get(c.headerKey) != c.headerVal {
-			t.Errorf("expected header '%s' to be '%s', got '%s'", c.headerKey, c.headerVal, w.Header().Get(c.headerKey))
+			t.Errorf("case %d: expected header '%s' to be '%s', got '%s'", i+1, c.headerKey, c.headerVal, w.Header().Get(c.headerKey))
 		}
+	}
+}
+
+func TestCORSGetters(t *testing.T) {
+	cp := []middleware.CORSPolicy{
+		{"Access-Control-Allow-Origin", "http://example.com"},
+		{"Access-Control-Allow-Methods", "GET, POST"},
+		{"Access-Control-Allow-Headers", "X-Custom-Header, Content-Type"},
+		{"Access-Control-Expose-Headers", "X-Expose-Header"},
+		{"Access-Control-Max-Age", "1234"},
+		{"Access-Control-Allow-Credentials", "true"},
+	}
+	_ = middleware.CORS(cp) // initialize config
+
+	// use GetCORS to get all config at once
+	corsConf := middleware.GetCORS()
+
+	// test AllowedOrigins
+	expectedOrigins := []string{"http://example.com"}
+	if len(corsConf.AllowedOrigins) != 1 || corsConf.AllowedOrigins[0] != expectedOrigins[0] {
+		t.Errorf("AllowedOrigins = %v, want %v", corsConf.AllowedOrigins, expectedOrigins)
+	}
+
+	// test AllowedMethods
+	expectedMethods := []string{"GET", "POST"}
+	if len(corsConf.AllowedMethods) != 2 || corsConf.AllowedMethods[0] != "GET" || corsConf.AllowedMethods[1] != "POST" {
+		t.Errorf("AllowedMethods = %v, want %v", corsConf.AllowedMethods, expectedMethods)
+	}
+
+	// test AllowedHeaders
+	expectedHeaders := []string{"X-Custom-Header", "Content-Type"}
+	if len(corsConf.AllowedHeaders) != 2 || corsConf.AllowedHeaders[0] != "X-Custom-Header" || corsConf.AllowedHeaders[1] != "Content-Type" {
+		t.Errorf("AllowedHeaders = %v, want %v", corsConf.AllowedHeaders, expectedHeaders)
+	}
+
+	// test ExposedHeaders
+	expectedExposed := []string{"X-Expose-Header"}
+	if len(corsConf.ExposedHeaders) != 1 || corsConf.ExposedHeaders[0] != expectedExposed[0] {
+		t.Errorf("ExposedHeaders = %v, want %v", corsConf.ExposedHeaders, expectedExposed)
+	}
+
+	// test MaxAge
+	if corsConf.MaxAge != 1234 {
+		t.Errorf("MaxAge = %d, want %d", corsConf.MaxAge, 1234)
+	}
+
+	// test AllowCredentials
+	if corsConf.AllowCredentials != true {
+		t.Errorf("AllowCredentials = %v, want %v", corsConf.AllowCredentials, true)
 	}
 }

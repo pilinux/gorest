@@ -28,16 +28,24 @@ type CORSPolicy struct {
 	Value string
 }
 
+// CORSConfig holds all CORS configuration values
+type CORSConfig struct {
+	AllowedOrigins   []string
+	AllowedMethods   []string
+	AllowedHeaders   []string
+	ExposedHeaders   []string
+	MaxAge           int
+	AllowCredentials bool
+}
+
+var (
+	corsConfig CORSConfig
+	maxAgeSet  bool
+)
+
 // CORS - Cross-Origin Resource Sharing
 func CORS(cp []CORSPolicy) gin.HandlerFunc {
-	// convert CORSPolicy slice to rs/cors.Options
-	var allowedOrigins []string
-	var allowedMethods []string
-	var allowedHeaders []string
-	var exposedHeaders []string
-	var maxAge int
-	var maxAgeSet bool
-	var allowCredentials bool
+	ResetCORS()
 
 	// helper function to deduplicate string slices
 	deduplicate := func(input []string) []string {
@@ -52,6 +60,7 @@ func CORS(cp []CORSPolicy) gin.HandlerFunc {
 		return result
 	}
 
+	// convert CORSPolicy slice to rs/cors.Options
 	for _, policy := range cp {
 		key := strings.ToLower(policy.Key)
 		switch key {
@@ -59,56 +68,56 @@ func CORS(cp []CORSPolicy) gin.HandlerFunc {
 			for _, o := range strings.Split(policy.Value, ",") {
 				trimmed := strings.TrimSpace(o)
 				if trimmed != "" {
-					allowedOrigins = append(allowedOrigins, trimmed)
+					corsConfig.AllowedOrigins = append(corsConfig.AllowedOrigins, trimmed)
 				}
 			}
 		case "access-control-allow-methods":
 			for _, m := range strings.Split(policy.Value, ",") {
 				trimmed := strings.TrimSpace(m)
 				if trimmed != "" {
-					allowedMethods = append(allowedMethods, trimmed)
+					corsConfig.AllowedMethods = append(corsConfig.AllowedMethods, trimmed)
 				}
 			}
 		case "access-control-allow-headers":
 			for _, h := range strings.Split(policy.Value, ",") {
 				trimmed := strings.TrimSpace(h)
 				if trimmed != "" {
-					allowedHeaders = append(allowedHeaders, trimmed)
+					corsConfig.AllowedHeaders = append(corsConfig.AllowedHeaders, trimmed)
 				}
 			}
 		case "access-control-expose-headers":
 			for _, h := range strings.Split(policy.Value, ",") {
 				trimmed := strings.TrimSpace(h)
 				if trimmed != "" {
-					exposedHeaders = append(exposedHeaders, trimmed)
+					corsConfig.ExposedHeaders = append(corsConfig.ExposedHeaders, trimmed)
 				}
 			}
 		case "access-control-max-age":
 			if v, err := strconv.Atoi(policy.Value); err == nil {
-				maxAge = v
+				corsConfig.MaxAge = v
 				maxAgeSet = true
 			}
 		case "access-control-allow-credentials":
 			if strings.ToLower(policy.Value) == "true" {
-				allowCredentials = true
+				corsConfig.AllowCredentials = true
 			}
 		}
 	}
 
 	// deduplicate allowed lists
-	allowedOrigins = deduplicate(allowedOrigins)
-	allowedMethods = deduplicate(allowedMethods)
-	allowedHeaders = deduplicate(allowedHeaders)
-	exposedHeaders = deduplicate(exposedHeaders)
+	corsConfig.AllowedOrigins = deduplicate(corsConfig.AllowedOrigins)
+	corsConfig.AllowedMethods = deduplicate(corsConfig.AllowedMethods)
+	corsConfig.AllowedHeaders = deduplicate(corsConfig.AllowedHeaders)
+	corsConfig.ExposedHeaders = deduplicate(corsConfig.ExposedHeaders)
 
 	// set default maxAge if not set by policy
 	if !maxAgeSet {
-		maxAge = 600 // default to 10 minutes
+		corsConfig.MaxAge = 600 // default to 10 minutes
 	}
 
 	// prevent insecure CORS config: credentials + wildcard origin
-	if allowCredentials {
-		if len(allowedOrigins) == 0 {
+	if corsConfig.AllowCredentials {
+		if len(corsConfig.AllowedOrigins) == 0 {
 			// if no origins are specified, by default all origins are allowed
 			// which is not allowed with credentials
 			return func(c *gin.Context) {
@@ -119,7 +128,7 @@ func CORS(cp []CORSPolicy) gin.HandlerFunc {
 			}
 		}
 
-		if strings.Contains(strings.Join(allowedOrigins, ", "), "*") {
+		if strings.Contains(strings.Join(corsConfig.AllowedOrigins, ", "), "*") {
 			// if any origin is "*", return error
 			// this is a security risk as it allows any origin to access the resource with credentials
 			// according to the CORS spec, this is forbidden
@@ -134,21 +143,21 @@ func CORS(cp []CORSPolicy) gin.HandlerFunc {
 	}
 
 	// if no allowed methods, set to default
-	if len(allowedMethods) == 0 {
-		allowedMethods = []string{"OPTIONS"}
+	if len(corsConfig.AllowedMethods) == 0 {
+		corsConfig.AllowedMethods = []string{"OPTIONS"}
 	}
 	// if no allowed headers, set to default
-	if len(allowedHeaders) == 0 {
-		allowedHeaders = []string{"Content-Type"}
+	if len(corsConfig.AllowedHeaders) == 0 {
+		corsConfig.AllowedHeaders = []string{"Content-Type"}
 	}
 
 	options := rs.Options{
-		AllowedOrigins:   allowedOrigins,
-		AllowedMethods:   allowedMethods,
-		AllowedHeaders:   allowedHeaders,
-		ExposedHeaders:   exposedHeaders,
-		MaxAge:           maxAge,
-		AllowCredentials: allowCredentials,
+		AllowedOrigins:   corsConfig.AllowedOrigins,
+		AllowedMethods:   corsConfig.AllowedMethods,
+		AllowedHeaders:   corsConfig.AllowedHeaders,
+		ExposedHeaders:   corsConfig.ExposedHeaders,
+		MaxAge:           corsConfig.MaxAge,
+		AllowCredentials: corsConfig.AllowCredentials,
 	}
 
 	corsHandler := cors.New(options)
@@ -189,16 +198,16 @@ func CORS(cp []CORSPolicy) gin.HandlerFunc {
 		// required for browser-based HTTP clients
 		if c.Request.Method == "OPTIONS" {
 			// set Access-Control-Allow-Methods
-			c.Writer.Header().Set("Access-Control-Allow-Methods", strings.Join(allowedMethods, ", "))
+			c.Writer.Header().Set("Access-Control-Allow-Methods", strings.Join(corsConfig.AllowedMethods, ", "))
 
 			// set Access-Control-Allow-Headers if present
-			if len(allowedHeaders) > 0 {
-				c.Writer.Header().Set("Access-Control-Allow-Headers", strings.Join(allowedHeaders, ", "))
+			if len(corsConfig.AllowedHeaders) > 0 {
+				c.Writer.Header().Set("Access-Control-Allow-Headers", strings.Join(corsConfig.AllowedHeaders, ", "))
 			}
 
 			// set Access-Control-Max-Age if set by policy
 			if maxAgeSet {
-				c.Writer.Header().Set("Access-Control-Max-Age", strconv.Itoa(maxAge))
+				c.Writer.Header().Set("Access-Control-Max-Age", strconv.Itoa(corsConfig.MaxAge))
 			}
 
 			corsHandler(c)
@@ -208,4 +217,15 @@ func CORS(cp []CORSPolicy) gin.HandlerFunc {
 
 		corsHandler(c)
 	}
+}
+
+// GetCORS returns all CORS configuration values in a struct
+func GetCORS() CORSConfig {
+	return corsConfig
+}
+
+// ResetCORS resets the CORS configuration
+func ResetCORS() {
+	corsConfig = CORSConfig{}
+	maxAgeSet = false
 }
