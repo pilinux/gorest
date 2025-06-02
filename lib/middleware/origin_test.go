@@ -24,20 +24,8 @@ func TestCheckOrigin(t *testing.T) {
 			expectedCode:  http.StatusOK,
 		},
 		{
-			name:          "Allowed Origin (null), should pass",
-			originAllowed: "null",
-			origin:        "http://example.com",
-			expectedCode:  http.StatusOK,
-		},
-		{
-			name:          "Allowed Origin (empty), should pass",
-			originAllowed: "",
-			origin:        "http://example.com",
-			expectedCode:  http.StatusOK,
-		},
-		{
 			name:          "Allowed Origin (http), should pass",
-			originAllowed: "http://Example.com",
+			originAllowed: "http://example.com",
 			origin:        "http://eXample.com",
 			expectedCode:  http.StatusOK,
 		},
@@ -48,9 +36,21 @@ func TestCheckOrigin(t *testing.T) {
 			expectedCode:  http.StatusOK,
 		},
 		{
+			name:          "Allowed Origin (empty), should fail",
+			originAllowed: "",
+			origin:        "http://example.com",
+			expectedCode:  http.StatusForbidden,
+		},
+		{
 			name:          "Forbidden Origin, should fail",
 			originAllowed: "http://example.com",
 			origin:        "http://other-domain.com",
+			expectedCode:  http.StatusForbidden,
+		},
+		{
+			name:          "No Origin, should fail",
+			originAllowed: "http://example.com",
+			origin:        "",
 			expectedCode:  http.StatusForbidden,
 		},
 	}
@@ -69,7 +69,7 @@ func TestCheckOrigin(t *testing.T) {
 			}
 			router.TrustedPlatform = "X-Real-Ip"
 			router.Use(middleware.CORS(cp))
-			router.Use(middleware.CheckOrigin())
+			router.Use(middleware.CheckOrigin(middleware.GetCORS().AllowedOrigins))
 			router.GET("/", func(c *gin.Context) {
 				c.JSON(http.StatusOK, "success")
 			})
@@ -80,7 +80,8 @@ func TestCheckOrigin(t *testing.T) {
 				t.Errorf("failed to create an HTTP request")
 				return
 			}
-			req.Header.Set("Origin", test.origin)
+			req.Header.Add("Content-Type", "application/json")
+			req.Header.Add("Origin", test.origin)
 
 			// create a new HTTP response recorder
 			w := httptest.NewRecorder()
