@@ -18,6 +18,26 @@ gorest is a starter kit, written in [Golang][11] with [Gin framework][12],
 for rapid prototyping and developing a RESTful API. The source code is released
 under the [MIT license][13] and is free for any personal or commercial project.
 
+## Reasons to use gorest
+
+- always up-to-date with direct and indirect dependencies
+- every change is manually reviewed and tested before release
+- thoroughly scanned for security vulnerabilities and supply chain attacks
+- connect to a database and start building your RESTful API within minutes
+
+## Requirement
+
+- `Go 1.23+` (for versions `1.9.x`)
+- `Go 1.23+` (for versions `1.8.x`)
+- `Go 1.21+` (for versions `1.7.x`)
+- `Go 1.20+` (for versions `1.6.x`)
+
+For all new projects, it is recommended to use version `1.9.x` or higher.
+
+## Important
+
+- Go1.24.0 is not supported due to the [issue][22]. Please use any supported Go version excluding 1.24.0.
+
 ## Versioning
 
 `1.x.y`
@@ -27,21 +47,6 @@ under the [MIT license][13] and is free for any personal or commercial project.
 `x`: breaking changes
 
 `y`: new functionality or bug fixes in a backwards compatible manner
-
-## Important
-
-Version `1.6.x` contains breaking changes!
-
-_Note:_ For version `1.4.5` (obsolete): [v1.4.5](https://github.com/pilinux/gorest/tree/v1.4.5)
-
-For all new projects, it is recommended to use version `1.9.x` or higher.
-
-## Requirement
-
-- `Go 1.23+` (for versions `1.9.x`)
-- `Go 1.23+` (for versions `1.8.x`)
-- `Go 1.21+` (for versions `1.7.x`)
-- `Go 1.20+` (for versions `1.6.x`)
 
 ## Supported databases
 
@@ -280,6 +285,7 @@ Released under the [MIT license][13]
 [18]: https://deepwiki.com/badge.svg
 [19]: https://deepwiki.com/pilinux/gorest
 [21]: https://gorm.io
+[22]: https://github.com/bytedance/sonic/issues/738
 [41]: https://github.com/pilinux/HowtoCode/blob/master/Golang/1.Intro/Installation.md
 [42]: https://github.com/pilinux/gorest/issues/7
 [51]: https://github.com/joho/godotenv
