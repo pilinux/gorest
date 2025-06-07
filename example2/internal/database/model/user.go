@@ -26,10 +26,10 @@ func (u *User) Trim() (err error) {
 	u.LastName = strings.TrimSpace(u.LastName)
 
 	if u.FirstName == "" {
-		return errors.New("first name is required")
+		return errors.New("firstName is required")
 	}
 	if u.LastName == "" {
-		return errors.New("last name is required")
+		return errors.New("lastName is required")
 	}
 
 	return nil

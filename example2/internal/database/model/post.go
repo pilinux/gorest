@@ -12,6 +12,7 @@ type Post struct {
 	UpdatedAt int64  `json:"updatedAt,omitempty" structs:"updatedAt,omitempty"`
 	Title     string `json:"title,omitempty" structs:"title,omitempty"`
 	Body      string `json:"body,omitempty" structs:"body,omitempty"`
+	IDAuth    uint64 `gorm:"index" json:"-"`
 	IDUser    uint64 `gorm:"index" json:"-"`
 }
 
