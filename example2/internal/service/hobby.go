@@ -13,12 +13,12 @@ import (
 
 // HobbyService provides methods for hobby-related operations.
 type HobbyService struct {
-	hobbyRepo *repo.HobbyRepo
-	userRepo  *repo.UserRepo
+	hobbyRepo repo.HobbyRepository
+	userRepo  repo.UserRepository
 }
 
 // NewHobbyService returns a new HobbyService instance.
-func NewHobbyService(hobbyRepo *repo.HobbyRepo, userRepo *repo.UserRepo) *HobbyService {
+func NewHobbyService(hobbyRepo repo.HobbyRepository, userRepo repo.UserRepository) *HobbyService {
 	return &HobbyService{
 		hobbyRepo: hobbyRepo,
 		userRepo:  userRepo,

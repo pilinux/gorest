@@ -20,6 +20,19 @@ func NewHobbyRepo(conn *gorm.DB) *HobbyRepo {
 	}
 }
 
+// HobbyRepository defines the contract for hobby-related operations.
+type HobbyRepository interface {
+	GetHobbies() ([]model.Hobby, error)
+	GetHobbiesByUserID(userID uint64) ([]model.Hobby, error)
+	GetHobby(hobbyID uint64) (*model.Hobby, error)
+	AddHobbyToUser(hobby *model.Hobby, user *model.User) error
+	DeleteHobbyFromUser(hobbyID uint64, user *model.User) error
+	DeleteHobbiesFromUser(user *model.User) error
+}
+
+// Compile-time check:
+var _ HobbyRepository = (*HobbyRepo)(nil)
+
 // GetHobbies retrieves all hobbies from the database.
 func (r *HobbyRepo) GetHobbies() ([]model.Hobby, error) {
 	var hobbies []model.Hobby

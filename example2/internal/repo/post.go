@@ -20,6 +20,21 @@ func NewPostRepo(conn *gorm.DB) *PostRepo {
 	}
 }
 
+// PostRepository defines the contract for post-related operations.
+type PostRepository interface {
+	GetPosts() ([]model.Post, error)
+	GetPost(postID uint64) (*model.Post, error)
+	GetPostsByUserID(userID uint64) ([]model.Post, error)
+	CreatePost(post *model.Post) error
+	UpdatePost(post *model.Post) error
+	DeletePost(postID uint64) error
+	DeletePostsByUserID(userID uint64) error
+	DeletePostsByAuthID(authID uint64) error
+}
+
+// Compile-time check:
+var _ PostRepository = (*PostRepo)(nil)
+
 // GetPosts returns all posts from the database.
 func (r *PostRepo) GetPosts() ([]model.Post, error) {
 	var posts []model.Post

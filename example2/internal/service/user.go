@@ -16,13 +16,13 @@ import (
 
 // UserService provides methods for user-related operations.
 type UserService struct {
-	userRepo  *repo.UserRepo
-	postRepo  *repo.PostRepo
-	hobbyRepo *repo.HobbyRepo
+	userRepo  repo.UserRepository
+	postRepo  repo.PostRepository
+	hobbyRepo repo.HobbyRepository
 }
 
 // NewUserService returns a new UserService instance.
-func NewUserService(userRepo *repo.UserRepo, postRepo *repo.PostRepo, hobbyRepo *repo.HobbyRepo) *UserService {
+func NewUserService(userRepo repo.UserRepository, postRepo repo.PostRepository, hobbyRepo repo.HobbyRepository) *UserService {
 	return &UserService{
 		userRepo:  userRepo,
 		postRepo:  postRepo,

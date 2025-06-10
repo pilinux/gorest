@@ -13,12 +13,12 @@ import (
 
 // PostService provides methods for post-related operations.
 type PostService struct {
-	postRepo *repo.PostRepo
-	userRepo *repo.UserRepo
+	postRepo repo.PostRepository
+	userRepo repo.UserRepository
 }
 
 // NewPostService returns a new PostService instance.
-func NewPostService(postRepo *repo.PostRepo, userRepo *repo.UserRepo) *PostService {
+func NewPostService(postRepo repo.PostRepository, userRepo repo.UserRepository) *PostService {
 	return &PostService{
 		postRepo: postRepo,
 		userRepo: userRepo,

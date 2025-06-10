@@ -22,6 +22,20 @@ func NewUserRepo(conn *gorm.DB) *UserRepo {
 	}
 }
 
+// UserRepository defines the contract for user-related operations.
+type UserRepository interface {
+	GetUsers() ([]model.User, error)
+	GetUser(userID uint64) (*model.User, error)
+	GetUserByAuthID(authID uint64) (*model.User, error)
+	CreateUser(user *model.User) error
+	UpdateUser(user *model.User) error
+	DeleteUser(userID uint64) error
+	DeleteUserByAuthID(authID uint64) error
+}
+
+// Compile-time check:
+var _ UserRepository = (*UserRepo)(nil)
+
 // GetUsers returns all users from the database.
 func (r *UserRepo) GetUsers() ([]model.User, error) {
 	var users []model.User
