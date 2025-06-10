@@ -16,15 +16,17 @@ import (
 
 // UserService provides methods for user-related operations.
 type UserService struct {
-	userRepo *repo.UserRepo
-	postRepo *repo.PostRepo
+	userRepo  *repo.UserRepo
+	postRepo  *repo.PostRepo
+	hobbyRepo *repo.HobbyRepo
 }
 
 // NewUserService returns a new UserService instance.
-func NewUserService(userRepo *repo.UserRepo, postRepo *repo.PostRepo) *UserService {
+func NewUserService(userRepo *repo.UserRepo, postRepo *repo.PostRepo, hobbyRepo *repo.HobbyRepo) *UserService {
 	return &UserService{
-		userRepo: userRepo,
-		postRepo: postRepo,
+		userRepo:  userRepo,
+		postRepo:  postRepo,
+		hobbyRepo: hobbyRepo,
 	}
 }
 
@@ -185,7 +187,7 @@ func (s *UserService) UpdateUser(user *model.User) (httpResponse gmodel.HTTPResp
 }
 
 // DeleteUser deletes a user with the given authID
-// and their associated posts.
+// and their associated posts and hobbies.
 func (s *UserService) DeleteUser(authID uint64) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	// check if the user exists
 	user, err := s.userRepo.GetUserByAuthID(authID)
@@ -210,9 +212,17 @@ func (s *UserService) DeleteUser(authID uint64) (httpResponse gmodel.HTTPRespons
 		return
 	}
 
+	// delete the user's hobbies
+	if err := s.hobbyRepo.DeleteHobbiesFromUser(user); err != nil {
+		log.WithError(err).Error("DeleteUser.s.3")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+
 	// delete the user profile
 	if err := s.userRepo.DeleteUser(user.UserID); err != nil {
-		log.WithError(err).Error("DeleteUser.s.3")
+		log.WithError(err).Error("DeleteUser.s.4")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -227,22 +237,22 @@ func (s *UserService) DeleteUser(authID uint64) (httpResponse gmodel.HTTPRespons
 
 	// delete all 2fa backup codes for the user
 	if err := twoFABackupRepo.DeleteTwoFABackup(authID); err != nil {
-		log.WithError(err).Error("DeleteUser.s.4")
+		log.WithError(err).Error("DeleteUser.s.5")
 	}
 
 	// delete the 2fa record for the user
 	if err := twoFARepo.DeleteTwoFA(authID); err != nil {
-		log.WithError(err).Error("DeleteUser.s.5")
+		log.WithError(err).Error("DeleteUser.s.6")
 	}
 
 	// delete the temporary email for the user
 	if err := tempEmailRepo.DeleteTempEmail(authID); err != nil {
-		log.WithError(err).Error("DeleteUser.s.6")
+		log.WithError(err).Error("DeleteUser.s.7")
 	}
 
 	// delete the auth record for the user
 	if err := authRepo.DeleteAuth(authID); err != nil {
-		log.WithError(err).Error("DeleteUser.s.7")
+		log.WithError(err).Error("DeleteUser.s.8")
 	}
 
 	httpResponse.Message = "user deleted successfully"

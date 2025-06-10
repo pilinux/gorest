@@ -208,9 +208,10 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 
 			userRepo := repo.NewUserRepo(db)
 			postRepo := repo.NewPostRepo(db)
+			hobbyRepo := repo.NewHobbyRepo(db)
 
 			// User
-			userSrv := service.NewUserService(userRepo, postRepo)
+			userSrv := service.NewUserService(userRepo, postRepo, hobbyRepo)
 			userAPI := handler.NewUserAPI(userSrv)
 
 			rUsers := v1.Group("users")
@@ -251,7 +252,6 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			rPosts.DELETE("all", postAPI.DeleteAllPostsOfUser) // Protected
 
 			// Hobby
-			hobbyRepo := repo.NewHobbyRepo(db)
 			hobbySrv := service.NewHobbyService(hobbyRepo, userRepo)
 			hobbyAPI := handler.NewHobbyAPI(hobbySrv)
 

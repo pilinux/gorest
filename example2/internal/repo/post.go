@@ -33,10 +33,10 @@ func (r *PostRepo) GetPosts() ([]model.Post, error) {
 func (r *PostRepo) GetPost(postID uint64) (*model.Post, error) {
 	var post model.Post
 	if postID == 0 {
-		return &model.Post{}, gorm.ErrRecordNotFound
+		return nil, gorm.ErrRecordNotFound
 	}
 	if err := r.db.Where("post_id = ?", postID).First(&post).Error; err != nil {
-		return &model.Post{}, err
+		return nil, err
 	}
 	return &post, nil
 }

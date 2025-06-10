@@ -94,3 +94,44 @@ func (r *HobbyRepo) DeleteHobbyFromUser(hobbyID uint64, user *model.User) error 
 	// delete the hobby as it has no other associations
 	return r.db.Where("hobby_id = ?", hobbyID).Delete(&model.Hobby{}).Error
 }
+
+// DeleteHobbiesFromUser removes all hobbies from a user.
+func (r *HobbyRepo) DeleteHobbiesFromUser(user *model.User) error {
+	if user == nil || user.UserID == 0 {
+		return nil
+	}
+
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// preload hobbies for the user
+		if err := tx.Preload("Hobbies").First(user, user.UserID).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return nil // no hobbies to delete
+			}
+			return err
+		}
+		if len(user.Hobbies) == 0 {
+			return nil // no hobbies to delete
+		}
+
+		// copy the hobbies to a new slice to avoid modifying the original slice during iteration
+		hobbiesCopy := make([]model.Hobby, len(user.Hobbies))
+		copy(hobbiesCopy, user.Hobbies)
+
+		// remove all associations
+		if err := tx.Model(user).Association("Hobbies").Clear(); err != nil {
+			return err
+		}
+
+		// delete orphaned hobbies
+		for _, hobby := range hobbiesCopy {
+			count := tx.Model(&hobby).Association("Users").Count()
+			if count == 0 {
+				if err := tx.Where("hobby_id = ?", hobby.HobbyID).Delete(&model.Hobby{}).Error; err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	})
+}

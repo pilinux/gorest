@@ -35,10 +35,10 @@ func (r *UserRepo) GetUsers() ([]model.User, error) {
 func (r *UserRepo) GetUser(userID uint64) (*model.User, error) {
 	var user model.User
 	if userID == 0 {
-		return &model.User{}, gorm.ErrRecordNotFound
+		return nil, gorm.ErrRecordNotFound
 	}
 	if err := r.db.Where("user_id = ?", userID).First(&user).Error; err != nil {
-		return &model.User{}, err
+		return nil, err
 	}
 	return &user, nil
 }
@@ -47,10 +47,10 @@ func (r *UserRepo) GetUser(userID uint64) (*model.User, error) {
 func (r *UserRepo) GetUserByAuthID(authID uint64) (*model.User, error) {
 	var user model.User
 	if authID == 0 {
-		return &model.User{}, gorm.ErrRecordNotFound
+		return nil, gorm.ErrRecordNotFound
 	}
 	if err := r.db.Where("id_auth = ?", authID).First(&user).Error; err != nil {
-		return &model.User{}, err
+		return nil, err
 	}
 	return &user, nil
 }
