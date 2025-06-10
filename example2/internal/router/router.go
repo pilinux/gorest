@@ -249,6 +249,27 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			rPosts.PUT("/:id", postAPI.UpdatePost)             // Protected
 			rPosts.DELETE("/:id", postAPI.DeletePost)          // Protected
 			rPosts.DELETE("all", postAPI.DeleteAllPostsOfUser) // Protected
+
+			// Hobby
+			hobbyRepo := repo.NewHobbyRepo(db)
+			hobbySrv := service.NewHobbyService(hobbyRepo, userRepo)
+			hobbyAPI := handler.NewHobbyAPI(hobbySrv)
+
+			rHobbies := v1.Group("hobbies")
+			rHobbies.GET("", hobbyAPI.GetHobbies)   // Not protected
+			rHobbies.GET("/:id", hobbyAPI.GetHobby) // Not protected
+			rHobbies.Use(gmiddleware.JWT())
+			rHobbies.Use(gservice.JWTBlacklistChecker())
+			if gconfig.Is2FA() {
+				rHobbies.Use(gmiddleware.TwoFA(
+					configure.Security.TwoFA.Status.On,
+					configure.Security.TwoFA.Status.Off,
+					configure.Security.TwoFA.Status.Verified,
+				))
+			}
+			rHobbies.GET("me", hobbyAPI.GetHobbiesMe)             // Protected
+			rHobbies.POST("", hobbyAPI.AddHobbyToUser)            // Protected
+			rHobbies.DELETE("/:id", hobbyAPI.DeleteHobbyFromUser) // Protected
 		}
 	}
 
