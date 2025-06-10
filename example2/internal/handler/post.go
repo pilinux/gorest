@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	gmodel "github.com/pilinux/gorest/database/model"
 	grenderer "github.com/pilinux/gorest/lib/renderer"
 
 	"github.com/pilinux/gorest/example2/internal/database/model"
@@ -42,13 +43,19 @@ func (api *PostAPI) GetPosts(c *gin.Context) {
 func (api *PostAPI) GetPost(c *gin.Context) {
 	id := strings.TrimSpace(c.Param("id"))
 	if id == "" {
-		grenderer.Render(c, "postID is required", http.StatusBadRequest)
+		resp := gmodel.HTTPResponse{
+			Message: "postID is required",
+		}
+		grenderer.Render(c, resp, http.StatusBadRequest)
 		return
 	}
 
 	postID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		grenderer.Render(c, "invalid postID format", http.StatusBadRequest)
+		resp := gmodel.HTTPResponse{
+			Message: "invalid postID format",
+		}
+		grenderer.Render(c, resp, http.StatusBadRequest)
 		return
 	}
 
@@ -64,7 +71,10 @@ func (api *PostAPI) GetPost(c *gin.Context) {
 func (api *PostAPI) CreatePost(c *gin.Context) {
 	userIDAuth := getAuthID(c)
 	if userIDAuth == 0 {
-		grenderer.Render(c, "unauthorized", http.StatusUnauthorized)
+		resp := gmodel.HTTPResponse{
+			Message: "unauthorized",
+		}
+		grenderer.Render(c, resp, http.StatusUnauthorized)
 		return
 	}
 
@@ -91,18 +101,27 @@ func (api *PostAPI) CreatePost(c *gin.Context) {
 func (api *PostAPI) UpdatePost(c *gin.Context) {
 	userIDAuth := getAuthID(c)
 	if userIDAuth == 0 {
-		grenderer.Render(c, "unauthorized", http.StatusUnauthorized)
+		resp := gmodel.HTTPResponse{
+			Message: "unauthorized",
+		}
+		grenderer.Render(c, resp, http.StatusUnauthorized)
 		return
 	}
 
 	id := strings.TrimSpace(c.Param("id"))
 	if id == "" {
-		grenderer.Render(c, "postID is required", http.StatusBadRequest)
+		resp := gmodel.HTTPResponse{
+			Message: "postID is required",
+		}
+		grenderer.Render(c, resp, http.StatusBadRequest)
 		return
 	}
 	postID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		grenderer.Render(c, "invalid postID format", http.StatusBadRequest)
+		resp := gmodel.HTTPResponse{
+			Message: "invalid postID format",
+		}
+		grenderer.Render(c, resp, http.StatusBadRequest)
 		return
 	}
 
@@ -130,18 +149,27 @@ func (api *PostAPI) UpdatePost(c *gin.Context) {
 func (api *PostAPI) DeletePost(c *gin.Context) {
 	userIDAuth := getAuthID(c)
 	if userIDAuth == 0 {
-		grenderer.Render(c, "unauthorized", http.StatusUnauthorized)
+		resp := gmodel.HTTPResponse{
+			Message: "unauthorized",
+		}
+		grenderer.Render(c, resp, http.StatusUnauthorized)
 		return
 	}
 
 	id := strings.TrimSpace(c.Param("id"))
 	if id == "" {
-		grenderer.Render(c, "postID is required", http.StatusBadRequest)
+		resp := gmodel.HTTPResponse{
+			Message: "postID is required",
+		}
+		grenderer.Render(c, resp, http.StatusBadRequest)
 		return
 	}
 	postID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		grenderer.Render(c, "invalid postID format", http.StatusBadRequest)
+		resp := gmodel.HTTPResponse{
+			Message: "invalid postID format",
+		}
+		grenderer.Render(c, resp, http.StatusBadRequest)
 		return
 	}
 
@@ -157,7 +185,10 @@ func (api *PostAPI) DeletePost(c *gin.Context) {
 func (api *PostAPI) DeleteAllPostsOfUser(c *gin.Context) {
 	userIDAuth := getAuthID(c)
 	if userIDAuth == 0 {
-		grenderer.Render(c, "unauthorized", http.StatusUnauthorized)
+		resp := gmodel.HTTPResponse{
+			Message: "unauthorized",
+		}
+		grenderer.Render(c, resp, http.StatusUnauthorized)
 		return
 	}
 

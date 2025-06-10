@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	gmodel "github.com/pilinux/gorest/database/model"
 	grenderer "github.com/pilinux/gorest/lib/renderer"
 
 	"github.com/pilinux/gorest/example2/internal/database/model"
@@ -44,13 +45,19 @@ func (api *UserAPI) GetUsers(c *gin.Context) {
 func (api *UserAPI) GetUser(c *gin.Context) {
 	id := strings.TrimSpace(c.Param("id"))
 	if id == "" {
-		grenderer.Render(c, "userID is required", http.StatusBadRequest)
+		resp := gmodel.HTTPResponse{
+			Message: "userID is required",
+		}
+		grenderer.Render(c, resp, http.StatusBadRequest)
 		return
 	}
 
 	userID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		grenderer.Render(c, "invalid userID format", http.StatusBadRequest)
+		resp := gmodel.HTTPResponse{
+			Message: "invalid userID format",
+		}
+		grenderer.Render(c, resp, http.StatusBadRequest)
 		return
 	}
 
@@ -66,7 +73,10 @@ func (api *UserAPI) GetUser(c *gin.Context) {
 func (api *UserAPI) CreateUser(c *gin.Context) {
 	userIDAuth := getAuthID(c)
 	if userIDAuth == 0 {
-		grenderer.Render(c, "unauthorized", http.StatusUnauthorized)
+		resp := gmodel.HTTPResponse{
+			Message: "unauthorized",
+		}
+		grenderer.Render(c, resp, http.StatusUnauthorized)
 		return
 	}
 
@@ -93,7 +103,10 @@ func (api *UserAPI) CreateUser(c *gin.Context) {
 func (api *UserAPI) UpdateUser(c *gin.Context) {
 	userIDAuth := getAuthID(c)
 	if userIDAuth == 0 {
-		grenderer.Render(c, "unauthorized", http.StatusUnauthorized)
+		resp := gmodel.HTTPResponse{
+			Message: "unauthorized",
+		}
+		grenderer.Render(c, resp, http.StatusUnauthorized)
 		return
 	}
 
@@ -121,7 +134,10 @@ func (api *UserAPI) UpdateUser(c *gin.Context) {
 func (api *UserAPI) DeleteUser(c *gin.Context) {
 	userIDAuth := getAuthID(c)
 	if userIDAuth == 0 {
-		grenderer.Render(c, "unauthorized", http.StatusUnauthorized)
+		resp := gmodel.HTTPResponse{
+			Message: "unauthorized",
+		}
+		grenderer.Render(c, resp, http.StatusUnauthorized)
 		return
 	}
 

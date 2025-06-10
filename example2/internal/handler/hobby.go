@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	gmodel "github.com/pilinux/gorest/database/model"
 	grenderer "github.com/pilinux/gorest/lib/renderer"
 
 	"github.com/pilinux/gorest/example2/internal/database/model"
@@ -42,13 +43,19 @@ func (api *HobbyAPI) GetHobbies(c *gin.Context) {
 func (api *HobbyAPI) GetHobby(c *gin.Context) {
 	id := strings.TrimSpace(c.Param("id"))
 	if id == "" {
-		grenderer.Render(c, "hobbyID is required", http.StatusBadRequest)
+		resp := gmodel.HTTPResponse{
+			Message: "hobbyID is required",
+		}
+		grenderer.Render(c, resp, http.StatusBadRequest)
 		return
 	}
 
 	hobbyID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		grenderer.Render(c, "invalid hobbyID format", http.StatusBadRequest)
+		resp := gmodel.HTTPResponse{
+			Message: "invalid hobbyID format",
+		}
+		grenderer.Render(c, resp, http.StatusBadRequest)
 		return
 	}
 
@@ -64,7 +71,10 @@ func (api *HobbyAPI) GetHobby(c *gin.Context) {
 func (api *HobbyAPI) GetHobbiesMe(c *gin.Context) {
 	userIDAuth := getAuthID(c)
 	if userIDAuth == 0 {
-		grenderer.Render(c, "unauthorized", http.StatusUnauthorized)
+		resp := gmodel.HTTPResponse{
+			Message: "unauthorized",
+		}
+		grenderer.Render(c, resp, http.StatusUnauthorized)
 		return
 	}
 
@@ -80,7 +90,10 @@ func (api *HobbyAPI) GetHobbiesMe(c *gin.Context) {
 func (api *HobbyAPI) AddHobbyToUser(c *gin.Context) {
 	userIDAuth := getAuthID(c)
 	if userIDAuth == 0 {
-		grenderer.Render(c, "unauthorized", http.StatusUnauthorized)
+		resp := gmodel.HTTPResponse{
+			Message: "unauthorized",
+		}
+		grenderer.Render(c, resp, http.StatusUnauthorized)
 		return
 	}
 
@@ -106,19 +119,28 @@ func (api *HobbyAPI) AddHobbyToUser(c *gin.Context) {
 func (api *HobbyAPI) DeleteHobbyFromUser(c *gin.Context) {
 	userIDAuth := getAuthID(c)
 	if userIDAuth == 0 {
-		grenderer.Render(c, "unauthorized", http.StatusUnauthorized)
+		resp := gmodel.HTTPResponse{
+			Message: "unauthorized",
+		}
+		grenderer.Render(c, resp, http.StatusUnauthorized)
 		return
 	}
 
 	id := strings.TrimSpace(c.Param("id"))
 	if id == "" {
-		grenderer.Render(c, "hobbyID is required", http.StatusBadRequest)
+		resp := gmodel.HTTPResponse{
+			Message: "hobbyID is required",
+		}
+		grenderer.Render(c, resp, http.StatusBadRequest)
 		return
 	}
 
 	hobbyID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		grenderer.Render(c, "invalid hobbyID format", http.StatusBadRequest)
+		resp := gmodel.HTTPResponse{
+			Message: "invalid hobbyID format",
+		}
+		grenderer.Render(c, resp, http.StatusBadRequest)
 		return
 	}
 
