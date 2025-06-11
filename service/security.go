@@ -35,7 +35,7 @@ func IsTokenAllowed(jti string) bool {
 
 	jti = config.PrefixJtiBlacklist + jti
 
-	client := *database.GetRedis()
+	client := database.GetRedis()
 	rConnTTL := config.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()

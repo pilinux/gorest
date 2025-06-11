@@ -108,7 +108,7 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 	data.key = model.PasswordRecoveryKeyPrefix + authPayload.SecretCode
 
 	// get redis client
-	client := *database.GetRedis()
+	client := database.GetRedis()
 	rConnTTL := config.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()

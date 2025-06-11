@@ -17,7 +17,7 @@ import (
 
 // RedisCreate - handles jobs for controller.RedisCreate
 func RedisCreate(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	client := *gdatabase.GetRedis()
+	client := gdatabase.GetRedis()
 	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
@@ -44,7 +44,7 @@ func RedisCreate(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpSt
 
 // RedisRead - handles jobs for controller.RedisRead
 func RedisRead(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	client := *gdatabase.GetRedis()
+	client := gdatabase.GetRedis()
 	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
@@ -79,7 +79,7 @@ func RedisRead(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpStat
 
 // RedisDelete - handles jobs for controller.RedisDelete
 func RedisDelete(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	client := *gdatabase.GetRedis()
+	client := gdatabase.GetRedis()
 	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
@@ -106,7 +106,7 @@ func RedisDelete(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpSt
 
 // RedisCreateHash - handles jobs for controller.RedisCreateHash
 func RedisCreateHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	client := *gdatabase.GetRedis()
+	client := gdatabase.GetRedis()
 	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
@@ -126,7 +126,7 @@ func RedisCreateHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse
 
 // RedisReadHash - handles jobs for controller.RedisReadHash
 func RedisReadHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	client := *gdatabase.GetRedis()
+	client := gdatabase.GetRedis()
 	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
@@ -161,7 +161,7 @@ func RedisReadHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse, 
 
 // RedisDeleteHash - handles jobs for controller.RedisDeleteHash
 func RedisDeleteHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	client := *gdatabase.GetRedis()
+	client := gdatabase.GetRedis()
 	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()

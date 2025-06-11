@@ -175,7 +175,7 @@ func SendEmail(email string, emailType int, opts ...string) (bool, error) {
 	}
 
 	// save in redis with expiry time
-	client := *database.GetRedis()
+	client := database.GetRedis()
 	redisConnTTL := appConfig.Database.REDIS.Conn.ConnTTL
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(redisConnTTL)*time.Second)

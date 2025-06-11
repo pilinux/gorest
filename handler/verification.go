@@ -35,7 +35,7 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 	data.key = model.EmailVerificationKeyPrefix + payload.VerificationCode
 
 	// get redis client
-	client := *database.GetRedis()
+	client := database.GetRedis()
 	rConnTTL := config.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
@@ -224,7 +224,7 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 	data.key = model.EmailUpdateKeyPrefix + payload.VerificationCode
 
 	// get redis client
-	client := *database.GetRedis()
+	client := database.GetRedis()
 	rConnTTL := config.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()

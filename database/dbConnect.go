@@ -47,7 +47,7 @@ var sqlDB *sql.DB
 var err error
 
 // redisClient variable to access the redis client
-var redisClient *radix.Client
+var redisClient radix.Client
 
 // RedisConnTTL - context deadline in second
 var RedisConnTTL int
@@ -194,7 +194,7 @@ func GetDB() *gorm.DB {
 }
 
 // InitRedis - function to initialize redis client
-func InitRedis() (*radix.Client, error) {
+func InitRedis() (radix.Client, error) {
 	configureRedis := config.GetConfig().Database.REDIS
 
 	RedisConnTTL = configureRedis.Conn.ConnTTL
@@ -208,18 +208,18 @@ func InitRedis() (*radix.Client, error) {
 		configureRedis.Env.Port))
 	if err != nil {
 		log.WithError(err).Panic("panic code: 161")
-		return &rClient, err
+		return rClient, err
 	}
 	// Only for debugging
 	fmt.Println("REDIS pool connection successful!")
 
-	redisClient = &rClient
+	redisClient = rClient
 
 	return redisClient, nil
 }
 
 // GetRedis - get a connection
-func GetRedis() *radix.Client {
+func GetRedis() radix.Client {
 	return redisClient
 }
 
@@ -318,7 +318,7 @@ func CloseSQL() error {
 func CloseRedis() error {
 	if redisClient != nil {
 		fmt.Println("Closing Redis connection...")
-		if err := radix.Client.Close(*redisClient); err != nil {
+		if err := radix.Client.Close(redisClient); err != nil {
 			return err
 		}
 		redisClient = nil

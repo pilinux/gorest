@@ -24,7 +24,7 @@ func Logout(jtiAccess, jtiRefresh string, expAccess, expRefresh int64) (httpResp
 	}
 
 	// Redis enabled
-	client := *database.GetRedis()
+	client := database.GetRedis()
 	rConnTTL := config.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
