@@ -271,6 +271,24 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			rHobbies.POST("", hobbyAPI.AddHobbyToUser)            // Protected
 			rHobbies.DELETE("/:id", hobbyAPI.DeleteHobbyFromUser) // Protected
 		}
+
+		// Mongo Playground - addresses
+		if gconfig.IsMongo() {
+			// MongoDB connection from the pool
+			conn := gdb.GetMongo()
+
+			addressRepo := repo.NewAddressRepo(conn)
+			addressSrv := service.NewAddressService(addressRepo)
+			addressAPI := handler.NewAddressAPI(addressSrv)
+
+			rAddress := v1.Group("addresses")
+			rAddress.POST("", addressAPI.AddAddress)               // Not protected
+			rAddress.GET("", addressAPI.GetAddresses)              // Not protected
+			rAddress.GET("/:id", addressAPI.GetAddress)            // Not protected
+			rAddress.POST("filter", addressAPI.GetAddressByFilter) // Not protected
+			rAddress.PUT("", addressAPI.UpdateAddress)             // Not protected
+			rAddress.DELETE("/:id", addressAPI.DeleteAddress)      // Not protected
+		}
 	}
 
 	return r, nil
