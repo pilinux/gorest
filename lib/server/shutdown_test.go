@@ -59,7 +59,7 @@ func sendSignal(sig os.Signal, delay time.Duration) {
 
 // createHangingHandler creates an HTTP handler that sleeps for a specified duration
 func createHangingHandler(sleepDuration time.Duration) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, _ *http.Request) {
 		time.Sleep(sleepDuration)
 		_, _ = fmt.Fprintln(w, "finally responded")
 	}
@@ -71,7 +71,7 @@ func TestGracefulShutdown_SuccessWithDB(t *testing.T) {
 	t.Log("running:" + t.Name())
 
 	// set up a server with a quick handler
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, err := fmt.Fprintln(w, "Hello, World!")
 		if err != nil {
 			t.Errorf("failed to write response: %v", err)
@@ -142,7 +142,7 @@ func TestGracefulShutdown_SuccessWithDBFail(t *testing.T) {
 	t.Log("running:" + t.Name())
 
 	// set up a server with a quick handler
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, err := fmt.Fprintln(w, "Hello, World!")
 		if err != nil {
 			t.Errorf("failed to write response: %v", err)

@@ -151,8 +151,8 @@ func TestPongo2(t *testing.T) {
 	}
 
 	// download a file from a remote location and save it to the new directory
-	fileUrl := strings.TrimSpace(os.Getenv("TEST_INDEX_HTML_URL"))
-	err = downloadFile("templates/index.html", fileUrl)
+	fileURL := strings.TrimSpace(os.Getenv("TEST_INDEX_HTML_URL"))
+	err = downloadFile("templates/index.html", fileURL)
 	if err != nil {
 		t.Error(err)
 	}

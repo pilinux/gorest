@@ -76,9 +76,9 @@ func TestGetJWT(t *testing.T) {
 				fileName := "private-key" + tc.Algorithm + ".pem"
 
 				// download a file from a remote location and save it
-				fileUrl := strings.TrimSpace(os.Getenv("TEST_KEY_FILE_LOCATION"))
-				fileUrl += "/" + fileName
-				err := downloadFile(fileName, fileUrl)
+				fileURL := strings.TrimSpace(os.Getenv("TEST_KEY_FILE_LOCATION"))
+				fileURL += "/" + fileName
+				err := downloadFile(fileName, fileURL)
 				if err != nil {
 					t.Error(err)
 				}
@@ -917,9 +917,9 @@ func TestValidateAccessJWT(t *testing.T) {
 				fileName := "public-key" + tc.Algorithm + ".pem"
 
 				// download a file from a remote location and save it
-				fileUrl := strings.TrimSpace(os.Getenv("TEST_KEY_FILE_LOCATION"))
-				fileUrl += "/" + fileName
-				err := downloadFile(fileName, fileUrl)
+				fileURL := strings.TrimSpace(os.Getenv("TEST_KEY_FILE_LOCATION"))
+				fileURL += "/" + fileName
+				err := downloadFile(fileName, fileURL)
 				if err != nil {
 					t.Error(err)
 				}
@@ -1122,9 +1122,9 @@ func TestValidateRefreshJWT(t *testing.T) {
 				fileName := "public-key" + tc.Algorithm + ".pem"
 
 				// download a file from a remote location and save it
-				fileUrl := strings.TrimSpace(os.Getenv("TEST_KEY_FILE_LOCATION"))
-				fileUrl += "/" + fileName
-				err := downloadFile(fileName, fileUrl)
+				fileURL := strings.TrimSpace(os.Getenv("TEST_KEY_FILE_LOCATION"))
+				fileURL += "/" + fileName
+				err := downloadFile(fileName, fileURL)
 				if err != nil {
 					t.Error(err)
 				}

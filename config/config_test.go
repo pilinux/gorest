@@ -26,8 +26,8 @@ func TestEnv(t *testing.T) {
 	}
 
 	// download a file from a remote location and save it
-	fileUrl := strings.TrimSpace(os.Getenv("TEST_ENV_URL"))
-	err = downloadFile(".env", fileUrl)
+	fileURL := strings.TrimSpace(os.Getenv("TEST_ENV_URL"))
+	err = downloadFile(".env", fileURL)
 	if err != nil {
 		t.Error(err)
 	}
@@ -53,8 +53,8 @@ func TestConfig(t *testing.T) {
 	}
 
 	// download a file from a remote location and save it
-	fileUrl := strings.TrimSpace(os.Getenv("TEST_ENV_URL"))
-	err = downloadFile(".env", fileUrl)
+	fileURL := strings.TrimSpace(os.Getenv("TEST_ENV_URL"))
+	err = downloadFile(".env", fileURL)
 	if err != nil {
 		t.Error(err)
 	}
@@ -439,8 +439,8 @@ func TestErrorGetConfig(t *testing.T) {
 	}
 
 	// download a file from a remote location and save it
-	fileUrl := strings.TrimSpace(os.Getenv("TEST_ENV_URL"))
-	err := downloadFile(".env", fileUrl)
+	fileURL := strings.TrimSpace(os.Getenv("TEST_ENV_URL"))
+	err := downloadFile(".env", fileURL)
 	if err != nil {
 		t.Error(err)
 	}
@@ -689,8 +689,8 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 	}
 
 	// download a file from a remote location and save it
-	fileUrl := strings.TrimSpace(os.Getenv("TEST_ENV_URL"))
-	err := downloadFile(".env", fileUrl)
+	fileURL := strings.TrimSpace(os.Getenv("TEST_ENV_URL"))
+	err := downloadFile(".env", fileURL)
 	if err != nil {
 		t.Error(err)
 	}
