@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	gmodel "github.com/pilinux/gorest/database/model"
@@ -31,7 +33,10 @@ func NewPostAPI(postService *service.PostService) *PostAPI {
 //
 // Authorization: None
 func (api *PostAPI) GetPosts(c *gin.Context) {
-	resp, statusCode := api.postService.GetPosts()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, statusCode := api.postService.GetPosts(ctx)
 	grenderer.Render(c, resp, statusCode)
 }
 
@@ -59,7 +64,10 @@ func (api *PostAPI) GetPost(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := api.postService.GetPost(postID)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, statusCode := api.postService.GetPost(ctx, postID)
 	grenderer.Render(c, resp, statusCode)
 }
 
@@ -89,7 +97,10 @@ func (api *PostAPI) CreatePost(c *gin.Context) {
 	}
 	post.IDAuth = userIDAuth
 
-	resp, statusCode := api.postService.CreatePost(&post)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, statusCode := api.postService.CreatePost(ctx, &post)
 	grenderer.Render(c, resp, statusCode)
 }
 
@@ -137,7 +148,10 @@ func (api *PostAPI) UpdatePost(c *gin.Context) {
 	post.PostID = postID
 	post.IDAuth = userIDAuth
 
-	resp, statusCode := api.postService.UpdatePost(&post)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, statusCode := api.postService.UpdatePost(ctx, &post)
 	grenderer.Render(c, resp, statusCode)
 }
 
@@ -173,7 +187,10 @@ func (api *PostAPI) DeletePost(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := api.postService.DeletePost(postID, userIDAuth)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, statusCode := api.postService.DeletePost(ctx, postID, userIDAuth)
 	grenderer.Render(c, resp, statusCode)
 }
 
@@ -192,6 +209,9 @@ func (api *PostAPI) DeleteAllPostsOfUser(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := api.postService.DeletePostsByAuthID(userIDAuth)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, statusCode := api.postService.DeletePostsByAuthID(ctx, userIDAuth)
 	grenderer.Render(c, resp, statusCode)
 }

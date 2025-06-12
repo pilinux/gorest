@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+	"errors"
 	"net/http"
 
 	gmodel "github.com/pilinux/gorest/database/model"
@@ -26,9 +28,15 @@ func NewPostService(postRepo repo.PostRepository, userRepo repo.UserRepository) 
 }
 
 // GetPosts retrieves all posts.
-func (s *PostService) GetPosts() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	posts, err := s.postRepo.GetPosts()
+func (s *PostService) GetPosts(ctx context.Context) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	posts, err := s.postRepo.GetPosts(ctx)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
 		log.WithError(err).Error("GetPosts.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
@@ -47,10 +55,16 @@ func (s *PostService) GetPosts() (httpResponse gmodel.HTTPResponse, httpStatusCo
 }
 
 // GetPost retrieves a post with the given postID.
-func (s *PostService) GetPost(postID uint64) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	post, err := s.postRepo.GetPost(postID)
+func (s *PostService) GetPost(ctx context.Context, postID uint64) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	post, err := s.postRepo.GetPost(ctx, postID)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpResponse.Message = "post not found"
 			httpStatusCode = http.StatusNotFound
 			return
@@ -68,10 +82,16 @@ func (s *PostService) GetPost(postID uint64) (httpResponse gmodel.HTTPResponse, 
 }
 
 // GetPostsByUserID retrieves all posts for a given userID.
-func (s *PostService) GetPostsByUserID(userID uint64) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	posts, err := s.postRepo.GetPostsByUserID(userID)
+func (s *PostService) GetPostsByUserID(ctx context.Context, userID uint64) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	posts, err := s.postRepo.GetPostsByUserID(ctx, userID)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpResponse.Message = "no post found"
 			httpStatusCode = http.StatusNotFound
 			return
@@ -89,11 +109,17 @@ func (s *PostService) GetPostsByUserID(userID uint64) (httpResponse gmodel.HTTPR
 }
 
 // CreatePost creates a new post.
-func (s *PostService) CreatePost(post *model.Post) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+func (s *PostService) CreatePost(ctx context.Context, post *model.Post) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	// check if the user exists
-	user, err := s.userRepo.GetUserByAuthID(post.IDAuth)
+	user, err := s.userRepo.GetUserByAuthID(ctx, post.IDAuth)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpResponse.Message = "no user profile found"
 			httpStatusCode = http.StatusForbidden
 			return
@@ -106,7 +132,13 @@ func (s *PostService) CreatePost(post *model.Post) (httpResponse gmodel.HTTPResp
 	}
 	post.IDUser = user.UserID
 
-	if err := s.postRepo.CreatePost(post); err != nil {
+	if err := s.postRepo.CreatePost(ctx, post); err != nil {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
 		log.WithError(err).Error("CreatePost.s.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
@@ -119,11 +151,17 @@ func (s *PostService) CreatePost(post *model.Post) (httpResponse gmodel.HTTPResp
 }
 
 // UpdatePost updates an existing post.
-func (s *PostService) UpdatePost(post *model.Post) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+func (s *PostService) UpdatePost(ctx context.Context, post *model.Post) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	// check if the post exists
-	existingPost, err := s.postRepo.GetPost(post.PostID)
+	existingPost, err := s.postRepo.GetPost(ctx, post.PostID)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpResponse.Message = "post not found"
 			httpStatusCode = http.StatusNotFound
 			return
@@ -155,7 +193,13 @@ func (s *PostService) UpdatePost(post *model.Post) (httpResponse gmodel.HTTPResp
 	existingPost.Body = post.Body
 
 	// update the post
-	if err := s.postRepo.UpdatePost(existingPost); err != nil {
+	if err := s.postRepo.UpdatePost(ctx, existingPost); err != nil {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
 		log.WithError(err).Error("UpdatePost.s.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
@@ -168,11 +212,17 @@ func (s *PostService) UpdatePost(post *model.Post) (httpResponse gmodel.HTTPResp
 }
 
 // DeletePost deletes a post with the given postID.
-func (s *PostService) DeletePost(postID uint64, userIDAuth uint64) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+func (s *PostService) DeletePost(ctx context.Context, postID uint64, userIDAuth uint64) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	// check if the post exists
-	post, err := s.postRepo.GetPost(postID)
+	post, err := s.postRepo.GetPost(ctx, postID)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpResponse.Message = "post not found"
 			httpStatusCode = http.StatusNotFound
 			return
@@ -191,7 +241,13 @@ func (s *PostService) DeletePost(postID uint64, userIDAuth uint64) (httpResponse
 		return
 	}
 
-	if err := s.postRepo.DeletePost(postID); err != nil {
+	if err := s.postRepo.DeletePost(ctx, postID); err != nil {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
 		log.WithError(err).Error("DeletePost.s.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
@@ -204,10 +260,16 @@ func (s *PostService) DeletePost(postID uint64, userIDAuth uint64) (httpResponse
 }
 
 // DeletePostsByAuthID deletes all posts for a given authID.
-func (s *PostService) DeletePostsByAuthID(authID uint64) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	user, err := s.userRepo.GetUserByAuthID(authID)
+func (s *PostService) DeletePostsByAuthID(ctx context.Context, authID uint64) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	user, err := s.userRepo.GetUserByAuthID(ctx, authID)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpResponse.Message = "no user profile found"
 			httpStatusCode = http.StatusForbidden
 			return
@@ -219,7 +281,13 @@ func (s *PostService) DeletePostsByAuthID(authID uint64) (httpResponse gmodel.HT
 		return
 	}
 
-	if err := s.postRepo.DeletePostsByUserID(user.UserID); err != nil {
+	if err := s.postRepo.DeletePostsByUserID(ctx, user.UserID); err != nil {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
 		log.WithError(err).Error("DeletePostsByAuthID.s.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError

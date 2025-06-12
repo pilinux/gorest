@@ -3,9 +3,11 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	gmodel "github.com/pilinux/gorest/database/model"
@@ -33,7 +35,10 @@ func NewUserAPI(userService *service.UserService) *UserAPI {
 //
 // Authorization: None
 func (api *UserAPI) GetUsers(c *gin.Context) {
-	resp, statusCode := api.userService.GetUsers()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, statusCode := api.userService.GetUsers(ctx)
 	grenderer.Render(c, resp, statusCode)
 }
 
@@ -61,7 +66,10 @@ func (api *UserAPI) GetUser(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := api.userService.GetUser(userID)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, statusCode := api.userService.GetUser(ctx, userID)
 	grenderer.Render(c, resp, statusCode)
 }
 
@@ -91,7 +99,10 @@ func (api *UserAPI) CreateUser(c *gin.Context) {
 	}
 	user.IDAuth = userIDAuth
 
-	resp, statusCode := api.userService.CreateUser(&user)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, statusCode := api.userService.CreateUser(ctx, &user)
 	grenderer.Render(c, resp, statusCode)
 }
 
@@ -121,7 +132,10 @@ func (api *UserAPI) UpdateUser(c *gin.Context) {
 	}
 	user.IDAuth = userIDAuth
 
-	resp, statusCode := api.userService.UpdateUser(&user)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, statusCode := api.userService.UpdateUser(ctx, &user)
 	grenderer.Render(c, resp, statusCode)
 }
 
@@ -141,6 +155,9 @@ func (api *UserAPI) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := api.userService.DeleteUser(userIDAuth)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, statusCode := api.userService.DeleteUser(ctx, userIDAuth)
 	grenderer.Render(c, resp, statusCode)
 }

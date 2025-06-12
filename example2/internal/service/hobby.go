@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+	"errors"
 	"net/http"
 
 	gmodel "github.com/pilinux/gorest/database/model"
@@ -26,9 +28,15 @@ func NewHobbyService(hobbyRepo repo.HobbyRepository, userRepo repo.UserRepositor
 }
 
 // GetHobbies retrieves all hobbies.
-func (s *HobbyService) GetHobbies() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	hobbies, err := s.hobbyRepo.GetHobbies()
+func (s *HobbyService) GetHobbies(ctx context.Context) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	hobbies, err := s.hobbyRepo.GetHobbies(ctx)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
 		log.WithError(err).Error("GetHobbies.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
@@ -47,10 +55,16 @@ func (s *HobbyService) GetHobbies() (httpResponse gmodel.HTTPResponse, httpStatu
 }
 
 // GetHobby retrieves a hobby with the given hobbyID.
-func (s *HobbyService) GetHobby(hobbyID uint64) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	hobby, err := s.hobbyRepo.GetHobby(hobbyID)
+func (s *HobbyService) GetHobby(ctx context.Context, hobbyID uint64) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	hobby, err := s.hobbyRepo.GetHobby(ctx, hobbyID)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpResponse.Message = "hobby not found"
 			httpStatusCode = http.StatusNotFound
 			return
@@ -68,11 +82,17 @@ func (s *HobbyService) GetHobby(hobbyID uint64) (httpResponse gmodel.HTTPRespons
 }
 
 // GetHobbiesByAuthID retrieves hobbies for a user by their authID.
-func (s *HobbyService) GetHobbiesByAuthID(authID uint64) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+func (s *HobbyService) GetHobbiesByAuthID(ctx context.Context, authID uint64) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	// check if the user exists
-	user, err := s.userRepo.GetUserByAuthID(authID)
+	user, err := s.userRepo.GetUserByAuthID(ctx, authID)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpResponse.Message = "no user profile found"
 			httpStatusCode = http.StatusForbidden
 			return
@@ -84,9 +104,15 @@ func (s *HobbyService) GetHobbiesByAuthID(authID uint64) (httpResponse gmodel.HT
 		return
 	}
 
-	hobbies, err := s.hobbyRepo.GetHobbiesByUserID(user.UserID)
+	hobbies, err := s.hobbyRepo.GetHobbiesByUserID(ctx, user.UserID)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpResponse.Message = "no hobbies found for this user"
 			httpStatusCode = http.StatusNotFound
 			return
@@ -104,11 +130,17 @@ func (s *HobbyService) GetHobbiesByAuthID(authID uint64) (httpResponse gmodel.HT
 }
 
 // AddHobbyToUser adds a hobby to a user.
-func (s *HobbyService) AddHobbyToUser(authID uint64, hobby *model.Hobby) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+func (s *HobbyService) AddHobbyToUser(ctx context.Context, authID uint64, hobby *model.Hobby) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	// check if the user exists
-	user, err := s.userRepo.GetUserByAuthID(authID)
+	user, err := s.userRepo.GetUserByAuthID(ctx, authID)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpResponse.Message = "no user profile found"
 			httpStatusCode = http.StatusForbidden
 			return
@@ -120,7 +152,13 @@ func (s *HobbyService) AddHobbyToUser(authID uint64, hobby *model.Hobby) (httpRe
 		return
 	}
 
-	if err := s.hobbyRepo.AddHobbyToUser(hobby, user); err != nil {
+	if err := s.hobbyRepo.AddHobbyToUser(ctx, hobby, user); err != nil {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
 		log.WithError(err).Error("AddHobbyToUser.s.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
@@ -133,11 +171,17 @@ func (s *HobbyService) AddHobbyToUser(authID uint64, hobby *model.Hobby) (httpRe
 }
 
 // DeleteHobbyFromUser removes a hobby from a user.
-func (s *HobbyService) DeleteHobbyFromUser(authID, hobbyID uint64) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+func (s *HobbyService) DeleteHobbyFromUser(ctx context.Context, authID, hobbyID uint64) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	// check if the user exists
-	user, err := s.userRepo.GetUserByAuthID(authID)
+	user, err := s.userRepo.GetUserByAuthID(ctx, authID)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpResponse.Message = "no user profile found"
 			httpStatusCode = http.StatusForbidden
 			return
@@ -149,8 +193,14 @@ func (s *HobbyService) DeleteHobbyFromUser(authID, hobbyID uint64) (httpResponse
 		return
 	}
 
-	if err := s.hobbyRepo.DeleteHobbyFromUser(hobbyID, user); err != nil {
-		if err == gorm.ErrRecordNotFound {
+	if err := s.hobbyRepo.DeleteHobbyFromUser(ctx, hobbyID, user); err != nil {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpResponse.Message = "hobby not found"
 			httpStatusCode = http.StatusNotFound
 			return

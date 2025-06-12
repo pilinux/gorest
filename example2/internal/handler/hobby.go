@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	gmodel "github.com/pilinux/gorest/database/model"
@@ -31,7 +33,10 @@ func NewHobbyAPI(hobbyService *service.HobbyService) *HobbyAPI {
 //
 // Authorization: None
 func (api *HobbyAPI) GetHobbies(c *gin.Context) {
-	resp, statusCode := api.hobbyService.GetHobbies()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, statusCode := api.hobbyService.GetHobbies(ctx)
 	grenderer.Render(c, resp, statusCode)
 }
 
@@ -59,7 +64,10 @@ func (api *HobbyAPI) GetHobby(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := api.hobbyService.GetHobby(hobbyID)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, statusCode := api.hobbyService.GetHobby(ctx, hobbyID)
 	grenderer.Render(c, resp, statusCode)
 }
 
@@ -78,7 +86,10 @@ func (api *HobbyAPI) GetHobbiesMe(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := api.hobbyService.GetHobbiesByAuthID(userIDAuth)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, statusCode := api.hobbyService.GetHobbiesByAuthID(ctx, userIDAuth)
 	grenderer.Render(c, resp, statusCode)
 }
 
@@ -107,7 +118,10 @@ func (api *HobbyAPI) AddHobbyToUser(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := api.hobbyService.AddHobbyToUser(userIDAuth, &hobby)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, statusCode := api.hobbyService.AddHobbyToUser(ctx, userIDAuth, &hobby)
 	grenderer.Render(c, resp, statusCode)
 }
 
@@ -144,6 +158,9 @@ func (api *HobbyAPI) DeleteHobbyFromUser(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := api.hobbyService.DeleteHobbyFromUser(userIDAuth, hobbyID)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, statusCode := api.hobbyService.DeleteHobbyFromUser(ctx, userIDAuth, hobbyID)
 	grenderer.Render(c, resp, statusCode)
 }

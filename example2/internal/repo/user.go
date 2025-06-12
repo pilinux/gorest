@@ -3,6 +3,7 @@
 package repo
 
 import (
+	"context"
 	"time"
 
 	"gorm.io/gorm"
@@ -24,74 +25,74 @@ func NewUserRepo(conn *gorm.DB) *UserRepo {
 
 // UserRepository defines the contract for user-related operations.
 type UserRepository interface {
-	GetUsers() ([]model.User, error)
-	GetUser(userID uint64) (*model.User, error)
-	GetUserByAuthID(authID uint64) (*model.User, error)
-	CreateUser(user *model.User) error
-	UpdateUser(user *model.User) error
-	DeleteUser(userID uint64) error
-	DeleteUserByAuthID(authID uint64) error
+	GetUsers(ctx context.Context) ([]model.User, error)
+	GetUser(ctx context.Context, userID uint64) (*model.User, error)
+	GetUserByAuthID(ctx context.Context, authID uint64) (*model.User, error)
+	CreateUser(ctx context.Context, user *model.User) error
+	UpdateUser(ctx context.Context, user *model.User) error
+	DeleteUser(ctx context.Context, userID uint64) error
+	DeleteUserByAuthID(ctx context.Context, authID uint64) error
 }
 
 // Compile-time check:
 var _ UserRepository = (*UserRepo)(nil)
 
 // GetUsers returns all users from the database.
-func (r *UserRepo) GetUsers() ([]model.User, error) {
+func (r *UserRepo) GetUsers(ctx context.Context) ([]model.User, error) {
 	var users []model.User
-	if err := r.db.Find(&users).Error; err != nil {
+	if err := r.db.WithContext(ctx).Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil
 }
 
 // GetUser returns a user with the given userID from the database.
-func (r *UserRepo) GetUser(userID uint64) (*model.User, error) {
+func (r *UserRepo) GetUser(ctx context.Context, userID uint64) (*model.User, error) {
 	var user model.User
 	if userID == 0 {
 		return nil, gorm.ErrRecordNotFound
 	}
-	if err := r.db.Where("user_id = ?", userID).First(&user).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("user_id = ?", userID).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
 }
 
 // GetUserByAuthID returns a user with the given authID from the database.
-func (r *UserRepo) GetUserByAuthID(authID uint64) (*model.User, error) {
+func (r *UserRepo) GetUserByAuthID(ctx context.Context, authID uint64) (*model.User, error) {
 	var user model.User
 	if authID == 0 {
 		return nil, gorm.ErrRecordNotFound
 	}
-	if err := r.db.Where("id_auth = ?", authID).First(&user).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("id_auth = ?", authID).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
 }
 
 // CreateUser creates a new user in the database.
-func (r *UserRepo) CreateUser(user *model.User) error {
+func (r *UserRepo) CreateUser(ctx context.Context, user *model.User) error {
 	tNow := time.Now()
 	user.UserID = 0 // auto-increment
 	user.CreatedAt = tNow.Unix()
 	user.UpdatedAt = tNow.Unix()
 	user.Hobbies = nil // clear hobbies to avoid inserting them unintentionally
-	return r.db.Create(user).Error
+	return r.db.WithContext(ctx).Create(user).Error
 }
 
 // UpdateUser updates an existing user in the database.
-func (r *UserRepo) UpdateUser(user *model.User) error {
+func (r *UserRepo) UpdateUser(ctx context.Context, user *model.User) error {
 	user.UpdatedAt = time.Now().Unix()
 	user.Hobbies = nil // clear hobbies to avoid updating them unintentionally
-	return r.db.Save(user).Error
+	return r.db.WithContext(ctx).Save(user).Error
 }
 
 // DeleteUser deletes a user with the given userID from the database.
-func (r *UserRepo) DeleteUser(userID uint64) error {
-	return r.db.Where("user_id = ?", userID).Delete(&model.User{}).Error
+func (r *UserRepo) DeleteUser(ctx context.Context, userID uint64) error {
+	return r.db.WithContext(ctx).Where("user_id = ?", userID).Delete(&model.User{}).Error
 }
 
 // DeleteUserByAuthID deletes a user with the given authID from the database.
-func (r *UserRepo) DeleteUserByAuthID(authID uint64) error {
-	return r.db.Where("id_auth = ?", authID).Delete(&model.User{}).Error
+func (r *UserRepo) DeleteUserByAuthID(ctx context.Context, authID uint64) error {
+	return r.db.WithContext(ctx).Where("id_auth = ?", authID).Delete(&model.User{}).Error
 }

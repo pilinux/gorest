@@ -3,6 +3,8 @@
 package service
 
 import (
+	"context"
+	"errors"
 	"net/http"
 
 	gdb "github.com/pilinux/gorest/database"
@@ -31,9 +33,15 @@ func NewUserService(userRepo repo.UserRepository, postRepo repo.PostRepository, 
 }
 
 // GetUsers returns all users along with their posts.
-func (s *UserService) GetUsers() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	users, err := s.userRepo.GetUsers()
+func (s *UserService) GetUsers(ctx context.Context) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	users, err := s.userRepo.GetUsers(ctx)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
 		log.WithError(err).Error("GetUsers.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
@@ -48,10 +56,14 @@ func (s *UserService) GetUsers() (httpResponse gmodel.HTTPResponse, httpStatusCo
 
 	// fetch posts for each user
 	for j, user := range users {
-		posts, err := s.postRepo.GetPostsByUserID(user.UserID)
+		posts, err := s.postRepo.GetPostsByUserID(ctx, user.UserID)
 		if err == nil {
 			users[j].Posts = posts
-		} else if err != gorm.ErrRecordNotFound {
+		} else if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 			log.WithError(err).Error("GetUsers.s.2")
 		}
 	}
@@ -62,10 +74,16 @@ func (s *UserService) GetUsers() (httpResponse gmodel.HTTPResponse, httpStatusCo
 }
 
 // GetUser returns a user with the given userID and their posts.
-func (s *UserService) GetUser(userID uint64) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	user, err := s.userRepo.GetUser(userID)
+func (s *UserService) GetUser(ctx context.Context, userID uint64) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	user, err := s.userRepo.GetUser(ctx, userID)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpResponse.Message = "user not found"
 			httpStatusCode = http.StatusNotFound
 			return
@@ -78,10 +96,14 @@ func (s *UserService) GetUser(userID uint64) (httpResponse gmodel.HTTPResponse, 
 	}
 
 	// fetch posts for the user
-	posts, err := s.postRepo.GetPostsByUserID(user.UserID)
+	posts, err := s.postRepo.GetPostsByUserID(ctx, user.UserID)
 	if err == nil {
 		user.Posts = posts
-	} else if err != gorm.ErrRecordNotFound {
+	} else if errors.Is(err, context.Canceled) {
+		httpResponse.Message = "request canceled"
+		httpStatusCode = http.StatusRequestTimeout
+		return
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		log.WithError(err).Error("GetUser.s.2")
 	}
 
@@ -91,10 +113,16 @@ func (s *UserService) GetUser(userID uint64) (httpResponse gmodel.HTTPResponse, 
 }
 
 // GetUserByAuthID retrieves a user by their authID and their posts.
-func (s *UserService) GetUserByAuthID(authID uint64) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	user, err := s.userRepo.GetUserByAuthID(authID)
+func (s *UserService) GetUserByAuthID(ctx context.Context, authID uint64) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	user, err := s.userRepo.GetUserByAuthID(ctx, authID)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpResponse.Message = "user not found"
 			httpStatusCode = http.StatusNotFound
 			return
@@ -107,10 +135,14 @@ func (s *UserService) GetUserByAuthID(authID uint64) (httpResponse gmodel.HTTPRe
 	}
 
 	// fetch posts for the user
-	posts, err := s.postRepo.GetPostsByUserID(user.UserID)
+	posts, err := s.postRepo.GetPostsByUserID(ctx, user.UserID)
 	if err == nil {
 		user.Posts = posts
-	} else if err != gorm.ErrRecordNotFound {
+	} else if errors.Is(err, context.Canceled) {
+		httpResponse.Message = "request canceled"
+		httpStatusCode = http.StatusRequestTimeout
+		return
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		log.WithError(err).Error("GetUserByAuthID.s.2")
 	}
 
@@ -120,19 +152,36 @@ func (s *UserService) GetUserByAuthID(authID uint64) (httpResponse gmodel.HTTPRe
 }
 
 // CreateUser adds a new user.
-func (s *UserService) CreateUser(user *model.User) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+func (s *UserService) CreateUser(ctx context.Context, user *model.User) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	// check if the user profile already exists
-	_, err := s.userRepo.GetUserByAuthID(user.IDAuth)
+	_, err := s.userRepo.GetUserByAuthID(ctx, user.IDAuth)
 	if err == nil {
 		httpResponse.Message = "user profile already exists"
 		httpStatusCode = http.StatusConflict
 		return
 	}
+	if errors.Is(err, context.Canceled) {
+		httpResponse.Message = "request canceled"
+		httpStatusCode = http.StatusRequestTimeout
+		return
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		log.WithError(err).Error("CreateUser.s.1")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 
 	// create the user profile
-	err = s.userRepo.CreateUser(user)
+	err = s.userRepo.CreateUser(ctx, user)
 	if err != nil {
-		log.WithError(err).Error("CreateUser.s.1")
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		log.WithError(err).Error("CreateUser.s.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -144,11 +193,17 @@ func (s *UserService) CreateUser(user *model.User) (httpResponse gmodel.HTTPResp
 }
 
 // UpdateUser updates an existing user.
-func (s *UserService) UpdateUser(user *model.User) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+func (s *UserService) UpdateUser(ctx context.Context, user *model.User) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	// check if the user exists
-	existingUser, err := s.userRepo.GetUserByAuthID(user.IDAuth)
+	existingUser, err := s.userRepo.GetUserByAuthID(ctx, user.IDAuth)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpResponse.Message = "user not found"
 			httpStatusCode = http.StatusNotFound
 			return
@@ -173,8 +228,14 @@ func (s *UserService) UpdateUser(user *model.User) (httpResponse gmodel.HTTPResp
 	existingUser.LastName = user.LastName
 
 	// update the user profile
-	err = s.userRepo.UpdateUser(existingUser)
+	err = s.userRepo.UpdateUser(ctx, existingUser)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
 		log.WithError(err).Error("UpdateUser.s.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
@@ -188,11 +249,17 @@ func (s *UserService) UpdateUser(user *model.User) (httpResponse gmodel.HTTPResp
 
 // DeleteUser deletes a user with the given authID
 // and their associated posts and hobbies.
-func (s *UserService) DeleteUser(authID uint64) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+func (s *UserService) DeleteUser(ctx context.Context, authID uint64) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	// check if the user exists
-	user, err := s.userRepo.GetUserByAuthID(authID)
+	user, err := s.userRepo.GetUserByAuthID(ctx, authID)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpResponse.Message = "user not found"
 			httpStatusCode = http.StatusNotFound
 			return
@@ -205,7 +272,13 @@ func (s *UserService) DeleteUser(authID uint64) (httpResponse gmodel.HTTPRespons
 	}
 
 	// delete the user's posts
-	if err := s.postRepo.DeletePostsByUserID(user.UserID); err != nil {
+	if err := s.postRepo.DeletePostsByUserID(ctx, user.UserID); err != nil {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
 		log.WithError(err).Error("DeleteUser.s.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
@@ -213,7 +286,13 @@ func (s *UserService) DeleteUser(authID uint64) (httpResponse gmodel.HTTPRespons
 	}
 
 	// delete the user's hobbies
-	if err := s.hobbyRepo.DeleteHobbiesFromUser(user); err != nil {
+	if err := s.hobbyRepo.DeleteHobbiesFromUser(ctx, user); err != nil {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
 		log.WithError(err).Error("DeleteUser.s.3")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
@@ -221,7 +300,13 @@ func (s *UserService) DeleteUser(authID uint64) (httpResponse gmodel.HTTPRespons
 	}
 
 	// delete the user profile
-	if err := s.userRepo.DeleteUser(user.UserID); err != nil {
+	if err := s.userRepo.DeleteUser(ctx, user.UserID); err != nil {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
 		log.WithError(err).Error("DeleteUser.s.4")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
@@ -236,22 +321,46 @@ func (s *UserService) DeleteUser(authID uint64) (httpResponse gmodel.HTTPRespons
 	twoFABackupRepo := repo.NewTwoFABackupRepo(db)
 
 	// delete all 2fa backup codes for the user
-	if err := twoFABackupRepo.DeleteTwoFABackup(authID); err != nil {
+	if err := twoFABackupRepo.DeleteTwoFABackup(ctx, authID); err != nil {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
 		log.WithError(err).Error("DeleteUser.s.5")
 	}
 
 	// delete the 2fa record for the user
-	if err := twoFARepo.DeleteTwoFA(authID); err != nil {
+	if err := twoFARepo.DeleteTwoFA(ctx, authID); err != nil {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
 		log.WithError(err).Error("DeleteUser.s.6")
 	}
 
 	// delete the temporary email for the user
-	if err := tempEmailRepo.DeleteTempEmail(authID); err != nil {
+	if err := tempEmailRepo.DeleteTempEmail(ctx, authID); err != nil {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
 		log.WithError(err).Error("DeleteUser.s.7")
 	}
 
 	// delete the auth record for the user
-	if err := authRepo.DeleteAuth(authID); err != nil {
+	if err := authRepo.DeleteAuth(ctx, authID); err != nil {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
 		log.WithError(err).Error("DeleteUser.s.8")
 	}
 

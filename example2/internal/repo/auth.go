@@ -1,6 +1,8 @@
 package repo
 
 import (
+	"context"
+
 	gmodel "github.com/pilinux/gorest/database/model"
 	"gorm.io/gorm"
 )
@@ -54,21 +56,21 @@ func NewTwoFABackupRepo(conn *gorm.DB) *TwoFABackupRepo {
 }
 
 // DeleteAuth deletes an authentication record by authID.
-func (r *AuthRepo) DeleteAuth(authID uint64) error {
-	return r.db.Where("auth_id = ?", authID).Delete(&gmodel.Auth{}).Error
+func (r *AuthRepo) DeleteAuth(ctx context.Context, authID uint64) error {
+	return r.db.WithContext(ctx).Where("auth_id = ?", authID).Delete(&gmodel.Auth{}).Error
 }
 
 // DeleteTempEmail deletes a temporary email record by authID.
-func (r *TempEmailRepo) DeleteTempEmail(authID uint64) error {
-	return r.db.Where("id_auth = ?", authID).Delete(&gmodel.TempEmail{}).Error
+func (r *TempEmailRepo) DeleteTempEmail(ctx context.Context, authID uint64) error {
+	return r.db.WithContext(ctx).Where("id_auth = ?", authID).Delete(&gmodel.TempEmail{}).Error
 }
 
 // DeleteTwoFA deletes a two-factor authentication record by authID.
-func (r *TwoFARepo) DeleteTwoFA(authID uint64) error {
-	return r.db.Where("id_auth = ?", authID).Delete(&gmodel.TwoFA{}).Error
+func (r *TwoFARepo) DeleteTwoFA(ctx context.Context, authID uint64) error {
+	return r.db.WithContext(ctx).Where("id_auth = ?", authID).Delete(&gmodel.TwoFA{}).Error
 }
 
 // DeleteTwoFABackup deletes a two-factor authentication backup record by authID.
-func (r *TwoFABackupRepo) DeleteTwoFABackup(authID uint64) error {
-	return r.db.Where("id_auth = ?", authID).Delete(&gmodel.TwoFABackup{}).Error
+func (r *TwoFABackupRepo) DeleteTwoFABackup(ctx context.Context, authID uint64) error {
+	return r.db.WithContext(ctx).Where("id_auth = ?", authID).Delete(&gmodel.TwoFABackup{}).Error
 }
