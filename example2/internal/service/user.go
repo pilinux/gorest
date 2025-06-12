@@ -68,6 +68,20 @@ func (s *UserService) GetUsers(ctx context.Context) (httpResponse gmodel.HTTPRes
 		}
 	}
 
+	// fetch hobbies for each user
+	for j, user := range users {
+		hobbies, err := s.hobbyRepo.GetHobbiesByUserID(ctx, user.UserID)
+		if err == nil {
+			users[j].Hobbies = hobbies
+		} else if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			log.WithError(err).Error("GetUsers.s.3")
+		}
+	}
+
 	httpResponse.Message = users
 	httpStatusCode = http.StatusOK
 	return
@@ -107,6 +121,18 @@ func (s *UserService) GetUser(ctx context.Context, userID uint64) (httpResponse 
 		log.WithError(err).Error("GetUser.s.2")
 	}
 
+	// fetch hobbies for the user
+	hobbies, err := s.hobbyRepo.GetHobbiesByUserID(ctx, user.UserID)
+	if err == nil {
+		user.Hobbies = hobbies
+	} else if errors.Is(err, context.Canceled) {
+		httpResponse.Message = "request canceled"
+		httpStatusCode = http.StatusRequestTimeout
+		return
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		log.WithError(err).Error("GetUser.s.3")
+	}
+
 	httpResponse.Message = user
 	httpStatusCode = http.StatusOK
 	return
@@ -144,6 +170,18 @@ func (s *UserService) GetUserByAuthID(ctx context.Context, authID uint64) (httpR
 		return
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		log.WithError(err).Error("GetUserByAuthID.s.2")
+	}
+
+	// fetch hobbies for the user
+	hobbies, err := s.hobbyRepo.GetHobbiesByUserID(ctx, user.UserID)
+	if err == nil {
+		user.Hobbies = hobbies
+	} else if errors.Is(err, context.Canceled) {
+		httpResponse.Message = "request canceled"
+		httpStatusCode = http.StatusRequestTimeout
+		return
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		log.WithError(err).Error("GetUserByAuthID.s.3")
 	}
 
 	httpResponse.Message = user
