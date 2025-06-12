@@ -183,11 +183,12 @@ and set the environment variables according to your own instance setup.
 
 _Tutorials:_
 
-For version `1.6.x` and above, please check the project in [example](example)
+Please check example projects:
 
-For version `1.4.x` and `1.5.x`, [Wiki][10] (obsolete)
+- **recommended** - [example2](example2) [interface-driven design, with a focus on modularity and testability]
+- [example](example) [simplicity and ease of use, with a focus on rapid development and prototyping]
 
-- convention over configuration
+convention over configuration
 
 ```go
 import (
