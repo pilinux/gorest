@@ -111,6 +111,9 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 	}
 
 	// API Status
+	r.GET("", handler.APIStatus)
+	// Health check
+	r.GET("health", handler.APIStatus)
 
 	// API:v1.0
 	v1 := r.Group("/api/v1/")
@@ -307,6 +310,42 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			rAddress.PUT("", addressAPI.UpdateAddress)             // Not protected
 			rAddress.DELETE("/:id", addressAPI.DeleteAddress)      // Not protected
 		}
+
+		// Playground - JWT
+		if gconfig.IsJWT() {
+			rTestJWT := v1.Group("test-jwt")
+			rTestJWT.Use(gmiddleware.JWT())
+			rTestJWT.Use(gservice.JWTBlacklistChecker())
+			if gconfig.Is2FA() {
+				rTestJWT.Use(gmiddleware.TwoFA(
+					configure.Security.TwoFA.Status.On,
+					configure.Security.TwoFA.Status.Off,
+					configure.Security.TwoFA.Status.Verified,
+				))
+			}
+			rTestJWT.GET("", handler.APIStatus) // Protected
+		}
+
+		// Playground - Basic Auth
+		if gconfig.IsBasicAuth() {
+			user := configure.Security.BasicAuth.Username
+			pass := configure.Security.BasicAuth.Password
+			rBasicAuth := v1.Group("basic-auth")
+			rBasicAuth.Use(gin.BasicAuth(gin.Accounts{
+				user: pass,
+			}))
+			rBasicAuth.GET("", handler.APIStatus) // Protected
+		}
+
+		// if you want to use clerk.com auth provider:
+		// __session contains the JWT
+		// clerk uses RS256 algorithm for JWT token generation
+		// use the `sub` claim: c.GetString("sub") to get the user ID from JWT token
+		// and build relation in the database
+		rClerk := v1.Group("clerk")
+		rClerk.Use(gmiddleware.JWT())
+		rClerk.Use(gservice.JWTBlacklistChecker())
+		rClerk.GET("", handler.APIStatus) // Protected
 	}
 
 	return r, nil
