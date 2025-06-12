@@ -272,6 +272,24 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			rHobbies.DELETE("/:id", hobbyAPI.DeleteHobbyFromUser) // Protected
 		}
 
+		// REDIS Playground - kv
+		if gconfig.IsRedis() {
+			// Redis connection from the pool
+			conn := gdb.GetRedis()
+
+			kvRepo := repo.NewKeyValueRepo(conn)
+			kvSrv := service.NewKeyValueService(kvRepo)
+			kvAPI := handler.NewKeyValueAPI(kvSrv)
+
+			rKV := v1.Group("kv")
+			rKV.POST("", kvAPI.SetKeyValue)                   // Not protected
+			rKV.GET("/:key", kvAPI.GetKeyValue)               // Not protected
+			rKV.DELETE("/:key", kvAPI.DeleteKeyValue)         // Not protected
+			rKV.POST("hash", kvAPI.SetHashKeyValue)           // Not protected
+			rKV.GET("hash/:key", kvAPI.GetHashKeyValue)       // Not protected
+			rKV.DELETE("hash/:key", kvAPI.DeleteHashKeyValue) // Not protected
+		}
+
 		// Mongo Playground - addresses
 		if gconfig.IsMongo() {
 			// MongoDB connection from the pool

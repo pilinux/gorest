@@ -16,7 +16,7 @@ type Hobby struct {
 
 // Trim trims leading and trailing spaces from Hobby,
 // and validates that Hobby is not empty.
-func (h *Hobby) Trim() (err error) {
+func (h *Hobby) Trim() error {
 	h.Hobby = strings.TrimSpace(h.Hobby)
 
 	if h.Hobby == "" {

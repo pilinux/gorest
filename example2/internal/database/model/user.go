@@ -21,7 +21,7 @@ type User struct {
 
 // Trim trims leading and trailing spaces from FirstName and LastName,
 // and validates that none of the fields are empty.
-func (u *User) Trim() (err error) {
+func (u *User) Trim() error {
 	u.FirstName = strings.TrimSpace(u.FirstName)
 	u.LastName = strings.TrimSpace(u.LastName)
 
