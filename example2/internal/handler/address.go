@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	gmodel "github.com/pilinux/gorest/database/model"
@@ -44,7 +46,10 @@ func (api *AddressAPI) AddAddress(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := api.addressService.AddAddress(address)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, statusCode := api.addressService.AddAddress(ctx, address)
 	grenderer.Render(c, resp, statusCode)
 }
 
@@ -54,7 +59,10 @@ func (api *AddressAPI) AddAddress(c *gin.Context) {
 //
 // Authorization: None
 func (api *AddressAPI) GetAddresses(c *gin.Context) {
-	resp, statusCode := api.addressService.GetAddresses()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, statusCode := api.addressService.GetAddresses(ctx)
 	grenderer.Render(c, resp, statusCode)
 }
 
@@ -73,7 +81,10 @@ func (api *AddressAPI) GetAddress(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := api.addressService.GetAddress(id)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, statusCode := api.addressService.GetAddress(ctx, id)
 	grenderer.Render(c, resp, statusCode)
 }
 
@@ -97,8 +108,11 @@ func (api *AddressAPI) GetAddressByFilter(c *gin.Context) {
 		return
 	}
 
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	addDocIDInFilter := strings.ToLower(strings.TrimSpace(c.Query("exclude-address-id"))) != "true"
-	resp, statusCode := api.addressService.GetAddressByFilter(address, addDocIDInFilter)
+	resp, statusCode := api.addressService.GetAddressByFilter(ctx, address, addDocIDInFilter)
 	grenderer.Render(c, resp, statusCode)
 }
 
@@ -122,7 +136,10 @@ func (api *AddressAPI) UpdateAddress(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := api.addressService.UpdateAddress(address)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, statusCode := api.addressService.UpdateAddress(ctx, address)
 	grenderer.Render(c, resp, statusCode)
 }
 
@@ -141,6 +158,9 @@ func (api *AddressAPI) DeleteAddress(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := api.addressService.DeleteAddress(id)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, statusCode := api.addressService.DeleteAddress(ctx, id)
 	grenderer.Render(c, resp, statusCode)
 }

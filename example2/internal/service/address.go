@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"reflect"
-	"time"
 
 	gmodel "github.com/pilinux/gorest/database/model"
 	"github.com/qiniu/qmgo"
@@ -28,12 +28,15 @@ func NewAddressService(addressRepo repo.AddressRepository) *AddressService {
 }
 
 // AddAddress adds a new address to the database.
-func (s *AddressService) AddAddress(address *model.Geocoding) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
+func (s *AddressService) AddAddress(ctx context.Context, address *model.Geocoding) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	res, err := s.addressRepo.AddAddress(ctx, address)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
 		log.WithError(err).Error("AddAddress.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
@@ -46,12 +49,15 @@ func (s *AddressService) AddAddress(address *model.Geocoding) (httpResponse gmod
 }
 
 // GetAddresses retrieves all addresses from the database.
-func (s *AddressService) GetAddresses() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
+func (s *AddressService) GetAddresses(ctx context.Context) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	addr, err := s.addressRepo.GetAddresses(ctx)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
 		log.WithError(err).Error("GetAddresses.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
@@ -70,10 +76,7 @@ func (s *AddressService) GetAddresses() (httpResponse gmodel.HTTPResponse, httpS
 }
 
 // GetAddress retrieves an address by its ID.
-func (s *AddressService) GetAddress(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
+func (s *AddressService) GetAddress(ctx context.Context, id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	_id, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		resp := gmodel.HTTPResponse{
@@ -86,7 +89,13 @@ func (s *AddressService) GetAddress(id string) (httpResponse gmodel.HTTPResponse
 
 	addr, err := s.addressRepo.GetAddress(ctx, _id)
 	if err != nil {
-		if err == qmgo.ErrNoSuchDocuments {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		if errors.Is(err, qmgo.ErrNoSuchDocuments) {
 			httpResponse.Message = "address not found"
 			httpStatusCode = http.StatusNotFound
 			return
@@ -104,13 +113,16 @@ func (s *AddressService) GetAddress(id string) (httpResponse gmodel.HTTPResponse
 }
 
 // GetAddressByFilter retrieves an address based on a filter.
-func (s *AddressService) GetAddressByFilter(address *model.Geocoding, addDocIDInFilter bool) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
+func (s *AddressService) GetAddressByFilter(ctx context.Context, address *model.Geocoding, addDocIDInFilter bool) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	addr, err := s.addressRepo.GetAddressByFilter(ctx, address, addDocIDInFilter)
 	if err != nil {
-		if err == qmgo.ErrNoSuchDocuments {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		if errors.Is(err, qmgo.ErrNoSuchDocuments) {
 			httpResponse.Message = "address not found"
 			httpStatusCode = http.StatusNotFound
 			return
@@ -128,10 +140,7 @@ func (s *AddressService) GetAddressByFilter(address *model.Geocoding, addDocIDIn
 }
 
 // UpdateAddress updates an existing address in the database.
-func (s *AddressService) UpdateAddress(address *model.Geocoding) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
+func (s *AddressService) UpdateAddress(ctx context.Context, address *model.Geocoding) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	if address == nil || address.ID.IsZero() {
 		httpResponse.Message = "address ID is required"
 		httpStatusCode = http.StatusBadRequest
@@ -141,7 +150,13 @@ func (s *AddressService) UpdateAddress(address *model.Geocoding) (httpResponse g
 	// check if the address exists
 	existingAddress, err := s.addressRepo.GetAddress(ctx, address.ID)
 	if err != nil {
-		if err == qmgo.ErrNoSuchDocuments {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		if errors.Is(err, qmgo.ErrNoSuchDocuments) {
 			httpResponse.Message = "address not found"
 			httpStatusCode = http.StatusNotFound
 			return
@@ -162,7 +177,13 @@ func (s *AddressService) UpdateAddress(address *model.Geocoding) (httpResponse g
 
 	err = s.addressRepo.UpdateAddressFields(ctx, address)
 	if err != nil {
-		if err == qmgo.ErrNoSuchDocuments {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		if errors.Is(err, qmgo.ErrNoSuchDocuments) {
 			httpResponse.Message = "address not found"
 			httpStatusCode = http.StatusNotFound
 			return
@@ -180,10 +201,7 @@ func (s *AddressService) UpdateAddress(address *model.Geocoding) (httpResponse g
 }
 
 // DeleteAddress deletes an address by its ID.
-func (s *AddressService) DeleteAddress(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
+func (s *AddressService) DeleteAddress(ctx context.Context, id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	_id, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		resp := gmodel.HTTPResponse{
@@ -196,7 +214,13 @@ func (s *AddressService) DeleteAddress(id string) (httpResponse gmodel.HTTPRespo
 
 	err = s.addressRepo.DeleteAddress(ctx, _id)
 	if err != nil {
-		if err == qmgo.ErrNoSuchDocuments {
+		if errors.Is(err, context.Canceled) {
+			httpResponse.Message = "request canceled"
+			httpStatusCode = http.StatusRequestTimeout
+			return
+		}
+
+		if errors.Is(err, qmgo.ErrNoSuchDocuments) {
 			httpResponse.Message = "address not found"
 			httpStatusCode = http.StatusNotFound
 			return
