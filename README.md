@@ -253,6 +253,19 @@ export TEST_SENTRY_DSN="please_set_your_sentry_DSN_here"
 go test -v -cover ./...
 ```
 
+For cross-compilation:
+
+```bash
+GOOS=linux GOARCH=arm64 go build
+GOOS=linux GOARCH=amd64 go build
+
+GOOS=darwin GOARCH=arm64 go build
+GOOS=darwin GOARCH=amd64 go build
+
+GOOS=windows GOARCH=arm64 go build
+GOOS=windows GOARCH=amd64 go build
+```
+
 ## Contributing
 
 Please see [CONTRIBUTING][61] to join this amazing project.
