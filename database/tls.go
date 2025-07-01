@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/go-sql-driver/mysql"
@@ -11,7 +12,7 @@ import (
 	"github.com/pilinux/gorest/config"
 )
 
-// InitTLSMySQL registers a custom tls.Config
+// InitTLSMySQL registers a custom tls.Config for MySQL/PostgreSQL connections.
 //
 // Tutorial: How to configure MySQL instance and enable TLS support
 //
@@ -84,7 +85,7 @@ import (
 // 7.5 convert PKCS#8 format key into PKCS#1 format
 //
 // `openssl rsa -in client-key.pem -out client-key.pem`
-func InitTLSMySQL() (err error) {
+func InitTLSMySQL() error {
 	configureDB := config.GetConfig().Database.RDBMS
 	minTLS := configureDB.Ssl.MinTLS
 	rootCA := configureDB.Ssl.RootCA
@@ -94,57 +95,54 @@ func InitTLSMySQL() (err error) {
 
 	rootCertPool := x509.NewCertPool()
 	var pem []byte
+	var err error
 
 	if rootCA != "" {
 		pem, err = os.ReadFile(rootCA)
 		if err != nil {
-			return
+			return fmt.Errorf("failed to read root CA file: %w", err)
 		}
 	} else {
 		if serverCert == "" {
-			err = errors.New("missing server certificate")
-			return
+			return errors.New("missing server certificate")
 		}
 
 		pem, err = os.ReadFile(serverCert)
 		if err != nil {
-			return
+			return fmt.Errorf("failed to read server certificate file: %w", err)
 		}
 	}
 
 	if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
-		err = errors.New("failed to parse PEM encoded certificates")
-		return
+		return errors.New("failed to parse PEM encoded certificates")
 	}
 
 	tlsConfig := tls.Config{}
+	tlsConfig.RootCAs = rootCertPool
 	tlsConfig.MinVersion = tls.VersionTLS12 // default: TLS 1.2
 
-	if minTLS == "1.1" {
+	switch minTLS {
+	case "1.1":
 		tlsConfig.MinVersion = tls.VersionTLS11
-	}
-	if minTLS == "1.2" {
+	case "1.2":
 		tlsConfig.MinVersion = tls.VersionTLS12
-	}
-	if minTLS == "1.3" {
+	case "1.3":
 		tlsConfig.MinVersion = tls.VersionTLS13
 	}
-	tlsConfig.RootCAs = rootCertPool
 
 	if clientCert != "" && clientKey != "" {
-		clientCertificate := make([]tls.Certificate, 0, 1)
-		var certs tls.Certificate
-
-		certs, err = tls.LoadX509KeyPair(clientCert, clientKey)
+		cert, err := tls.LoadX509KeyPair(clientCert, clientKey)
 		if err != nil {
-			return
+			return fmt.Errorf("failed to load client certificate and key: %w", err)
 		}
 
-		clientCertificate = append(clientCertificate, certs)
-		tlsConfig.Certificates = clientCertificate
+		tlsConfig.Certificates = []tls.Certificate{cert}
 	}
 
 	err = mysql.RegisterTLSConfig("custom", &tlsConfig)
+	if err != nil {
+		return fmt.Errorf("failed to register custom TLS config: %w", err)
+	}
 
-	return
+	return nil
 }

@@ -33,8 +33,6 @@ import (
 	"github.com/qiniu/qmgo/options"
 	"go.mongodb.org/mongo-driver/event"
 	opts "go.mongodb.org/mongo-driver/mongo/options"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // RecordNotFound record not found error message
@@ -96,13 +94,16 @@ func InitDB() *gorm.DB {
 				dsn += "&tls=custom"
 				err = InitTLSMySQL()
 				if err != nil {
-					log.WithError(err).Panic("panic code: 150")
+					db.Error = err
+					return db
 				}
 			}
 		}
 		sqlDB, err = sql.Open(driver, dsn)
 		if err != nil {
-			log.WithError(err).Panic("panic code: 151")
+			err = fmt.Errorf("failed to open SQL connection: %w", err)
+			db.Error = err
+			return db
 		}
 		sqlDB.SetMaxIdleConns(maxIdleConns)       // max number of connections in the idle connection pool
 		sqlDB.SetMaxOpenConns(maxOpenConns)       // max number of open connections in the database
@@ -114,7 +115,9 @@ func InitDB() *gorm.DB {
 			Logger: logger.Default.LogMode(logger.LogLevel(logLevel)),
 		})
 		if err != nil {
-			log.WithError(err).Panic("panic code: 152")
+			err = fmt.Errorf("failed to open GORM connection: %w", err)
+			db.Error = err
+			return db
 		}
 		// Only for debugging
 		if err == nil {
@@ -147,7 +150,9 @@ func InitDB() *gorm.DB {
 
 		sqlDB, err = sql.Open("pgx", dsn)
 		if err != nil {
-			log.WithError(err).Panic("panic code: 153")
+			err = fmt.Errorf("failed to open SQL connection: %w", err)
+			db.Error = err
+			return db
 		}
 		sqlDB.SetMaxIdleConns(maxIdleConns)       // max number of connections in the idle connection pool
 		sqlDB.SetMaxOpenConns(maxOpenConns)       // max number of open connections in the database
@@ -159,7 +164,9 @@ func InitDB() *gorm.DB {
 			Logger: logger.Default.LogMode(logger.LogLevel(logLevel)),
 		})
 		if err != nil {
-			log.WithError(err).Panic("panic code: 154")
+			err = fmt.Errorf("failed to open GORM connection: %w", err)
+			db.Error = err
+			return db
 		}
 		// Only for debugging
 		if err == nil {
@@ -172,7 +179,9 @@ func InitDB() *gorm.DB {
 			DisableForeignKeyConstraintWhenMigrating: true,
 		})
 		if err != nil {
-			log.WithError(err).Panic("panic code: 155")
+			err = fmt.Errorf("failed to open GORM connection: %w", err)
+			db.Error = err
+			return db
 		}
 		// Only for debugging
 		if err == nil {
@@ -180,7 +189,9 @@ func InitDB() *gorm.DB {
 		}
 
 	default:
-		log.Fatal("The driver " + driver + " is not implemented yet")
+		err = fmt.Errorf("the driver %s is not implemented yet", driver)
+		db.Error = err
+		return db
 	}
 
 	dbClient = db
@@ -207,7 +218,7 @@ func InitRedis() (radix.Client, error) {
 		configureRedis.Env.Host,
 		configureRedis.Env.Port))
 	if err != nil {
-		log.WithError(err).Panic("panic code: 161")
+		err = fmt.Errorf("failed to connect to Redis: %w", err)
 		return rClient, err
 	}
 	// Only for debugging
