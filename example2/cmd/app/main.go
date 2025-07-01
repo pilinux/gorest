@@ -28,9 +28,13 @@ func main() {
 
 	if gconfig.IsRDBMS() {
 		// initialize RDBMS client
-		if err := gdb.InitDB().Error; err != nil {
-			fmt.Println(err)
-			return
+		for {
+			if err := gdb.InitDB().Error; err != nil {
+				fmt.Println(err)
+				time.Sleep(10 * time.Second) // wait before retrying
+				continue                     // retry initialization
+			}
+			break // exit loop if initialization is successful
 		}
 
 		// drop all tables from DB
@@ -50,17 +54,25 @@ func main() {
 
 	if gconfig.IsRedis() {
 		// initialize REDIS client
-		if _, err := gdb.InitRedis(); err != nil {
-			fmt.Println(err)
-			return
+		for {
+			if _, err := gdb.InitRedis(); err != nil {
+				fmt.Println(err)
+				time.Sleep(10 * time.Second) // wait before retrying
+				continue                     // retry initialization
+			}
+			break // exit loop if initialization is successful
 		}
 	}
 
 	if gconfig.IsMongo() {
 		// initialize MONGO client
-		if _, err := gdb.InitMongo(); err != nil {
-			fmt.Println(err)
-			return
+		for {
+			if _, err := gdb.InitMongo(); err != nil {
+				fmt.Println(err)
+				time.Sleep(10 * time.Second) // wait before retrying
+				continue                     // retry initialization
+			}
+			break // exit loop if initialization is successful
 		}
 
 		// example of dropping index "countryCode" from collection "geocodes" in database "map"
