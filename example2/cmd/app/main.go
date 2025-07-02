@@ -187,8 +187,8 @@ func main() {
 		Handler: r,
 		// add timeout to prevent Slowloris attacks
 		ReadTimeout:       30 * time.Second, // max time to read the entire request including body
-		ReadHeaderTimeout: 5 * time.Second,  // max time to read the request header
-		WriteTimeout:      5 * time.Second,  // max time to generate and send the response
+		ReadHeaderTimeout: 10 * time.Second, // max time to read the request header
+		WriteTimeout:      10 * time.Second, // max time to generate and send the response
 		IdleTimeout:       60 * time.Second, // important for keep-alive connections
 	}
 

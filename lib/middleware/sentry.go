@@ -15,7 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var globalSentryHook *sentrylogrus.Hook // global hook
+var globalSentryHook sentrylogrus.Hook // global hook
 
 // InitSentry - initialize sentry for middleware or separate goroutines
 //
@@ -28,7 +28,7 @@ var globalSentryHook *sentrylogrus.Hook // global hook
 // optional parameter (4th parameter): enableTracing (yes or no)
 //
 // optional parameter (5th parameter): tracesSampleRate (0.0 - 1.0)
-func InitSentry(sentryDsn string, v ...string) (*sentrylogrus.Hook, error) {
+func InitSentry(sentryDsn string, v ...string) (sentrylogrus.Hook, error) {
 	if globalSentryHook != nil {
 		// prevent double hook
 		return globalSentryHook, nil
@@ -59,7 +59,7 @@ func InitSentry(sentryDsn string, v ...string) (*sentrylogrus.Hook, error) {
 }
 
 // NewSentryHook creates a new Sentry hook for goroutine-specific loggers
-func NewSentryHook(sentryDsn string, v ...string) (*sentrylogrus.Hook, error) {
+func NewSentryHook(sentryDsn string, v ...string) (sentrylogrus.Hook, error) {
 	return createSentryHook(sentryDsn, v...)
 }
 
@@ -71,7 +71,7 @@ func DestroySentry() {
 	}
 }
 
-func createSentryHook(sentryDsn string, v ...string) (*sentrylogrus.Hook, error) {
+func createSentryHook(sentryDsn string, v ...string) (sentrylogrus.Hook, error) {
 	sentryDebugMode := true
 	environment := "development" // default
 	release := ""
@@ -108,10 +108,11 @@ func createSentryHook(sentryDsn string, v ...string) (*sentrylogrus.Hook, error)
 		Release:          release,
 		EnableTracing:    enableTracing,
 		TracesSampleRate: tracesSampleRate,
+		EnableLogs:       true, // enable logs to be captured
 	}
 
 	// Hook with desired log levels
-	hook, err := sentrylogrus.New(log.AllLevels, clientOptions)
+	hook, err := sentrylogrus.NewEventHook(log.AllLevels, clientOptions)
 	if err != nil {
 		return nil, err
 	}
