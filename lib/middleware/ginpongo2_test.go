@@ -40,7 +40,7 @@ func TestStringFromContext(t *testing.T) {
 
 func TestConvertContext(t *testing.T) {
 	// create a test map
-	testMap := map[string]interface{}{
+	testMap := map[string]any{
 		"key1": "value1",
 		"key2": 2,
 	}
@@ -75,7 +75,7 @@ func TestPongo2(t *testing.T) {
 		name          string
 		baseDirectory string
 		template      string
-		data          interface{}
+		data          any
 		expectedCode  int
 		expectedBody  string
 	}{
@@ -83,7 +83,7 @@ func TestPongo2(t *testing.T) {
 			"valid data",
 			"templates",
 			"index.html",
-			map[string]interface{}{
+			map[string]any{
 				"message": "Hello, World!",
 			},
 			http.StatusOK,
@@ -94,7 +94,7 @@ func TestPongo2(t *testing.T) {
 			"missing template name",
 			"templates",
 			"",
-			map[string]interface{}{
+			map[string]any{
 				"message": "Hello, World!",
 			},
 			http.StatusOK,
@@ -114,7 +114,7 @@ func TestPongo2(t *testing.T) {
 			"invalid base directory",
 			"invalid/path",
 			"index.html",
-			map[string]interface{}{
+			map[string]any{
 				"message": "Hello, World!",
 			},
 			http.StatusInternalServerError,
@@ -125,7 +125,7 @@ func TestPongo2(t *testing.T) {
 			"invalid template file",
 			"templates",
 			"invalid.html",
-			map[string]interface{}{
+			map[string]any{
 				"message": "Hello, World!",
 			},
 			http.StatusInternalServerError,
@@ -136,7 +136,7 @@ func TestPongo2(t *testing.T) {
 			"panicking template execution",
 			"templates",
 			"index.html",
-			map[string]interface{}{
+			map[string]any{
 				"message": "Hello, World!",
 			},
 			http.StatusInternalServerError,

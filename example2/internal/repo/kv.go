@@ -31,9 +31,9 @@ type KeyValueRepository interface {
 	DeleteKeyValue(ctx context.Context, key string) (bool, error)
 
 	// hash operations
-	SetHashKeyValue(ctx context.Context, key string, value interface{}) error
-	GetHashKeyValue(ctx context.Context, key string) (interface{}, error)
-	DeleteHashKeyValue(ctx context.Context, key string, value interface{}) (bool, error)
+	SetHashKeyValue(ctx context.Context, key string, value any) error
+	GetHashKeyValue(ctx context.Context, key string) (any, error)
+	DeleteHashKeyValue(ctx context.Context, key string, value any) (bool, error)
 }
 
 // Compile-time check:
@@ -77,12 +77,12 @@ func (r *KeyValueRepo) DeleteKeyValue(ctx context.Context, key string) (bool, er
 
 // SetHashKeyValue sets a hash key-value pair in Redis.
 // It uses the HSET command to set a field in a hash stored at key.
-func (r *KeyValueRepo) SetHashKeyValue(ctx context.Context, key string, value interface{}) error {
+func (r *KeyValueRepo) SetHashKeyValue(ctx context.Context, key string, value any) error {
 	return r.redisClient.Do(ctx, radix.FlatCmd(nil, "HSET", key, value))
 }
 
 // GetHashKeyValue retrieves a value from a hash stored at key in Redis.
-func (r *KeyValueRepo) GetHashKeyValue(ctx context.Context, key string) (interface{}, error) {
+func (r *KeyValueRepo) GetHashKeyValue(ctx context.Context, key string) (any, error) {
 	var value model.KVHashValue
 	if err := r.redisClient.Do(ctx, radix.FlatCmd(&value, "HGETALL", key)); err != nil {
 		return nil, err
@@ -94,7 +94,7 @@ func (r *KeyValueRepo) GetHashKeyValue(ctx context.Context, key string) (interfa
 }
 
 // DeleteHashKeyValue deletes a hash key-value pair from Redis.
-func (r *KeyValueRepo) DeleteHashKeyValue(ctx context.Context, key string, value interface{}) (bool, error) {
+func (r *KeyValueRepo) DeleteHashKeyValue(ctx context.Context, key string, value any) (bool, error) {
 	ok := 0
 	if err := r.redisClient.Do(ctx, radix.FlatCmd(&ok, "HDEL", key, value)); err != nil {
 		return false, err

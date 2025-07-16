@@ -37,23 +37,23 @@ func TestStrArrHTMLModel(t *testing.T) {
 func TestHTMLModel(t *testing.T) {
 	testCases := []struct {
 		input []string
-		want  map[string]interface{}
+		want  map[string]any
 	}{
 		{
 			[]string{"title", "My Page", "body", "Welcome to my page!"},
-			map[string]interface{}{"title": "My Page", "body": "Welcome to my page!"},
+			map[string]any{"title": "My Page", "body": "Welcome to my page!"},
 		},
 		{
 			[]string{"title", "My Page"},
-			map[string]interface{}{"title": "My Page"},
+			map[string]any{"title": "My Page"},
 		},
 		{
 			[]string{"title", "My Page", "body", "Welcome to my page!", "footer", "Copyright 2023"},
-			map[string]interface{}{"title": "My Page", "body": "Welcome to my page!", "footer": "Copyright 2023"},
+			map[string]any{"title": "My Page", "body": "Welcome to my page!", "footer": "Copyright 2023"},
 		},
 		{
 			[]string{},
-			map[string]interface{}{},
+			map[string]any{},
 		},
 	}
 

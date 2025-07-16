@@ -312,7 +312,7 @@ func RefreshJWT() gin.HandlerFunc {
 }
 
 // ValidateHMACAccess - validate hash based access token
-func ValidateHMACAccess(token *jwt.Token) (interface{}, error) {
+func ValidateHMACAccess(token *jwt.Token) (any, error) {
 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 	}
@@ -320,7 +320,7 @@ func ValidateHMACAccess(token *jwt.Token) (interface{}, error) {
 }
 
 // ValidateHMACRefresh - validate hash based refresh token
-func ValidateHMACRefresh(token *jwt.Token) (interface{}, error) {
+func ValidateHMACRefresh(token *jwt.Token) (any, error) {
 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 	}
@@ -328,7 +328,7 @@ func ValidateHMACRefresh(token *jwt.Token) (interface{}, error) {
 }
 
 // ValidateECDSA - validate elliptic curve digital signature algorithm based token
-func ValidateECDSA(token *jwt.Token) (interface{}, error) {
+func ValidateECDSA(token *jwt.Token) (any, error) {
 	if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
 		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 	}
@@ -336,7 +336,7 @@ func ValidateECDSA(token *jwt.Token) (interface{}, error) {
 }
 
 // ValidateRSA - validate Rivest–Shamir–Adleman cryptosystem based token
-func ValidateRSA(token *jwt.Token) (interface{}, error) {
+func ValidateRSA(token *jwt.Token) (any, error) {
 	if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 	}
@@ -344,7 +344,7 @@ func ValidateRSA(token *jwt.Token) (interface{}, error) {
 }
 
 // ValidateAccessJWT - verify the access JWT's signature, and validate its claims
-func ValidateAccessJWT(token *jwt.Token) (interface{}, error) {
+func ValidateAccessJWT(token *jwt.Token) (any, error) {
 	alg := JWTParams.Algorithm
 
 	switch alg {
@@ -360,7 +360,7 @@ func ValidateAccessJWT(token *jwt.Token) (interface{}, error) {
 }
 
 // ValidateRefreshJWT - verify the refresh JWT's signature, and validate its claims
-func ValidateRefreshJWT(token *jwt.Token) (interface{}, error) {
+func ValidateRefreshJWT(token *jwt.Token) (any, error) {
 	alg := JWTParams.Algorithm
 
 	switch alg {
@@ -379,7 +379,7 @@ func ValidateRefreshJWT(token *jwt.Token) (interface{}, error) {
 func GetJWT(customClaims MyCustomClaims, tokenType string) (string, string, error) {
 	var (
 		key     []byte
-		privKey interface{}
+		privKey any
 		ttl     int
 		nbf     int
 	)

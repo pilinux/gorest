@@ -16,7 +16,7 @@ type PostmarkParams struct {
 	TrackOpens    bool
 	TrackLinks    string
 	MessageStream string
-	HTMLModel     map[string]interface{}
+	HTMLModel     map[string]any
 }
 
 // Postmark email delivery service using HTML templates

@@ -89,9 +89,9 @@ func StringFromContext(c *gin.Context, input string) string {
 }
 
 // ConvertContext function converts the input map to a pongo2.Context type and preserves the key-value pairs
-func ConvertContext(thing interface{}) pongo2.Context {
+func ConvertContext(thing any) pongo2.Context {
 	if thing != nil {
-		context, isMap := thing.(map[string]interface{})
+		context, isMap := thing.(map[string]any)
 		if isMap {
 			return context
 		}

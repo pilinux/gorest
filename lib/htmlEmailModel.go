@@ -31,10 +31,10 @@ func StrArrHTMLModel(s string) []string {
 
 // HTMLModel takes a slice and builds a model for populating
 // a templated email
-func HTMLModel(in []string) map[string]interface{} {
+func HTMLModel(in []string) map[string]any {
 	length := len(in)
 
-	model := make(map[string]interface{})
+	model := make(map[string]any)
 
 	for i := 0; i < length; i += 2 {
 		model[in[i]] = in[i+1]

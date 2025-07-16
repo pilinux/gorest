@@ -22,8 +22,8 @@ func TestGetJWT(t *testing.T) {
 
 	testCases := []struct {
 		Algorithm    string
-		PrivKeyECDSA interface{}
-		PrivKeyRSA   interface{}
+		PrivKeyECDSA any
+		PrivKeyRSA   any
 		ExpectedErr  error
 	}{
 		// HMAC
@@ -840,11 +840,11 @@ func TestValidateAccessJWT(t *testing.T) {
 
 	testCases := []struct {
 		Algorithm   string
-		PubKeyECDSA interface{}
-		PubKeyRSA   interface{}
+		PubKeyECDSA any
+		PubKeyRSA   any
 
 		ExpectedAlg string
-		ExpectedKey interface{}
+		ExpectedKey any
 		ExpectedErr error
 	}{
 		// HMAC
@@ -962,7 +962,7 @@ func TestValidateAccessJWT(t *testing.T) {
 					Method: &jwt.SigningMethodHMAC{
 						Name: tc.Algorithm,
 					},
-					Header: map[string]interface{}{
+					Header: map[string]any{
 						"alg": tc.Algorithm,
 					},
 				}
@@ -973,7 +973,7 @@ func TestValidateAccessJWT(t *testing.T) {
 					Method: &jwt.SigningMethodECDSA{
 						Name: tc.Algorithm,
 					},
-					Header: map[string]interface{}{
+					Header: map[string]any{
 						"alg": tc.Algorithm,
 					},
 				}
@@ -984,7 +984,7 @@ func TestValidateAccessJWT(t *testing.T) {
 					Method: &jwt.SigningMethodRSA{
 						Name: tc.Algorithm,
 					},
-					Header: map[string]interface{}{
+					Header: map[string]any{
 						"alg": tc.Algorithm,
 					},
 				}
@@ -1045,11 +1045,11 @@ func TestValidateRefreshJWT(t *testing.T) {
 
 	testCases := []struct {
 		Algorithm   string
-		PubKeyECDSA interface{}
-		PubKeyRSA   interface{}
+		PubKeyECDSA any
+		PubKeyRSA   any
 
 		ExpectedAlg string
-		ExpectedKey interface{}
+		ExpectedKey any
 		ExpectedErr error
 	}{
 		// HMAC
@@ -1167,7 +1167,7 @@ func TestValidateRefreshJWT(t *testing.T) {
 					Method: &jwt.SigningMethodHMAC{
 						Name: tc.Algorithm,
 					},
-					Header: map[string]interface{}{
+					Header: map[string]any{
 						"alg": tc.Algorithm,
 					},
 				}
@@ -1178,7 +1178,7 @@ func TestValidateRefreshJWT(t *testing.T) {
 					Method: &jwt.SigningMethodECDSA{
 						Name: tc.Algorithm,
 					},
-					Header: map[string]interface{}{
+					Header: map[string]any{
 						"alg": tc.Algorithm,
 					},
 				}
@@ -1189,7 +1189,7 @@ func TestValidateRefreshJWT(t *testing.T) {
 					Method: &jwt.SigningMethodRSA{
 						Name: tc.Algorithm,
 					},
-					Header: map[string]interface{}{
+					Header: map[string]any{
 						"alg": tc.Algorithm,
 					},
 				}
@@ -1250,7 +1250,7 @@ func TestValidateFailure(t *testing.T) {
 
 	testCases := []struct {
 		testName  string
-		validator func(*jwt.Token) (interface{}, error)
+		validator func(*jwt.Token) (any, error)
 	}{
 		{
 			testName:  "HMAC-Access",
