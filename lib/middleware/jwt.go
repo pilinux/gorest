@@ -71,24 +71,28 @@ type JWTPayload struct {
 }
 
 // JWT - validate access token
-func JWT() gin.HandlerFunc {
+func JWT(namedCookie ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var jwtPayload JWTPayload
 		var token *jwt.Token
 		var val string
 		var vals []string
+		var accessJWT string
+		var err error
+
+		// if namedCookie is provided, use it to read the JWT from the cookie
+		if len(namedCookie) > 0 {
+			accessJWT, err = c.Cookie(namedCookie[0])
+			// accessJWT is available in the cookie
+			if err == nil {
+				jwtPayload.AccessJWT = accessJWT
+				goto VerifyClaims
+			}
+		}
 
 		// first try to read the cookie
-		accessJWT, err := c.Cookie("accessJWT")
+		accessJWT, err = c.Cookie("accessJWT")
 		// accessJWT is available in the cookie
-		if err == nil {
-			jwtPayload.AccessJWT = accessJWT
-			goto VerifyClaims
-		}
-		// accessJWT is not available in the cookie
-		// is __session available?
-		accessJWT, err = c.Cookie("__session")
-		// __session is available in the cookie
 		if err == nil {
 			jwtPayload.AccessJWT = accessJWT
 			goto VerifyClaims

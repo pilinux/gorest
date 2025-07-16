@@ -325,7 +325,7 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 		// use the `sub` claim: c.GetString("sub") to get the user ID from JWT token
 		// and build relation in the database
 		rClerk := v1.Group("clerk")
-		rClerk.Use(gmiddleware.JWT())
+		rClerk.Use(gmiddleware.JWT("__session"))
 		rClerk.Use(gservice.JWTBlacklistChecker())
 		rClerk.GET("", controller.AccessResource) // Protected
 	}

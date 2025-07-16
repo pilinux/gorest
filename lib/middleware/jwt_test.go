@@ -410,7 +410,7 @@ func TestJWTAuthCookie(t *testing.T) {
 			t.Errorf("failed to set trusted proxies to nil")
 		}
 		router.TrustedPlatform = "X-Real-Ip"
-		router.Use(middleware.JWT())
+		router.Use(middleware.JWT("__session"))
 		router.GET("/", func(c *gin.Context) {
 			c.Status(http.StatusOK)
 		})
