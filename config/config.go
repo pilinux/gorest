@@ -473,21 +473,38 @@ func security() (securityConfig SecurityConfig, err error) {
 	if securityConfig.MustCORS == Activated {
 		cp := middleware.CORSPolicy{}
 
+		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS#requests_with_credentials
+		var isCredentialed bool
+
+		// Access-Control-Allow-Credentials
+		// Indicates whether or not the actual request can be made using credentials
+		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials
+		cp.Value = strings.ToLower(strings.TrimSpace(os.Getenv("CORS_CREDENTIALS")))
+		if cp.Value != "" {
+			if cp.Value == "true" {
+				isCredentialed = true
+			}
+			cp.Key = "Access-Control-Allow-Credentials"
+			securityConfig.CORS = append(securityConfig.CORS, cp)
+		}
+
 		// Access-Control-Allow-Origin
 		// Indicates whether the response can be shared with requesting code from the given origin
 		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
 		cp.Value = strings.TrimSpace(os.Getenv("CORS_ORIGIN"))
 		if cp.Value != "" {
+			// in credentialed request, Access-Control-Allow-Origin must never be "*"
+			if isCredentialed {
+				values := strings.Split(cp.Value, ",")
+				for _, v := range values {
+					v = strings.TrimSpace(v)
+					if v == "*" {
+						err = errors.New("credentialed request cannot have '*' as Access-Control-Allow-Origin")
+						return
+					}
+				}
+			}
 			cp.Key = "Access-Control-Allow-Origin"
-			securityConfig.CORS = append(securityConfig.CORS, cp)
-		}
-
-		// Access-Control-Allow-Credentials
-		// Indicates whether or not the actual request can be made using credentials
-		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials
-		cp.Value = strings.TrimSpace(os.Getenv("CORS_CREDENTIALS"))
-		if cp.Value != "" {
-			cp.Key = "Access-Control-Allow-Credentials"
 			securityConfig.CORS = append(securityConfig.CORS, cp)
 		}
 
@@ -496,6 +513,17 @@ func security() (securityConfig SecurityConfig, err error) {
 		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Headers
 		cp.Value = strings.TrimSpace(os.Getenv("CORS_HEADERS"))
 		if cp.Value != "" {
+			// in credentialed request, Access-Control-Allow-Headers must not be "*"
+			if isCredentialed {
+				values := strings.Split(cp.Value, ",")
+				for _, v := range values {
+					v = strings.TrimSpace(v)
+					if v == "*" {
+						err = errors.New("credentialed request cannot have '*' as Access-Control-Allow-Headers")
+						return
+					}
+				}
+			}
 			cp.Key = "Access-Control-Allow-Headers"
 			securityConfig.CORS = append(securityConfig.CORS, cp)
 		}
@@ -506,6 +534,17 @@ func security() (securityConfig SecurityConfig, err error) {
 		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers
 		cp.Value = strings.TrimSpace(os.Getenv("CORS_EXPOSE_HEADERS"))
 		if cp.Value != "" {
+			// in credentialed request, Access-Control-Expose-Headers must not be "*"
+			if isCredentialed {
+				values := strings.Split(cp.Value, ",")
+				for _, v := range values {
+					v = strings.TrimSpace(v)
+					if v == "*" {
+						err = errors.New("credentialed request cannot have '*' as Access-Control-Expose-Headers")
+						return
+					}
+				}
+			}
 			cp.Key = "Access-Control-Expose-Headers"
 			securityConfig.CORS = append(securityConfig.CORS, cp)
 		}
@@ -515,6 +554,17 @@ func security() (securityConfig SecurityConfig, err error) {
 		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Methods
 		cp.Value = strings.TrimSpace(os.Getenv("CORS_METHODS"))
 		if cp.Value != "" {
+			// in credentialed request, Access-Control-Allow-Methods must not be "*"
+			if isCredentialed {
+				values := strings.Split(cp.Value, ",")
+				for _, v := range values {
+					v = strings.TrimSpace(v)
+					if v == "*" {
+						err = errors.New("credentialed request cannot have '*' as Access-Control-Allow-Methods")
+						return
+					}
+				}
+			}
 			cp.Key = "Access-Control-Allow-Methods"
 			securityConfig.CORS = append(securityConfig.CORS, cp)
 		}
@@ -599,6 +649,14 @@ func security() (securityConfig SecurityConfig, err error) {
 
 	// Important for getting real client IP
 	securityConfig.TrustedPlatform = strings.TrimSpace(os.Getenv("TRUSTED_PLATFORM"))
+
+	// Validate CORS configuration at startup
+	if securityConfig.MustCORS == Activated {
+		if len(securityConfig.CORS) == 0 {
+			err = errors.New("empty CORS header")
+			return
+		}
+	}
 
 	return
 }

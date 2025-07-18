@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -245,14 +246,14 @@ func TestGetConfig(t *testing.T) {
 	}
 	expected.Security.CORS = append(
 		expected.Security.CORS, middleware.CORSPolicy{
-			Key:   "Access-Control-Allow-Origin",
-			Value: "*",
+			Key:   "Access-Control-Allow-Credentials",
+			Value: "true",
 		},
 	)
 	expected.Security.CORS = append(
 		expected.Security.CORS, middleware.CORSPolicy{
-			Key:   "Access-Control-Allow-Credentials",
-			Value: "true",
+			Key:   "Access-Control-Allow-Origin",
+			Value: "https://example.com",
 		},
 	)
 	expected.Security.CORS = append(
@@ -536,12 +537,12 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 			SetValue: "max-age=63072000; includeSubDomains; preload",
 			ExpValue5: []middleware.CORSPolicy{
 				{
-					Key:   "Access-Control-Allow-Origin",
-					Value: "*",
-				},
-				{
 					Key:   "Access-Control-Allow-Credentials",
 					Value: "true",
+				},
+				{
+					Key:   "Access-Control-Allow-Origin",
+					Value: "https://example.com",
 				},
 				{
 					Key:   "Access-Control-Allow-Headers",
@@ -686,6 +687,41 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 			SetValue:  "yes",
 			ExpValue1: true,
 		},
+		{
+			// invalid: credentials true with wildcard in comma-separated list for Access-Control-Allow-Origin
+			Key:      "CORS_ORIGIN",
+			TestNo:   24,
+			SetValue: "https://example.com, * ,https://test.com",
+			ExpErr:   errors.New("credentialed request cannot have '*' as Access-Control-Allow-Origin"),
+		},
+		{
+			// invalid: credentials true with wildcard in comma-separated list for Access-Control-Allow-Headers
+			Key:      "CORS_HEADERS",
+			TestNo:   25,
+			SetValue: "Content-Type, Content-Length, *",
+			ExpErr:   errors.New("credentialed request cannot have '*' as Access-Control-Allow-Headers"),
+		},
+		{
+			// invalid: credentials true with wildcard in comma-separated list for Access-Control-Expose-Headers
+			Key:      "CORS_EXPOSE_HEADERS",
+			TestNo:   26,
+			SetValue: "Content-Length, *",
+			ExpErr:   errors.New("credentialed request cannot have '*' as Access-Control-Expose-Headers"),
+		},
+		{
+			// invalid: credentials true with wildcard in comma-separated list for Access-Control-Allow-Methods
+			Key:      "CORS_METHODS",
+			TestNo:   27,
+			SetValue: "GET, POST, PUT, *",
+			ExpErr:   errors.New("credentialed request cannot have '*' as Access-Control-Allow-Methods"),
+		},
+		{
+			// cors is activated but empty
+			Key:      "ACTIVATE_CORS",
+			TestNo:   28,
+			SetValue: "yes",
+			ExpErr:   errors.New(("empty CORS header")),
+		},
 	}
 
 	// download a file from a remote location and save it
@@ -757,6 +793,33 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 				if err != nil {
 					t.Errorf("got error '%v' when setting JWT_ALG for test no: '%v'", err, tc.TestNo)
 				}
+			}
+
+			if tc.TestNo >= 24 && tc.TestNo <= 27 {
+				// test with invalid CORS settings
+				fmt.Println("test with invalid CORS settings")
+				fmt.Println("test no:", tc.TestNo)
+				err = os.Setenv(tc.Key, tc.SetValue)
+				if err != nil {
+					t.Errorf("got error '%v' when setting %v", err, tc.Key)
+				}
+			}
+
+			if tc.TestNo == 28 {
+				// test with empty CORS settings
+				fmt.Println("test with empty CORS settings")
+				_ = os.Setenv("CORS_CREDENTIALS", "")
+				_ = os.Setenv("CORS_ORIGIN", "")
+				_ = os.Setenv("CORS_HEADERS", "")
+				_ = os.Setenv("CORS_EXPOSE_HEADERS", "")
+				_ = os.Setenv("CORS_METHODS", "")
+				_ = os.Setenv("CORS_MAXAGE", "")
+				_ = os.Setenv("CORS_X_CONTENT_TYPE", "")
+				_ = os.Setenv("CORS_X_FRAME", "")
+				_ = os.Setenv("CORS_REFERRER", "")
+				_ = os.Setenv("CORS_CONTENT_SECURITY", "")
+				_ = os.Setenv("CORS_TIMING_ALLOW_ORIGIN", "")
+				_ = os.Setenv("CORS_HSTS", "")
 			}
 
 			err = config.Config()
@@ -957,6 +1020,18 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 				}
 				if !config.IsPasswordRecoverCodeUUIDv4() {
 					t.Errorf("expected true, got false when setting %v", tc.Key)
+				}
+			}
+
+			if tc.TestNo >= 24 && tc.TestNo <= 27 {
+				if err == nil {
+					t.Errorf("expected error, got nil for test no: '%v'", tc.TestNo)
+				}
+			}
+
+			if tc.TestNo == 28 {
+				if err == nil {
+					t.Errorf("expected error, got nil for test no: '%v'", tc.TestNo)
 				}
 			}
 
