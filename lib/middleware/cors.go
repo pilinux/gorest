@@ -115,6 +115,15 @@ func CORS(cp []CORSPolicy) gin.HandlerFunc {
 		corsConfig.MaxAge = 600 // default to 10 minutes
 	}
 
+	// if no allowed methods, set to default
+	if len(corsConfig.AllowedMethods) == 0 {
+		corsConfig.AllowedMethods = []string{"OPTIONS"}
+	}
+	// if no allowed headers, set to default
+	if len(corsConfig.AllowedHeaders) == 0 {
+		corsConfig.AllowedHeaders = []string{"Content-Type"}
+	}
+
 	// prevent insecure CORS config: credentials + wildcard origin
 	if corsConfig.AllowCredentials {
 		if len(corsConfig.AllowedOrigins) == 0 {
@@ -128,11 +137,11 @@ func CORS(cp []CORSPolicy) gin.HandlerFunc {
 			}
 		}
 
+		// if any origin is "*", return error
+		// this is a security risk as it allows any origin to access the resource with credentials
+		// according to the CORS spec, this is forbidden
+		// https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#access-control-allow-credentials
 		if strings.Contains(strings.Join(corsConfig.AllowedOrigins, ", "), "*") {
-			// if any origin is "*", return error
-			// this is a security risk as it allows any origin to access the resource with credentials
-			// according to the CORS spec, this is forbidden
-			// https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#access-control-allow-credentials
 			return func(c *gin.Context) {
 				c.AbortWithStatusJSON(
 					http.StatusInternalServerError,
@@ -140,15 +149,36 @@ func CORS(cp []CORSPolicy) gin.HandlerFunc {
 				)
 			}
 		}
-	}
 
-	// if no allowed methods, set to default
-	if len(corsConfig.AllowedMethods) == 0 {
-		corsConfig.AllowedMethods = []string{"OPTIONS"}
-	}
-	// if no allowed headers, set to default
-	if len(corsConfig.AllowedHeaders) == 0 {
-		corsConfig.AllowedHeaders = []string{"Content-Type"}
+		// if any method is "*", return error
+		if strings.Contains(strings.Join(corsConfig.AllowedMethods, ", "), "*") {
+			return func(c *gin.Context) {
+				c.AbortWithStatusJSON(
+					http.StatusInternalServerError,
+					"CORS misconfiguration: CORS_CREDENTIALS=true with CORS_METHODS=* is forbidden by the CORS spec",
+				)
+			}
+		}
+
+		// if any header is "*", return error
+		if strings.Contains(strings.Join(corsConfig.AllowedHeaders, ", "), "*") {
+			return func(c *gin.Context) {
+				c.AbortWithStatusJSON(
+					http.StatusInternalServerError,
+					"CORS misconfiguration: CORS_CREDENTIALS=true with CORS_HEADERS=* is forbidden by the CORS spec",
+				)
+			}
+		}
+
+		// if any exposed header is "*", return error
+		if strings.Contains(strings.Join(corsConfig.ExposedHeaders, ", "), "*") {
+			return func(c *gin.Context) {
+				c.AbortWithStatusJSON(
+					http.StatusInternalServerError,
+					"CORS misconfiguration: CORS_CREDENTIALS=true with CORS_EXPOSED_HEADERS=* is forbidden by the CORS spec",
+				)
+			}
+		}
 	}
 
 	options := rs.Options{

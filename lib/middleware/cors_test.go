@@ -200,6 +200,39 @@ func TestCORS(t *testing.T) {
 		},
 		{
 			[]middleware.CORSPolicy{
+				{"Access-Control-Allow-Origin", "http://example.com"},
+				{"Access-Control-Allow-Credentials", "true"},
+				{"Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS, *"},
+			},
+			"GET",
+			"error",
+			"\"CORS misconfiguration: CORS_CREDENTIALS=true with CORS_METHODS=* is forbidden by the CORS spec\"",
+			http.StatusInternalServerError,
+		},
+		{
+			[]middleware.CORSPolicy{
+				{"Access-Control-Allow-Origin", "http://example.com"},
+				{"Access-Control-Allow-Credentials", "true"},
+				{"Access-Control-Allow-Headers", "Content-Type, *"},
+			},
+			"GET",
+			"error",
+			"\"CORS misconfiguration: CORS_CREDENTIALS=true with CORS_HEADERS=* is forbidden by the CORS spec\"",
+			http.StatusInternalServerError,
+		},
+		{
+			[]middleware.CORSPolicy{
+				{"Access-Control-Allow-Origin", "http://example.com"},
+				{"Access-Control-Allow-Credentials", "true"},
+				{"Access-Control-Expose-Headers", "Content-Length, *"},
+			},
+			"GET",
+			"error",
+			"\"CORS misconfiguration: CORS_CREDENTIALS=true with CORS_EXPOSED_HEADERS=* is forbidden by the CORS spec\"",
+			http.StatusInternalServerError,
+		},
+		{
+			[]middleware.CORSPolicy{
 				{"Access-Control-Allow-Origin", ""},
 				{"Access-Control-Allow-Credentials", "true"},
 			},
