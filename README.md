@@ -10,7 +10,6 @@
 [![Ask DeepWiki][18]][19]
 [![Go Report Card](https://goreportcard.com/badge/github.com/pilinux/gorest)][01]
 [![CodeFactor](https://www.codefactor.io/repository/github/pilinux/gorest/badge)][06]
-[![codebeat badge](https://codebeat.co/badges/12c01a53-4745-4f90-ad2b-a95c94e4b432)][03]
 [![MIT license](https://img.shields.io/badge/license-MIT-brightgreen.svg)][13]
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)][62]
 
@@ -281,7 +280,6 @@ Released under the [MIT license][13]
 
 [01]: https://goreportcard.com/report/github.com/pilinux/gorest
 [02]: https://github.com/pilinux/gorest/actions/workflows/codeql-analysis.yml/badge.svg
-[03]: https://codebeat.co/projects/github-com-pilinux-gorest-main
 [04]: https://codecov.io/gh/pilinux/gorest/branch/main/graph/badge.svg?token=xGLBRrCAvB
 [05]: https://codecov.io/gh/pilinux/gorest
 [06]: https://www.codefactor.io/repository/github/pilinux/gorest
