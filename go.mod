@@ -14,7 +14,7 @@ require (
 	github.com/mediocregopher/radix/v4 v4.1.4
 	github.com/mrz1836/postmark v1.7.4
 	github.com/pilinux/argon2 v0.19.0
-	github.com/pilinux/crypt v0.0.14
+	github.com/pilinux/crypt v0.0.15
 	github.com/pilinux/libgo v0.0.5
 	github.com/pilinux/structs v1.1.1
 	github.com/pilinux/twofactor v1.1.9
@@ -24,7 +24,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/ulule/limiter/v3 v3.11.2
 	go.mongodb.org/mongo-driver v1.17.4
-	golang.org/x/crypto v0.40.0
+	golang.org/x/crypto v0.41.0
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/driver/sqlite v1.6.0
@@ -73,8 +73,8 @@ require (
 	golang.org/x/arch v0.19.0 // indirect
 	golang.org/x/net v0.42.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/sys v0.34.0 // indirect
-	golang.org/x/text v0.27.0 // indirect
+	golang.org/x/sys v0.35.0 // indirect
+	golang.org/x/text v0.28.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	rsc.io/qr v0.2.0 // indirect
