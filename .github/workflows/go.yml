@@ -17,6 +17,7 @@ jobs:
     permissions:
       actions: read
       contents: read
+      security-events: write
 
     steps:
       - name: Checkout repository
@@ -35,7 +36,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
-          go-version: 1.23.x
+          go-version: 1.24.x
       - run: go version
 
       - name: Examine source code for Linux AMD
@@ -64,7 +65,7 @@ jobs:
       - name: Run govulncheck
         uses: golang/govulncheck-action@v1
         with:
-          go-version-input: 1.23.x
+          go-version-input: 1.24.x
           go-package: ./...
 
       - name: Build for Linux AMD

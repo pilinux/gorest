@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto"
 	"crypto/sha256"
+	"crypto/sha3"
 	"errors"
 	"fmt"
 	"io"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/pilinux/gorest/config"
 	"github.com/pilinux/gorest/lib/middleware"
-	"golang.org/x/crypto/sha3"
 )
 
 func TestEnv(t *testing.T) {

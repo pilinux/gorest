@@ -6,6 +6,7 @@ package config
 import (
 	"crypto"
 	"crypto/sha256"
+	"crypto/sha3"
 	"errors"
 	"net/http"
 	"os"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
-	"golang.org/x/crypto/sha3"
 
 	"github.com/pilinux/gorest/lib"
 	"github.com/pilinux/gorest/lib/middleware"
