@@ -91,7 +91,7 @@ _Note:_ gorest uses [GORM][21] as its ORM
 - [x] ES256: ECDSA Signature with SHA-256
 - [x] ES384: ECDSA Signature with SHA-384
 - [x] ES512: ECDSA Signature with SHA-512
-- [x] EdDSA: EdDSA Signature (only Ed25519 curve is supported)
+- [x] EdDSA: Ed25519 variant (EdDSA over the Edwards25519 curve) is supported
 - [x] RS256: RSA Signature with SHA-256
 - [x] RS384: RSA Signature with SHA-384
 - [x] RS512: RSA Signature with SHA-512
