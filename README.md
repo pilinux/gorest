@@ -26,12 +26,13 @@ under the [MIT license][13] and is free for any personal or commercial project.
 
 ## Requirement
 
+- `Go 1.24.1+` (for versions `1.10.x`)
 - `Go 1.23+` (for versions `1.9.x`)
 - `Go 1.23+` (for versions `1.8.x`)
 - `Go 1.21+` (for versions `1.7.x`)
 - `Go 1.20+` (for versions `1.6.x`)
 
-For all new projects, it is recommended to use version `1.9.x` or higher.
+For all new projects, it is recommended to use version `1.10.x` or higher.
 
 ## Important
 
@@ -90,6 +91,7 @@ _Note:_ gorest uses [GORM][21] as its ORM
 - [x] ES256: ECDSA Signature with SHA-256
 - [x] ES384: ECDSA Signature with SHA-384
 - [x] ES512: ECDSA Signature with SHA-512
+- [x] EdDSA: EdDSA Signature (only Ed25519 curve is supported)
 - [x] RS256: RSA Signature with SHA-256
 - [x] RS384: RSA Signature with SHA-384
 - [x] RS512: RSA Signature with SHA-512
@@ -130,6 +132,15 @@ openssl ec -in private-key.pem -pubout -out public-key.pem
 ```bash
 openssl ecparam -name secp521r1 -genkey -noout -out private-key.pem
 openssl ec -in private-key.pem -pubout -out public-key.pem
+```
+
+### EdDSA
+
+#### Ed25519
+
+```bash
+openssl genpkey -algorithm Ed25519 -out private-key.pem
+openssl pkey -in private-key.pem -pubout -out public-key.pem
 ```
 
 ### RSA
@@ -285,7 +296,6 @@ Released under the [MIT license][13]
 [06]: https://www.codefactor.io/repository/github/pilinux/gorest
 [07]: https://github.com/pilinux/gorest/actions/workflows/go.yml/badge.svg
 [08]: https://github.com/pilinux/gorest/actions/workflows/golangci-lint.yml/badge.svg
-[10]: https://github.com/pilinux/gorest/wiki
 [11]: https://github.com/golang/go
 [12]: https://github.com/gin-gonic/gin
 [13]: LICENSE
