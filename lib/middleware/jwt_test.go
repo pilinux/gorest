@@ -2,6 +2,7 @@ package middleware_test
 
 import (
 	"bytes"
+	"crypto/ed25519"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -23,6 +24,7 @@ func TestGetJWT(t *testing.T) {
 	testCases := []struct {
 		Algorithm    string
 		PrivKeyECDSA any
+		PrivKeyEdDSA any
 		PrivKeyRSA   any
 		ExpectedErr  error
 	}{
@@ -52,6 +54,11 @@ func TestGetJWT(t *testing.T) {
 			Algorithm:   "ES512",
 			ExpectedErr: nil,
 		},
+		// EdDSA
+		{
+			Algorithm:   "EdDSA",
+			ExpectedErr: nil,
+		},
 		// RSA
 		{
 			Algorithm:   "RS256",
@@ -72,6 +79,7 @@ func TestGetJWT(t *testing.T) {
 			middleware.JWTParams.Algorithm = tc.Algorithm
 
 			if tc.Algorithm == "ES256" || tc.Algorithm == "ES384" || tc.Algorithm == "ES512" ||
+				tc.Algorithm == "EdDSA" ||
 				tc.Algorithm == "RS256" || tc.Algorithm == "RS384" || tc.Algorithm == "RS512" {
 				fileName := "private-key" + tc.Algorithm + ".pem"
 
@@ -103,6 +111,19 @@ func TestGetJWT(t *testing.T) {
 						t.Errorf("failed to read privateKeyBytes, error: %v", errThis)
 					}
 					middleware.JWTParams.PrivKeyECDSA = privateKey
+				}
+
+				if tc.Algorithm == "EdDSA" {
+					privateKey, errThis := jwt.ParseEdPrivateKeyFromPEM(privateKeyBytes)
+					if errThis != nil {
+						t.Errorf("failed to read privateKeyBytes, error: %v", errThis)
+					}
+					// convert to ed25519.PrivateKey
+					privateKeyEdDSA, ok := privateKey.(ed25519.PrivateKey)
+					if !ok {
+						t.Errorf("failed to convert privateKey to ed25519.PrivateKey")
+					}
+					middleware.JWTParams.PrivKeyEdDSA = privateKeyEdDSA
 				}
 
 				if tc.Algorithm == "RS256" || tc.Algorithm == "RS384" || tc.Algorithm == "RS512" {
@@ -840,9 +861,6 @@ func TestValidateAccessJWT(t *testing.T) {
 
 	testCases := []struct {
 		Algorithm   string
-		PubKeyECDSA any
-		PubKeyRSA   any
-
 		ExpectedAlg string
 		ExpectedKey any
 		ExpectedErr error
@@ -889,6 +907,12 @@ func TestValidateAccessJWT(t *testing.T) {
 			ExpectedAlg: "ES512",
 			ExpectedErr: nil,
 		},
+		// EdDSA
+		{
+			Algorithm:   "EdDSA",
+			ExpectedAlg: "EdDSA",
+			ExpectedErr: nil,
+		},
 		// RSA
 		{
 			Algorithm:   "RS256",
@@ -913,6 +937,7 @@ func TestValidateAccessJWT(t *testing.T) {
 			var token *jwt.Token
 
 			if tc.Algorithm == "ES256" || tc.Algorithm == "ES384" || tc.Algorithm == "ES512" ||
+				tc.Algorithm == "EdDSA" ||
 				tc.Algorithm == "RS256" || tc.Algorithm == "RS384" || tc.Algorithm == "RS512" {
 				fileName := "public-key" + tc.Algorithm + ".pem"
 
@@ -947,6 +972,20 @@ func TestValidateAccessJWT(t *testing.T) {
 					tc.ExpectedKey = publicKey
 				}
 
+				if tc.Algorithm == "EdDSA" {
+					publicKey, errThis := jwt.ParseEdPublicKeyFromPEM(publicKeyBytes)
+					if errThis != nil {
+						t.Errorf("failed to read publicKeyBytes, error: %v", errThis)
+					}
+					// convert to ed25519.PublicKey
+					publicKeyEdDSA, ok := publicKey.(ed25519.PublicKey)
+					if !ok {
+						t.Errorf("failed to convert publicKey to ed25519.PublicKey")
+					}
+					middleware.JWTParams.PubKeyEdDSA = publicKeyEdDSA
+					tc.ExpectedKey = publicKeyEdDSA
+				}
+
 				if tc.Algorithm == "RS256" || tc.Algorithm == "RS384" || tc.Algorithm == "RS512" {
 					publicKey, errThis := jwt.ParseRSAPublicKeyFromPEM(publicKeyBytes)
 					if errThis != nil {
@@ -979,6 +1018,15 @@ func TestValidateAccessJWT(t *testing.T) {
 				}
 			}
 
+			if tc.Algorithm == "EdDSA" {
+				token = &jwt.Token{
+					Method: &jwt.SigningMethodEd25519{},
+					Header: map[string]any{
+						"alg": tc.Algorithm,
+					},
+				}
+			}
+
 			if tc.Algorithm == "RS256" || tc.Algorithm == "RS384" || tc.Algorithm == "RS512" {
 				token = &jwt.Token{
 					Method: &jwt.SigningMethodRSA{
@@ -1004,14 +1052,23 @@ func TestValidateAccessJWT(t *testing.T) {
 				t.Errorf("unexpected algorithm: got %v, want %v", token.Header["alg"], tc.ExpectedAlg)
 			}
 
-			if tc.Algorithm == "HS256" || tc.Algorithm == "HS384" || tc.Algorithm == "HS512" || tc.Algorithm == "unknown" {
+			if tc.Algorithm == "HS256" || tc.Algorithm == "HS384" || tc.Algorithm == "HS512" || tc.Algorithm == "unknown" || tc.Algorithm == "EdDSA" {
 				if key != nil && tc.ExpectedKey != nil {
-					if len(key.([]byte)) != len(tc.ExpectedKey.([]byte)) {
-						t.Errorf("unexpected key length: got %v, want %v", len(key.([]byte)), len(tc.ExpectedKey.([]byte)))
+					var keyBytes []byte
+					var expectedBytes []byte
+					if tc.Algorithm == "EdDSA" {
+						keyBytes = []byte(key.(ed25519.PublicKey))
+						expectedBytes = []byte(tc.ExpectedKey.(ed25519.PublicKey))
 					} else {
-						for i := 0; i < len(key.([]byte)); i++ {
-							if key.([]byte)[i] != tc.ExpectedKey.([]byte)[i] {
-								t.Errorf("unexpected key value at index %d: got %v, want %v", i, key.([]byte)[i], tc.ExpectedKey.([]byte)[i])
+						keyBytes = key.([]byte)
+						expectedBytes = tc.ExpectedKey.([]byte)
+					}
+					if len(keyBytes) != len(expectedBytes) {
+						t.Errorf("unexpected key length: got %v, want %v", len(keyBytes), len(expectedBytes))
+					} else {
+						for i := 0; i < len(keyBytes); i++ {
+							if keyBytes[i] != expectedBytes[i] {
+								t.Errorf("unexpected key value at index %d: got %v, want %v", i, keyBytes[i], expectedBytes[i])
 								break
 							}
 						}
@@ -1045,9 +1102,6 @@ func TestValidateRefreshJWT(t *testing.T) {
 
 	testCases := []struct {
 		Algorithm   string
-		PubKeyECDSA any
-		PubKeyRSA   any
-
 		ExpectedAlg string
 		ExpectedKey any
 		ExpectedErr error
@@ -1094,6 +1148,12 @@ func TestValidateRefreshJWT(t *testing.T) {
 			ExpectedAlg: "ES512",
 			ExpectedErr: nil,
 		},
+		// EdDSA
+		{
+			Algorithm:   "EdDSA",
+			ExpectedAlg: "EdDSA",
+			ExpectedErr: nil,
+		},
 		// RSA
 		{
 			Algorithm:   "RS256",
@@ -1118,6 +1178,7 @@ func TestValidateRefreshJWT(t *testing.T) {
 			var token *jwt.Token
 
 			if tc.Algorithm == "ES256" || tc.Algorithm == "ES384" || tc.Algorithm == "ES512" ||
+				tc.Algorithm == "EdDSA" ||
 				tc.Algorithm == "RS256" || tc.Algorithm == "RS384" || tc.Algorithm == "RS512" {
 				fileName := "public-key" + tc.Algorithm + ".pem"
 
@@ -1152,6 +1213,20 @@ func TestValidateRefreshJWT(t *testing.T) {
 					tc.ExpectedKey = publicKey
 				}
 
+				if tc.Algorithm == "EdDSA" {
+					publicKey, errThis := jwt.ParseEdPublicKeyFromPEM(publicKeyBytes)
+					if errThis != nil {
+						t.Errorf("failed to read publicKeyBytes, error: %v", errThis)
+					}
+					// convert to ed25519.PublicKey
+					publicKeyEdDSA, ok := publicKey.(ed25519.PublicKey)
+					if !ok {
+						t.Errorf("failed to convert publicKey to ed25519.PublicKey")
+					}
+					middleware.JWTParams.PubKeyEdDSA = publicKeyEdDSA
+					tc.ExpectedKey = publicKeyEdDSA
+				}
+
 				if tc.Algorithm == "RS256" || tc.Algorithm == "RS384" || tc.Algorithm == "RS512" {
 					publicKey, errThis := jwt.ParseRSAPublicKeyFromPEM(publicKeyBytes)
 					if errThis != nil {
@@ -1184,6 +1259,15 @@ func TestValidateRefreshJWT(t *testing.T) {
 				}
 			}
 
+			if tc.Algorithm == "EdDSA" {
+				token = &jwt.Token{
+					Method: &jwt.SigningMethodEd25519{},
+					Header: map[string]any{
+						"alg": tc.Algorithm,
+					},
+				}
+			}
+
 			if tc.Algorithm == "RS256" || tc.Algorithm == "RS384" || tc.Algorithm == "RS512" {
 				token = &jwt.Token{
 					Method: &jwt.SigningMethodRSA{
@@ -1209,14 +1293,23 @@ func TestValidateRefreshJWT(t *testing.T) {
 				t.Errorf("unexpected algorithm: got %v, want %v", token.Header["alg"], tc.ExpectedAlg)
 			}
 
-			if tc.Algorithm == "HS256" || tc.Algorithm == "HS384" || tc.Algorithm == "HS512" || tc.Algorithm == "unknown" {
+			if tc.Algorithm == "HS256" || tc.Algorithm == "HS384" || tc.Algorithm == "HS512" || tc.Algorithm == "unknown" || tc.Algorithm == "EdDSA" {
 				if key != nil && tc.ExpectedKey != nil {
-					if len(key.([]byte)) != len(tc.ExpectedKey.([]byte)) {
-						t.Errorf("unexpected key length: got %v, want %v", len(key.([]byte)), len(tc.ExpectedKey.([]byte)))
+					var keyBytes []byte
+					var expectedBytes []byte
+					if tc.Algorithm == "EdDSA" {
+						keyBytes = []byte(key.(ed25519.PublicKey))
+						expectedBytes = []byte(tc.ExpectedKey.(ed25519.PublicKey))
 					} else {
-						for i := 0; i < len(key.([]byte)); i++ {
-							if key.([]byte)[i] != tc.ExpectedKey.([]byte)[i] {
-								t.Errorf("unexpected key value at index %d: got %v, want %v", i, key.([]byte)[i], tc.ExpectedKey.([]byte)[i])
+						keyBytes = key.([]byte)
+						expectedBytes = tc.ExpectedKey.([]byte)
+					}
+					if len(keyBytes) != len(expectedBytes) {
+						t.Errorf("unexpected key length: got %v, want %v", len(keyBytes), len(expectedBytes))
+					} else {
+						for i := 0; i < len(keyBytes); i++ {
+							if keyBytes[i] != expectedBytes[i] {
+								t.Errorf("unexpected key value at index %d: got %v, want %v", i, keyBytes[i], expectedBytes[i])
 								break
 							}
 						}
@@ -1263,6 +1356,10 @@ func TestValidateFailure(t *testing.T) {
 		{
 			testName:  "ECDSA",
 			validator: middleware.ValidateECDSA,
+		},
+		{
+			testName:  "EdDSA",
+			validator: middleware.ValidateEdDSA,
 		},
 		{
 			testName:  "RSA",

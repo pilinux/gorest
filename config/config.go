@@ -5,6 +5,7 @@ package config
 
 import (
 	"crypto"
+	"crypto/ed25519"
 	"crypto/sha256"
 	"crypto/sha3"
 	"errors"
@@ -705,11 +706,13 @@ func getParamsJWT() (params middleware.JWTParameters, err error) {
 	// ES256: ECDSA Signature with SHA-256
 	// ES384: ECDSA Signature with SHA-384
 	// ES512: ECDSA Signature with SHA-512
+	// EdDSA: EdDSA Signature
 	// RS256: RSA Signature with SHA-256
 	// RS384: RSA Signature with SHA-384
 	// RS512: RSA Signature with SHA-512
 	if alg != "HS256" && alg != "HS384" && alg != "HS512" &&
 		alg != "ES256" && alg != "ES384" && alg != "ES512" &&
+		alg != "EdDSA" &&
 		alg != "RS256" && alg != "RS384" && alg != "RS512" {
 		err = errors.New("unsupported algorithm for JWT")
 		return
@@ -745,6 +748,22 @@ func getParamsJWT() (params middleware.JWTParameters, err error) {
 			params.PrivKeyECDSA = privateKey
 		}
 
+		// EdDSA
+		if alg == "EdDSA" {
+			privateKey, errThis := jwt.ParseEdPrivateKeyFromPEM(privateKeyBytes)
+			if errThis != nil {
+				err = errThis
+				return
+			}
+			// convert to ed25519.PrivateKey
+			privateKeyEdDSA, ok := privateKey.(ed25519.PrivateKey)
+			if !ok {
+				err = errors.New("invalid EdDSA private key")
+				return
+			}
+			params.PrivKeyEdDSA = privateKeyEdDSA
+		}
+
 		// RSA
 		if alg == "RS256" || alg == "RS384" || alg == "RS512" {
 			privateKey, errThis := jwt.ParseRSAPrivateKeyFromPEM(privateKeyBytes)
@@ -773,6 +792,22 @@ func getParamsJWT() (params middleware.JWTParameters, err error) {
 				return
 			}
 			params.PubKeyECDSA = publicKey
+		}
+
+		// EdDSA
+		if alg == "EdDSA" {
+			publicKey, errThis := jwt.ParseEdPublicKeyFromPEM(publicKeyBytes)
+			if errThis != nil {
+				err = errThis
+				return
+			}
+			// convert to ed25519.PublicKey
+			publicKeyEdDSA, ok := publicKey.(ed25519.PublicKey)
+			if !ok {
+				err = errors.New("invalid EdDSA public key")
+				return
+			}
+			params.PubKeyEdDSA = publicKeyEdDSA
 		}
 
 		// RSA
@@ -810,6 +845,8 @@ func setParamsJWT(c middleware.JWTParameters) {
 	middleware.JWTParams.RefreshKeyTTL = c.RefreshKeyTTL
 	middleware.JWTParams.PrivKeyECDSA = c.PrivKeyECDSA
 	middleware.JWTParams.PubKeyECDSA = c.PubKeyECDSA
+	middleware.JWTParams.PrivKeyEdDSA = c.PrivKeyEdDSA
+	middleware.JWTParams.PubKeyEdDSA = c.PubKeyEdDSA
 	middleware.JWTParams.PrivKeyRSA = c.PrivKeyRSA
 	middleware.JWTParams.PubKeyRSA = c.PubKeyRSA
 

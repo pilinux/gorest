@@ -6,6 +6,7 @@ package middleware
 
 import (
 	"crypto/ecdsa"
+	"crypto/ed25519"
 	"crypto/rsa"
 	"errors"
 	"fmt"
@@ -27,6 +28,8 @@ type JWTParameters struct {
 	RefreshKeyTTL int
 	PrivKeyECDSA  *ecdsa.PrivateKey
 	PubKeyECDSA   *ecdsa.PublicKey
+	PrivKeyEdDSA  ed25519.PrivateKey
+	PubKeyEdDSA   ed25519.PublicKey
 	PrivKeyRSA    *rsa.PrivateKey
 	PubKeyRSA     *rsa.PublicKey
 
@@ -339,6 +342,14 @@ func ValidateECDSA(token *jwt.Token) (any, error) {
 	return JWTParams.PubKeyECDSA, nil
 }
 
+// ValidateEdDSA - validate Edwards-curve Digital Signature Algorithm based token
+func ValidateEdDSA(token *jwt.Token) (any, error) {
+	if _, ok := token.Method.(*jwt.SigningMethodEd25519); !ok {
+		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+	}
+	return JWTParams.PubKeyEdDSA, nil
+}
+
 // ValidateRSA - validate Rivest–Shamir–Adleman cryptosystem based token
 func ValidateRSA(token *jwt.Token) (any, error) {
 	if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
@@ -356,6 +367,8 @@ func ValidateAccessJWT(token *jwt.Token) (any, error) {
 		return ValidateHMACAccess(token)
 	case "ES256", "ES384", "ES512":
 		return ValidateECDSA(token)
+	case "EdDSA":
+		return ValidateEdDSA(token)
 	case "RS256", "RS384", "RS512":
 		return ValidateRSA(token)
 	default:
@@ -372,6 +385,8 @@ func ValidateRefreshJWT(token *jwt.Token) (any, error) {
 		return ValidateHMACRefresh(token)
 	case "ES256", "ES384", "ES512":
 		return ValidateECDSA(token)
+	case "EdDSA":
+		return ValidateEdDSA(token)
 	case "RS256", "RS384", "RS512":
 		return ValidateRSA(token)
 	default:
@@ -430,6 +445,9 @@ func GetJWT(customClaims MyCustomClaims, tokenType string) (string, string, erro
 	case "ES256", "ES384", "ES512":
 		token = jwt.NewWithClaims(alg, claims)
 		privKey = JWTParams.PrivKeyECDSA
+	case "EdDSA":
+		token = jwt.NewWithClaims(alg, claims)
+		privKey = JWTParams.PrivKeyEdDSA
 	case "RS256", "RS384", "RS512":
 		token = jwt.NewWithClaims(alg, claims)
 		privKey = JWTParams.PrivKeyRSA
@@ -465,6 +483,11 @@ func GetJWT(customClaims MyCustomClaims, tokenType string) (string, string, erro
 	// secp521r1: NIST/SECG curve over a 521 bit prime field
 	// openssl ecparam -name secp521r1 -genkey -noout -out private-key.pem
 	// openssl ec -in private-key.pem -pubout -out public-key.pem
+
+	// EdDSA
+	//
+	// openssl genpkey -algorithm Ed25519 -out private-key.pem
+	// openssl pkey -in private-key.pem -pubout -out public-key.pem
 
 	// RSA
 	//

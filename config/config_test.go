@@ -178,6 +178,8 @@ func TestGetConfig(t *testing.T) {
 	expected.Security.JWT.RefreshKeyTTL = 60
 	expected.Security.JWT.PrivKeyECDSA = nil
 	expected.Security.JWT.PubKeyECDSA = nil
+	expected.Security.JWT.PrivKeyEdDSA = nil
+	expected.Security.JWT.PubKeyEdDSA = nil
 	expected.Security.JWT.PrivKeyRSA = nil
 	expected.Security.JWT.PubKeyRSA = nil
 
@@ -615,6 +617,13 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 			SetValue: "./private-keyES256.pem",
 		},
 		{
+			// test private key for EdDSA Ed25519
+			Key:      "PRIV_KEY_FILE_PATH",
+			TestNo:   29,
+			FileName: "private-keyEdDSA.pem",
+			SetValue: "./private-keyEdDSA.pem",
+		},
+		{
 			// test private key for RS256
 			Key:      "PRIV_KEY_FILE_PATH",
 			TestNo:   13,
@@ -629,6 +638,13 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 			SetValue: "./public-keyES256.pem",
 		},
 		{
+			// test public key for EdDSA Ed25519
+			Key:      "PUB_KEY_FILE_PATH",
+			TestNo:   30,
+			FileName: "public-keyEdDSA.pem",
+			SetValue: "./public-keyEdDSA.pem",
+		},
+		{
 			// test public key for RS256
 			Key:      "PUB_KEY_FILE_PATH",
 			TestNo:   15,
@@ -636,13 +652,13 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 			SetValue: "./public-keyRS256.pem",
 		},
 		{
-			// fail test - no private key present for ES256 or RS256
+			// fail test - no private key present for ES256, EdDSA or RS256
 			Key:      "PRIV_KEY_FILE_PATH",
 			TestNo:   16,
 			SetValue: "./private-keyES256.pem",
 		},
 		{
-			// fail test - no public key present for ES256 or RS256
+			// fail test - no public key present for ES256, EdDSA or RS256
 			Key:      "PUB_KEY_FILE_PATH",
 			TestNo:   17,
 			SetValue: "./public-keyES256.pem",
@@ -651,6 +667,13 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 			// fail test - wrong private key for ES256
 			Key:      "PRIV_KEY_FILE_PATH",
 			TestNo:   18,
+			FileName: "private-keyRS256.pem",
+			SetValue: "./private-keyRS256.pem",
+		},
+		{
+			// fail test - wrong private key for EdDSA Ed25519
+			Key:      "PRIV_KEY_FILE_PATH",
+			TestNo:   31,
 			FileName: "private-keyRS256.pem",
 			SetValue: "./private-keyRS256.pem",
 		},
@@ -665,6 +688,13 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 			// fail test - wrong public key for ES256
 			Key:      "PUB_KEY_FILE_PATH",
 			TestNo:   20,
+			FileName: "public-keyRS256.pem",
+			SetValue: "./public-keyRS256.pem",
+		},
+		{
+			// fail test - wrong public key for EdDSA Ed25519
+			Key:      "PUB_KEY_FILE_PATH",
+			TestNo:   32,
 			FileName: "public-keyRS256.pem",
 			SetValue: "./public-keyRS256.pem",
 		},
@@ -750,7 +780,8 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 			}
 
 			if tc.TestNo == 12 || tc.TestNo == 13 || tc.TestNo == 14 || tc.TestNo == 15 ||
-				tc.TestNo == 18 || tc.TestNo == 19 || tc.TestNo == 20 || tc.TestNo == 21 {
+				tc.TestNo == 18 || tc.TestNo == 19 || tc.TestNo == 20 || tc.TestNo == 21 ||
+				tc.TestNo == 29 || tc.TestNo == 30 || tc.TestNo == 31 || tc.TestNo == 32 {
 				// download private-public key file from a remote location and save it
 				fmt.Println("downloading...", tc.FileName)
 				err := downloadFile(tc.FileName, testKeyFilePath+"/"+tc.FileName)
@@ -763,6 +794,15 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 				// test with keys for ES256
 				fmt.Println("test with keys for ES256")
 				err = os.Setenv("JWT_ALG", "ES256")
+				if err != nil {
+					t.Errorf("got error '%v' when setting JWT_ALG for test no: '%v'", err, tc.TestNo)
+				}
+			}
+
+			if tc.TestNo == 29 || tc.TestNo == 30 {
+				// test with keys for EdDSA Ed25519
+				fmt.Println("test with keys for EdDSA Ed25519")
+				err = os.Setenv("JWT_ALG", "EdDSA")
 				if err != nil {
 					t.Errorf("got error '%v' when setting JWT_ALG for test no: '%v'", err, tc.TestNo)
 				}
@@ -781,6 +821,15 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 				// test with wrong keys for ES256
 				fmt.Println("test with wrong keys for ES256")
 				err = os.Setenv("JWT_ALG", "ES256")
+				if err != nil {
+					t.Errorf("got error '%v' when setting JWT_ALG for test no: '%v'", err, tc.TestNo)
+				}
+			}
+
+			if tc.TestNo == 31 || tc.TestNo == 32 {
+				// test with wrong keys for EdDSA Ed25519
+				fmt.Println("test with wrong keys for EdDSA Ed25519")
+				err = os.Setenv("JWT_ALG", "EdDSA")
 				if err != nil {
 					t.Errorf("got error '%v' when setting JWT_ALG for test no: '%v'", err, tc.TestNo)
 				}
@@ -920,6 +969,32 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 				}
 			}
 
+			// test with keys for EdDSA Ed25519
+			if tc.TestNo == 29 || tc.TestNo == 30 {
+				if err != nil {
+					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				}
+				// reset value
+				err = os.Setenv("JWT_ALG", "HS256")
+				if err != nil {
+					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				}
+				err = os.Setenv("PRIV_KEY_FILE_PATH", "")
+				if err != nil {
+					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				}
+				err = os.Setenv("PUB_KEY_FILE_PATH", "")
+				if err != nil {
+					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				}
+				// remove the downloaded file at the end of the test
+				fmt.Println("deleting...", tc.SetValue)
+				err = os.RemoveAll(tc.SetValue)
+				if err != nil {
+					t.Error(err)
+				}
+			}
+
 			// test with keys for RS256
 			if tc.TestNo == 13 || tc.TestNo == 15 {
 				if err != nil {
@@ -946,7 +1021,7 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 				}
 			}
 
-			// fail test - without keys of ES256 or RS256
+			// fail test - without keys of ES256, EdDSA or RS256
 			if tc.TestNo == 16 || tc.TestNo == 17 {
 				if err == nil {
 					t.Errorf("expected error, got nil when setting '%v' for test no: '%v'", tc.Key, tc.TestNo)
@@ -955,6 +1030,32 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 
 			// fail test with wrong keys for ES256
 			if tc.TestNo == 18 || tc.TestNo == 20 {
+				if err == nil {
+					t.Errorf("expected error, got nil when setting '%v' for test no: '%v'", tc.Key, tc.TestNo)
+				}
+				// reset value
+				err = os.Setenv("JWT_ALG", "HS256")
+				if err != nil {
+					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				}
+				err = os.Setenv("PRIV_KEY_FILE_PATH", "")
+				if err != nil {
+					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				}
+				err = os.Setenv("PUB_KEY_FILE_PATH", "")
+				if err != nil {
+					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				}
+				// remove the downloaded file at the end of the test
+				fmt.Println("deleting...", tc.SetValue)
+				err = os.RemoveAll(tc.SetValue)
+				if err != nil {
+					t.Error(err)
+				}
+			}
+
+			// fail test with wrong keys for EdDSA Ed25519
+			if tc.TestNo == 31 || tc.TestNo == 32 {
 				if err == nil {
 					t.Errorf("expected error, got nil when setting '%v' for test no: '%v'", tc.Key, tc.TestNo)
 				}
