@@ -4,7 +4,7 @@ go 1.24.1
 
 require (
 	github.com/flosch/pongo2/v6 v6.0.0
-	github.com/getsentry/sentry-go v0.35.3
+	github.com/getsentry/sentry-go v0.36.2
 	github.com/getsentry/sentry-go/logrus v0.35.3
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-sql-driver/mysql v1.9.3
