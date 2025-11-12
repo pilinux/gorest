@@ -63,7 +63,7 @@ require (
 	github.com/pilinux/cryptoengine v0.1.11 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
-	github.com/quic-go/quic-go v0.54.0 // indirect
+	github.com/quic-go/quic-go v0.54.1 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/sec51/convert v1.0.2 // indirect
 	github.com/tilinna/clock v1.1.0 // indirect
