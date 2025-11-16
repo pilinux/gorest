@@ -14,7 +14,7 @@ require (
 	github.com/mediocregopher/radix/v4 v4.1.4
 	github.com/mrz1836/postmark v1.8.2
 	github.com/pilinux/argon2 v0.21.0
-	github.com/pilinux/crypt v0.0.16
+	github.com/pilinux/crypt v0.0.17
 	github.com/pilinux/libgo v0.0.5
 	github.com/pilinux/structs v1.1.1
 	github.com/pilinux/twofactor v1.1.11
