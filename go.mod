@@ -17,7 +17,7 @@ require (
 	github.com/pilinux/crypt v0.0.16
 	github.com/pilinux/libgo v0.0.5
 	github.com/pilinux/structs v1.1.1
-	github.com/pilinux/twofactor v1.1.10
+	github.com/pilinux/twofactor v1.1.11
 	github.com/qiniu/qmgo v1.1.10
 	github.com/rs/cors v1.11.1
 	github.com/rs/cors/wrapper/gin v0.0.0-20240830163046-1084d89a1692
