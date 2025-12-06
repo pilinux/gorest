@@ -97,8 +97,8 @@ github.com/mrz1836/postmark v1.8.2 h1:tlBx8Dyqxpc0HrgrPhHDdSc66cxrkCRBnlPZlqpwAu
 github.com/mrz1836/postmark v1.8.2/go.mod h1:0/7m4WMaKl72nWb55H7AIPtuCuvkdEIAjV1jAGCBFIQ=
 github.com/pelletier/go-toml/v2 v2.2.4 h1:mye9XuhQ6gvn5h28+VilKrrPoQVanw5PMw/TB0t5Ec4=
 github.com/pelletier/go-toml/v2 v2.2.4/go.mod h1:2gIqNv+qfxSVS7cM2xJQKtLSTLUE9V8t9Stt+h56mCY=
-github.com/pilinux/argon2 v0.22.0 h1:GNknIx1kgkFfQe7X3/Xx+llFUvptbYiMOC1AlbSep90=
-github.com/pilinux/argon2 v0.22.0/go.mod h1:iu6Peg0178sEEOI53xwcRla+IqTTVrcISr2+dDV+49s=
+github.com/pilinux/argon2 v0.23.0 h1:9sB7rMcHMU1BWiRrGU35JlFdqMViO53BU4XmQqOpO7k=
+github.com/pilinux/argon2 v0.23.0/go.mod h1:/jAjCwKRzrv09DQT+mqQ0WiPN+g6MDHiI69jcUG+tuA=
 github.com/pilinux/crypt v0.0.17 h1:08e/FvcZferCJus1TtOl1szwy4xPEonip6gUdF2JNKc=
 github.com/pilinux/crypt v0.0.17/go.mod h1:zjy/UplVkHh0l8cSpkxcId4WTXJW1yTnQ15XZNQXom0=
 github.com/pilinux/cryptoengine v0.1.11 h1:y2tSwZZ02UAUxlSp46vnvGq0QOnMM5SN04CM5LQTJwA=
@@ -180,8 +180,8 @@ golang.org/x/crypto v0.19.0/go.mod h1:Iy9bg/ha4yyC70EfRS8jz+B6ybOBKMaSxLj6P6oBDf
 golang.org/x/crypto v0.22.0/go.mod h1:vr6Su+7cTlO45qkww3VDJlzDn0ctJvRgYbC2NvXHt+M=
 golang.org/x/crypto v0.23.0/go.mod h1:CKFgDieR+mRhux2Lsu27y0fO304Db0wZe70UKqHu0v8=
 golang.org/x/crypto v0.26.0/go.mod h1:GY7jblb9wI+FOo5y8/S2oY4zWP07AkOJ4+jxCqdqn54=
-golang.org/x/crypto v0.44.0 h1:A97SsFvM3AIwEEmTBiaxPPTYpDC47w720rdiiUvgoAU=
-golang.org/x/crypto v0.44.0/go.mod h1:013i+Nw79BMiQiMsOPcVCB5ZIJbYkerPrGnOa00tvmc=
+golang.org/x/crypto v0.45.0 h1:jMBrvKuj23MTlT0bQEOBcAE0mjg8mK9RXFhRH6nyF3Q=
+golang.org/x/crypto v0.45.0/go.mod h1:XTGrrkGJve7CYK7J8PEww4aY7gM3qMCElcJQ8n8JdX4=
 golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4/go.mod h1:jJ57K6gSWd91VN4djpZkiMVwK6gcyfeH4XE8wZrZaV4=
 golang.org/x/mod v0.8.0/go.mod h1:iBbtSCu2XBx23ZKBPSOrRkjjQPZFPuis4dIYUhu/chs=
 golang.org/x/mod v0.12.0/go.mod h1:iBbtSCu2XBx23ZKBPSOrRkjjQPZFPuis4dIYUhu/chs=
