@@ -99,8 +99,8 @@ github.com/pelletier/go-toml/v2 v2.2.4 h1:mye9XuhQ6gvn5h28+VilKrrPoQVanw5PMw/TB0
 github.com/pelletier/go-toml/v2 v2.2.4/go.mod h1:2gIqNv+qfxSVS7cM2xJQKtLSTLUE9V8t9Stt+h56mCY=
 github.com/pilinux/argon2 v0.23.0 h1:9sB7rMcHMU1BWiRrGU35JlFdqMViO53BU4XmQqOpO7k=
 github.com/pilinux/argon2 v0.23.0/go.mod h1:/jAjCwKRzrv09DQT+mqQ0WiPN+g6MDHiI69jcUG+tuA=
-github.com/pilinux/crypt v0.0.17 h1:08e/FvcZferCJus1TtOl1szwy4xPEonip6gUdF2JNKc=
-github.com/pilinux/crypt v0.0.17/go.mod h1:zjy/UplVkHh0l8cSpkxcId4WTXJW1yTnQ15XZNQXom0=
+github.com/pilinux/crypt v0.0.18 h1:CHCqH/75XQvS0ERqyYzBelkRWkH9PD1PnE7iTt6a1Vg=
+github.com/pilinux/crypt v0.0.18/go.mod h1:E+h+kJKdKJZhMG8yhgVxSOU/zfm6FL5AhRBhfKbex3E=
 github.com/pilinux/cryptoengine v0.1.13 h1:qA1ZFyh2LRlKEC+dnCsrKC0uygOX9h5mx9aV/pgB00A=
 github.com/pilinux/cryptoengine v0.1.13/go.mod h1:kmat6J2lxQtqacgRINz2Xv47rWRe4L5AAKX4qGBrblU=
 github.com/pilinux/libgo v0.0.5 h1:vvCIeZbPhhtGHcosWYNQ0wIuM06DDtbUPl8PnXqAiGM=
