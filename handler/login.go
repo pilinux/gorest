@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/base64"
 	"net/http"
 	"strings"
 
@@ -97,18 +98,34 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 
 			// 2FA ON
 			if twoFA.Status == configSecurity.TwoFA.Status.On {
-				// hash user's pass
-				hashPass, err := service.GetHash([]byte(payload.Password))
-				if err != nil {
-					log.WithError(err).Error("error code: 1013.4")
-					httpResponse.Message = "internal server error"
-					httpStatusCode = http.StatusInternalServerError
-					return
+				var key []byte
+
+				// check if KeySalt is available
+				if twoFA.KeySalt != "" {
+					salt, err := base64.StdEncoding.DecodeString(twoFA.KeySalt)
+					if err != nil {
+						log.WithError(err).Error("error code: 1013.4.1")
+						httpResponse.Message = "internal server error"
+						httpStatusCode = http.StatusInternalServerError
+						return
+					}
+					key = lib.GetArgon2Key([]byte(payload.Password), salt, 32)
+				} else {
+					// fallback to old 2FA mechanism
+					// hash user's pass
+					hashPass, err := service.GetHash([]byte(payload.Password))
+					if err != nil {
+						log.WithError(err).Error("error code: 1013.4.2")
+						httpResponse.Message = "internal server error"
+						httpStatusCode = http.StatusInternalServerError
+						return
+					}
+					key = hashPass
 				}
 
-				// save the hashed pass in memory for OTP validation step
+				// save the hashed pass (key) in memory for OTP validation step
 				data2FA := model.Secret2FA{}
-				data2FA.PassSHA = hashPass
+				data2FA.PassHash = key
 				model.InMemorySecret2FA[claims.AuthID] = data2FA
 			}
 		}

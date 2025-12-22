@@ -100,6 +100,13 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 		return
 	}
 
+	authPayload.SecretCode = strings.TrimSpace(authPayload.SecretCode)
+	if authPayload.SecretCode == "" {
+		httpResponse.Message = "password reset code is required"
+		httpStatusCode = http.StatusBadRequest
+		return
+	}
+
 	// for redis
 	data := struct {
 		key   string
@@ -302,14 +309,17 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 				}
 
 				// step 8: encrypt (AES-256) secret using hash of user's new pass
-				passSHA, err := service.GetHash([]byte(authPayload.PassNew))
+				// generate random salt
+				salt, err := service.RandomByte(16)
 				if err != nil {
 					log.WithError(err).Error("error code: 1024.3")
 					httpResponse.Message = "internal server error"
 					httpStatusCode = http.StatusInternalServerError
 					return
 				}
-				keyMainCipherByte, err := lib.Encrypt(keyBackupPlaintextByte, passSHA)
+				// derive key
+				key := lib.GetArgon2Key([]byte(authPayload.PassNew), salt, 32)
+				keyMainCipherByte, err := lib.Encrypt(keyBackupPlaintextByte, key)
 				if err != nil {
 					log.WithError(err).Error("error code: 1024.4")
 					httpResponse.Message = "internal server error"
@@ -340,6 +350,7 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 				// step 10: encode in base64
 				twoFA.KeyMain = base64.StdEncoding.EncodeToString(keyMainCipherByte)
 				twoFA.KeyBackup = base64.StdEncoding.EncodeToString(keyBackupCipherByte)
+				twoFA.KeySalt = base64.StdEncoding.EncodeToString(salt)
 				twoFA.UUIDEnc = base64.StdEncoding.EncodeToString(uuidEncByte)
 
 				// update DB
@@ -488,23 +499,43 @@ func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayl
 
 	// process 2-FA
 	if process2FA {
-		// step 1: hash current password
-		hashPassCurrent, err := service.GetHash([]byte(authPayload.Password))
-		if err != nil {
-			log.WithError(err).Error("error code: 1027.1")
-			httpResponse.Message = "internal server error"
-			httpStatusCode = http.StatusInternalServerError
-			return
+		// step 1: derive key from current password
+		var keyCurrent []byte
+
+		// check if KeySalt is available
+		if twoFA.KeySalt != "" {
+			salt, err := base64.StdEncoding.DecodeString(twoFA.KeySalt)
+			if err != nil {
+				log.WithError(err).Error("error code: 1027.1.1")
+				httpResponse.Message = "internal server error"
+				httpStatusCode = http.StatusInternalServerError
+				return
+			}
+			keyCurrent = lib.GetArgon2Key([]byte(authPayload.Password), salt, 32)
+		} else {
+			// fallback to old 2FA mechanism
+			// hash user's pass
+			hashPass, err := service.GetHash([]byte(authPayload.Password))
+			if err != nil {
+				log.WithError(err).Error("error code: 1027.1.2")
+				httpResponse.Message = "internal server error"
+				httpStatusCode = http.StatusInternalServerError
+				return
+			}
+			keyCurrent = hashPass
 		}
 
-		// step 2: hash new password
-		hashPassNew, err := service.GetHash([]byte(authPayload.PassNew))
+		// step 2: derive key from new password
+		// generate random salt
+		salt, err := service.RandomByte(16)
 		if err != nil {
 			log.WithError(err).Error("error code: 1027.2")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
 		}
+		// derive key
+		keyNew := lib.GetArgon2Key([]byte(authPayload.PassNew), salt, 32)
 
 		// step 3: decode base64 encoded main key
 		keyMainCipherByte, err := base64.StdEncoding.DecodeString(twoFA.KeyMain)
@@ -516,7 +547,7 @@ func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayl
 		}
 
 		// step 4: decrypt (AES-256) main key with hash of current password
-		keyMainPlaintextByte, err := lib.Decrypt(keyMainCipherByte, hashPassCurrent)
+		keyMainPlaintextByte, err := lib.Decrypt(keyMainCipherByte, keyCurrent)
 		if err != nil {
 			log.WithError(err).Error("error code: 1028.1")
 			httpResponse.Message = "internal server error"
@@ -525,7 +556,7 @@ func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayl
 		}
 
 		// step 5: encrypt secret (or main key) with hash of new password
-		keyMainCipherByte, err = lib.Encrypt(keyMainPlaintextByte, hashPassNew)
+		keyMainCipherByte, err = lib.Encrypt(keyMainPlaintextByte, keyNew)
 		if err != nil {
 			log.WithError(err).Error("error code: 1028.2")
 			httpResponse.Message = "internal server error"
@@ -535,6 +566,7 @@ func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayl
 
 		// step 6: encode in base64
 		twoFA.KeyMain = base64.StdEncoding.EncodeToString(keyMainCipherByte)
+		twoFA.KeySalt = base64.StdEncoding.EncodeToString(salt)
 
 		// update DB
 		twoFA.UpdatedAt = timeNow

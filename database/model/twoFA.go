@@ -14,6 +14,7 @@ type TwoFA struct {
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 	KeyMain   string         `json:"-"`
 	KeyBackup string         `json:"-"`
+	KeySalt   string         `json:"-"`
 	UUIDSHA   string         `json:"-"`
 	UUIDEnc   string         `json:"-"`
 	Status    string         `json:"-"`
@@ -31,9 +32,10 @@ type TwoFABackup struct {
 
 // Secret2FA - save encoded secrets in RAM temporarily
 type Secret2FA struct {
-	PassSHA []byte `json:"-"`
-	Secret  []byte `json:"-"`
-	Image   string `json:"-"`
+	PassHash []byte `json:"-"`
+	KeySalt  []byte `json:"-"`
+	Secret   []byte `json:"-"`
+	Image    string `json:"-"`
 }
 
 // InMemorySecret2FA - keep secrets temporarily

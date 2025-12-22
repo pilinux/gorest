@@ -167,14 +167,17 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 		return
 	}
 
-	// step 5: hash user's pass
-	hashPass, err := service.GetHash([]byte(authPayload.Password))
+	// step 5: derive key from user's pass
+	// generate random salt
+	salt, err := service.RandomByte(16)
 	if err != nil {
 		log.WithError(err).Error("error code: 1051.51")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
+	// derive key
+	key := lib.GetArgon2Key([]byte(authPayload.Password), salt, 32)
 
 	// step 6: check if client secret is available in memory
 	data2FA, ok := model.InMemorySecret2FA[claims.AuthID]
@@ -189,7 +192,8 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	}
 
 	// step 7: save the secrets in memory for validation
-	data2FA.PassSHA = hashPass
+	data2FA.PassHash = key
+	data2FA.KeySalt = salt
 	data2FA.Secret = otpByte
 	data2FA.Image = img
 	model.InMemorySecret2FA[claims.AuthID] = data2FA
@@ -307,7 +311,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	}
 
 	// step 5: encrypt (AES-256) secret using hash of user's pass
-	keyMainCipherByte, err := lib.Encrypt(otpByte, data2FA.PassSHA)
+	keyMainCipherByte, err := lib.Encrypt(otpByte, data2FA.PassHash)
 	if err != nil {
 		log.WithError(err).Error("error code: 1052.51")
 		httpResponse.Message = "internal server error"
@@ -359,6 +363,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	// step 9: encode in base64
 	twoFA.KeyMain = base64.StdEncoding.EncodeToString(keyMainCipherByte)
 	twoFA.KeyBackup = base64.StdEncoding.EncodeToString(keyBackupCipherByte)
+	twoFA.KeySalt = base64.StdEncoding.EncodeToString(data2FA.KeySalt)
 	twoFA.UUIDEnc = base64.StdEncoding.EncodeToString(uuidEncByte)
 
 	// step 10: save in DB
@@ -530,7 +535,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 		}
 
 		// decrypt (AES-256) secret using hash of user's pass
-		keyMainPlaintextByte, err := lib.Decrypt(keyMainCipherByte, data2FA.PassSHA)
+		keyMainPlaintextByte, err := lib.Decrypt(keyMainCipherByte, data2FA.PassHash)
 		if err != nil {
 			log.WithError(err).Error("error code: 1053.33")
 			httpResponse.Message = "internal server error"
@@ -557,7 +562,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 			// save in DB to protect from accidental data loss
 			//
 			// encrypt (AES-256) secret using hash of user's pass
-			keyMainCipherByte, err := lib.Encrypt(otpByte, data2FA.PassSHA)
+			keyMainCipherByte, err := lib.Encrypt(otpByte, data2FA.PassHash)
 			if err != nil {
 				log.WithError(err).Error("error code: 1053.41")
 			}
@@ -590,7 +595,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	// step 5: 2FA validated
 	//
 	// encrypt (AES-256) secret using hash of user's pass
-	keyMainCipherByte, err := lib.Encrypt(otpByte, data2FA.PassSHA)
+	keyMainCipherByte, err := lib.Encrypt(otpByte, data2FA.PassHash)
 	if err != nil {
 		log.WithError(err).Error("error code: 1053.51")
 		httpResponse.Message = "internal server error"
@@ -716,6 +721,7 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 			twoFA.UpdatedAt = time.Now()
 			twoFA.KeyMain = ""
 			twoFA.KeyBackup = ""
+			twoFA.KeySalt = ""
 			twoFA.UUIDSHA = ""
 			twoFA.UUIDEnc = ""
 			twoFA.Status = configSecurity.TwoFA.Status.Off
