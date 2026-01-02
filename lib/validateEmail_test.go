@@ -19,6 +19,7 @@ func TestValidateEmail(t *testing.T) {
 		{"invalid@[127.0.0.1]", false},
 		{"me@no-destination.pilinux.me", false},
 		{"@missinglocalpart.com", false},
+		{"security@google.com", true},
 	}
 
 	for _, tc := range testCases {
