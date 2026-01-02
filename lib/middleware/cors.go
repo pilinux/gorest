@@ -10,7 +10,7 @@ package middleware
 
 // github.com/pilinux/gorest
 // The MIT License (MIT)
-// Copyright (c) 2022-2025 pilinux
+// Copyright (c) 2022-2026 pilinux
 
 import (
 	"net/http"

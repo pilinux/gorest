@@ -285,7 +285,7 @@ Please see [this][62] document.
 
 ## License
 
-© Mahir Hasan 2019 - 2025
+© Mahir Hasan 2019 - 2026
 
 Released under the [MIT license][13]
 
