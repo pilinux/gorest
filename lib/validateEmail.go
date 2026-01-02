@@ -27,5 +27,11 @@ func ValidateEmail(e string) bool {
 		return false
 	}
 
+	// RFC 7505
+	// https://www.rfc-editor.org/rfc/rfc7505.html
+	if mx[0].Host == "." {
+		return false
+	}
+
 	return true
 }

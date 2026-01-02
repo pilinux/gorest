@@ -11,7 +11,7 @@ func TestValidateEmail(t *testing.T) {
 		email string
 		want  bool
 	}{
-		{"test@example.com", true},
+		{"test@example.com", false}, // RFC 7505 test case
 		{"in", false},
 		{"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@gmail.com", false},
 		{"invalid", false},
