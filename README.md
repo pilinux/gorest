@@ -27,12 +27,11 @@ under the [MIT license][13] and is free for any personal or commercial project.
 ## LLM interface
 
 This repository provides a complete, machine-readable interface for LLMs and MCP servers via
-`LLMs.txt`.
+`llms.txt`.
 
 Direct link:
 
-- [LLMs.txt](https://raw.githubusercontent.com/pilinux/gorest/refs/heads/main/LLMs.txt)
-
+- [llms.txt](https://raw.githubusercontent.com/pilinux/gorest/refs/heads/main/llms.txt)
 The file contains authoritative context about this repository, including purpose, capabilities, usage
 guidance, and constraints. MCP-compatible servers and autonomous agents should consume this file as
 the primary integration entry point.
