@@ -908,6 +908,124 @@ func SetWithMsTTL(key, value string, ms int) error {
 }
 ```
 
+#### Caching Strategy (multi-service invalidation + Redis fallback)
+
+gorest exposes a Redis client (`database.GetRedis()` / `gdb.GetRedis()`) but does not impose a caching pattern.
+For most applications, use cache-aside reads, explicit invalidation on writes, and design keys so invalidation remains cheap across multiple services.
+
+Recommended baseline:
+
+- Cache-aside: read from Redis, on miss load from DB, then `SET EX <ttl>`
+- Short TTL + jitter: keep TTLs bounded and add a small random jitter to reduce synchronized expirations
+- Treat Redis as optional: on Redis errors/timeouts, bypass cache and use the database (correctness over availability)
+
+##### Key design for invalidation across services: versioned namespaces
+
+When multiple endpoints/services derive data from the same underlying entities, deleting every derived key becomes hard.
+Instead, store a small "version" key per entity (or per tenant/org), and include the version in all derived cache keys.
+
+Example (user profile affects multiple endpoints):
+
+- Version key: `v:user:{authID}` (string integer)
+- Cached payload keys:
+  - `user:{authID}:v{ver}` -> user profile JSON
+  - `posts:list:user:{authID}:v{ver}` -> derived list JSON
+
+On any update to the user that changes derived views, just bump the version:
+
+- `INCR v:user:{authID}`
+
+All previously cached keys become unreachable (no mass delete needed) and will expire naturally via TTL.
+
+##### Cache-aside read helper (Redis errors treated as miss)
+
+```go
+package cache
+
+import (
+    "context"
+    "encoding/json"
+    "errors"
+    "time"
+
+    "github.com/mediocregopher/radix/v4"
+)
+
+type Getter[T any] func(ctx context.Context) (T, error)
+
+// GetOrLoadJSON implements cache-aside for JSON payloads.
+// If Redis is unavailable, it falls back to loader without failing the request.
+func GetOrLoadJSON[T any](ctx context.Context, client radix.Client, key string, ttl time.Duration, loader Getter[T]) (T, error) {
+    var zero T
+
+    // 1) Try Redis
+    var raw string
+    if err := client.Do(ctx, radix.FlatCmd(&raw, "GET", key)); err == nil && raw != "" {
+        var v T
+        if json.Unmarshal([]byte(raw), &v) == nil {
+            return v, nil
+        }
+        // corrupted value: treat as miss
+    }
+
+    // 2) Load from DB/service
+    v, err := loader(ctx)
+    if err != nil {
+        return zero, err
+    }
+
+    // 3) Best-effort populate cache
+    b, _ := json.Marshal(v)
+    _ = client.Do(ctx, radix.FlatCmd(new(string), "SET", key, string(b), "EX", int(ttl.Seconds())))
+
+    return v, nil
+}
+
+var ErrNotFound = errors.New("not found")
+```
+
+Notes:
+
+- Use request-scoped timeouts (`context.WithTimeout`) so Redis cannot stall handlers.
+- Consider negative caching for expensive misses (cache "not found" briefly), but keep TTL very short.
+
+##### Write/update flows (invalidate safely)
+
+For a write that changes an entity and its derived views:
+
+1. Write to the database (source of truth)
+2. Bump the version key (`INCR v:entity:{id}`) so all derived caches become stale
+3. Optionally warm specific hot keys asynchronously
+
+If you cannot use versioned keys, a safer delete pattern is "double delete":
+
+1. `DEL key`
+2. Update DB
+3. `DEL key` again (after a small delay) to reduce the chance a concurrent read repopulated stale data
+
+Versioned keys are usually simpler and avoid needing delayed deletes.
+
+##### Redis unavailability fallback
+
+When Redis is down/unreachable:
+
+- Bypass cache reads/writes and hit the DB directly
+- Optionally add a tiny in-process cache (per-instance) with a very short TTL to absorb bursts
+- Use a simple circuit breaker: after N consecutive Redis errors, disable Redis usage for a cool-down window
+
+Keep in mind that in-process caches do not invalidate across instances and are best used only for short-lived protection.
+
+#### Race conditions to consider
+
+- Cache stampede / thundering herd: many concurrent misses load from DB simultaneously (use short TTL + jitter; optionally request coalescing)
+- Stale repopulation after update: a reader loads old DB state and writes it to cache right after a writer updated DB (versioned keys prevent this)
+- Out-of-order invalidation across services: service A updates DB and publishes invalidation; service B processes invalidation late/early and serves stale derived caches
+- Lost invalidations during Redis outage: if invalidation depends on Redis and Redis is down, stale cache can persist until TTL
+- Partial failures: DB write succeeds but version bump/delete fails (treat cache operations as best-effort; rely on TTL)
+- ABA/version races: multiple rapid updates can cause clients to observe different versions; build keys using the version read at request time
+- Negative-cache poisoning: caching "not found" too long can hide newly created records
+- Hot key contention: frequent updates to a single version key can become a bottleneck (consider per-tenant sharding only when needed)
+
 ### MongoDB (QMGO)
 
 #### Initialization (QMGO)
