@@ -32,6 +32,7 @@ This repository provides a complete, machine-readable interface for LLMs and MCP
 Direct link:
 
 - [llms.txt](https://raw.githubusercontent.com/pilinux/gorest/refs/heads/main/llms.txt)
+
 The file contains authoritative context about this repository, including purpose, capabilities, usage
 guidance, and constraints. MCP-compatible servers and autonomous agents should consume this file as
 the primary integration entry point.
