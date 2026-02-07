@@ -1066,6 +1066,93 @@ Recommended baseline:
 - Short TTL + jitter: keep TTLs bounded and add a small random jitter to reduce synchronized expirations
 - Treat Redis as optional: on Redis errors/timeouts, bypass cache and use the database (correctness over availability)
 
+##### Where to implement caching logic in the layered architecture
+
+In gorest (and the recommended `example2/` layout), keep caching out of controllers/handlers.
+Controllers should bind/validate requests and render responses, while caching belongs where data-access or business composition happens:
+
+- Repository layer (recommended for query result caching): wrap your DB repository with a cache-aware decorator that implements the same interface
+- Service layer (recommended for cross-repo composition): cache the assembled view/result that spans multiple repositories
+
+Avoid implementing caching inside Gin middleware unless the cached value is itself cross-cutting (e.g., RBAC permission lookups) and not tied to a specific endpoint payload.
+
+Typical flow:
+
+`controller/handler -> internal/service -> internal/repo (DB) + internal/repo (cache wrapper) -> database`
+
+##### Example: repository decorator using Redis cache-aside
+
+This pattern keeps your business logic unchanged while adding caching transparently.
+
+```go
+package repo
+
+import (
+    "context"
+    "encoding/json"
+    "strconv"
+    "time"
+
+    "github.com/mediocregopher/radix/v4"
+)
+
+type User struct {
+    UserID uint64 `json:"userID"`
+    Name   string `json:"name"`
+}
+
+type UserRepository interface {
+    GetUserByID(ctx context.Context, id uint64) (*User, error)
+}
+
+type CachedUserRepo struct {
+    base UserRepository
+    rdb  radix.Client
+    ttl  time.Duration
+}
+
+func NewCachedUserRepo(base UserRepository, rdb radix.Client, ttl time.Duration) *CachedUserRepo {
+    return &CachedUserRepo{base: base, rdb: rdb, ttl: ttl}
+}
+
+func (r *CachedUserRepo) cacheKey(id uint64) string {
+    return "user:" + strconv.FormatUint(id, 10)
+}
+
+func (r *CachedUserRepo) GetUserByID(ctx context.Context, id uint64) (*User, error) {
+    key := r.cacheKey(id)
+
+    // Redis should not block the request
+    cctx, cancel := context.WithTimeout(ctx, 200*time.Millisecond)
+    defer cancel()
+
+    var raw string
+    if err := r.rdb.Do(cctx, radix.FlatCmd(&raw, "GET", key)); err == nil && raw != "" {
+        var u User
+        if json.Unmarshal([]byte(raw), &u) == nil {
+            return &u, nil
+        }
+        // decode failure: treat as miss
+    }
+
+    u, err := r.base.GetUserByID(ctx, id)
+    if err != nil {
+        return nil, err
+    }
+
+    // Best-effort cache fill
+    b, _ := json.Marshal(u)
+    _ = r.rdb.Do(cctx, radix.FlatCmd(new(string), "SET", key, string(b), "EX", int(r.ttl.Seconds())))
+
+    return u, nil
+}
+```
+
+On writes, invalidate (or version-bump) in the same layer that performs the write:
+
+- repository write method (if the repository owns the write)
+- service method (if the service orchestrates multiple writes)
+
 ##### Key design for invalidation across services: versioned namespaces
 
 When multiple endpoints/services derive data from the same underlying entities, deleting every derived key becomes hard.
