@@ -835,6 +835,153 @@ func (r *PostRepo) DeletePost(ctx context.Context, id uint64) error {
 }
 ```
 
+#### Paginated List Endpoint Example (users or posts)
+
+Pagination is app-specific, but the common gorest approach is:
+
+1. Define query params (`page`, `pageSize`) with safe defaults and a hard maximum
+2. Add repository methods that accept `limit` and `offset` (and optionally a `Count` query)
+3. Implement a handler that validates inputs, calls repo, and returns a response payload that includes pagination metadata
+4. Wire the route in your router (optionally behind `gmiddleware.JWT()` and other middleware)
+
+Example query params and response types:
+
+```go
+package api
+
+type PageQuery struct {
+    Page     int `form:"page"`
+    PageSize int `form:"pageSize"`
+}
+
+func (q *PageQuery) Normalize() (page, pageSize, offset int) {
+    page = q.Page
+    pageSize = q.PageSize
+    if page <= 0 {
+        page = 1
+    }
+    if pageSize <= 0 {
+        pageSize = 20
+    }
+    if pageSize > 100 {
+        pageSize = 100
+    }
+    offset = (page - 1) * pageSize
+    return
+}
+
+type PageResult[T any] struct {
+    Items    []T   `json:"items"`
+    Page     int   `json:"page"`
+    PageSize int   `json:"pageSize"`
+    Total    int64 `json:"total"`
+}
+```
+
+Repository methods (GORM) for posts:
+
+```go
+package repo
+
+import (
+    "context"
+
+    "gorm.io/gorm"
+    "your-app/database/model"
+)
+
+type PostRepository interface {
+    ListPosts(ctx context.Context, limit, offset int) ([]model.Post, error)
+    CountPosts(ctx context.Context) (int64, error)
+}
+
+type PostRepo struct {
+    db *gorm.DB
+}
+
+func (r *PostRepo) ListPosts(ctx context.Context, limit, offset int) ([]model.Post, error) {
+    var posts []model.Post
+    err := r.db.WithContext(ctx).
+        Order("post_id desc").
+        Limit(limit).
+        Offset(offset).
+        Find(&posts).Error
+    return posts, err
+}
+
+func (r *PostRepo) CountPosts(ctx context.Context) (int64, error) {
+    var total int64
+    err := r.db.WithContext(ctx).Model(&model.Post{}).Count(&total).Error
+    return total, err
+}
+```
+
+Handler/controller (Gin) example using gorest response wrapper:
+
+```go
+package handler
+
+import (
+    "net/http"
+
+    "github.com/gin-gonic/gin"
+
+    gmodel "github.com/pilinux/gorest/database/model"
+    grenderer "github.com/pilinux/gorest/lib/renderer"
+
+    "your-app/internal/api"
+    "your-app/internal/repo"
+)
+
+type PostHandler struct {
+    repo repo.PostRepository
+}
+
+func (h *PostHandler) ListPosts(c *gin.Context) {
+    var q api.PageQuery
+    _ = c.ShouldBindQuery(&q)
+    page, pageSize, offset := q.Normalize()
+
+    items, err := h.repo.ListPosts(c.Request.Context(), pageSize, offset)
+    if err != nil {
+        grenderer.Render(c, gmodel.HTTPResponse{Message: "internal server error"}, http.StatusInternalServerError)
+        return
+    }
+    total, err := h.repo.CountPosts(c.Request.Context())
+    if err != nil {
+        grenderer.Render(c, gmodel.HTTPResponse{Message: "internal server error"}, http.StatusInternalServerError)
+        return
+    }
+
+    payload := api.PageResult[any]{
+        Items:    make([]any, 0, len(items)),
+        Page:     page,
+        PageSize: pageSize,
+        Total:    total,
+    }
+    for i := range items {
+        payload.Items = append(payload.Items, items[i])
+    }
+
+    grenderer.Render(c, gmodel.HTTPResponse{Message: payload}, http.StatusOK)
+}
+```
+
+Route wiring:
+
+```go
+posts := v1.Group("/posts")
+posts.Use(gmiddleware.JWT())
+posts.Use(gservice.JWTBlacklistChecker())
+posts.GET("", postHandler.ListPosts)
+```
+
+Notes:
+
+- Use a stable sort order (e.g., `post_id desc`) so pages are deterministic.
+- For large tables or high write rates, consider cursor pagination instead of `offset` pagination.
+- If listing users based on gorest `Auth` rows, avoid exposing sensitive fields; `Auth` has custom `MarshalJSON` that only outputs `authID` and `email`.
+
 ### Redis (Caching, JWT Blacklist)
 
 #### Initialization (Radix v4)
