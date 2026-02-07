@@ -1273,6 +1273,213 @@ func MyHandler(c *gin.Context) {
 | `custom1` | `string` | Custom claim 1 |
 | `custom2` | `string` | Custom claim 2 |
 
+### Custom Middleware: Role-Based Access Control (RBAC)
+
+gorest intentionally does not ship an opinionated RBAC system because permission models vary widely by application.
+Instead, gorest provides stable identity primitives in the request context after JWT validation:
+
+- First-party gorest JWT: `authID` (`c.GetUint64("authID")`) and custom claims like `role` / `scope`
+- Third-party JWT providers (e.g., Clerk): `sub` (`c.GetString("sub")`) as the subject (external user ID)
+
+Using `authID` or `sub`, an application can build its own RBAC/ACL model (roles, permissions, org membership, resource ownership) and enforce it via custom Gin middleware.
+
+#### Minimal pattern (role or scope from token)
+
+If your roles/permissions are embedded into the token at login (e.g., `claims.Role`, `claims.Scope`), you can enforce them without a database round-trip.
+
+```go
+package middleware
+
+import (
+    "net/http"
+    "strings"
+
+    "github.com/gin-gonic/gin"
+)
+
+// RequireRoles enforces that the caller has at least one required role.
+// It expects gorest JWT middleware to have already populated the context keys.
+func RequireRoles(roles ...string) gin.HandlerFunc {
+    allowed := make(map[string]struct{}, len(roles))
+    for _, r := range roles {
+        r = strings.TrimSpace(r)
+        if r != "" {
+            allowed[r] = struct{}{}
+        }
+    }
+
+    return func(c *gin.Context) {
+        role := c.GetString("role")
+        if _, ok := allowed[role]; !ok {
+            c.AbortWithStatusJSON(http.StatusForbidden, "forbidden")
+            return
+        }
+        c.Next()
+    }
+}
+
+// RequireScopes enforces OAuth-style scopes stored in the `scope` claim.
+// Convention: store scopes as a space-separated string (e.g., "post:read post:write").
+func RequireScopes(required ...string) gin.HandlerFunc {
+    req := make(map[string]struct{}, len(required))
+    for _, s := range required {
+        s = strings.TrimSpace(s)
+        if s != "" {
+            req[s] = struct{}{}
+        }
+    }
+
+    return func(c *gin.Context) {
+        scope := c.GetString("scope")
+        have := map[string]struct{}{}
+        for _, s := range strings.Fields(scope) {
+            have[s] = struct{}{}
+        }
+        for s := range req {
+            if _, ok := have[s]; !ok {
+                c.AbortWithStatusJSON(http.StatusForbidden, "forbidden")
+                return
+            }
+        }
+        c.Next()
+    }
+}
+```
+
+Router usage (different permission requirements per endpoint):
+
+```go
+v1 := r.Group("/api/v1")
+
+protected := v1.Group("")
+protected.Use(gmiddleware.JWT())
+protected.Use(gservice.JWTBlacklistChecker())
+
+// Admin-only area
+admin := protected.Group("/admin")
+admin.Use(mymiddleware.RequireRoles("admin"))
+admin.GET("/stats", myhandler.AdminStats)
+
+// Fine-grained permissions
+posts := protected.Group("/posts")
+posts.GET("", mymiddleware.RequireScopes("post:read"), myhandler.ListPosts)
+posts.POST("", mymiddleware.RequireScopes("post:write"), myhandler.CreatePost)
+```
+
+#### App-specific RBAC (authID/sub -> DB/cache lookup)
+
+If permissions can change while a token is still valid (role updates, org membership, revocations), prefer a lookup keyed by `authID` or `sub`.
+Typical approach:
+
+1. JWT middleware authenticates the request and sets `authID` and/or `sub`
+2. RBAC middleware loads permissions from a repository (RDBMS) or cache (Redis)
+3. RBAC middleware decides and aborts with `403` on denial
+
+Pseudo-signature:
+
+```go
+// EnforcePermission loads permissions for the identity and checks a permission key.
+// Identity key: `authID` (first-party) or `sub` (third-party).
+func EnforcePermission(repo PermissionRepo, permission string) gin.HandlerFunc
+```
+
+#### Resource-scoped authorization example (owner OR admin)
+
+Many real-world rules are scoped to a resource (post/project/org). A common pattern is:
+
+- allow if caller is the resource owner (by `authID`)
+- OR allow if caller has an elevated role (e.g., `admin`)
+
+This example assumes:
+
+- you use gorest JWT middleware (so `authID`/`role` are available in context)
+- your app has a repository method that can resolve a post's owner `authID`
+
+```go
+package middleware
+
+import (
+    "context"
+    "net/http"
+    "strconv"
+    "strings"
+
+    "github.com/gin-gonic/gin"
+)
+
+// PostAccessRepo abstracts ownership lookup.
+// Implement it using your RDBMS repo, and optionally add caching (e.g., Redis) for hot paths.
+type PostAccessRepo interface {
+    // GetPostOwnerAuthID returns the owner's authID for postID.
+    // Return an error if the post does not exist or lookup fails.
+    GetPostOwnerAuthID(ctx context.Context, postID uint64) (uint64, error)
+}
+
+// RequirePostOwnerOrRoles authorizes access to a single post resource.
+// It expects the route to provide an ID param (e.g., ":postID").
+func RequirePostOwnerOrRoles(repo PostAccessRepo, idParam string, roles ...string) gin.HandlerFunc {
+    allowedRoles := make(map[string]struct{}, len(roles))
+    for _, r := range roles {
+        r = strings.TrimSpace(r)
+        if r != "" {
+            allowedRoles[r] = struct{}{}
+        }
+    }
+
+    return func(c *gin.Context) {
+        authID := c.GetUint64("authID")
+        if authID == 0 {
+            c.AbortWithStatusJSON(http.StatusUnauthorized, "unauthorized")
+            return
+        }
+
+        if _, ok := allowedRoles[c.GetString("role")]; ok {
+            c.Next()
+            return
+        }
+
+        rawID := strings.TrimSpace(c.Param(idParam))
+        id, err := strconv.ParseUint(rawID, 10, 64)
+        if err != nil || id == 0 {
+            c.AbortWithStatusJSON(http.StatusBadRequest, "invalid id")
+            return
+        }
+
+        ownerAuthID, err := repo.GetPostOwnerAuthID(c.Request.Context(), id)
+        if err != nil {
+            // Your app may prefer 404 for not found vs 500 for lookup failures.
+            c.AbortWithStatusJSON(http.StatusInternalServerError, "internal server error")
+            return
+        }
+        if ownerAuthID != authID {
+            c.AbortWithStatusJSON(http.StatusForbidden, "forbidden")
+            return
+        }
+
+        c.Next()
+    }
+}
+```
+
+Router usage:
+
+```go
+posts := protected.Group("/posts")
+posts.PUT(":postID", mymiddleware.RequirePostOwnerOrRoles(postRepo, "postID", "admin"), myhandler.UpdatePost)
+posts.DELETE(":postID", mymiddleware.RequirePostOwnerOrRoles(postRepo, "postID", "admin"), myhandler.DeletePost)
+```
+
+If you authenticate via an external provider where the stable identifier is `sub` (string), map `sub` to your internal `authID` (or store permissions keyed by `sub`) and reuse the same pattern.
+
+#### Common challenges with complex authorization hierarchies
+
+- Role inheritance and overrides: deciding how parent roles, explicit denies, and conflicts resolve (order matters)
+- Multi-tenancy: permissions often depend on org/project membership and the target resource, not only global roles
+- Resource-scoped authorization: "can edit post 123" requires ownership checks and/or policy evaluation
+- Performance: DB lookups on every request need caching and careful invalidation when permissions change
+- Token staleness: embedding roles/scopes in JWT is fast but can be incorrect until token refresh (revocation is hard)
+- Permission sprawl: growing role matrices and duplicated rules across routes make audits and changes error-prone
+
 ### CORS Middleware
 
 ```go
