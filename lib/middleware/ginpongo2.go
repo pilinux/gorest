@@ -5,7 +5,7 @@ package middleware
 // Copyright (c) 2014 Nick Gerakines
 // github.com/pilinux/gorest
 // The MIT License (MIT)
-// Copyright (c) 2022 pilinux
+// Copyright (c) 2022 - 2026 pilinux
 
 import (
 	"net/http"
@@ -22,15 +22,6 @@ import (
 // Example: baseDirectory = "templates/"
 func Pongo2(baseDirectory string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Automatic recovery from panic
-		defer func() {
-			if r := recover(); r != nil {
-				log.Error("panic msg: middleware -> pongo2 panicked")
-				c.AbortWithStatus(http.StatusInternalServerError)
-				return
-			}
-		}()
-
 		c.Next()
 
 		name := StringFromContext(c, "template")
