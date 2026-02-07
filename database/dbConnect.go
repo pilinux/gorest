@@ -35,9 +35,6 @@ import (
 	opts "go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// RecordNotFound is the error message for record not found.
-const RecordNotFound string = "record not found"
-
 // dbClient holds the gorm DB connection instance.
 var dbClient *gorm.DB
 

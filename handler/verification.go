@@ -10,6 +10,7 @@ import (
 	"github.com/mediocregopher/radix/v4"
 	"github.com/pilinux/argon2"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 
 	"github.com/pilinux/gorest/config"
 	"github.com/pilinux/gorest/database"
@@ -84,7 +85,7 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 	isEmail := lib.ValidateEmail(data.value)
 	if isEmail {
 		if err := db.Where("email = ?", data.value).First(&auth).Error; err != nil {
-			if err.Error() != database.RecordNotFound {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
 				log.WithError(err).Error("error code: 1061.5")
 				httpResponse.Message = "internal server error"
@@ -101,7 +102,7 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 	}
 	if !isEmail {
 		if err := db.Where("email_hash = ?", data.value).First(&auth).Error; err != nil {
-			if err.Error() != database.RecordNotFound {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
 				log.WithError(err).Error("error code: 1061.7")
 				httpResponse.Message = "internal server error"
@@ -155,7 +156,7 @@ func CreateVerificationEmail(payload model.AuthPayload) (httpResponse model.HTTP
 
 	v, err := service.GetUserByEmail(payload.Email, true)
 	if err != nil {
-		if err.Error() != database.RecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
 			log.WithError(err).Error("error code: 1062.1")
 			httpResponse.Message = "internal server error"
@@ -279,7 +280,7 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 	if isEmail {
 		// check 'temp_emails' with the email in plaintext
 		if err := db.Where("email = ?", data.value).First(&tempEmail).Error; err != nil {
-			if err.Error() != database.RecordNotFound {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
 				log.WithError(err).Error("error code: 1063.5")
 				httpResponse.Message = "internal server error"
@@ -298,7 +299,7 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 	if !isEmail {
 		// check 'temp_emails' with hash of the email
 		if err := db.Where("email_hash = ?", data.value).First(&tempEmail).Error; err != nil {
-			if err.Error() != database.RecordNotFound {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
 				log.WithError(err).Error("error code: 1063.6")
 				httpResponse.Message = "internal server error"
@@ -321,7 +322,7 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 		err := db.Where("email = ?", tempEmail.Email).First(&auth).Error
 
 		if err != nil {
-			if err.Error() != database.RecordNotFound {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
 				log.WithError(err).Error("error code: 1063.71")
 				httpResponse.Message = "internal server error"
@@ -339,7 +340,7 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 		err := db.Where("email_hash = ?", tempEmail.EmailHash).First(&auth).Error
 
 		if err != nil {
-			if err.Error() != database.RecordNotFound {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
 				log.WithError(err).Error("error code: 1063.72")
 				httpResponse.Message = "internal server error"
@@ -356,7 +357,7 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 
 	// fetch auth data
 	if err := db.Where("auth_id = ?", tempEmail.IDAuth).First(&auth).Error; err != nil {
-		if err.Error() != database.RecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
 			log.WithError(err).Error("error code: 1063.73")
 			httpResponse.Message = "internal server error"
@@ -423,7 +424,7 @@ func GetUnverifiedEmail(claims middleware.MyCustomClaims) (httpResponse model.HT
 	// check 'temp_emails'
 	err := db.Where("id_auth = ?", claims.AuthID).First(&tempEmail).Error
 	if err != nil {
-		if err.Error() != database.RecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
 			log.WithError(err).Error("error code: 1064.1")
 			httpResponse.Message = "internal server error"
@@ -487,7 +488,7 @@ func ResendVerificationCodeToModifyActiveEmail(claims middleware.MyCustomClaims)
 	// check 'temp_emails'
 	err := db.Where("id_auth = ?", claims.AuthID).First(&tempEmail).Error
 	if err != nil {
-		if err.Error() != database.RecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
 			log.WithError(err).Error("error code: 1065.1")
 			httpResponse.Message = "internal server error"

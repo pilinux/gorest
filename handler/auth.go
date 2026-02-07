@@ -9,6 +9,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 
 	"github.com/pilinux/argon2"
 	"github.com/pilinux/crypt"
@@ -48,7 +49,7 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 	// email must be unique
 	err := db.Where("email = ?", auth.Email).First(&auth).Error
 	if err != nil {
-		if err.Error() != database.RecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
 			log.WithError(err).Error("error code: 1002.1")
 			httpResponse.Message = "internal server error"
@@ -68,7 +69,7 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 	if !config.IsCipher() {
 		err := db.Where("email_hash IS NOT NULL AND email_hash != ?", "").First(&auth).Error
 		if err != nil {
-			if err.Error() != database.RecordNotFound {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
 				log.WithError(err).Error("error code: 1002.2")
 				httpResponse.Message = "internal server error"
@@ -106,7 +107,7 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 		// email must be unique
 		err = db.Where("email_hash = ?", authFinal.EmailHash).First(&auth).Error
 		if err != nil {
-			if err.Error() != database.RecordNotFound {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
 				log.WithError(err).Error("error code: 1002.4")
 				httpResponse.Message = "internal server error"
@@ -205,7 +206,7 @@ func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpRes
 	// step 2: verify that this email is not registered to anyone
 	_, err := service.GetUserByEmail(req.Email, false)
 	if err != nil {
-		if err.Error() != database.RecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
 			log.WithError(err).Error("error code: 1003.21")
 			httpResponse.Message = "internal server error"
@@ -267,7 +268,7 @@ func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpRes
 	tEmailDB := model.TempEmail{}
 	err = db.Where("id_auth = ?", claims.AuthID).First(&tEmailDB).Error
 	if err != nil {
-		if err.Error() != database.RecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
 			log.WithError(err).Error("error code: 1003.61")
 			httpResponse.Message = "internal server error"

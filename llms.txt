@@ -580,9 +580,6 @@ gconfig.IsPasswordRecoverCodeUUIDv4()   // EMAIL_PASS_RECOVER_USE_UUIDv4 (bool c
 ```go
 import gdb "github.com/pilinux/gorest/database"
 
-// Constants
-const gdb.RecordNotFound = "record not found"
-
 // Variables
 var gdb.RedisConnTTL int // context deadline in seconds for Redis connections (set by InitRedis)
 

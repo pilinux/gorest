@@ -13,6 +13,7 @@ import (
 	"github.com/mediocregopher/radix/v4"
 	"github.com/pilinux/argon2"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 
 	"github.com/pilinux/gorest/config"
 	"github.com/pilinux/gorest/database"
@@ -38,7 +39,7 @@ func PasswordForgot(authPayload model.AuthPayload) (httpResponse model.HTTPRespo
 	// find user
 	v, err := service.GetUserByEmail(authPayload.Email, true)
 	if err != nil {
-		if err.Error() != database.RecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
 			log.WithError(err).Error("error code: 1030.1")
 			httpResponse.Message = "internal server error"
@@ -173,7 +174,7 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 	isEmail := lib.ValidateEmail(data.value)
 	if isEmail {
 		if err := db.Where("email = ?", data.value).First(&auth).Error; err != nil {
-			if err.Error() != database.RecordNotFound {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
 				log.WithError(err).Error("error code: 1021.4")
 				httpResponse.Message = "internal server error"
@@ -189,7 +190,7 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 	}
 	if !isEmail {
 		if err := db.Where("email_hash = ?", data.value).First(&auth).Error; err != nil {
-			if err.Error() != database.RecordNotFound {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
 				log.WithError(err).Error("error code: 1021.5")
 				httpResponse.Message = "internal server error"
@@ -214,7 +215,7 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 		// is user account protected by 2FA
 		err := db.Where("id_auth = ?", auth.AuthID).First(&twoFA).Error
 		if err != nil {
-			if err.Error() != database.RecordNotFound {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
 				log.WithError(err).Error("error code: 1021.6")
 				httpResponse.Message = "internal server error"
@@ -473,7 +474,7 @@ func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayl
 	if configSecurity.Must2FA == config.Activated {
 		err := db.Where("id_auth = ?", claims.AuthID).First(&twoFA).Error
 		if err != nil {
-			if err.Error() != database.RecordNotFound {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
 				log.WithError(err).Error("error code: 1026.3")
 				httpResponse.Message = "internal server error"

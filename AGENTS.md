@@ -368,7 +368,7 @@ const PrefixJtiBlacklist string = "gorest-blacklist-jti:"
 ### Key Constants (database)
 
 ```go
-const RecordNotFound string = "record not found"
+// Use errors.Is(err, gorm.ErrRecordNotFound) instead of string matching.
 var RedisConnTTL int // context deadline in seconds for Redis connections
 ```
 

@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"net/http"
 	"os"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/pilinux/argon2"
 	"github.com/pilinux/crypt"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 
 	"github.com/pilinux/gorest/config"
 	"github.com/pilinux/gorest/database"
@@ -53,11 +55,11 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	// is 2FA disabled/never configured before
 	db := database.GetDB()
 	twoFA := model.TwoFA{}
-	// err == RecordNotFound => never configured before
+	// err == gorm.ErrRecordNotFound => never configured before
 	// err == nil => 2FA disabled
 	err := db.Where("id_auth = ?", claims.AuthID).First(&twoFA).Error
 	if err != nil {
-		if err.Error() != database.RecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
 			log.WithError(err).Error("error code: 1051.1")
 			httpResponse.Message = "internal server error"
@@ -78,7 +80,7 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	v := model.Auth{}
 	err = db.Where("auth_id = ?", claims.AuthID).First(&v).Error
 	if err != nil {
-		if err.Error() != database.RecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
 			log.WithError(err).Error("error code: 1051.2")
 			httpResponse.Message = "internal server error"
@@ -287,7 +289,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	available := false
 	err = db.Where("id_auth = ?", claims.AuthID).First(&twoFA).Error
 	if err != nil {
-		if err.Error() != database.RecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
 			log.WithError(err).Error("error code: 1052.41")
 			httpResponse.Message = "internal server error"
@@ -515,7 +517,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	twoFA := model.TwoFA{}
 	// no record in DB!
 	if err := db.Where("id_auth = ?", claims.AuthID).First(&twoFA).Error; err != nil {
-		if err.Error() != database.RecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
 			log.WithError(err).Error("error code: 1053.31")
 			httpResponse.Message = "internal server error"
@@ -678,7 +680,7 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 	db := database.GetDB()
 	v := model.Auth{}
 	if err := db.Where("auth_id = ?", claims.AuthID).First(&v).Error; err != nil {
-		if err.Error() != database.RecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
 			log.WithError(err).Error("error code: 1054.1")
 			httpResponse.Message = "internal server error"
@@ -710,7 +712,7 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 
 	err = db.Where("id_auth = ?", v.AuthID).First(&twoFA).Error
 	if err != nil {
-		if err.Error() != database.RecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
 			log.WithError(err).Error("error code: 1054.3")
 			httpResponse.Message = "internal server error"
@@ -829,7 +831,7 @@ func CreateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPay
 	db := database.GetDB()
 	v := model.Auth{}
 	if err := db.Where("auth_id = ?", claims.AuthID).First(&v).Error; err != nil {
-		if err.Error() != database.RecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
 			log.WithError(err).Error("error code: 1055.1")
 			httpResponse.Message = "internal server error"

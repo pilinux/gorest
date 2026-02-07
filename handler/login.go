@@ -2,11 +2,13 @@ package handler
 
 import (
 	"encoding/base64"
+	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/pilinux/argon2"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 
 	"github.com/pilinux/gorest/config"
 	"github.com/pilinux/gorest/database"
@@ -31,7 +33,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 
 	v, err := service.GetUserByEmail(payload.Email, false)
 	if err != nil {
-		if err.Error() != database.RecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
 			log.WithError(err).Error("error code: 1013.1")
 			httpResponse.Message = "internal server error"
@@ -88,7 +90,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 		// have the user configured 2FA
 		err := db.Where("id_auth = ?", v.AuthID).First(&twoFA).Error
 		if err != nil {
-			if err.Error() != database.RecordNotFound {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
 				log.WithError(err).Error("error code: 1013.3")
 				httpResponse.Message = "internal server error"
