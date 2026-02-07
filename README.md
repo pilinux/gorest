@@ -24,6 +24,21 @@ under the [MIT license][13] and is free for any personal or commercial project.
 - thoroughly scanned for security vulnerabilities and supply chain attacks
 - connect to a database and start building your RESTful API within minutes
 
+## LLM interface
+
+This repository provides a complete, machine-readable interface for LLMs and MCP servers via
+`LLMs.txt`.
+
+Direct link:
+
+- [LLMs.txt](https://raw.githubusercontent.com/pilinux/gorest/refs/heads/main/LLMs.txt)
+
+The file contains authoritative context about this repository, including purpose, capabilities, usage
+guidance, and constraints. MCP-compatible servers and autonomous agents should consume this file as
+the primary integration entry point.
+
+Additional agent-specific behavior is documented in [AGENTS.md][20].
+
 ## Requirement
 
 - `Go 1.24.1+` (for versions `1.10.x`)
@@ -305,6 +320,7 @@ Released under the [MIT license][13]
 [17]: https://sentry.io/
 [18]: https://deepwiki.com/badge.svg
 [19]: https://deepwiki.com/pilinux/gorest
+[20]: AGENTS.md
 [21]: https://gorm.io
 [22]: https://github.com/bytedance/sonic/issues/738
 [41]: https://github.com/pilinux/HowtoCode/blob/master/Golang/1.Intro/Installation.md

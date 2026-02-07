@@ -1,0 +1,2074 @@
+# gorest knowledge base
+
+gorest is a production-ready Go RESTful API starter kit built with Gin, GORM, JWT, and Redis.
+This document serves as the complete reference for using gorest in any application.
+
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Architecture Overview](#architecture-overview)
+- [Configuration](#configuration)
+- [Database Layer](#database-layer)
+- [Authentication System](#authentication-system)
+- [Middleware](#middleware)
+- [Utility Library](#utility-library)
+- [Service Layer](#service-layer)
+- [Complete Application Example](#complete-application-example)
+- [API Reference](#api-reference)
+
+## Quick Start
+
+### Installation
+
+```bash
+go get github.com/pilinux/gorest
+```
+
+### Minimal Application
+
+```go
+package main
+
+import (
+    "net/http"
+    "time"
+
+    gconfig "github.com/pilinux/gorest/config"
+    gdb "github.com/pilinux/gorest/database"
+    gserver "github.com/pilinux/gorest/lib/server"
+)
+
+func main() {
+    // Load configuration from .env
+    if err := gconfig.Config(); err != nil {
+        panic(err)
+    }
+    configure := gconfig.GetConfig()
+
+    // Initialize databases
+    if gconfig.IsRDBMS() {
+        if err := gdb.InitDB().Error; err != nil {
+            panic(err)
+        }
+    }
+    if gconfig.IsRedis() {
+        if _, err := gdb.InitRedis(); err != nil {
+            panic(err)
+        }
+    }
+
+    // Setup router and start server
+    // setupRouter is user-supplied (see router example below)
+    r := setupRouter(configure)
+    srv := &http.Server{
+        Addr:    configure.Server.ServerHost + ":" + configure.Server.ServerPort,
+        Handler: r,
+    }
+
+    done := make(chan struct{})
+    go gserver.GracefulShutdown(srv, 30*time.Second, done, gdb.CloseAllDB)
+
+    srv.ListenAndServe()
+    <-done
+}
+```
+
+## Architecture Overview
+
+### Project Structure
+
+```text
+github.com/pilinux/gorest/
+├── config/          # Configuration loading from environment
+├── controller/      # HTTP request handlers (thin layer)
+├── database/        # Database connections and models
+│   ├── model/       # GORM models (Auth, TwoFA, etc.)
+│   └── migrate/     # Auto-migration utilities
+├── handler/         # Business logic layer
+├── service/         # Utility services (email, crypto, validation)
+├── lib/             # Core utilities
+│   ├── middleware/  # Gin middleware (JWT, CORS, etc.)
+│   ├── renderer/    # HTTP response renderer
+│   └── server/      # Graceful shutdown
+└── example2/        # Recommended application structure
+    ├── cmd/app/     # Application entry point
+    └── internal/
+        ├── database/
+        │   ├── migrate/  # Auto-migration utilities
+        │   └── model/    # GORM models
+        ├── handler/ # API handlers
+        ├── repo/    # Repository pattern (data access)
+        ├── router/  # Route definitions
+        └── service/ # Business logic
+```
+
+### Layer Responsibilities
+
+| Layer | Package | Responsibility |
+| ----- | ------- | -------------- |
+| Controller | `/controller` | Request binding, response rendering |
+| Handler | `/handler` | Business logic, validation |
+| Service | `/service` | Shared utilities, security |
+| Repository | `example2/internal/repo` | Data access abstraction |
+| Database | `/database` | Connection management |
+
+## Configuration
+
+### Loading Configuration
+
+```go
+import gconfig "github.com/pilinux/gorest/config"
+
+// Load .env file (calls godotenv.Load())
+err := gconfig.Env()
+
+// Load all configuration from environment variables
+err := gconfig.Config()
+
+// Retrieve the loaded configuration
+configure := gconfig.GetConfig()
+```
+
+### Configuration Struct
+
+```go
+type Configuration struct {
+    Version    string
+    Database   DatabaseConfig
+    EmailConf  EmailConfig
+    Logger     LoggerConfig
+    Server     ServerConfig
+    Security   SecurityConfig
+    ViewConfig ViewConfig
+}
+
+type ServerConfig struct {
+    ServerHost string
+    ServerPort string
+    ServerEnv  string
+}
+
+type LoggerConfig struct {
+    Activate           string
+    SentryDsn          string
+    PerformanceTracing string
+    TracesSampleRate   string
+}
+
+type ViewConfig struct {
+    Activate  string
+    Directory string
+}
+
+type DatabaseConfig struct {
+    RDBMS   RDBMS
+    REDIS   REDIS
+    MongoDB MongoDB
+}
+
+type RDBMS struct {
+    Activate string
+    Env      struct {
+        Driver   string
+        Host     string
+        Port     string
+        TimeZone string
+    }
+    Access struct {
+        DbName string
+        User   string
+        Pass   string
+    }
+    Ssl struct {
+        Sslmode    string
+        MinTLS     string
+        RootCA     string
+        ServerCert string
+        ClientCert string
+        ClientKey  string
+    }
+    Conn struct {
+        MaxIdleConns    int
+        MaxOpenConns    int
+        ConnMaxLifetime time.Duration
+    }
+    Log struct {
+        LogLevel int
+    }
+}
+
+type REDIS struct {
+    Activate string
+    Env      struct {
+        Host string
+        Port string
+    }
+    Conn struct {
+        PoolSize int
+        ConnTTL  int
+    }
+}
+
+type MongoDB struct {
+    Activate string
+    Env      struct {
+        AppName  string
+        URI      string
+        PoolSize uint64
+        PoolMon  string
+        ConnTTL  int
+    }
+}
+
+type EmailConfig struct {
+    Activate     string
+    Provider     string
+    APIToken     string
+    AddrFrom     string
+    TrackOpens   bool
+    TrackLinks   string
+    DeliveryType string
+
+    EmailVerificationTemplateID int64
+    PasswordRecoverTemplateID   int64
+    EmailUpdateVerifyTemplateID int64
+    EmailVerificationCodeUUIDv4 bool
+    EmailVerificationCodeLength uint64
+    PasswordRecoverCodeUUIDv4   bool
+    PasswordRecoverCodeLength   uint64
+    EmailVerificationTag        string
+    PasswordRecoverTag          string
+    HTMLModel                   string
+    EmailVerifyValidityPeriod   uint64 // in seconds
+    PassRecoverValidityPeriod   uint64 // in seconds
+}
+
+type SecurityConfig struct {
+    UserPassMinLength int
+
+    MustBasicAuth string
+    BasicAuth     struct {
+        Username string
+        Password string
+    }
+
+    MustJWT string
+    JWT     middleware.JWTParameters
+
+    InvalidateJWT string
+
+    AuthCookieActivate bool
+    AuthCookiePath     string
+    AuthCookieDomain   string
+    AuthCookieSecure   bool
+    AuthCookieHTTPOnly bool
+    AuthCookieSameSite http.SameSite
+    ServeJwtAsResBody  bool
+
+    MustHash string
+    HashPass lib.HashPassConfig
+    HashSec  string
+
+    MustCipher bool
+    CipherKey  []byte
+    Blake2bSec []byte
+
+    VerifyEmail bool
+    RecoverPass bool
+
+    MustFW   string
+    Firewall struct {
+        ListType string
+        IP       string
+    }
+
+    MustCORS string
+    CORS     []middleware.CORSPolicy
+
+    CheckOrigin     string
+    RateLimit       string
+    TrustedPlatform string
+
+    Must2FA string
+    TwoFA   struct {
+        Issuer string
+        Crypto crypto.Hash
+        Digits int
+
+        Status Status2FA
+        PathQR string
+
+        DoubleHash bool
+    }
+}
+
+type Status2FA struct {
+    Verified string
+    On       string
+    Off      string
+    Invalid  string
+}
+```
+
+### Constants
+
+```go
+const gconfig.Activated string = "yes"                       // keyword to activate a service
+const gconfig.PrefixJtiBlacklist string = "gorest-blacklist-jti:" // Redis key prefix for JWT blacklist
+```
+
+### Feature Check Functions
+
+```go
+gconfig.IsProd()                        // APP_ENV == "production"
+gconfig.IsRDBMS()                       // ACTIVATE_RDBMS == "yes"
+gconfig.IsRedis()                       // ACTIVATE_REDIS == "yes"
+gconfig.IsMongo()                       // ACTIVATE_MONGO == "yes"
+gconfig.IsJWT()                         // ACTIVATE_JWT == "yes"
+gconfig.Is2FA()                         // ACTIVATE_2FA == "yes"
+gconfig.Is2FADoubleHash()               // TWO_FA_DOUBLE_HASH (bool check)
+gconfig.IsCORS()                        // ACTIVATE_CORS == "yes"
+gconfig.IsWAF()                         // ACTIVATE_FIREWALL == "yes"
+gconfig.IsRateLimit()                   // RATE_LIMIT != ""
+gconfig.IsSentry()                      // ACTIVATE_SENTRY == "yes"
+gconfig.IsEmailService()                // ACTIVATE_EMAIL_SERVICE == "yes"
+gconfig.IsEmailVerificationService()    // VERIFY_EMAIL (bool check)
+gconfig.IsPassRecoveryService()         // RECOVER_PASSWORD (bool check)
+gconfig.IsCipher()                      // ACTIVATE_CIPHER (bool check)
+gconfig.IsAuthCookie()                  // AUTH_COOKIE_ACTIVATE (bool check)
+gconfig.InvalidateJWT()                 // INVALIDATE_JWT == "yes"
+gconfig.IsBasicAuth()                   // ACTIVATE_BASIC_AUTH == "yes"
+gconfig.IsHashPass()                    // ACTIVATE_HASHING == "yes"
+gconfig.IsOriginCheck()                 // ACTIVATE_ORIGIN_VALIDATION == "yes"
+gconfig.IsTemplatingEngine()            // ACTIVATE_VIEW == "yes"
+gconfig.IsEmailVerificationCodeUUIDv4() // EMAIL_VERIFY_USE_UUIDv4 (bool check)
+gconfig.IsPasswordRecoverCodeUUIDv4()   // EMAIL_PASS_RECOVER_USE_UUIDv4 (bool check)
+```
+
+### Environment Variables Reference
+
+#### Application
+
+| Variable | Description | Example |
+| -------- | ----------- | ------- |
+| `APP_HOST` | Server host | `localhost` |
+| `APP_PORT` | Server port | `8999` |
+| `APP_ENV` | Environment | `development`, `production` |
+| `TRUSTED_PLATFORM` | Real IP header | `X-Real-Ip`, `cf`, `google` |
+| `RELEASE_VERSION_OR_COMMIT_NUMBER` | App version for Sentry | `v1.0.0` |
+
+#### Basic Auth
+
+| Variable | Description | Example |
+| -------- | ----------- | ------- |
+| `ACTIVATE_BASIC_AUTH` | Enable basic auth | `yes` |
+| `USERNAME` | Basic auth username | `admin` |
+| `PASSWORD` | Basic auth password | Strong secret |
+
+#### Password Policy
+
+| Variable | Description | Example |
+| -------- | ----------- | ------- |
+| `MIN_PASS_LENGTH` | Minimum password length | `8` |
+
+#### JWT Authentication
+
+| Variable | Description | Example |
+| -------- | ----------- | ------- |
+| `ACTIVATE_JWT` | Enable JWT | `yes` |
+| `JWT_ALG` | Algorithm | `HS256`, `RS256`, `ES256`, `EdDSA` |
+| `ACCESS_KEY` | HMAC secret for access tokens | Strong random key |
+| `REFRESH_KEY` | HMAC secret for refresh tokens | Strong random key |
+| `ACCESS_KEY_TTL` | Access token TTL (minutes) | `5` |
+| `REFRESH_KEY_TTL` | Refresh token TTL (minutes) | `60` |
+| `PRIV_KEY_FILE_PATH` | Private key path (asymmetric) | `./private-key.pem` |
+| `PUB_KEY_FILE_PATH` | Public key path (asymmetric) | `./public-key.pem` |
+| `AUDIENCE` | JWT audience claim | `myapp` |
+| `ISSUER` | JWT issuer claim | `gorest` |
+| `SUBJECT` | JWT subject claim | `user-session` |
+| `NOT_BEFORE_ACC` | Access token not-before (seconds) | `0` |
+| `NOT_BEFORE_REF` | Refresh token not-before (seconds) | `0` |
+| `INVALIDATE_JWT` | Enable token blacklisting | `yes` |
+
+#### Auth Cookies
+
+| Variable | Description | Example |
+| -------- | ----------- | ------- |
+| `AUTH_COOKIE_ACTIVATE` | Enable cookies | `yes` |
+| `AUTH_COOKIE_PATH` | Cookie path | `/` |
+| `AUTH_COOKIE_DOMAIN` | Cookie domain | `example.com` |
+| `AUTH_COOKIE_SECURE` | Secure flag | `yes` |
+| `AUTH_COOKIE_HttpOnly` | HttpOnly flag | `yes` |
+| `AUTH_COOKIE_SameSite` | SameSite policy | `strict`, `lax`, `none` |
+| `SERVE_JWT_AS_RESPONSE_BODY` | Also return in body | `yes`, `no` |
+
+#### Password Hashing
+
+| Variable | Description | Recommended |
+| -------- | ----------- | ----------- |
+| `ACTIVATE_HASHING` | Enable hashing | `yes` |
+| `HASHPASSMEMORY` | Memory (multiplied by 1024 internally for KiB) | `64` |
+| `HASHPASSITERATIONS` | Iterations | `2` |
+| `HASHPASSPARALLELISM` | Threads | `2` |
+| `HASHPASSSALTLENGTH` | Salt length | `16` |
+| `HASHPASSKEYLENGTH` | Key length | `32` |
+| `HASH_SECRET` | Optional pepper | Strong secret |
+
+#### Encryption at Rest
+
+| Variable | Description | Example |
+| -------- | ----------- | ------- |
+| `ACTIVATE_CIPHER` | Enable ChaCha20-Poly1305 | `yes` |
+| `CIPHER_KEY` | Encryption key | Strong key (hashed to 256-bit) |
+| `BLAKE2B_SECRET` | BLAKE2b MAC secret | Optional secret |
+
+#### Two-Factor Authentication
+
+| Variable | Description | Example |
+| -------- | ----------- | ------- |
+| `ACTIVATE_2FA` | Enable 2FA | `yes` |
+| `TWO_FA_ISSUER` | TOTP issuer | `MyApp` |
+| `TWO_FA_CRYPTO` | Hash algorithm | `1` (SHA1), `256`, `512` |
+| `TWO_FA_DIGITS` | OTP digits | `6`, `7`, `8` |
+| `TWO_FA_VERIFIED` | Verified status | `verified` |
+| `TWO_FA_ON` | Enabled status | `on` |
+| `TWO_FA_OFF` | Disabled status | `off` |
+| `TWO_FA_QR_PATH` | QR code directory | `tmp` |
+| `TWO_FA_DOUBLE_HASH` | Extra blake2b hash | `yes` |
+| `TWO_FA_INVALID` | Invalid 2FA status | `invalid` |
+
+#### RDBMS Database
+
+| Variable | Description | Example |
+| -------- | ----------- | ------- |
+| `ACTIVATE_RDBMS` | Enable RDBMS | `yes` |
+| `DBDRIVER` | Driver | `mysql`, `postgres`, `sqlite3` |
+| `DBHOST` | Database host | `localhost` |
+| `DBPORT` | Database port | `3306`, `5432` |
+| `DBNAME` | Database name | `myapp` |
+| `DBUSER` | Username | `root` |
+| `DBPASS` | Password | Secret |
+| `DBTIMEZONE` | Timezone | `Europe/Berlin` |
+| `DBSSLMODE` | SSL mode | `disable`, `require`, `verify-full` |
+| `DBMAXIDLECONNS` | Max idle connections | `10` |
+| `DBMAXOPENCONNS` | Max open connections | `100` |
+| `DBCONNMAXLIFETIME` | Connection lifetime | `1h` |
+| `DBLOGLEVEL` | GORM log level | `1` (silent) to `4` (info) |
+
+#### RDBMS TLS
+
+| Variable | Description | Example |
+| -------- | ----------- | ------- |
+| `DBSSL_TLS_MIN` | Minimum TLS version | `1.2` |
+| `DBSSL_ROOT_CA` | Root CA file path | `./ca.pem` |
+| `DBSSL_SERVER_CERT` | Server cert path | `./server-cert.pem` |
+| `DBSSL_CLIENT_CERT` | Client cert path | `./client-cert.pem` |
+| `DBSSL_CLIENT_KEY` | Client key path | `./client-key.pem` |
+
+#### Redis
+
+| Variable | Description | Example |
+| -------- | ----------- | ------- |
+| `ACTIVATE_REDIS` | Enable Redis | `yes` |
+| `REDISHOST` | Redis host | `127.0.0.1` |
+| `REDISPORT` | Redis port | `6379` |
+| `POOLSIZE` | Connection pool size | `10` |
+| `CONNTTL` | Connection TTL (seconds) | `5` |
+
+#### MongoDB
+
+| Variable | Description | Example |
+| -------- | ----------- | ------- |
+| `ACTIVATE_MONGO` | Enable MongoDB | `yes` |
+| `MONGO_URI` | Connection URI | `mongodb://localhost:27017` |
+| `MONGO_APP` | Application name | `myapp` |
+| `MONGO_POOLSIZE` | Pool size | `50` |
+| `MONGO_CONNTTL` | Connection TTL | `10` |
+| `MONGO_MONITOR_POOL` | Enable pool monitor | `yes` |
+
+#### CORS
+
+| Variable | Description | Example |
+| -------- | ----------- | ------- |
+| `ACTIVATE_CORS` | Enable CORS | `yes` |
+| `CORS_ORIGIN` | Allowed origins | `*`, `https://example.com` |
+| `CORS_METHODS` | Allowed methods | `GET, POST, PUT, DELETE, OPTIONS` |
+| `CORS_HEADERS` | Allowed headers | `Content-Type, Authorization` |
+| `CORS_EXPOSE_HEADERS` | Exposed headers | `Content-Length` |
+| `CORS_CREDENTIALS` | Allow credentials | `true` |
+| `CORS_MAXAGE` | Preflight cache (seconds) | `3600` |
+| `CORS_TIMING_ALLOW_ORIGIN` | Timing-Allow-Origin | `*`, `https://example.com` |
+
+#### Origin Validation
+
+| Variable | Description | Example |
+| -------- | ----------- | ------- |
+| `ACTIVATE_ORIGIN_VALIDATION` | Enable origin check | `yes` |
+
+#### Security Headers
+
+| Variable | Description | Example |
+| -------- | ----------- | ------- |
+| `CORS_X_CONTENT_TYPE` | X-Content-Type-Options | `nosniff` |
+| `CORS_X_FRAME` | X-Frame-Options | `DENY` |
+| `CORS_REFERRER` | Referrer-Policy | `strict-origin-when-cross-origin` |
+| `CORS_CONTENT_SECURITY` | Content-Security-Policy | `default-src 'self'` |
+| `CORS_HSTS` | Strict-Transport-Security | `max-age=31536000` |
+
+#### Firewall
+
+| Variable | Description | Example |
+| -------- | ----------- | ------- |
+| `ACTIVATE_FIREWALL` | Enable firewall | `yes` |
+| `LISTTYPE` | Mode | `whitelist`, `blacklist` |
+| `IP` | IP list (comma-separated) | `*`, `192.168.0.0/16` |
+
+#### Rate Limiting
+
+| Variable | Description | Example |
+| -------- | ----------- | ------- |
+| `RATE_LIMIT` | Rate limit | `100-M` (100/min), `10-S` (10/sec) |
+
+#### Sentry Logger
+
+| Variable | Description | Example |
+| -------- | ----------- | ------- |
+| `ACTIVATE_SENTRY` | Enable Sentry | `yes` |
+| `SentryDSN` | Sentry DSN | `https://key@sentry.io/project` |
+| `SENTRY_ENABLE_TRACING` | Enable tracing | `yes` |
+| `SENTRY_TRACES_SAMPLE_RATE` | Sample rate (0.0-1.0) | `0.5` |
+
+#### Template Engine
+
+| Variable | Description | Example |
+| -------- | ----------- | ------- |
+| `ACTIVATE_VIEW` | Enable template engine | `yes` |
+| `TEMPLATE_DIR` | Template directory | `templates/` |
+
+#### Email Service (Postmark)
+
+| Variable | Description | Example |
+| -------- | ----------- | ------- |
+| `ACTIVATE_EMAIL_SERVICE` | Enable email | `yes` |
+| `EMAIL_SERVICE_PROVIDER` | Provider | `postmark` |
+| `EMAIL_API_TOKEN` | API token | Server token |
+| `EMAIL_FROM` | Sender address | `noreply@example.com` |
+| `EMAIL_TRACK_OPENS` | Track opens | `yes`, `no` |
+| `EMAIL_TRACK_LINKS` | Track links | `none`, `html`, `text`, `html_and_text` |
+| `EMAIL_DELIVERY_TYPE` | Delivery type | `outbound` |
+| `VERIFY_EMAIL` | Enable verification | `yes` |
+| `RECOVER_PASSWORD` | Enable recovery | `yes` |
+| `EMAIL_VERIFY_TEMPLATE_ID` | Template ID | `12345` |
+| `EMAIL_PASS_RECOVER_TEMPLATE_ID` | Recovery template ID | `23456` |
+| `EMAIL_UPDATE_VERIFY_TEMPLATE_ID` | Update email template ID | `34567` |
+| `EMAIL_VERIFY_USE_UUIDv4` | Use UUID for verify code | `yes` |
+| `EMAIL_PASS_RECOVER_USE_UUIDv4` | Use UUID for recovery code | `yes` |
+| `EMAIL_VERIFY_CODE_LENGTH` | Verify code length | `8` |
+| `EMAIL_PASS_RECOVER_CODE_LENGTH` | Recovery code length | `8` |
+| `EMAIL_VERIFY_TAG` | Verify email tag | `emailVerification` |
+| `EMAIL_PASS_RECOVER_TAG` | Recover email tag | `passwordRecovery` |
+| `EMAIL_HTML_MODEL` | HTML template file | `email.html` |
+| `EMAIL_VERIFY_VALIDITY_PERIOD` | Code validity (seconds) | `86400` |
+| `EMAIL_PASS_RECOVER_VALIDITY_PERIOD` | Recovery validity (seconds) | `86400` |
+
+## Database Layer
+
+### RDBMS (MySQL, PostgreSQL, SQLite)
+
+#### Initialization
+
+```go
+import gdb "github.com/pilinux/gorest/database"
+
+// Constants
+const gdb.RecordNotFound = "record not found"
+
+// Variables
+var gdb.RedisConnTTL int // context deadline in seconds for Redis connections (set by InitRedis)
+
+// Initialize (reads config automatically)
+if err := gdb.InitDB().Error; err != nil {
+    panic(err)
+}
+
+// Initialize with TLS (MySQL only)
+gdb.InitTLSMySQL()
+
+// Get connection
+db := gdb.GetDB()
+
+// Close connections
+gdb.CloseSQL()      // close RDBMS
+gdb.CloseRedis()    // close Redis
+gdb.CloseMongo()    // close MongoDB
+gdb.CloseAllDB()    // close all database connections (returns error)
+```
+
+#### Models
+
+```go
+import gmodel "github.com/pilinux/gorest/database/model"
+
+// Auth model - users table
+type Auth struct {
+    AuthID      uint64         `gorm:"primaryKey" json:"authID,omitempty"`
+    CreatedAt   time.Time      `json:"createdAt,omitempty"`
+    UpdatedAt   time.Time      `json:"updatedAt,omitempty"`
+    DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+    Email       string         `gorm:"index" json:"email"`
+    EmailCipher string         `json:"-"`
+    EmailNonce  string         `json:"-"`
+    EmailHash   string         `gorm:"index" json:"-"`
+    Password    string         `json:"password"`
+    VerifyEmail int8           `json:"-"`
+}
+
+// Auth has custom JSON marshaling/unmarshaling:
+//
+// UnmarshalJSON: validates password length against config, trims
+// email whitespace, and hashes the password with Argon2id automatically.
+// Returns error "short password" if password is too short.
+//
+// MarshalJSON: only outputs authID and email fields (hides password
+// and all other fields from JSON output).
+
+// Email verification statuses
+const (
+    EmailNotVerified       int8 = -1
+    EmailVerifyNotRequired int8 = 0
+    EmailVerified          int8 = 1
+)
+
+// Email type constants
+const (
+    EmailTypeVerifyEmailNewAcc  int = 1 // verify email of newly registered user
+    EmailTypePassRecovery       int = 2 // password recovery code
+    EmailTypeVerifyUpdatedEmail int = 3 // verify request of updating user email
+)
+
+// Redis key prefixes
+const (
+    EmailVerificationKeyPrefix string = "gorest-email-verification-"
+    EmailUpdateKeyPrefix       string = "gorest-email-update-"
+    PasswordRecoveryKeyPrefix  string = "gorest-pass-recover-"
+)
+
+// TwoFA model
+type TwoFA struct {
+    ID        uint64         `gorm:"primaryKey" json:"-"`
+    CreatedAt time.Time      `json:"-"`
+    UpdatedAt time.Time      `json:"-"`
+    DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+    KeyMain   string         `json:"-"`
+    KeyBackup string         `json:"-"`
+    KeySalt   string         `json:"-"`
+    UUIDSHA   string         `json:"-"`
+    UUIDEnc   string         `json:"-"`
+    Status    string         `json:"-"`
+    IDAuth    uint64         `gorm:"index" json:"-"`
+}
+
+// TwoFABackup model
+type TwoFABackup struct {
+    ID        uint64    `gorm:"primaryKey" json:"-"`
+    CreatedAt time.Time `json:"-"`
+    Code      string    `gorm:"-" json:"code"`
+    CodeHash  string    `json:"-"`
+    IDAuth    uint64    `gorm:"index" json:"-"`
+}
+
+// Secret2FA holds encoded secrets temporarily in RAM
+type Secret2FA struct {
+    PassHash []byte `json:"-"`
+    KeySalt  []byte `json:"-"`
+    Secret   []byte `json:"-"`
+    Image    string `json:"-"`
+}
+
+// InMemorySecret2FA keeps secrets temporarily in memory to set up 2FA
+var InMemorySecret2FA = make(map[uint64]Secret2FA)
+
+// TempEmail model - holds data temporarily during email replacement
+type TempEmail struct {
+    ID          uint64    `gorm:"primaryKey" json:"-"`
+    CreatedAt   time.Time `json:"createdAt,omitempty"`
+    UpdatedAt   time.Time `json:"updatedAt,omitempty"`
+    Email       string    `gorm:"index" json:"emailNew"`
+    Password    string    `gorm:"-" json:"password,omitempty"`
+    EmailCipher string    `json:"-"`
+    EmailNonce  string    `json:"-"`
+    EmailHash   string    `gorm:"index" json:"-"`
+    IDAuth      uint64    `gorm:"index" json:"-"`
+}
+
+// KeyValue - general-purpose key-value pair
+type KeyValue struct {
+    Key   string `json:"key,omitempty"`
+    Value string `json:"value,omitempty"`
+}
+
+// HTTPResponse - standard API response
+type HTTPResponse struct {
+    Message any `json:"message,omitempty"`
+}
+```
+
+#### Custom Model Example
+
+```go
+package model
+
+import "time"
+
+type User struct {
+    UserID    uint64 `gorm:"primaryKey" json:"userID"`
+    CreatedAt int64  `json:"createdAt"`
+    UpdatedAt int64  `json:"updatedAt"`
+    FirstName string `json:"firstName"`
+    LastName  string `json:"lastName"`
+    IDAuth    uint64 `gorm:"index" json:"-"`
+}
+
+type Post struct {
+    PostID    uint64 `gorm:"primaryKey" json:"postID"`
+    CreatedAt int64  `json:"createdAt"`
+    UpdatedAt int64  `json:"updatedAt"`
+    Title     string `json:"title"`
+    Body      string `json:"body"`
+    IDAuth    uint64 `gorm:"index" json:"-"`
+    IDUser    uint64 `gorm:"index" json:"-"`
+}
+```
+
+#### Migration
+
+```go
+package migrate
+
+import (
+    gconfig "github.com/pilinux/gorest/config"
+    gdb "github.com/pilinux/gorest/database"
+    gmodel "github.com/pilinux/gorest/database/model"
+    "your-app/database/model"
+)
+
+type auth gmodel.Auth
+type twoFA gmodel.TwoFA
+type twoFABackup gmodel.TwoFABackup
+type tempEmail gmodel.TempEmail
+type user model.User
+type post model.Post
+
+func StartMigration(configure gconfig.Configuration) error {
+    db := gdb.GetDB()
+    driver := configure.Database.RDBMS.Env.Driver
+
+    if driver == "mysql" {
+        return db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(
+            &auth{}, &twoFA{}, &twoFABackup{}, &tempEmail{}, &user{}, &post{},
+        )
+    }
+    return db.AutoMigrate(&auth{}, &twoFA{}, &twoFABackup{}, &tempEmail{}, &user{}, &post{})
+}
+
+// DropAllTables drops all database tables. Use with caution.
+func DropAllTables() error {
+    db := gdb.GetDB()
+    return db.Migrator().DropTable(
+        &tempEmail{}, &twoFABackup{}, &twoFA{}, &auth{},
+    )
+}
+```
+
+#### Repository Pattern
+
+```go
+package repo
+
+import (
+    "context"
+    "gorm.io/gorm"
+    "your-app/database/model"
+)
+
+type PostRepository interface {
+    GetPosts(ctx context.Context) ([]model.Post, error)
+    GetPost(ctx context.Context, id uint64) (*model.Post, error)
+    CreatePost(ctx context.Context, post *model.Post) error
+    UpdatePost(ctx context.Context, post *model.Post) error
+    DeletePost(ctx context.Context, id uint64) error
+}
+
+type PostRepo struct {
+    db *gorm.DB
+}
+
+// Compile-time interface check
+var _ PostRepository = (*PostRepo)(nil)
+
+func NewPostRepo(db *gorm.DB) *PostRepo {
+    return &PostRepo{db: db}
+}
+
+func (r *PostRepo) GetPosts(ctx context.Context) ([]model.Post, error) {
+    var posts []model.Post
+    err := r.db.WithContext(ctx).Find(&posts).Error
+    return posts, err
+}
+
+func (r *PostRepo) GetPost(ctx context.Context, id uint64) (*model.Post, error) {
+    var post model.Post
+    err := r.db.WithContext(ctx).Where("post_id = ?", id).First(&post).Error
+    return &post, err
+}
+
+func (r *PostRepo) CreatePost(ctx context.Context, post *model.Post) error {
+    return r.db.WithContext(ctx).Create(post).Error
+}
+
+func (r *PostRepo) UpdatePost(ctx context.Context, post *model.Post) error {
+    return r.db.WithContext(ctx).Save(post).Error
+}
+
+func (r *PostRepo) DeletePost(ctx context.Context, id uint64) error {
+    return r.db.WithContext(ctx).Where("post_id = ?", id).Delete(&model.Post{}).Error
+}
+```
+
+### Redis (Caching, JWT Blacklist)
+
+#### Initialization (Radix v4)
+
+```go
+import gdb "github.com/pilinux/gorest/database"
+
+if _, err := gdb.InitRedis(); err != nil {
+    panic(err)
+}
+client := gdb.GetRedis()
+defer gdb.CloseRedis()
+```
+
+#### Usage
+
+```go
+import (
+    "context"
+    "time"
+    "github.com/mediocregopher/radix/v4"
+    gdb "github.com/pilinux/gorest/database"
+)
+
+func SetValue(key, value string) error {
+    client := gdb.GetRedis()
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    var result string
+    return client.Do(ctx, radix.FlatCmd(&result, "SET", key, value))
+}
+
+func GetValue(key string) (string, error) {
+    client := gdb.GetRedis()
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    var value string
+    err := client.Do(ctx, radix.FlatCmd(&value, "GET", key))
+    return value, err
+}
+
+func SetWithExpiry(key, value string, seconds int) error {
+    client := gdb.GetRedis()
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    var result string
+    return client.Do(ctx, radix.FlatCmd(&result, "SET", key, value, "EX", seconds))
+}
+
+// Set with absolute Unix expiry (seconds)
+func SetWithExpiryAt(key, value string, unixSeconds int64) error {
+    client := gdb.GetRedis()
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    var result string
+    return client.Do(ctx, radix.FlatCmd(&result, "SET", key, value, "EXAT", unixSeconds))
+}
+
+// Millisecond TTL (PX) and conditional set (NX/XX)
+func SetWithMsTTL(key, value string, ms int) error {
+    client := gdb.GetRedis()
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    var result string
+    return client.Do(ctx, radix.FlatCmd(&result, "SET", key, value, "PX", ms, "NX"))
+}
+```
+
+### MongoDB (QMGO)
+
+#### Initialization (QMGO)
+
+```go
+import gdb "github.com/pilinux/gorest/database"
+
+if _, err := gdb.InitMongo(); err != nil {
+    panic(err)
+}
+client := gdb.GetMongo()
+defer gdb.CloseMongo()
+```
+
+#### Index Management
+
+```go
+import (
+    gdb "github.com/pilinux/gorest/database"
+    "github.com/qiniu/qmgo/options"
+)
+
+// Create single index
+index := options.IndexModel{Key: []string{"email"}}
+gdb.MongoCreateIndex("mydb", "users", index)
+
+// Create multiple indexes
+indexes := []options.IndexModel{
+    {Key: []string{"email"}},
+    {Key: []string{"createdAt"}},
+}
+gdb.MongoCreateIndexes("mydb", "users", indexes)
+
+// Drop indexes
+gdb.MongoDropIndex("mydb", "users", []string{"email"})
+gdb.MongoDropAllIndexes("mydb", "users")
+```
+
+#### Repository Pattern (Example)
+
+```go
+package repo
+
+import (
+    "context"
+    "github.com/qiniu/qmgo"
+    "go.mongodb.org/mongo-driver/bson"
+    "go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+type Address struct {
+    ID          primitive.ObjectID `bson:"_id" json:"id"`
+    Street      string             `bson:"street" json:"street"`
+    City        string             `bson:"city" json:"city"`
+    CountryCode string             `bson:"countryCode" json:"countryCode"`
+}
+
+type AddressRepo struct {
+    db *qmgo.Client
+}
+
+func (r *AddressRepo) coll() *qmgo.Collection {
+    return r.db.Database("mydb").Collection("addresses")
+}
+
+func (r *AddressRepo) Create(ctx context.Context, addr *Address) error {
+    addr.ID = primitive.NewObjectID()
+    _, err := r.coll().InsertOne(ctx, addr)
+    return err
+}
+
+func (r *AddressRepo) FindByID(ctx context.Context, id primitive.ObjectID) (*Address, error) {
+    var addr Address
+    err := r.coll().Find(ctx, bson.M{"_id": id}).One(&addr)
+    return &addr, err
+}
+
+func (r *AddressRepo) FindAll(ctx context.Context) ([]Address, error) {
+    var addrs []Address
+    err := r.coll().Find(ctx, bson.M{}).All(&addrs)
+    return addrs, err
+}
+
+func (r *AddressRepo) Update(ctx context.Context, addr *Address) error {
+    return r.coll().UpdateOne(ctx, bson.M{"_id": addr.ID}, bson.M{"$set": addr})
+}
+
+func (r *AddressRepo) Delete(ctx context.Context, id primitive.ObjectID) error {
+    return r.coll().Remove(ctx, bson.M{"_id": id})
+}
+```
+
+## Authentication System
+
+### Controllers (HTTP Handlers)
+
+All controllers are in `github.com/pilinux/gorest/controller`.
+
+| Function | Route | Description |
+| -------- | ----- | ----------- |
+| `CreateUserAuth` | `POST /register` | User registration |
+| `Login` | `POST /login` | User login, issues JWT |
+| `Refresh` | `POST /refresh` | Refresh JWT tokens |
+| `Logout` | `POST /logout` | Invalidate tokens |
+| `PasswordForgot` | `POST /password/forgot` | Send recovery email |
+| `PasswordRecover` | `POST /password/reset` | Reset password with code |
+| `PasswordUpdate` | `POST /password/edit` | Change password (logged in) |
+| `Setup2FA` | `POST /2fa/setup` | Generate 2FA secret/QR |
+| `Activate2FA` | `POST /2fa/activate` | Enable 2FA with OTP |
+| `Validate2FA` | `POST /2fa/validate` | Verify OTP during login |
+| `Deactivate2FA` | `POST /2fa/deactivate` | Disable 2FA |
+| `CreateBackup2FA` | `POST /2fa/create-backup-codes` | Generate backup codes |
+| `ValidateBackup2FA` | `POST /2fa/validate-backup-code` | Use backup code |
+| `VerifyEmail` | `POST /verify` | Verify email with code |
+| `CreateVerificationEmail` | `POST /resend-verification-email` | Resend verification |
+| `VerifyUpdatedEmail` | `POST /verify-updated-email` | Verify email change |
+| `UpdateEmail` | `POST /email/update` | Submit new email to replace existing |
+| `GetUnverifiedEmail` | `GET /email/unverified` | Retrieve unverified email |
+| `ResendVerificationCodeToModifyActiveEmail` | `POST /email/resend-verification-email` | Resend code for email change |
+
+### Handler Functions (Business Logic)
+
+All handlers are in `github.com/pilinux/gorest/handler`. Controllers are thin
+wrappers that bind requests and call handlers. All handler functions return
+`(httpResponse model.HTTPResponse, httpStatusCode int)`.
+
+```go
+import ghandler "github.com/pilinux/gorest/handler"
+
+// Auth
+ghandler.CreateUserAuth(auth model.Auth) (model.HTTPResponse, int)
+ghandler.Login(payload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.Refresh(claims middleware.MyCustomClaims) (model.HTTPResponse, int)
+ghandler.Logout(jtiAccess, jtiRefresh string, expAccess, expRefresh int64) (model.HTTPResponse, int)
+
+// Email update
+ghandler.UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (model.HTTPResponse, int)
+
+// Email verification
+ghandler.VerifyEmail(payload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.CreateVerificationEmail(payload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.VerifyUpdatedEmail(payload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.GetUnverifiedEmail(claims middleware.MyCustomClaims) (model.HTTPResponse, int)
+ghandler.ResendVerificationCodeToModifyActiveEmail(claims middleware.MyCustomClaims) (model.HTTPResponse, int)
+
+// Password
+ghandler.PasswordForgot(authPayload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.PasswordRecover(authPayload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (model.HTTPResponse, int)
+
+// Two-Factor Authentication
+ghandler.Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.CreateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.ValidateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (model.HTTPResponse, int)
+```
+
+### Request/Response Models
+
+```go
+// Registration/Login request
+type AuthPayload struct {
+    Email    string `json:"email,omitempty"`
+    Password string `json:"password,omitempty"`
+
+    VerificationCode string `json:"verificationCode,omitempty"`
+
+    OTP string `json:"otp,omitempty"`
+
+    SecretCode  string `json:"secretCode,omitempty"`
+    RecoveryKey string `json:"recoveryKey,omitempty"`
+
+    PassNew    string `json:"passNew,omitempty"`
+    PassRepeat string `json:"passRepeat,omitempty"`
+}
+
+// JWT response
+type JWTPayload struct {
+    AccessJWT   string `json:"accessJWT,omitempty"`
+    RefreshJWT  string `json:"refreshJWT,omitempty"`
+    TwoAuth     string `json:"twoFA,omitempty"`
+    RecoveryKey string `json:"recoveryKey,omitempty"`
+}
+```
+
+### Route Setup Example
+
+```go
+import (
+    "github.com/gin-gonic/gin"
+    gcontroller "github.com/pilinux/gorest/controller"
+    gmiddleware "github.com/pilinux/gorest/lib/middleware"
+    gservice "github.com/pilinux/gorest/service"
+)
+
+func SetupRoutes(r *gin.Engine) {
+    v1 := r.Group("/api/v1")
+
+    // Public routes
+    v1.POST("register", gcontroller.CreateUserAuth)
+    v1.POST("login", gcontroller.Login)
+    v1.POST("verify", gcontroller.VerifyEmail)
+    v1.POST("resend-verification-email", gcontroller.CreateVerificationEmail)
+    v1.POST("verify-updated-email", gcontroller.VerifyUpdatedEmail)
+    v1.POST("password/forgot", gcontroller.PasswordForgot)
+    v1.POST("password/reset", gcontroller.PasswordRecover)
+
+    // Protected routes (access token required)
+    protected := v1.Group("")
+    protected.Use(gmiddleware.JWT())
+    protected.Use(gservice.JWTBlacklistChecker())
+    {
+        // Logout (needs both access and refresh tokens)
+        logout := protected.Group("logout")
+        logout.Use(gmiddleware.RefreshJWT())
+        logout.POST("", gcontroller.Logout)
+
+        // 2FA routes
+        twoFA := protected.Group("2fa")
+        twoFA.POST("setup", gcontroller.Setup2FA)
+        twoFA.POST("activate", gcontroller.Activate2FA)
+        twoFA.POST("validate", gcontroller.Validate2FA)
+
+        // Routes requiring verified 2FA
+        verified := protected.Group("")
+        verified.Use(gmiddleware.TwoFA("on", "off", "verified"))
+        verified.POST("password/edit", gcontroller.PasswordUpdate)
+        verified.POST("2fa/deactivate", gcontroller.Deactivate2FA)
+
+        // Email update routes
+        verified.POST("email/update", gcontroller.UpdateEmail)
+        verified.GET("email/unverified", gcontroller.GetUnverifiedEmail)
+        verified.POST("email/resend-verification-email", gcontroller.ResendVerificationCodeToModifyActiveEmail)
+    }
+
+    // Refresh token route
+    refresh := v1.Group("refresh")
+    refresh.Use(gmiddleware.RefreshJWT())
+    refresh.Use(gservice.JWTBlacklistChecker())
+    refresh.POST("", gcontroller.Refresh)
+}
+```
+
+## Middleware
+
+### JWT Middleware
+
+```go
+import gmiddleware "github.com/pilinux/gorest/lib/middleware"
+
+// Validate access token
+router.Use(gmiddleware.JWT())
+
+// With custom cookie name
+router.Use(gmiddleware.JWT("__session"))
+
+// Validate refresh token
+router.Use(gmiddleware.RefreshJWT())
+```
+
+#### JWT Configuration
+
+```go
+// Global JWT parameters (auto-configured from env)
+gmiddleware.JWTParams = gmiddleware.JWTParameters{
+    Algorithm:     "HS256",
+    AccessKey:     []byte("secret"),
+    AccessKeyTTL:  5,  // minutes
+    RefreshKey:    []byte("refresh-secret"),
+    RefreshKeyTTL: 60, // minutes
+    PrivKeyECDSA:  *ecdsa.PrivateKey,  // ECDSA private key (loaded from PEM)
+    PubKeyECDSA:   *ecdsa.PublicKey,   // ECDSA public key (loaded from PEM)
+    PrivKeyEdDSA:  ed25519.PrivateKey, // EdDSA private key (loaded from PEM)
+    PubKeyEdDSA:   ed25519.PublicKey,  // EdDSA public key (loaded from PEM)
+    PrivKeyRSA:    *rsa.PrivateKey,    // RSA private key (loaded from PEM)
+    PubKeyRSA:     *rsa.PublicKey,     // RSA public key (loaded from PEM)
+    Audience:      "myapp",
+    Issuer:        "gorest",
+    AccNbf:        0,       // access token not-before offset (seconds)
+    RefNbf:        0,       // refresh token not-before offset (seconds)
+    Subject:       "user",  // JWT subject claim
+}
+```
+
+#### Issue Tokens
+
+```go
+claims := gmiddleware.MyCustomClaims{
+    AuthID:  123,
+    Email:   "user@example.com",
+    Role:    "admin",
+    Scope:   "read write",
+    TwoFA:   "verified",
+    Azp:     "authorized-party",
+    Fva:     []int{0, 1},
+    Sid:     "session-id",
+    V:       1,
+    SiteLan: "en",
+    Custom1: "value1",
+    Custom2: "value2",
+}
+
+accessToken, jti, err := gmiddleware.GetJWT(claims, "access")
+refreshToken, jti, err := gmiddleware.GetJWT(claims, "refresh")
+
+// JWT validation functions (used internally by middleware, also exported)
+// ValidateAccessJWT dispatches to the algorithm-specific validator
+gmiddleware.ValidateAccessJWT(token *jwt.Token) (any, error)
+gmiddleware.ValidateRefreshJWT(token *jwt.Token) (any, error)
+// Algorithm-specific validators
+gmiddleware.ValidateHMACAccess(token *jwt.Token) (any, error)
+gmiddleware.ValidateHMACRefresh(token *jwt.Token) (any, error)
+gmiddleware.ValidateECDSA(token *jwt.Token) (any, error)
+gmiddleware.ValidateEdDSA(token *jwt.Token) (any, error)
+gmiddleware.ValidateRSA(token *jwt.Token) (any, error)
+
+// JWTClaims embeds custom claims with registered claims
+type JWTClaims struct {
+    MyCustomClaims
+    jwt.RegisteredClaims
+}
+```
+
+#### Extract Claims in Handler
+
+```go
+import gservice "github.com/pilinux/gorest/service"
+
+func MyHandler(c *gin.Context) {
+    claims := gservice.GetClaims(c)
+    userID := claims.AuthID
+    email := claims.Email
+    role := claims.Role
+}
+```
+
+#### Context Values Set by JWT Middleware
+
+| Key | Type | Description |
+| --- | ---- | ----------- |
+| `authID` | `uint64` | User authentication ID |
+| `email` | `string` | User email |
+| `role` | `string` | User role |
+| `scope` | `string` | Permission scope |
+| `tfa` | `string` | 2FA status |
+| `expAccess` | `int64` | Token expiration (Unix) |
+| `jtiAccess` | `string` | Token ID |
+| `iatAccess` | `int64` | Token issued-at (Unix) |
+| `iss` | `string` | Token issuer |
+| `sub` | `string` | Token subject |
+| `aud` | `[]string` | Token audience |
+| `iat` | `int64` | Issued-at (Unix) |
+| `exp` | `int64` | Expiration (Unix) |
+| `nbf` | `int64` | Not-before (Unix) |
+| `jti` | `string` | Token ID |
+| `azp` | `string` | Authorized party |
+| `fva` | `[]int` | Factor verification age |
+| `sid` | `string` | Session ID |
+| `v` | `int` | Token version |
+| `siteLan` | `string` | Site language |
+| `custom1` | `string` | Custom claim 1 |
+| `custom2` | `string` | Custom claim 2 |
+
+### CORS Middleware
+
+```go
+cp := []gmiddleware.CORSPolicy{
+    {Key: "Access-Control-Allow-Origin", Value: "https://example.com"},
+    {Key: "Access-Control-Allow-Methods", Value: "GET, POST, PUT, DELETE"},
+    {Key: "Access-Control-Allow-Headers", Value: "Content-Type, Authorization"},
+    {Key: "Access-Control-Allow-Credentials", Value: "true"},
+    {Key: "X-Content-Type-Options", Value: "nosniff"},
+    {Key: "X-Frame-Options", Value: "DENY"},
+}
+router.Use(gmiddleware.CORS(cp))
+
+// Get current CORS configuration
+corsConfig := gmiddleware.GetCORS() // returns CORSConfig struct
+
+// CORSConfig struct
+type CORSConfig struct {
+    AllowedOrigins   []string
+    AllowedMethods   []string
+    AllowedHeaders   []string
+    ExposedHeaders   []string
+    MaxAge           int
+    AllowCredentials bool
+}
+
+// Reset CORS configuration
+gmiddleware.ResetCORS()
+
+// Note: Access-Control-Allow-Credentials cannot be used with wildcard origins.
+```
+
+### Rate Limiting Middleware
+
+```go
+import glib "github.com/pilinux/gorest/lib"
+
+// Format: "count-period" where period is S, M, H, D
+limiter, _ := glib.InitRateLimiter("100-M", "X-Real-Ip") // 100/minute
+router.Use(gmiddleware.RateLimit(limiter))
+```
+
+### Firewall Middleware
+
+```go
+// Whitelist mode - only allow specified IPs
+router.Use(gmiddleware.Firewall("whitelist", "192.168.1.0/24, 10.0.0.1"))
+
+// Blacklist mode - block specified IPs
+router.Use(gmiddleware.Firewall("blacklist", "192.168.100.0/24"))
+
+// Allow all
+router.Use(gmiddleware.Firewall("whitelist", "*"))
+
+// Reset firewall state (useful for testing)
+gmiddleware.ResetFirewallState()
+```
+
+### 2FA Middleware
+
+```go
+// Requires JWT middleware first
+router.Use(gmiddleware.JWT())
+router.Use(gmiddleware.TwoFA("on", "off", "verified"))
+```
+
+### Origin Check Middleware
+
+```go
+router.Use(gmiddleware.CheckOrigin([]string{
+    "https://example.com",
+    "https://app.example.com",
+}))
+```
+
+### Sentry Middleware
+
+```go
+// InitSentry(sentryDsn string, v ...string) (sentrylogrus.Hook, error)
+//   - required: sentryDsn
+//   - optional variadic v[0]: environment ("development" or "production")
+//   - optional variadic v[1]: release version or git commit number
+//   - optional variadic v[2]: enableTracing ("yes" or "no")
+//   - optional variadic v[3]: tracesSampleRate ("0.0" - "1.0")
+_, err := gmiddleware.InitSentry(
+    "https://key@sentry.io/project",
+    "production",
+    "v1.0.0",
+    "yes",
+    "0.5",
+)
+
+// NewSentryHook creates a new Sentry hook for goroutine-specific loggers
+// NewSentryHook(sentryDsn string, v ...string) (sentrylogrus.Hook, error)
+hook, err := gmiddleware.NewSentryHook("https://key@sentry.io/project", "production")
+
+// DestroySentry destroys the global sentry hook
+gmiddleware.DestroySentry()
+
+router.Use(gmiddleware.SentryCapture())
+```
+
+### Template Rendering Middleware
+
+```go
+router.Use(gmiddleware.Pongo2("templates/"))
+
+router.GET("/", func(c *gin.Context) {
+    c.Set("template", "index.html")
+    c.Set("data", map[string]any{
+        "title": "Welcome",
+    })
+})
+
+// Helper: retrieve a string value from Gin context
+val := gmiddleware.StringFromContext(c, "template") // returns string
+
+// Helper: convert map[string]any to pongo2.Context
+ctx := gmiddleware.ConvertContext(data) // returns pongo2.Context
+```
+
+## Utility Library
+
+### Encryption (AES-GCM)
+
+```go
+import glib "github.com/pilinux/gorest/lib"
+
+key := []byte("16-24-or-32-bytes") // AES-128/192/256
+plaintext := []byte("secret data")
+
+// Encrypt
+ciphertext, err := glib.Encrypt(plaintext, key)
+
+// Decrypt
+decrypted, err := glib.Decrypt(ciphertext, key)
+```
+
+### Password Hashing (Argon2id)
+
+```go
+config := glib.HashPassConfig{
+    Memory:      64,  // multiplied by 1024 internally: 64 * 1024 = 65536 KiB = 64 MiB
+    Iterations:  2,
+    Parallelism: 2,
+    SaltLength:  16,
+    KeyLength:   32,
+}
+
+hash, err := glib.HashPass(config, "password123", "optional-pepper")
+```
+
+### Key Derivation
+
+```go
+import gservice "github.com/pilinux/gorest/service"
+
+salt, _ := gservice.RandomByte(16)
+key := glib.GetArgon2Key([]byte("password"), salt, 32)
+```
+
+### Two-Factor Authentication (TOTP, QR Code)
+
+```go
+import "crypto"
+
+// Create TOTP
+otpBytes, err := glib.NewTOTP("user@example.com", "MyApp", crypto.SHA1, 6)
+
+// Generate QR code
+qrPNG, err := glib.NewQR(otpBytes, "MyApp")
+
+// Validate OTP
+updatedOTP, err := glib.ValidateTOTP(otpBytes, "MyApp", "123456")
+
+// Save QR to file
+filename, err := glib.ByteToPNG(qrPNG, "/tmp/qrcodes")
+```
+
+### Email Validation
+
+```go
+if glib.ValidateEmail("user@example.com") {
+    // Valid email with working MX records
+}
+```
+
+### Random Generation
+
+```go
+// Secure random number with N digits
+code := glib.SecureRandomNumber(6) // 100000-999999
+
+// Random bytes
+bytes, err := gservice.RandomByte(32)
+
+// Random alphanumeric code
+code, err := gservice.GenerateCode(12) // e.g., "aB3xY7kM2nPq"
+```
+
+### File Utilities
+
+```go
+// Check file exists
+if glib.FileExist("/path/to/file") {
+    // File exists
+}
+
+// Validate path (prevent traversal attacks)
+safePath, err := glib.ValidatePath("/uploads/../etc/passwd", "/uploads")
+// Returns error if path escapes allowed directory
+
+// Remove all whitespace from a string
+cleaned := glib.RemoveAllSpace("  hello  world  ") // "helloworld"
+
+// HTML email template model helpers
+// StrArrHTMLModel splits a semicolon-separated string of key:value pairs
+// into a flat slice: ["key1", "value1", "key2", "value2", ...]
+strArr := glib.StrArrHTMLModel("key1:value1;key2:value2") // returns []string
+// HTMLModel converts a flat key-value slice into a map for templated emails
+model := glib.HTMLModel(strArr) // returns map[string]any
+```
+
+### HTTP Response Renderer
+
+```go
+import grenderer "github.com/pilinux/gorest/lib/renderer"
+
+func Handler(c *gin.Context) {
+    data := gmodel.HTTPResponse{Message: "success"}
+    grenderer.Render(c, data, http.StatusOK)
+
+    // With HTML template
+    grenderer.Render(c, data, http.StatusOK, "template.html")
+}
+```
+
+### Graceful Shutdown
+
+```go
+import gserver "github.com/pilinux/gorest/lib/server"
+
+// Full signature:
+// GracefulShutdown(srv *http.Server, timeout time.Duration, done chan struct{}, closeDB ...func() error) error
+
+srv := &http.Server{Addr: ":8080", Handler: router}
+done := make(chan struct{})
+
+go gserver.GracefulShutdown(srv, 30*time.Second, done, gdb.CloseAllDB)
+
+srv.ListenAndServe()
+<-done
+```
+
+## Service Layer
+
+### Authentication Services
+
+```go
+import gservice "github.com/pilinux/gorest/service"
+
+// Get user by email
+auth, err := gservice.GetUserByEmail("user@example.com", true)
+
+// Get email by auth ID
+email, err := gservice.GetEmailByAuthID(123)
+
+// Check if auth ID exists
+valid := gservice.IsAuthIDValid(123)
+
+// Validate auth ID (checks zero value + database existence)
+valid := gservice.ValidateAuthID(123)
+
+// Validate user ID (checks authID != 0 and email != "")
+valid := gservice.ValidateUserID(123, "user@example.com")
+
+// Decrypt stored email
+email, err := gservice.DecryptEmail(nonce, ciphertext)
+
+// Calculate BLAKE2b hash
+hash, err := gservice.CalcHash([]byte("data"), nil)
+```
+
+### JWT Blacklist Service
+
+```go
+// Check if token is allowed
+if gservice.IsTokenAllowed(jti) {
+    // Token not blacklisted
+}
+
+// Middleware for blacklist checking
+router.Use(gservice.JWTBlacklistChecker())
+```
+
+### Email Service
+
+```go
+// Send verification or recovery email
+// SendEmail(email string, emailType int, opts ...string) (bool, error)
+//   - opts: optional additional info strings added to the email template
+//     as "additional_info_0", "additional_info_1", etc.
+delivered, err := gservice.SendEmail(
+    "user@example.com",
+    gmodel.EmailTypeVerifyEmailNewAcc, // or EmailTypePassRecovery, EmailTypeVerifyUpdatedEmail
+)
+```
+
+### 2FA Services
+
+```go
+// Validate TOTP
+otpBytes, status, err := gservice.Validate2FA(secret, "MyApp", "123456")
+
+// Delete in-memory 2FA secrets
+gservice.DelMem2FA(authID)
+
+// Hash for 2FA key encryption
+hash, err := gservice.GetHash([]byte("password"))
+```
+
+### Postmark Email Delivery
+
+```go
+import gservice "github.com/pilinux/gorest/service"
+
+params := gservice.PostmarkParams{
+    ServerToken:   "server-token",
+    TemplateID:    12345,
+    From:          "noreply@example.com",
+    To:            "user@example.com",
+    Tag:           "emailVerification",
+    TrackOpens:    true,
+    TrackLinks:    "none",
+    MessageStream: "outbound",
+    HTMLModel:     map[string]any{"name": "John", "code": "123456"},
+}
+res, err := gservice.Postmark(params)
+```
+
+## Complete Application Example
+
+### Directory Structure
+
+```text
+myapp/
+├── cmd/
+│   └── main.go
+├── internal/
+│   ├── database/
+│   │   ├── migrate/
+│   │   │   └── migrate.go
+│   │   └── model/
+│   │       └── models.go
+│   ├── handler/
+│   │   └── post.go
+│   ├── repo/
+│   │   └── post.go
+│   ├── service/
+│   │   └── post.go
+│   └── router/
+│       └── router.go
+├── .env
+└── go.mod
+```
+
+### main.go
+
+```go
+package main
+
+import (
+    "fmt"
+    "net/http"
+    "time"
+
+    gconfig "github.com/pilinux/gorest/config"
+    gdb "github.com/pilinux/gorest/database"
+    gserver "github.com/pilinux/gorest/lib/server"
+
+    "myapp/internal/database/migrate"
+    "myapp/internal/router"
+)
+
+func main() {
+    if err := gconfig.Config(); err != nil {
+        fmt.Println(err)
+        return
+    }
+    configure := gconfig.GetConfig()
+
+    if gconfig.IsRDBMS() {
+        // retry loop for RDBMS initialization
+        for {
+            if err := gdb.InitDB().Error; err != nil {
+                fmt.Println(err)
+                time.Sleep(10 * time.Second)
+                continue
+            }
+            break
+        }
+        if err := migrate.StartMigration(*configure); err != nil {
+            fmt.Println(err)
+            return
+        }
+    }
+
+    if gconfig.IsRedis() {
+        // retry loop for Redis initialization
+        for {
+            if _, err := gdb.InitRedis(); err != nil {
+                fmt.Println(err)
+                time.Sleep(10 * time.Second)
+                continue
+            }
+            break
+        }
+    }
+
+    if gconfig.IsMongo() {
+        // retry loop for MongoDB initialization
+        for {
+            if _, err := gdb.InitMongo(); err != nil {
+                fmt.Println(err)
+                time.Sleep(10 * time.Second)
+                continue
+            }
+            break
+        }
+    }
+
+    r, err := router.SetupRouter(configure)
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+
+    srv := &http.Server{
+        Addr:              configure.Server.ServerHost + ":" + configure.Server.ServerPort,
+        Handler:           r,
+        ReadTimeout:       30 * time.Second,
+        ReadHeaderTimeout: 10 * time.Second,
+        WriteTimeout:      10 * time.Second,
+        IdleTimeout:       60 * time.Second,
+    }
+
+    const shutdownTimeout = 30 * time.Second
+    done := make(chan struct{})
+    go func() {
+        err := gserver.GracefulShutdown(srv, shutdownTimeout, done, gdb.CloseAllDB)
+        if err != nil {
+            fmt.Println(err)
+        }
+    }()
+
+    if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+        fmt.Printf("server error: %v\n", err)
+    }
+    <-done
+    fmt.Println("server shutdown complete")
+}
+```
+
+### router.go
+
+```go
+package router
+
+import (
+    "github.com/gin-gonic/gin"
+    gconfig "github.com/pilinux/gorest/config"
+    gcontroller "github.com/pilinux/gorest/controller"
+    gdb "github.com/pilinux/gorest/database"
+    glib "github.com/pilinux/gorest/lib"
+    gmiddleware "github.com/pilinux/gorest/lib/middleware"
+    gservice "github.com/pilinux/gorest/service"
+
+    "myapp/internal/handler"
+    "myapp/internal/repo"
+    "myapp/internal/service"
+)
+
+func SetupRouter(cfg *gconfig.Configuration) (*gin.Engine, error) {
+    if gconfig.IsProd() {
+        gin.SetMode(gin.ReleaseMode)
+    }
+
+    r := gin.Default()
+    r.SetTrustedProxies(nil)
+    r.TrustedPlatform = cfg.Security.TrustedPlatform
+
+    // Middleware
+    if gconfig.IsCORS() {
+        r.Use(gmiddleware.CORS(cfg.Security.CORS))
+    }
+    if gconfig.IsWAF() {
+        r.Use(gmiddleware.Firewall(cfg.Security.Firewall.ListType, cfg.Security.Firewall.IP))
+    }
+    if gconfig.IsRateLimit() {
+        limiter, _ := glib.InitRateLimiter(cfg.Security.RateLimit, cfg.Security.TrustedPlatform)
+        r.Use(gmiddleware.RateLimit(limiter))
+    }
+
+    // Dependency injection
+    db := gdb.GetDB()
+    postRepo := repo.NewPostRepo(db)
+    postService := service.NewPostService(postRepo)
+    postHandler := handler.NewPostHandler(postService)
+
+    // Routes
+    v1 := r.Group("/api/v1")
+
+    // Auth routes (from gorest)
+    v1.POST("register", gcontroller.CreateUserAuth)
+    v1.POST("login", gcontroller.Login)
+
+    // Protected routes
+    protected := v1.Group("")
+    protected.Use(gmiddleware.JWT())
+    protected.Use(gservice.JWTBlacklistChecker())
+
+    // Posts
+    posts := protected.Group("posts")
+    posts.GET("", postHandler.GetPosts)
+    posts.GET(":id", postHandler.GetPost)
+    posts.POST("", postHandler.CreatePost)
+    posts.PUT(":id", postHandler.UpdatePost)
+    posts.DELETE(":id", postHandler.DeletePost)
+
+    return r, nil
+}
+```
+
+### handler/post.go
+
+```go
+package handler
+
+import (
+    "context"
+    "net/http"
+    "strconv"
+    "strings"
+    "time"
+
+    "github.com/gin-gonic/gin"
+    gmodel "github.com/pilinux/gorest/database/model"
+    grenderer "github.com/pilinux/gorest/lib/renderer"
+    gservice "github.com/pilinux/gorest/service"
+
+    "myapp/internal/database/model"
+    "myapp/internal/service"
+)
+
+type PostHandler struct {
+    svc *service.PostService
+}
+
+func NewPostHandler(svc *service.PostService) *PostHandler {
+    return &PostHandler{svc: svc}
+}
+
+func (h *PostHandler) GetPosts(c *gin.Context) {
+    ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+    defer cancel()
+
+    resp, status := h.svc.GetPosts(ctx)
+    grenderer.Render(c, resp, status)
+}
+
+func (h *PostHandler) GetPost(c *gin.Context) {
+    id, err := strconv.ParseUint(strings.TrimSpace(c.Param("id")), 10, 64)
+    if err != nil {
+        grenderer.Render(c, gmodel.HTTPResponse{Message: "invalid id"}, http.StatusBadRequest)
+        return
+    }
+
+    ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+    defer cancel()
+
+    resp, status := h.svc.GetPost(ctx, id)
+    grenderer.Render(c, resp, status)
+}
+
+func (h *PostHandler) CreatePost(c *gin.Context) {
+    claims := gservice.GetClaims(c)
+    if claims.AuthID == 0 {
+        grenderer.Render(c, gmodel.HTTPResponse{Message: "unauthorized"}, http.StatusUnauthorized)
+        return
+    }
+
+    var post model.Post
+    if err := c.ShouldBindJSON(&post); err != nil {
+        grenderer.Render(c, gmodel.HTTPResponse{Message: err.Error()}, http.StatusBadRequest)
+        return
+    }
+    post.IDAuth = claims.AuthID
+
+    ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+    defer cancel()
+
+    resp, status := h.svc.CreatePost(ctx, &post)
+    grenderer.Render(c, resp, status)
+}
+```
+
+### service/post.go
+
+```go
+package service
+
+import (
+    "context"
+    "errors"
+    "net/http"
+
+    gmodel "github.com/pilinux/gorest/database/model"
+    log "github.com/sirupsen/logrus"
+    "gorm.io/gorm"
+
+    "myapp/internal/database/model"
+    "myapp/internal/repo"
+)
+
+type PostService struct {
+    repo repo.PostRepository
+}
+
+func NewPostService(repo repo.PostRepository) *PostService {
+    return &PostService{repo: repo}
+}
+
+func (s *PostService) GetPosts(ctx context.Context) (gmodel.HTTPResponse, int) {
+    posts, err := s.repo.GetPosts(ctx)
+    if err != nil {
+        log.WithError(err).Error("GetPosts.s.1")
+        return gmodel.HTTPResponse{Message: "internal server error"}, http.StatusInternalServerError
+    }
+    if len(posts) == 0 {
+        return gmodel.HTTPResponse{Message: "no posts found"}, http.StatusNotFound
+    }
+    return gmodel.HTTPResponse{Message: posts}, http.StatusOK
+}
+
+func (s *PostService) GetPost(ctx context.Context, id uint64) (gmodel.HTTPResponse, int) {
+    post, err := s.repo.GetPost(ctx, id)
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return gmodel.HTTPResponse{Message: "post not found"}, http.StatusNotFound
+        }
+        log.WithError(err).Error("GetPost.s.1")
+        return gmodel.HTTPResponse{Message: "internal server error"}, http.StatusInternalServerError
+    }
+    return gmodel.HTTPResponse{Message: post}, http.StatusOK
+}
+
+func (s *PostService) CreatePost(ctx context.Context, post *model.Post) (gmodel.HTTPResponse, int) {
+    if err := s.repo.CreatePost(ctx, post); err != nil {
+        log.WithError(err).Error("CreatePost.s.1")
+        return gmodel.HTTPResponse{Message: "internal server error"}, http.StatusInternalServerError
+    }
+    return gmodel.HTTPResponse{Message: post}, http.StatusCreated
+}
+```
+
+## API Reference
+
+### Standard Response Format
+
+```json
+{
+    "message": "response data or error message"
+}
+```
+
+`message` may be a string or a structured object depending on the handler.
+
+### Authentication Endpoints
+
+#### POST /api/v1/register
+
+Register a new user.
+
+Request:
+
+```json
+{
+    "email": "user@example.com",
+    "password": "secure-password"
+}
+```
+
+Response (201):
+
+```json
+{
+    "message": {
+        "authID": 1,
+        "email": "user@example.com"
+    }
+}
+```
+
+#### POST /api/v1/login
+
+Authenticate and receive JWT tokens.
+
+Request:
+
+```json
+{
+    "email": "user@example.com",
+    "password": "secure-password"
+}
+```
+
+Response (200):
+
+```json
+{
+    "message": {
+        "accessJWT": "eyJhbGc...",
+        "refreshJWT": "eyJhbGc...",
+        "twoFA": "verified"
+    }
+}
+```
+
+#### POST /api/v1/refresh
+
+Refresh JWT tokens.
+
+Headers: `Authorization: Bearer <refreshToken>`
+Also supported: refresh token in cookies or request body.
+
+Response (200): New JWT payload
+
+#### POST /api/v1/logout
+
+Invalidate tokens.
+
+Headers: `Authorization: Bearer <accessToken> <refreshToken>`
+
+Response (200): `{"message": "logout successful"}`
+
+### Error Responses
+
+| Status | Description |
+| ------ | ----------- |
+| 400 | Bad Request - Invalid input |
+| 401 | Unauthorized - Authentication required |
+| 403 | Forbidden - Insufficient permissions |
+| 404 | Not Found - Resource not found |
+| 500 | Internal Server Error |
+
+### JWT Algorithms
+
+| Algorithm | Type | Key Generation |
+| --------- | ---- | -------------- |
+| HS256 | HMAC | `openssl rand -base64 32` |
+| HS384 | HMAC | `openssl rand -base64 48` |
+| HS512 | HMAC | `openssl rand -base64 64` |
+| ES256 | ECDSA | `openssl ecparam -name prime256v1 -genkey -noout -out key.pem` |
+| ES384 | ECDSA | `openssl ecparam -name secp384r1 -genkey -noout -out key.pem` |
+| ES512 | ECDSA | `openssl ecparam -name secp521r1 -genkey -noout -out key.pem` |
+| EdDSA | EdDSA | `openssl genpkey -algorithm Ed25519 -out key.pem` |
+| RS256 | RSA | `openssl genpkey -algorithm RSA -out key.pem -pkeyopt rsa_keygen_bits:2048` |
+| RS384 | RSA | `openssl genpkey -algorithm RSA -out key.pem -pkeyopt rsa_keygen_bits:3072` |
+| RS512 | RSA | `openssl genpkey -algorithm RSA -out key.pem -pkeyopt rsa_keygen_bits:4096` |
+
+Extract public key:
+
+```bash
+# ECDSA
+openssl ec -in private-key.pem -pubout -out public-key.pem
+
+# RSA
+openssl rsa -in private-key.pem -pubout -out public-key.pem
+
+# EdDSA
+openssl pkey -in private-key.pem -pubout -out public-key.pem
+```
+
+## Import Aliases Convention
+
+```go
+import (
+    gconfig "github.com/pilinux/gorest/config"
+    gcontroller "github.com/pilinux/gorest/controller"
+    gdb "github.com/pilinux/gorest/database"
+    gmodel "github.com/pilinux/gorest/database/model"
+    ghandler "github.com/pilinux/gorest/handler"
+    glib "github.com/pilinux/gorest/lib"
+    gmiddleware "github.com/pilinux/gorest/lib/middleware"
+    grenderer "github.com/pilinux/gorest/lib/renderer"
+    gserver "github.com/pilinux/gorest/lib/server"
+    gservice "github.com/pilinux/gorest/service"
+)
+```
