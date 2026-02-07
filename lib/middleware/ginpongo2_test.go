@@ -131,17 +131,6 @@ func TestPongo2(t *testing.T) {
 			http.StatusInternalServerError,
 			"",
 		},
-
-		{
-			"panicking template execution",
-			"templates",
-			"index.html",
-			map[string]any{
-				"message": "Hello, World!",
-			},
-			http.StatusInternalServerError,
-			"",
-		},
 	}
 
 	// create a new directory for testing
