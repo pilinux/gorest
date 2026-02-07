@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// KV - key:value
+// KV represents a key-value pair.
 type KV struct {
 	Key   string `json:"key,omitempty"`
 	Value string `json:"value,omitempty"`
@@ -26,13 +26,13 @@ func (kv *KV) Trim() error {
 	return nil
 }
 
-// KVHash - key:hashValues
+// KVHash represents a key with hash values.
 type KVHash struct {
 	Key   string      `json:"key,omitempty"`
 	Value KVHashValue `json:"value,omitempty"`
 }
 
-// KVHashValue - values
+// KVHashValue holds the values for a hash key.
 type KVHashValue struct {
 	Value1 string `json:"value1,omitempty"`
 	Value2 string `json:"value2,omitempty"`

@@ -7,7 +7,7 @@ import (
 	"github.com/ulule/limiter/v3/drivers/store/memory"
 )
 
-// InitRateLimiter - initialize the rate limiter instance
+// InitRateLimiter initializes the rate limiter instance.
 func InitRateLimiter(formattedRateLimit, trustedPlatform string) (*limiter.Limiter, error) {
 	if formattedRateLimit == "" {
 		return nil, nil

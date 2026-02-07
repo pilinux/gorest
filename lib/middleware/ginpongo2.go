@@ -17,7 +17,7 @@ import (
 
 // Pongo2 uses the Pongo2 template library
 // https://github.com/flosch/pongo2
-// to render templates
+// to render templates.
 //
 // Example: baseDirectory = "templates/"
 func Pongo2(baseDirectory string) gin.HandlerFunc {
@@ -76,7 +76,7 @@ func Pongo2(baseDirectory string) gin.HandlerFunc {
 	}
 }
 
-// StringFromContext function retrieves the value from the context and returns it as a string
+// StringFromContext retrieves the value from the context and returns it as a string.
 func StringFromContext(c *gin.Context, input string) string {
 	raw, ok := c.Get(input)
 	if ok {
@@ -88,7 +88,7 @@ func StringFromContext(c *gin.Context, input string) string {
 	return ""
 }
 
-// ConvertContext function converts the input map to a pongo2.Context type and preserves the key-value pairs
+// ConvertContext converts the input map to a pongo2.Context type and preserves the key-value pairs.
 func ConvertContext(thing any) pongo2.Context {
 	if thing != nil {
 		context, isMap := thing.(map[string]any)

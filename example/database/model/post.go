@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Post model - `posts` table
+// Post model represents the posts table.
 type Post struct {
 	PostID    uint64         `gorm:"primaryKey" json:"postID,omitempty" structs:"postID,omitempty"`
 	CreatedAt time.Time      `json:"createdAt,omitempty" structs:"createdAt,omitempty"`

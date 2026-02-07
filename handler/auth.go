@@ -1,4 +1,4 @@
-// Package handler sits in between controller and database services.
+// Package handler contains business logic invoked by controllers.
 package handler
 
 import (
@@ -21,10 +21,14 @@ import (
 	"github.com/pilinux/gorest/service"
 )
 
-// CreateUserAuth receives tasks from controller.CreateUserAuth.
-// After email validation, it creates a new user account. It
-// supports both the legacy way of saving user email in plaintext
-// and the recommended way of applying encryption at rest.
+// CreateUserAuth validates the sign-up request and creates a new user account.
+//
+// It enforces unique email constraints and supports both:
+//   - legacy plaintext email storage, and
+//   - encrypted-at-rest email storage (with a fixed-size email hash for lookups).
+//
+// Depending on application settings, it may also send a verification email and
+// mark the account as email-not-verified.
 func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	db := database.GetDB()
 
@@ -166,25 +170,21 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 	return
 }
 
-// UpdateEmail receives tasks from controller.UpdateEmail.
+// UpdateEmail creates or updates a pending email-change request for a user.
 //
-// step 1: validate email format
+// It validates the new email address, verifies the user's password, ensures the
+// email is not already in use, stores the request in the temp table, and sends a
+// verification email when required by the application.
 //
-// step 2: verify that this email is not registered to anyone
-//
-// step 3: load user credentials
-//
-// step 4: verify user password
-//
-// step 5: calculate hash of the new email
-//
-// step 6: read 'temp_emails' table
-//
-// step 7: verify that this is not a repeated request for the same email
-//
-// step 8: populate model with data to be processed in database
-//
-// step 9: send a verification email if required by the app
+//   - step 1: validate email format
+//   - step 2: verify that this email is not registered to anyone
+//   - step 3: load user credentials
+//   - step 4: verify user password
+//   - step 5: calculate hash of the new email
+//   - step 6: read 'temp_emails' table
+//   - step 7: verify that this is not a repeated request for the same email
+//   - step 8: populate model with data to be processed in database
+//   - step 9: send a verification email if required by the app
 func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	// check auth validity
 	ok := service.ValidateAuthID(claims.AuthID)

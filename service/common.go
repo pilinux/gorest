@@ -22,7 +22,7 @@ import (
 	"github.com/pilinux/libgo/timestring"
 )
 
-// GetClaims - get JWT custom claims
+// GetClaims returns JWT custom claims.
 func GetClaims(c *gin.Context) middleware.MyCustomClaims {
 	// get claims
 	claims := middleware.MyCustomClaims{
@@ -39,7 +39,7 @@ func GetClaims(c *gin.Context) middleware.MyCustomClaims {
 	return claims
 }
 
-// ValidateAuthID - check whether authID is missing
+// ValidateAuthID checks whether authID is missing.
 func ValidateAuthID(authID uint64) bool {
 	if authID == 0 {
 		return false
@@ -49,13 +49,13 @@ func ValidateAuthID(authID uint64) bool {
 	return IsAuthIDValid(authID)
 }
 
-// ValidateUserID - check whether authID or email is missing
+// ValidateUserID checks whether authID or email is missing.
 func ValidateUserID(authID uint64, email string) bool {
 	email = strings.TrimSpace(email)
 	return authID != 0 && email != ""
 }
 
-// Validate2FA validates user-provided OTP
+// Validate2FA validates user-provided OTP.
 func Validate2FA(encryptedMessage []byte, issuer string, userInput string) ([]byte, string, error) {
 	configSecurity := config.GetConfig().Security
 	otpByte, err := lib.ValidateTOTP(encryptedMessage, issuer, userInput)
@@ -74,24 +74,22 @@ func Validate2FA(encryptedMessage []byte, issuer string, userInput string) ([]by
 	return otpByte, configSecurity.TwoFA.Status.Verified, nil
 }
 
-// DelMem2FA - delete secrets from memory
+// DelMem2FA deletes 2FA secrets from memory.
 func DelMem2FA(authID uint64) {
 	delete(model.InMemorySecret2FA, authID)
 }
 
 // SendEmail sends a verification/password recovery email if
 //
-// - required by the application
+//   - required by the application
+//   - an external email service is configured
+//   - a redis database is configured
 //
-// - an external email service is configured
+// and returns
 //
-// - a redis database is configured
-//
-// {true, nil} => email delivered successfully
-//
-// {false, nil} => email delivery not required/service not configured
-//
-// {false, error} => email delivery failed
+//   - {true, nil} => email delivered successfully
+//   - {false, nil} => email delivery not required/service not configured
+//   - {false, error} => email delivery failed
 func SendEmail(email string, emailType int, opts ...string) (bool, error) {
 	// send email if required by the application
 	appConfig := config.GetConfig()

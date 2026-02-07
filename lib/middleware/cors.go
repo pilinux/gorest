@@ -1,11 +1,11 @@
 // Package middleware contains:
 //
-// - CORS
-// - Application firewall
-// - Pongo2 template engine
-// - JWT
-// - Sentry logger
-// - Two-factor auth validator
+//   - CORS
+//   - Application firewall
+//   - Pongo2 template engine
+//   - JWT
+//   - Sentry logger
+//   - Two-factor auth validator
 package middleware
 
 // github.com/pilinux/gorest
@@ -22,13 +22,13 @@ import (
 	cors "github.com/rs/cors/wrapper/gin"
 )
 
-// CORSPolicy struct to handle all policies
+// CORSPolicy holds a key-value pair for a CORS policy.
 type CORSPolicy struct {
 	Key   string
 	Value string
 }
 
-// CORSConfig holds all CORS configuration values
+// CORSConfig holds all CORS configuration values.
 type CORSConfig struct {
 	AllowedOrigins   []string
 	AllowedMethods   []string
@@ -43,7 +43,7 @@ var (
 	maxAgeSet  bool
 )
 
-// CORS - Cross-Origin Resource Sharing
+// CORS configures Cross-Origin Resource Sharing.
 func CORS(cp []CORSPolicy) gin.HandlerFunc {
 	ResetCORS()
 
@@ -226,7 +226,7 @@ func CORS(cp []CORSPolicy) gin.HandlerFunc {
 		}
 
 		// required for browser-based HTTP clients
-		if c.Request.Method == "OPTIONS" {
+		if c.Request.Method == http.MethodOptions {
 			// set Access-Control-Allow-Methods
 			c.Writer.Header().Set("Access-Control-Allow-Methods", strings.Join(corsConfig.AllowedMethods, ", "))
 
@@ -249,12 +249,12 @@ func CORS(cp []CORSPolicy) gin.HandlerFunc {
 	}
 }
 
-// GetCORS returns all CORS configuration values in a struct
+// GetCORS returns all CORS configuration values in a struct.
 func GetCORS() CORSConfig {
 	return corsConfig
 }
 
-// ResetCORS resets the CORS configuration
+// ResetCORS resets the CORS configuration.
 func ResetCORS() {
 	corsConfig = CORSConfig{}
 	maxAgeSet = false

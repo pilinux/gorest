@@ -12,7 +12,7 @@ import (
 	"github.com/pilinux/gorest/example/database/model"
 )
 
-// GetPosts handles jobs for controller.GetPosts
+// GetPosts retrieves all posts.
 func GetPosts() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
 	posts := []model.Post{}
@@ -35,7 +35,7 @@ func GetPosts() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	return
 }
 
-// GetPost handles jobs for controller.GetPost
+// GetPost retrieves a single post by ID.
 func GetPost(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
 	post := model.Post{}
@@ -51,7 +51,7 @@ func GetPost(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	return
 }
 
-// CreatePost handles jobs for controller.CreatePost
+// CreatePost creates a new post for the authenticated user's profile.
 func CreatePost(userIDAuth uint64, post model.Post) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
 	user := model.User{}
@@ -84,7 +84,7 @@ func CreatePost(userIDAuth uint64, post model.Post) (httpResponse gmodel.HTTPRes
 	return
 }
 
-// UpdatePost handles jobs for controller.UpdatePost
+// UpdatePost updates an existing post owned by the authenticated user.
 func UpdatePost(userIDAuth uint64, id string, post model.Post) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
 	user := model.User{}
@@ -124,7 +124,7 @@ func UpdatePost(userIDAuth uint64, id string, post model.Post) (httpResponse gmo
 	return
 }
 
-// DeletePost handles jobs for controller.DeletePost
+// DeletePost deletes an existing post owned by the authenticated user.
 func DeletePost(userIDAuth uint64, id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
 	user := model.User{}

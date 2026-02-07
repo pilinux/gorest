@@ -16,8 +16,11 @@ import (
 	"github.com/pilinux/gorest/service"
 )
 
-// Login receives tasks from controller.Login.
-// After authentication, it returns new access and refresh tokens.
+// Login authenticates a user and returns a new access/refresh token pair.
+//
+// If email verification is enabled, it requires the account email to be verified.
+// If 2FA is enabled and configured for the user, it prepares in-memory state for
+// the OTP validation step.
 func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	payload.Email = strings.TrimSpace(payload.Email)
 	if !lib.ValidateEmail(payload.Email) {
@@ -157,8 +160,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 	return
 }
 
-// Refresh receives tasks from controller.Refresh and
-// returns new pair of tokens (access and refresh tokens).
+// Refresh issues a new access/refresh token pair for an authenticated session.
 func Refresh(claims middleware.MyCustomClaims) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	// check validity
 	ok := service.ValidateAuthID(claims.AuthID)

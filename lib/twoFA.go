@@ -6,8 +6,8 @@ import (
 	"github.com/pilinux/twofactor"
 )
 
-// NewTOTP - creates a new TOTP object
-// and returns a serialized byte array
+// NewTOTP creates a new TOTP object
+// and returns a serialized byte array.
 func NewTOTP(account string, issuer string, hash crypto.Hash, digits int) ([]byte, error) {
 	// TOTP object
 	otp, err := twofactor.NewTOTP(account, issuer, hash, digits)
@@ -26,7 +26,7 @@ func NewTOTP(account string, issuer string, hash crypto.Hash, digits int) ([]byt
 	return otpToByte, nil
 }
 
-// NewQR - creates a byte array containing QR
+// NewQR creates a byte array containing a QR
 // code encoded PNG image, with level Q error
 // correction, needed for the client apps to
 // generate tokens.
@@ -47,7 +47,7 @@ func NewQR(encryptedMessage []byte, issuer string) ([]byte, error) {
 	return qrBytes, nil
 }
 
-// ValidateTOTP - validates the user-provided token
+// ValidateTOTP validates the user-provided token.
 func ValidateTOTP(encryptedMessage []byte, issuer string, userInput string) ([]byte, error) {
 	otp, err := twofactor.TOTPFromBytes(encryptedMessage, issuer)
 	// internal error

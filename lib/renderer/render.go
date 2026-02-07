@@ -1,5 +1,5 @@
-// Package renderer uses template engine to
-// render and serve HTML pages
+// Package renderer uses a template engine to
+// render and serve HTML pages.
 package renderer
 
 // github.com/pilinux/gorest
@@ -13,8 +13,8 @@ import (
 	"github.com/pilinux/structs"
 )
 
-// Render - render response in JSON format
-// or use templating engine to serve HTML pages
+// Render renders a response in JSON format
+// or uses a templating engine to serve HTML pages.
 func Render(c *gin.Context, data any, statusCode int, htmlTpl ...string) {
 	if len(htmlTpl) > 0 {
 		reqType := c.Request.Header.Get("Accept")

@@ -1,4 +1,4 @@
-// Package migrate to migrate the schema
+// Package migrate handles database schema migrations.
 package migrate
 
 import (
@@ -9,13 +9,13 @@ import (
 	"github.com/pilinux/gorest/database/model"
 )
 
-// Load all the models
+// Model type aliases for migration.
 type auth model.Auth
 type twoFA model.TwoFA
 type twoFABackup model.TwoFABackup
 type tempEmail model.TempEmail
 
-// DropAllTables - careful! It will drop all the tables!
+// DropAllTables drops all database tables. Use with caution.
 func DropAllTables() error {
 	db := database.GetDB()
 
@@ -32,10 +32,10 @@ func DropAllTables() error {
 	return nil
 }
 
-// StartMigration - automatically migrate all the tables
+// StartMigration automatically migrates all the tables.
 //
-// - Only create tables with missing columns and missing indexes
-// - Will not change/delete any existing columns and their types
+//   - Only create tables with missing columns and missing indexes
+//   - Will not change/delete any existing columns and their types
 func StartMigration(configure config.Configuration) error {
 	db := database.GetDB()
 	configureDB := configure.Database.RDBMS

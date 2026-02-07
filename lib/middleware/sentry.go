@@ -2,7 +2,7 @@ package middleware
 
 // github.com/pilinux/gorest
 // The MIT License (MIT)
-// Copyright (c) 2022 pilinux
+// Copyright (c) 2022-2026 pilinux
 
 import (
 	"net/http"
@@ -17,17 +17,13 @@ import (
 
 var globalSentryHook sentrylogrus.Hook // global hook
 
-// InitSentry - initialize sentry for middleware or separate goroutines
+// InitSentry initializes sentry for middleware or separate goroutines.
 //
-// required parameter (1st parameter): sentryDsn
-//
-// optional parameter (2nd parameter): environment (development or production)
-//
-// optional parameter (3rd parameter): release version or git commit number
-//
-// optional parameter (4th parameter): enableTracing (yes or no)
-//
-// optional parameter (5th parameter): tracesSampleRate (0.0 - 1.0)
+//   - required parameter (1st parameter): sentryDsn
+//   - optional parameter (2nd parameter): environment (development or production)
+//   - optional parameter (3rd parameter): release version or git commit number
+//   - optional parameter (4th parameter): enableTracing (yes or no)
+//   - optional parameter (5th parameter): tracesSampleRate (0.0 - 1.0)
 func InitSentry(sentryDsn string, v ...string) (sentrylogrus.Hook, error) {
 	if globalSentryHook != nil {
 		// prevent double hook
@@ -58,12 +54,12 @@ func InitSentry(sentryDsn string, v ...string) (sentrylogrus.Hook, error) {
 	return globalSentryHook, nil
 }
 
-// NewSentryHook creates a new Sentry hook for goroutine-specific loggers
+// NewSentryHook creates a new Sentry hook for goroutine-specific loggers.
 func NewSentryHook(sentryDsn string, v ...string) (sentrylogrus.Hook, error) {
 	return createSentryHook(sentryDsn, v...)
 }
 
-// DestroySentry - destroy global sentry hook
+// DestroySentry destroys the global sentry hook.
 func DestroySentry() {
 	if globalSentryHook != nil {
 		globalSentryHook.Flush(5 * time.Second)
@@ -101,6 +97,8 @@ func createSentryHook(sentryDsn string, v ...string) (sentrylogrus.Hook, error) 
 	}
 
 	// Sentry Client options
+	// https://docs.sentry.io/platforms/go/configuration/options/
+	// https://docs.sentry.io/platforms/go/tracing/trace-propagation/ (feature introduced in sentry-go v0.41.0)
 	clientOptions := sentry.ClientOptions{
 		Dsn:              sentryDsn,
 		Debug:            sentryDebugMode,
@@ -130,7 +128,7 @@ func createSentryHook(sentryDsn string, v ...string) (sentrylogrus.Hook, error) 
 	return hook, nil
 }
 
-// SentryCapture - sentry middleware to capture errors and forward to sentry.io
+// SentryCapture returns a sentry middleware to capture errors and forward to sentry.io.
 func SentryCapture() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Automatic recovery from panic

@@ -9,7 +9,7 @@ import (
 	"github.com/pilinux/gorest/lib/middleware"
 )
 
-// TestCheckOrigin - test the CheckOrigin middleware
+// TestCheckOrigin tests the CheckOrigin middleware.
 func TestCheckOrigin(t *testing.T) {
 	tests := []struct {
 		name          string

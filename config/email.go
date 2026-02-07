@@ -1,6 +1,6 @@
 package config
 
-// EmailConfig - for external email services
+// EmailConfig holds configuration for external email services.
 type EmailConfig struct {
 	Activate     string
 	Provider     string

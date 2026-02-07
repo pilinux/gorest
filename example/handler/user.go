@@ -1,4 +1,4 @@
-// Package handler of the example application
+// Package handler contains the business logic of the example application.
 package handler
 
 import (
@@ -13,7 +13,7 @@ import (
 	"github.com/pilinux/gorest/example/database/model"
 )
 
-// GetUsers handles jobs for controller.GetUsers
+// GetUsers retrieves all users and populates their related posts and hobbies.
 func GetUsers() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
 	users := []model.User{}
@@ -49,7 +49,7 @@ func GetUsers() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	return
 }
 
-// GetUser handles jobs for controller.GetUser
+// GetUser retrieves a single user by ID and populates their related posts and hobbies.
 func GetUser(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
 	user := model.User{}
@@ -76,7 +76,9 @@ func GetUser(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	return
 }
 
-// CreateUser handles jobs for controller.CreateUser
+// CreateUser creates a user profile for the given auth ID.
+//
+// It prevents creating a duplicate profile for the same auth ID.
 func CreateUser(userIDAuth uint64, user model.User) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
 	userFinal := model.User{}
@@ -108,7 +110,7 @@ func CreateUser(userIDAuth uint64, user model.User) (httpResponse gmodel.HTTPRes
 	return
 }
 
-// UpdateUser handles jobs for controller.UpdateUser
+// UpdateUser updates the user profile for the given auth ID.
 func UpdateUser(userIDAuth uint64, user model.User) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
 	userFinal := model.User{}
@@ -140,7 +142,10 @@ func UpdateUser(userIDAuth uint64, user model.User) (httpResponse gmodel.HTTPRes
 	return
 }
 
-// AddHobby handles jobs for controller.AddHobby
+// AddHobby adds a hobby to the user's profile.
+//
+// It creates the hobby record if it does not already exist, and then associates
+// it with the user.
 func AddHobby(userIDAuth uint64, hobby model.Hobby) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
 	user := model.User{}

@@ -10,11 +10,10 @@ import (
 	"github.com/pilinux/gorest/lib/renderer"
 )
 
-// Logout -
+// Logout handles user logout.
 //
-// - if 'AUTH_COOKIE_ACTIVATE=yes', delete tokens from client browser.
-//
-// - if Redis is enabled, save invalid tokens in Redis up until the expiry time.
+//   - If 'AUTH_COOKIE_ACTIVATE=yes', delete tokens from client browser.
+//   - If Redis is enabled, save invalid tokens in Redis up until the expiry time.
 //
 // dependency: JWT
 func Logout(c *gin.Context) {

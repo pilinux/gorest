@@ -1,5 +1,5 @@
 // Package model contains all the models required
-// for a functional database management system
+// for a functional database management system.
 package model
 
 import (
@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// User model - `users` table
+// User model represents the users table.
 type User struct {
 	UserID    uint64         `gorm:"primaryKey" json:"userID,omitempty"`
 	CreatedAt time.Time      `json:"createdAt,omitempty"`

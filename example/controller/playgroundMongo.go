@@ -13,7 +13,7 @@ import (
 	"github.com/pilinux/gorest/example/handler"
 )
 
-// MongoCreateOne - create one document
+// MongoCreateOne creates one document.
 func MongoCreateOne(c *gin.Context) {
 	data := model.Geocoding{}
 	if err := c.ShouldBindJSON(&data); err != nil {
@@ -31,14 +31,14 @@ func MongoCreateOne(c *gin.Context) {
 	grenderer.Render(c, resp.Message, statusCode)
 }
 
-// MongoGetAll - get all documents
+// MongoGetAll gets all documents.
 func MongoGetAll(c *gin.Context) {
 	resp, statusCode := handler.MongoGetAll()
 
 	grenderer.Render(c, resp, statusCode)
 }
 
-// MongoGetByID - find one document by ID
+// MongoGetByID finds one document by ID.
 func MongoGetByID(c *gin.Context) {
 	id := strings.TrimSpace(c.Params.ByName("id"))
 
@@ -52,7 +52,7 @@ func MongoGetByID(c *gin.Context) {
 	grenderer.Render(c, resp.Message, statusCode)
 }
 
-// MongoGetByFilter - find documents using filter
+// MongoGetByFilter finds documents using a filter.
 func MongoGetByFilter(c *gin.Context) {
 	req := model.Geocoding{}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -65,11 +65,11 @@ func MongoGetByFilter(c *gin.Context) {
 	grenderer.Render(c, resp, statusCode)
 }
 
-// MongoUpdateByID - update a document
+// MongoUpdateByID updates a document.
 //
-// - edit existing fields
-// - add new fields
-// - do not remove any existing field
+//   - edit existing fields
+//   - add new fields
+//   - do not remove any existing field
 func MongoUpdateByID(c *gin.Context) {
 	req := model.Geocoding{}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -87,7 +87,7 @@ func MongoUpdateByID(c *gin.Context) {
 	grenderer.Render(c, resp.Message, statusCode)
 }
 
-// MongoDeleteFieldByID - delete existing field(s) from a document
+// MongoDeleteFieldByID deletes existing fields from a document.
 func MongoDeleteFieldByID(c *gin.Context) {
 	req := model.Geocoding{}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -105,7 +105,7 @@ func MongoDeleteFieldByID(c *gin.Context) {
 	grenderer.Render(c, resp.Message, statusCode)
 }
 
-// MongoDeleteByID - delete one document by ID
+// MongoDeleteByID deletes one document by ID.
 func MongoDeleteByID(c *gin.Context) {
 	id := strings.TrimSpace(c.Params.ByName("id"))
 

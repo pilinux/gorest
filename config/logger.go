@@ -1,6 +1,6 @@
 package config
 
-// LoggerConfig ...
+// LoggerConfig holds logger configuration.
 type LoggerConfig struct {
 	Activate           string
 	SentryDsn          string

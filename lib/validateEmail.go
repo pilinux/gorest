@@ -8,7 +8,7 @@ import (
 
 var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
-// ValidateEmail - check if the email provided passes the required structure
+// ValidateEmail checks if the email provided passes the required structure
 // and length test. It also checks the domain has a valid MX record.
 //
 // Credit: Edd Turtle

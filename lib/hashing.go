@@ -6,7 +6,7 @@ import "github.com/pilinux/argon2"
 // The MIT License (MIT)
 // Copyright (c) 2022 pilinux
 
-// HashPassConfig - params for argon2id
+// HashPassConfig holds params for argon2id.
 type HashPassConfig struct {
 	Memory      uint32
 	Iterations  uint32
@@ -15,7 +15,7 @@ type HashPassConfig struct {
 	KeyLength   uint32
 }
 
-// HashPass - securely hash passwords using Argon2id
+// HashPass securely hashes passwords using Argon2id.
 func HashPass(config HashPassConfig, pass, secret string) (string, error) {
 	params := &argon2.Params{
 		Memory:      config.Memory * 1024, // the amount of memory used by the Argon2 algorithm (in kibibytes)

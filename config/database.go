@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-// DatabaseConfig - all database variables
+// DatabaseConfig holds all database variables.
 type DatabaseConfig struct {
 	// relational database
 	RDBMS RDBMS
@@ -16,7 +16,7 @@ type DatabaseConfig struct {
 	MongoDB MongoDB
 }
 
-// RDBMS - relational database variables
+// RDBMS holds relational database variables.
 type RDBMS struct {
 	Activate string
 	Env      struct {
@@ -48,7 +48,7 @@ type RDBMS struct {
 	}
 }
 
-// REDIS - redis database variables
+// REDIS holds redis database variables.
 type REDIS struct {
 	Activate string
 	Env      struct {
@@ -61,7 +61,7 @@ type REDIS struct {
 	}
 }
 
-// MongoDB - mongo database variables
+// MongoDB holds mongo database variables.
 type MongoDB struct {
 	Activate string
 	Env      struct {

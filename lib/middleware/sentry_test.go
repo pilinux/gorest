@@ -147,7 +147,7 @@ func TestInitSentryLogLevel(t *testing.T) {
 	})
 }
 
-// Helper function to test log level setting
+// testLogLevel tests log level setting.
 func testLogLevel(sentryDsn string, v []string, expectedLevel log.Level, t *testing.T) {
 	// destroy any existing global hook
 	middleware.DestroySentry()

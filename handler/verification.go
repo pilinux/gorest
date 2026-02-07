@@ -19,7 +19,10 @@ import (
 	"github.com/pilinux/gorest/service"
 )
 
-// VerifyEmail handles jobs for controller.VerifyEmail
+// VerifyEmail verifies an email address using a verification code.
+//
+// It reads and deletes the verification code from Redis and then marks the
+// account email as verified in the relational database.
 func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	payload.VerificationCode = strings.TrimSpace(payload.VerificationCode)
 	if payload.VerificationCode == "" {
@@ -138,7 +141,10 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 	return
 }
 
-// CreateVerificationEmail handles jobs for controller.CreateVerificationEmail
+// CreateVerificationEmail sends a new email verification code.
+//
+// It validates the email address, verifies the user's password, and triggers a
+// verification email to be sent.
 func CreateVerificationEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	payload.Email = strings.TrimSpace(payload.Email)
 	if !lib.ValidateEmail(payload.Email) {
@@ -202,13 +208,14 @@ func CreateVerificationEmail(payload model.AuthPayload) (httpResponse model.HTTP
 	return
 }
 
-// VerifyUpdatedEmail receives tasks from controller.VerifyUpdatedEmail
+// VerifyUpdatedEmail verifies a pending email-change request.
 //
-// - verify newly added email address
+// It validates the verification code from Redis, updates the user's email in the
+// auth record, and deletes the corresponding temp email record.
 //
-// - update user email address
-//
-// - delete temporary data from database after verification process is done
+//   - verify newly added email address
+//   - update user email address in database after successful verification
+//   - delete temporary data from database after verification process is done
 func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	payload.VerificationCode = strings.TrimSpace(payload.VerificationCode)
 	if payload.VerificationCode == "" {
@@ -396,9 +403,10 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 	return
 }
 
-// GetUnverifiedEmail receives tasks from controller.GetUnverifiedEmail
+// GetUnverifiedEmail retrieves the current pending email-change request.
 //
-// It retrieves unverified email information for a given user.
+// It returns the unverified email details (deciphered when stored encrypted) for
+// the authenticated user.
 func GetUnverifiedEmail(claims middleware.MyCustomClaims) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	// check auth validity
 	ok := service.ValidateAuthID(claims.AuthID)
@@ -459,7 +467,10 @@ func GetUnverifiedEmail(claims middleware.MyCustomClaims) (httpResponse model.HT
 	return
 }
 
-// ResendVerificationCodeToModifyActiveEmail receives tasks from controller.ResendVerificationCodeToModifyActiveEmail
+// ResendVerificationCodeToModifyActiveEmail re-sends a verification code for a pending email change.
+//
+// It loads the pending email-change request, deciphers the email when needed,
+// and triggers a new verification email.
 func ResendVerificationCodeToModifyActiveEmail(claims middleware.MyCustomClaims) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	// check auth validity
 	ok := service.ValidateAuthID(claims.AuthID)

@@ -1,4 +1,4 @@
 package model
 
-// UserHobby model - intermediate table `user_hobbies` (many to many relations)
+// UserHobby model represents the intermediate table user_hobbies for many-to-many relations.
 type UserHobby struct{}

@@ -15,7 +15,7 @@ import (
 	"github.com/pilinux/gorest/example/database/model"
 )
 
-// RedisCreate - handles jobs for controller.RedisCreate
+// RedisCreate stores a key/value pair in Redis.
 func RedisCreate(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	client := gdatabase.GetRedis()
 	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
@@ -42,7 +42,7 @@ func RedisCreate(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpSt
 	return
 }
 
-// RedisRead - handles jobs for controller.RedisRead
+// RedisRead retrieves the value for a key from Redis.
 func RedisRead(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	client := gdatabase.GetRedis()
 	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
@@ -77,7 +77,7 @@ func RedisRead(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpStat
 	return
 }
 
-// RedisDelete - handles jobs for controller.RedisDelete
+// RedisDelete deletes a key from Redis.
 func RedisDelete(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	client := gdatabase.GetRedis()
 	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
@@ -104,7 +104,7 @@ func RedisDelete(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpSt
 	return
 }
 
-// RedisCreateHash - handles jobs for controller.RedisCreateHash
+// RedisCreateHash stores a hash (field/value set) in Redis.
 func RedisCreateHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	client := gdatabase.GetRedis()
 	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
@@ -124,7 +124,7 @@ func RedisCreateHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse
 	return
 }
 
-// RedisReadHash - handles jobs for controller.RedisReadHash
+// RedisReadHash retrieves a hash from Redis.
 func RedisReadHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	client := gdatabase.GetRedis()
 	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
@@ -159,7 +159,7 @@ func RedisReadHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse, 
 	return
 }
 
-// RedisDeleteHash - handles jobs for controller.RedisDeleteHash
+// RedisDeleteHash deletes one or more hash fields from Redis.
 func RedisDeleteHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	client := gdatabase.GetRedis()
 	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL

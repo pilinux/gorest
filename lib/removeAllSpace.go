@@ -6,8 +6,8 @@ package lib
 
 import "strings"
 
-// RemoveAllSpace - remove all spaces and return
-// the result as string
+// RemoveAllSpace removes all spaces and returns
+// the result as a string.
 func RemoveAllSpace(s string) string {
 	return strings.ReplaceAll(s, " ", "")
 }

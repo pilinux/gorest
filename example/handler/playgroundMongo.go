@@ -16,7 +16,7 @@ import (
 	"github.com/pilinux/gorest/example/database/model"
 )
 
-// MongoCreateOne - handles jobs for controller.MongoCreateOne
+// MongoCreateOne inserts a single geocoding document into MongoDB.
 func MongoCreateOne(data model.Geocoding) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	// remove all leading and trailing white spaces
 	data = mongoTrimSpace(data)
@@ -51,7 +51,7 @@ func MongoCreateOne(data model.Geocoding) (httpResponse gmodel.HTTPResponse, htt
 	return
 }
 
-// MongoGetAll handles jobs for controller.MongoGetAll
+// MongoGetAll retrieves all geocoding documents from MongoDB.
 func MongoGetAll() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	client := gdatabase.GetMongo()
 	db := client.Database("map")            // set database name
@@ -81,7 +81,7 @@ func MongoGetAll() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	return
 }
 
-// MongoGetByID handles jobs for controller.MongoGetByID
+// MongoGetByID retrieves a geocoding document by ObjectID.
 func MongoGetByID(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -111,7 +111,7 @@ func MongoGetByID(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode i
 	return
 }
 
-// MongoGetByFilter handles jobs for controller.MongoGetByFilter
+// MongoGetByFilter retrieves geocoding documents matching the provided fields.
 func MongoGetByFilter(req model.Geocoding) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	// remove all leading and trailing white spaces
 	req = mongoTrimSpace(req)
@@ -153,7 +153,7 @@ func MongoGetByFilter(req model.Geocoding) (httpResponse gmodel.HTTPResponse, ht
 	return
 }
 
-// MongoUpdateByID handles jobs for controller.MongoUpdateByID
+// MongoUpdateByID updates a geocoding document by ObjectID.
 func MongoUpdateByID(req model.Geocoding) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	if req.ID.IsZero() {
 		httpResponse.Message = "document ID is missing"
@@ -196,7 +196,7 @@ func MongoUpdateByID(req model.Geocoding) (httpResponse gmodel.HTTPResponse, htt
 	return
 }
 
-// MongoDeleteFieldByID handles jobs for controller.MongoDeleteFieldByID
+// MongoDeleteFieldByID unsets specific fields on a geocoding document by ObjectID.
 func MongoDeleteFieldByID(req model.Geocoding) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	if req.ID.IsZero() {
 		httpResponse.Message = "document ID is missing"
@@ -238,7 +238,7 @@ func MongoDeleteFieldByID(req model.Geocoding) (httpResponse gmodel.HTTPResponse
 	return
 }
 
-// MongoDeleteByID handles jobs for controller.MongoDeleteByID
+// MongoDeleteByID deletes a geocoding document by ObjectID.
 func MongoDeleteByID(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -267,7 +267,7 @@ func MongoDeleteByID(id string) (httpResponse gmodel.HTTPResponse, httpStatusCod
 	return
 }
 
-// mongoTrimSpace - remove all leading and trailing white spaces
+// mongoTrimSpace removes all leading and trailing white spaces from geocoding fields.
 func mongoTrimSpace(geocoding model.Geocoding) model.Geocoding {
 	geocoding.FormattedAddress = strings.TrimSpace(geocoding.FormattedAddress)
 	geocoding.StreetName = strings.TrimSpace(geocoding.StreetName)
@@ -283,7 +283,7 @@ func mongoTrimSpace(geocoding model.Geocoding) model.Geocoding {
 	return geocoding
 }
 
-// mongoFilter - search filter
+// mongoFilter builds a search filter for MongoDB queries.
 func mongoFilter(geocoding model.Geocoding, addDocIDInFilter bool) bson.M {
 	filter := bson.M{}
 

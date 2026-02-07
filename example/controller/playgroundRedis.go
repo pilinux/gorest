@@ -12,7 +12,7 @@ import (
 	"github.com/pilinux/gorest/example/handler"
 )
 
-// RedisCreate - SET key
+// RedisCreate handles SET key operations.
 func RedisCreate(c *gin.Context) {
 	data := model.RedisData{}
 	if err := c.ShouldBindJSON(&data); err != nil {
@@ -30,7 +30,7 @@ func RedisCreate(c *gin.Context) {
 	grenderer.Render(c, resp.Message, statusCode)
 }
 
-// RedisRead - GET key
+// RedisRead handles GET key operations.
 func RedisRead(c *gin.Context) {
 	data := model.RedisData{}
 	if err := c.ShouldBindJSON(&data); err != nil {
@@ -48,7 +48,7 @@ func RedisRead(c *gin.Context) {
 	grenderer.Render(c, resp.Message, statusCode)
 }
 
-// RedisDelete - DEL key
+// RedisDelete handles DEL key operations.
 func RedisDelete(c *gin.Context) {
 	data := model.RedisData{}
 	if err := c.ShouldBindJSON(&data); err != nil {
@@ -61,7 +61,7 @@ func RedisDelete(c *gin.Context) {
 	grenderer.Render(c, resp, statusCode)
 }
 
-// RedisCreateHash - SET hashes
+// RedisCreateHash handles SET hash operations.
 func RedisCreateHash(c *gin.Context) {
 	data := model.RedisDataHash{}
 	if err := c.ShouldBindJSON(&data); err != nil {
@@ -79,7 +79,7 @@ func RedisCreateHash(c *gin.Context) {
 	grenderer.Render(c, resp.Message, statusCode)
 }
 
-// RedisReadHash - GET hashes
+// RedisReadHash handles GET hash operations.
 func RedisReadHash(c *gin.Context) {
 	data := model.RedisDataHash{}
 	if err := c.ShouldBindJSON(&data); err != nil {
@@ -97,7 +97,7 @@ func RedisReadHash(c *gin.Context) {
 	grenderer.Render(c, resp.Message, statusCode)
 }
 
-// RedisDeleteHash - DEL hashes
+// RedisDeleteHash handles DEL hash operations.
 func RedisDeleteHash(c *gin.Context) {
 	data := model.RedisDataHash{}
 	if err := c.ShouldBindJSON(&data); err != nil {

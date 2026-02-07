@@ -1387,9 +1387,8 @@ func TestValidateFailure(t *testing.T) {
 	}
 }
 
-// DummyClaims is a struct to simulate invalid token claims for testing
-// Implements jwt.Claims minimally
-// Used in TestJWTAuthCookie
+// DummyClaims is a struct to simulate invalid token claims for testing.
+// It implements jwt.Claims minimally and is used in TestJWTAuthCookie.
 
 type DummyClaims struct {
 	Foo string
@@ -1403,7 +1402,7 @@ func (d *DummyClaims) GetIssuer() (string, error)                   { return "",
 func (d *DummyClaims) GetNotBefore() (*jwt.NumericDate, error)      { return nil, nil }
 func (d *DummyClaims) GetSubject() (string, error)                  { return "", nil }
 
-// set params
+// setParamsJWT sets JWT parameters for testing.
 func setParamsJWT() {
 	middleware.JWTParams.Algorithm = "HS256"
 	middleware.JWTParams.AccessKey = []byte("cryptographic_key_1")

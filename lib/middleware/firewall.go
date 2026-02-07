@@ -22,7 +22,7 @@ var (
 	ipCIDR     bool
 )
 
-// Firewall - whitelist/blacklist IPs
+// Firewall applies whitelist/blacklist IP filtering.
 func Firewall(listType string, ipList string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// parse the IP list only once
@@ -159,7 +159,7 @@ func parseIPList(listType, ipList string) {
 	}
 }
 
-// ResetFirewallState - helper function to reset firewall package-level variables
+// ResetFirewallState resets firewall package-level variables.
 func ResetFirewallState() {
 	parsedOnce = sync.Once{}
 	ipNets = nil

@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Hobby model - `hobbies` table
+// Hobby model represents the hobbies table.
 type Hobby struct {
 	HobbyID   uint64         `gorm:"primaryKey" json:"hobbyID,omitempty"`
 	CreatedAt time.Time      `json:"createdAt,omitempty"`

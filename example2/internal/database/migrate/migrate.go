@@ -1,4 +1,4 @@
-// Package migrate to migrate database schema for the example2 application.
+// Package migrate handles database schema migration for the example2 application.
 package migrate
 
 import (
@@ -11,7 +11,7 @@ import (
 	"github.com/pilinux/gorest/example2/internal/database/model"
 )
 
-// Load all the models.
+// load all the models.
 type auth gmodel.Auth
 type twoFA gmodel.TwoFA
 type twoFABackup gmodel.TwoFABackup
@@ -21,7 +21,7 @@ type post model.Post
 type hobby model.Hobby
 type userHobby model.UserHobby
 
-// DropAllTables - careful! It will drop all the tables!
+// DropAllTables drops all the tables. Use with caution!
 func DropAllTables() error {
 	db := gdb.GetDB()
 
@@ -42,11 +42,10 @@ func DropAllTables() error {
 	return nil
 }
 
-// StartMigration - automatically migrate all the tables.
+// StartMigration automatically migrates all the tables.
 //
-// - Only create tables with missing columns and missing indexes.
-//
-// - Will not change/delete any existing columns and their types.
+//   - Only create tables with missing columns and missing indexes.
+//   - Will not change/delete any existing columns and their types.
 func StartMigration(configure gconfig.Configuration) error {
 	db := gdb.GetDB()
 	configureDB := configure.Database.RDBMS

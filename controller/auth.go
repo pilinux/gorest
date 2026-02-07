@@ -1,5 +1,5 @@
 // Package controller contains all the controllers
-// of the application
+// of the application.
 package controller
 
 import (
@@ -15,7 +15,7 @@ import (
 	"github.com/pilinux/gorest/service"
 )
 
-// CreateUserAuth - register a new user account
+// CreateUserAuth registers a new user account.
 //
 // [POST]: /register
 //
@@ -74,7 +74,7 @@ func CreateUserAuth(c *gin.Context) {
 	renderer.Render(c, resp.Message, statusCode)
 }
 
-// UpdateEmail - update existing user email
+// UpdateEmail updates an existing user email.
 //
 // dependency: relational database, JWT
 //

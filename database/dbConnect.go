@@ -1,5 +1,5 @@
 // Package database handles connections to different
-// types of databases
+// types of databases.
 package database
 
 import (
@@ -35,25 +35,25 @@ import (
 	opts "go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// RecordNotFound record not found error message
+// RecordNotFound is the error message for record not found.
 const RecordNotFound string = "record not found"
 
-// dbClient variable to access gorm
+// dbClient holds the gorm DB connection instance.
 var dbClient *gorm.DB
 
 var sqlDB *sql.DB
 var err error
 
-// redisClient variable to access the redis client
+// redisClient holds the Redis client connection instance.
 var redisClient radix.Client
 
-// RedisConnTTL - context deadline in second
+// RedisConnTTL is the context deadline in seconds for Redis connections.
 var RedisConnTTL int
 
-// mongoClient instance
+// mongoClient holds the MongoDB client connection instance.
 var mongoClient *qmgo.Client
 
-// InitDB - function to initialize db
+// InitDB initializes the database connection.
 func InitDB() *gorm.DB {
 	var db = dbClient
 
@@ -199,12 +199,12 @@ func InitDB() *gorm.DB {
 	return dbClient
 }
 
-// GetDB - get a connection
+// GetDB returns the current database connection.
 func GetDB() *gorm.DB {
 	return dbClient
 }
 
-// InitRedis - function to initialize redis client
+// InitRedis initializes the Redis client connection.
 func InitRedis() (radix.Client, error) {
 	configureRedis := config.GetConfig().Database.REDIS
 
@@ -229,12 +229,12 @@ func InitRedis() (radix.Client, error) {
 	return redisClient, nil
 }
 
-// GetRedis - get a connection
+// GetRedis returns the current Redis client connection.
 func GetRedis() radix.Client {
 	return redisClient
 }
 
-// InitMongo - function to initialize mongo client
+// InitMongo initializes the MongoDB client connection.
 func InitMongo() (*qmgo.Client, error) {
 	configureMongo := config.GetConfig().Database.MongoDB
 
@@ -281,12 +281,12 @@ func InitMongo() (*qmgo.Client, error) {
 	return mongoClient, nil
 }
 
-// GetMongo - get a connection
+// GetMongo returns the current MongoDB client connection.
 func GetMongo() *qmgo.Client {
 	return mongoClient
 }
 
-// CloseAllDB - close all database connections
+// CloseAllDB closes all database connections.
 func CloseAllDB() error {
 	err := CloseSQL()
 	if err != nil {
@@ -306,7 +306,7 @@ func CloseAllDB() error {
 	return nil
 }
 
-// CloseSQL - close connections to the SQL database
+// CloseSQL closes the SQL database connection.
 func CloseSQL() error {
 	if dbClient != nil {
 		fmt.Println("Closing SQL DB connection...")
@@ -325,7 +325,7 @@ func CloseSQL() error {
 	return nil
 }
 
-// CloseRedis - close connections to the Redis database
+// CloseRedis closes the Redis database connection.
 func CloseRedis() error {
 	if redisClient != nil {
 		fmt.Println("Closing Redis connection...")
@@ -339,7 +339,7 @@ func CloseRedis() error {
 	return nil
 }
 
-// CloseMongo - close connections to the MongoDB database
+// CloseMongo closes the MongoDB database connection.
 func CloseMongo() error {
 	if mongoClient != nil {
 		fmt.Println("Closing MongoDB connection...")

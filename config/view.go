@@ -1,6 +1,6 @@
 package config
 
-// ViewConfig - HTML renderer
+// ViewConfig holds HTML renderer configuration.
 type ViewConfig struct {
 	Activate  string
 	Directory string

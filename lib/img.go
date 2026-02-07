@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// ByteToPNG - generate PNG from bytes and save on the disk
+// ByteToPNG generates a PNG from bytes and saves it on disk.
 func ByteToPNG(imgByte []byte, dir string) (string, error) {
 	img, _, err := image.Decode(bytes.NewReader(imgByte))
 	if err != nil {

@@ -17,7 +17,7 @@ import (
 	"github.com/pilinux/gorest/lib/server"
 )
 
-// newTestServer sets up a new HTTP server on a random port with a given handler
+// newTestServer sets up a new HTTP server on a random port with a given handler.
 func newTestServer(t *testing.T, handler http.HandlerFunc) (*http.Server, net.Listener) {
 	t.Helper()
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
@@ -43,7 +43,7 @@ func newTestServer(t *testing.T, handler http.HandlerFunc) (*http.Server, net.Li
 	return srv, ln
 }
 
-// sendSignal sends the specified OS signal to the current process after a delay
+// sendSignal sends the specified OS signal to the current process after a delay.
 func sendSignal(sig os.Signal, delay time.Duration) {
 	go func() {
 		time.Sleep(delay)
@@ -57,7 +57,7 @@ func sendSignal(sig os.Signal, delay time.Duration) {
 	}()
 }
 
-// createHangingHandler creates an HTTP handler that sleeps for a specified duration
+// createHangingHandler creates an HTTP handler that sleeps for a specified duration.
 func createHangingHandler(sleepDuration time.Duration) http.HandlerFunc {
 	return func(w http.ResponseWriter, _ *http.Request) {
 		time.Sleep(sleepDuration)
@@ -66,7 +66,7 @@ func createHangingHandler(sleepDuration time.Duration) http.HandlerFunc {
 }
 
 // TestGracefulShutdown_SuccessWithDB tests that the server shuts down gracefully
-// within the timeout, with successful closeDB functions including nil ones.
+// within the timeout with successful closeDB functions including nil ones.
 func TestGracefulShutdown_SuccessWithDB(t *testing.T) {
 	t.Log("running:" + t.Name())
 
@@ -201,7 +201,7 @@ func TestGracefulShutdown_SuccessWithDBFail(t *testing.T) {
 // This is not implementable here as it would require a custom http.Server implementation.
 
 // TestGracefulShutdown_TimeoutForceCloseSuccess tests that if shutdown times out,
-// srv.Shutdown returns context.DeadlineExceeded, and the server is forcefully closed successfully.
+// srv.Shutdown returns context.DeadlineExceeded and the server is forcefully closed successfully.
 func TestGracefulShutdown_TimeoutForceCloseSuccess(t *testing.T) {
 	t.Log("running:" + t.Name())
 

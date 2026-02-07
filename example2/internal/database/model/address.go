@@ -6,7 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// Geocoding - struct for address
+// Geocoding represents an address with geocoding information.
 type Geocoding struct {
 	ID               primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	FormattedAddress string             `json:"formattedAddress,omitempty" bson:"formattedAddress,omitempty"`
@@ -36,13 +36,13 @@ func (s *Geocoding) Trim() {
 	s.CountryCode = strings.TrimSpace(s.CountryCode)
 }
 
-// Geometry - struct for latitude and longitude
+// Geometry represents latitude and longitude coordinates.
 type Geometry struct {
 	Latitude  *float64 `json:"latitude,omitempty" bson:"latitude,omitempty"`
 	Longitude *float64 `json:"longitude,omitempty" bson:"longitude,omitempty"`
 }
 
-// IsEmpty - check empty struct
+// IsEmpty checks whether the Geocoding struct is empty.
 func (s *Geocoding) IsEmpty() bool {
 	return s.FormattedAddress == "" &&
 		s.StreetName == "" &&

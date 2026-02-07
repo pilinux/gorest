@@ -14,14 +14,14 @@ import (
 	"github.com/pilinux/gorest/example/handler"
 )
 
-// GetPosts - GET /posts
+// GetPosts handles GET /posts.
 func GetPosts(c *gin.Context) {
 	resp, statusCode := handler.GetPosts()
 
 	grenderer.Render(c, resp, statusCode)
 }
 
-// GetPost - GET /posts/:id
+// GetPost handles GET /posts/:id.
 func GetPost(c *gin.Context) {
 	id := strings.TrimSpace(c.Params.ByName("id"))
 
@@ -39,7 +39,7 @@ func GetPost(c *gin.Context) {
 	grenderer.Render(c, resp.Message, statusCode, "read-article.html")
 }
 
-// CreatePost - POST /posts
+// CreatePost handles POST /posts.
 func CreatePost(c *gin.Context) {
 	userIDAuth := c.GetUint64("authID")
 	post := model.Post{}
@@ -60,7 +60,7 @@ func CreatePost(c *gin.Context) {
 	grenderer.Render(c, resp.Message, statusCode)
 }
 
-// UpdatePost - PUT /posts/:id
+// UpdatePost handles PUT /posts/:id.
 func UpdatePost(c *gin.Context) {
 	userIDAuth := c.GetUint64("authID")
 	id := strings.TrimSpace(c.Params.ByName("id"))
@@ -82,7 +82,7 @@ func UpdatePost(c *gin.Context) {
 	grenderer.Render(c, resp.Message, statusCode)
 }
 
-// DeletePost - DELETE /posts/:id
+// DeletePost handles DELETE /posts/:id.
 func DeletePost(c *gin.Context) {
 	userIDAuth := c.GetUint64("authID")
 	id := strings.TrimSpace(c.Params.ByName("id"))

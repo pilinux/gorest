@@ -6,7 +6,7 @@ import (
 	"github.com/pilinux/gorest/lib"
 )
 
-// TestInitRateLimiter - test the InitRateLimiter function
+// TestInitRateLimiter tests the InitRateLimiter function.
 func TestInitRateLimiter(t *testing.T) {
 	tests := []struct {
 		name            string

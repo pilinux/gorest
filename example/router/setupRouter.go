@@ -1,4 +1,4 @@
-// Package router contains all routes of the example application
+// Package router contains all routes of the example application.
 package router
 
 import (
@@ -13,7 +13,7 @@ import (
 	"github.com/pilinux/gorest/example/controller"
 )
 
-// SetupRouter sets up all the routes
+// SetupRouter sets up all the routes.
 func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 	// Set Gin mode
 	if gconfig.IsProd() {

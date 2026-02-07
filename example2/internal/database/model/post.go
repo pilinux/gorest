@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Post model - `posts` table
+// Post represents a post in the posts table.
 type Post struct {
 	PostID    uint64 `gorm:"primaryKey" json:"postID,omitempty" structs:"postID,omitempty"`
 	CreatedAt int64  `json:"createdAt,omitempty" structs:"createdAt,omitempty"`

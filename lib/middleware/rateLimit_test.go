@@ -10,7 +10,7 @@ import (
 	"github.com/pilinux/gorest/lib/middleware"
 )
 
-// TestRateLimit - test the RateLimit middleware
+// TestRateLimit tests the RateLimit middleware.
 func TestRateLimit(t *testing.T) {
 	tests := []struct {
 		name           string

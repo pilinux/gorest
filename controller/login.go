@@ -15,7 +15,7 @@ import (
 	"github.com/pilinux/gorest/service"
 )
 
-// Login - issue new JWTs after user:pass verification
+// Login issues new JWTs after user:pass verification.
 //
 // [POST]: /login
 //
@@ -102,7 +102,7 @@ func Login(c *gin.Context) {
 	renderer.Render(c, resp.Message, statusCode)
 }
 
-// Refresh - issue new JWTs after validation
+// Refresh issues new JWTs after validation.
 //
 // dependency: JWT
 func Refresh(c *gin.Context) {

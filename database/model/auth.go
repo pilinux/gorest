@@ -1,5 +1,5 @@
 // Package model contains all the models required
-// for a functional database management system
+// for a functional database management system.
 package model
 
 import (
@@ -35,7 +35,7 @@ const (
 	PasswordRecoveryKeyPrefix  string = "gorest-pass-recover-"
 )
 
-// Auth model - `auths` table
+// Auth represents the auths table.
 type Auth struct {
 	AuthID      uint64         `gorm:"primaryKey" json:"authID,omitempty"`
 	CreatedAt   time.Time      `json:"createdAt,omitempty"`
@@ -49,7 +49,7 @@ type Auth struct {
 	VerifyEmail int8           `json:"-"`
 }
 
-// UnmarshalJSON ...
+// UnmarshalJSON implements the json.Unmarshaler interface for Auth.
 func (v *Auth) UnmarshalJSON(b []byte) error {
 	aux := struct {
 		AuthID   uint64 `json:"authID"`
@@ -88,7 +88,7 @@ func (v *Auth) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// MarshalJSON ...
+// MarshalJSON implements the json.Marshaler interface for Auth.
 func (v Auth) MarshalJSON() ([]byte, error) {
 	aux := struct {
 		AuthID uint64 `json:"authID"`
@@ -101,7 +101,7 @@ func (v Auth) MarshalJSON() ([]byte, error) {
 	return json.Marshal(aux)
 }
 
-// AuthPayload - struct to handle all auth data
+// AuthPayload holds all auth-related request data.
 type AuthPayload struct {
 	Email    string `json:"email,omitempty"`
 	Password string `json:"password,omitempty"`
@@ -117,9 +117,9 @@ type AuthPayload struct {
 	PassRepeat string `json:"passRepeat,omitempty"`
 }
 
-// TempEmail - 'temp_emails' table to hold data temporarily
+// TempEmail represents the temp_emails table used to hold data temporarily
 // during the process of replacing a user's email address
-// with a new one
+// with a new one.
 type TempEmail struct {
 	ID          uint64    `gorm:"primaryKey" json:"-"`
 	CreatedAt   time.Time `json:"createdAt,omitempty"`

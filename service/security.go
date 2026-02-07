@@ -14,7 +14,7 @@ import (
 	"github.com/pilinux/gorest/database"
 )
 
-// IsTokenAllowed returns true when the token is not in the blacklist
+// IsTokenAllowed returns true when the token is not in the blacklist.
 //
 // Dependency: JWT, Redis database + enable 'INVALIDATE_JWT' in .env
 func IsTokenAllowed(jti string) bool {
@@ -56,7 +56,7 @@ func IsTokenAllowed(jti string) bool {
 	return true
 }
 
-// JWTBlacklistChecker validates a token against the blacklist
+// JWTBlacklistChecker validates a token against the blacklist.
 func JWTBlacklistChecker() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var jti string

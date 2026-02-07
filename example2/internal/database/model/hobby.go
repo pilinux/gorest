@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Hobby model - `hobbies` table
+// Hobby represents a hobby in the hobbies table.
 type Hobby struct {
 	HobbyID   uint64 `gorm:"primaryKey" json:"hobbyID,omitempty"`
 	CreatedAt int64  `json:"createdAt,omitempty"`

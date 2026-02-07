@@ -19,7 +19,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// JWTParameters - params to configure JWT
+// JWTParameters holds params to configure JWT.
 type JWTParameters struct {
 	Algorithm     string
 	AccessKey     []byte
@@ -40,10 +40,10 @@ type JWTParameters struct {
 	Subject  string
 }
 
-// JWTParams - exported variables
+// JWTParams holds exported JWT configuration variables.
 var JWTParams JWTParameters
 
-// MyCustomClaims ...
+// MyCustomClaims holds custom JWT claims.
 type MyCustomClaims struct {
 	AuthID  uint64 `json:"authID,omitempty"`
 	Email   string `json:"email,omitempty"`
@@ -59,13 +59,13 @@ type MyCustomClaims struct {
 	Custom2 string `json:"custom2,omitempty"`
 }
 
-// JWTClaims ...
+// JWTClaims combines custom claims with registered JWT claims.
 type JWTClaims struct {
 	MyCustomClaims
 	jwt.RegisteredClaims
 }
 
-// JWTPayload ...
+// JWTPayload holds the JWT access and refresh token pair.
 type JWTPayload struct {
 	AccessJWT   string `json:"accessJWT,omitempty"`
 	RefreshJWT  string `json:"refreshJWT,omitempty"`
@@ -73,7 +73,7 @@ type JWTPayload struct {
 	RecoveryKey string `json:"recoveryKey,omitempty"`
 }
 
-// JWT - validate access token
+// JWT validates the access token.
 func JWT(namedCookie ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var jwtPayload JWTPayload
@@ -196,7 +196,7 @@ func JWT(namedCookie ...string) gin.HandlerFunc {
 	}
 }
 
-// RefreshJWT - validate refresh token
+// RefreshJWT validates the refresh token.
 func RefreshJWT() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var jwtPayload JWTPayload
@@ -318,7 +318,7 @@ func RefreshJWT() gin.HandlerFunc {
 	}
 }
 
-// ValidateHMACAccess - validate hash based access token
+// ValidateHMACAccess validates a hash based access token.
 func ValidateHMACAccess(token *jwt.Token) (any, error) {
 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -326,7 +326,7 @@ func ValidateHMACAccess(token *jwt.Token) (any, error) {
 	return JWTParams.AccessKey, nil
 }
 
-// ValidateHMACRefresh - validate hash based refresh token
+// ValidateHMACRefresh validates a hash based refresh token.
 func ValidateHMACRefresh(token *jwt.Token) (any, error) {
 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -334,7 +334,7 @@ func ValidateHMACRefresh(token *jwt.Token) (any, error) {
 	return JWTParams.RefreshKey, nil
 }
 
-// ValidateECDSA - validate elliptic curve digital signature algorithm based token
+// ValidateECDSA validates an elliptic curve digital signature algorithm based token.
 func ValidateECDSA(token *jwt.Token) (any, error) {
 	if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
 		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -342,7 +342,7 @@ func ValidateECDSA(token *jwt.Token) (any, error) {
 	return JWTParams.PubKeyECDSA, nil
 }
 
-// ValidateEdDSA - validate Edwards-curve Digital Signature Algorithm based token
+// ValidateEdDSA validates an Edwards-curve Digital Signature Algorithm based token.
 func ValidateEdDSA(token *jwt.Token) (any, error) {
 	if _, ok := token.Method.(*jwt.SigningMethodEd25519); !ok {
 		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -350,7 +350,7 @@ func ValidateEdDSA(token *jwt.Token) (any, error) {
 	return JWTParams.PubKeyEdDSA, nil
 }
 
-// ValidateRSA - validate Rivest–Shamir–Adleman cryptosystem based token
+// ValidateRSA validates a Rivest-Shamir-Adleman cryptosystem based token.
 func ValidateRSA(token *jwt.Token) (any, error) {
 	if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -358,7 +358,7 @@ func ValidateRSA(token *jwt.Token) (any, error) {
 	return JWTParams.PubKeyRSA, nil
 }
 
-// ValidateAccessJWT - verify the access JWT's signature, and validate its claims
+// ValidateAccessJWT verifies the access JWT's signature and validates its claims.
 func ValidateAccessJWT(token *jwt.Token) (any, error) {
 	alg := JWTParams.Algorithm
 
@@ -376,7 +376,7 @@ func ValidateAccessJWT(token *jwt.Token) (any, error) {
 	}
 }
 
-// ValidateRefreshJWT - verify the refresh JWT's signature, and validate its claims
+// ValidateRefreshJWT verifies the refresh JWT's signature and validates its claims.
 func ValidateRefreshJWT(token *jwt.Token) (any, error) {
 	alg := JWTParams.Algorithm
 
@@ -394,7 +394,7 @@ func ValidateRefreshJWT(token *jwt.Token) (any, error) {
 	}
 }
 
-// GetJWT - issue new tokens
+// GetJWT issues new tokens.
 func GetJWT(customClaims MyCustomClaims, tokenType string) (string, string, error) {
 	var (
 		key     []byte

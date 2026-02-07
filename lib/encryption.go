@@ -1,10 +1,10 @@
 // Package lib provides additional functionalities to the application:
 //
-// - AES encryption-decryption
-// - Argon2id hashing
-// - SHA hashing
-// - Two-factor authentication
-// - Email format validation along with MX lookup
+//   - AES encryption-decryption
+//   - Argon2id hashing
+//   - SHA hashing
+//   - Two-factor authentication
+//   - Email format validation along with MX lookup
 package lib
 
 import (
@@ -15,11 +15,11 @@ import (
 	"io"
 )
 
-// Encrypt using AES algorithm
+// Encrypt encrypts data using the AES algorithm.
 //
-// - AES128 key size: 16 bytes
-// - AES192 key size: 24 bytes
-// - AES256 key size: 32 bytes
+//   - AES128 key size: 16 bytes
+//   - AES192 key size: 24 bytes
+//   - AES256 key size: 32 bytes
 func Encrypt(plaintext []byte, key []byte) ([]byte, error) {
 	c, err := aes.NewCipher(key)
 	if err != nil {
@@ -39,10 +39,11 @@ func Encrypt(plaintext []byte, key []byte) ([]byte, error) {
 	return gcm.Seal(nonce, nonce, plaintext, nil), nil
 }
 
-// Decrypt using AES algorithm
-// AES128 key size: 16 bytes
-// AES192 key size: 24 bytes
-// AES256 key size: 32 bytes
+// Decrypt decrypts data using the AES algorithm.
+//
+//   - AES128 key size: 16 bytes
+//   - AES192 key size: 24 bytes
+//   - AES256 key size: 32 bytes
 func Decrypt(ciphertext []byte, key []byte) ([]byte, error) {
 	c, err := aes.NewCipher(key)
 	if err != nil {

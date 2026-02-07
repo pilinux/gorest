@@ -13,7 +13,7 @@ import (
 	"github.com/pilinux/gorest/service"
 )
 
-// PasswordForgot sends secret code for resetting a forgotten password
+// PasswordForgot sends secret code for resetting a forgotten password.
 //
 // dependency: relational database, Redis, email service, password recovery service
 //
@@ -82,7 +82,7 @@ func PasswordForgot(c *gin.Context) {
 	renderer.Render(c, resp, statusCode)
 }
 
-// PasswordRecover resets a forgotten password
+// PasswordRecover resets a forgotten password.
 //
 // dependency: relational database, Redis
 //
@@ -90,7 +90,7 @@ func PasswordForgot(c *gin.Context) {
 //
 // `{"secretCode":"...", "passNew":"...", "passRepeat":"...", "recoveryKey":"..."}`
 //
-// - `recoveryKey` is required if 2FA is enabled for the user account
+//   - `recoveryKey` is required if 2FA is enabled for the user account
 func PasswordRecover(c *gin.Context) {
 	// delete existing auth cookie if present
 	_, errAccessJWT := c.Cookie("accessJWT")
@@ -145,7 +145,7 @@ func PasswordRecover(c *gin.Context) {
 	renderer.Render(c, resp.Message, statusCode)
 }
 
-// PasswordUpdate - change password in logged-in state
+// PasswordUpdate changes the password in a logged-in state.
 //
 // dependency: relational database, JWT
 //

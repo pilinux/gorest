@@ -1,4 +1,4 @@
-// Package migrate to migrate the schema for the example application
+// Package migrate handles schema migration for the example application.
 package migrate
 
 import (
@@ -11,7 +11,7 @@ import (
 	"github.com/pilinux/gorest/example/database/model"
 )
 
-// Load all the models
+// load all the models
 type auth gmodel.Auth
 type twoFA gmodel.TwoFA
 type twoFABackup gmodel.TwoFABackup
@@ -21,7 +21,7 @@ type post model.Post
 type hobby model.Hobby
 type userHobby model.UserHobby
 
-// DropAllTables - careful! It will drop all the tables!
+// DropAllTables drops all the tables from the database.
 func DropAllTables() error {
 	db := gdatabase.GetDB()
 
@@ -42,10 +42,10 @@ func DropAllTables() error {
 	return nil
 }
 
-// StartMigration - automatically migrate all the tables
+// StartMigration automatically migrates all the tables.
 //
-// - Only create tables with missing columns and missing indexes
-// - Will not change/delete any existing columns and their types
+//   - Only create tables with missing columns and missing indexes
+//   - Will not change/delete any existing columns and their types
 func StartMigration(configure gconfig.Configuration) error {
 	db := gdatabase.GetDB()
 	configureDB := configure.Database.RDBMS
@@ -85,7 +85,7 @@ func StartMigration(configure gconfig.Configuration) error {
 	return nil
 }
 
-// SetPkFk - manually set foreign key for MySQL and PostgreSQL
+// SetPkFk manually sets foreign keys for MySQL and PostgreSQL.
 func SetPkFk() error {
 	db := gdatabase.GetDB()
 

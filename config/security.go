@@ -8,7 +8,7 @@ import (
 	"github.com/pilinux/gorest/lib/middleware"
 )
 
-// SecurityConfig ...
+// SecurityConfig holds security-related configuration.
 type SecurityConfig struct {
 	UserPassMinLength int
 
@@ -69,7 +69,7 @@ type SecurityConfig struct {
 	}
 }
 
-// Status2FA - user's 2FA statuses
+// Status2FA holds user's 2FA statuses.
 type Status2FA struct {
 	Verified string
 	On       string

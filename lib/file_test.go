@@ -31,7 +31,7 @@ func TestFileExist(t *testing.T) {
 	}
 }
 
-// Test function for validatePath
+// TestValidatePath tests the ValidatePath function.
 func TestValidatePath(t *testing.T) {
 	// set up a valid directory for testing
 	allowedDir := "/home/user/allowed_dir"

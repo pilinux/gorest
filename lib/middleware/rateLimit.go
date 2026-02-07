@@ -6,7 +6,7 @@ import (
 	mgin "github.com/ulule/limiter/v3/drivers/middleware/gin"
 )
 
-// RateLimit - rate limit middleware
+// RateLimit returns a rate limiting middleware.
 func RateLimit(limiterInstance *limiter.Limiter) gin.HandlerFunc {
 	// limiter instance is nil
 	if limiterInstance == nil {

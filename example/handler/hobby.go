@@ -11,7 +11,7 @@ import (
 	"github.com/pilinux/gorest/example/database/model"
 )
 
-// GetHobbies handles jobs for controller.GetHobbies
+// GetHobbies retrieves all hobbies.
 func GetHobbies() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
 	hobbies := []model.Hobby{}

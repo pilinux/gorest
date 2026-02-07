@@ -22,7 +22,10 @@ import (
 	"github.com/pilinux/gorest/service"
 )
 
-// PasswordForgot handles jobs for controller.PasswordForgot
+// PasswordForgot starts the password recovery flow.
+//
+// It validates the email, ensures the account exists and is email-verified, and
+// sends a password recovery email containing a secret code.
 func PasswordForgot(authPayload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	// check email format + perform mx lookup
 	authPayload.Email = strings.TrimSpace(authPayload.Email)
@@ -74,7 +77,11 @@ func PasswordForgot(authPayload model.AuthPayload) (httpResponse model.HTTPRespo
 	return
 }
 
-// PasswordRecover handles jobs for controller.PasswordRecover
+// PasswordRecover completes the password recovery flow using a secret code.
+//
+// It validates the secret code from Redis, updates the stored password hash, and
+// if 2FA is enabled it also rotates and re-encrypts the user's 2FA secrets and
+// returns a new recovery key.
 func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	// response to the client
 	response := struct {
@@ -401,7 +408,11 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 	return
 }
 
-// PasswordUpdate handles jobs for controller.PasswordUpdate
+// PasswordUpdate updates the password for an authenticated user.
+//
+// It verifies the current password, writes the new password hash, and if 2FA is
+// enabled and active it re-encrypts the stored 2FA secret using a key derived
+// from the new password.
 func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	// check auth validity
 	ok := service.ValidateAuthID(claims.AuthID)

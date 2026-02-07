@@ -16,9 +16,9 @@ import (
 	"github.com/pilinux/gorest/service"
 )
 
-// Setup2FA - get secret to activate 2FA
+// Setup2FA retrieves the secret to activate 2FA.
 //
-// - possible for accounts without 2FA-ON
+//   - possible for accounts without 2FA-ON
 //
 // dependency: relational database, JWT, 2FA service
 //
@@ -65,9 +65,9 @@ func Setup2FA(c *gin.Context) {
 	c.File(fmt.Sprintf("%v", resp.Message))
 }
 
-// Activate2FA - activate 2FA upon validation
+// Activate2FA activates 2FA upon validation.
 //
-// - possible for accounts without 2FA-ON
+//   - possible for accounts without 2FA-ON
 //
 // dependency: relational database, JWT, 2FA service
 //
@@ -158,9 +158,9 @@ func Activate2FA(c *gin.Context) {
 	renderer.Render(c, resp.Message, statusCode)
 }
 
-// Validate2FA - issue new JWTs upon 2FA validation
+// Validate2FA issues new JWTs upon 2FA validation.
 //
-// - required for accounts with 2FA-ON
+//   - required for accounts with 2FA-ON
 //
 // dependency: relational database, JWT, 2FA service
 //
@@ -257,7 +257,7 @@ func Validate2FA(c *gin.Context) {
 	renderer.Render(c, resp.Message, statusCode)
 }
 
-// Deactivate2FA - disable 2FA for user account
+// Deactivate2FA disables 2FA for a user account.
 //
 // dependency: relational database, JWT, 2FA service
 //
@@ -354,9 +354,9 @@ func Deactivate2FA(c *gin.Context) {
 	renderer.Render(c, resp.Message, statusCode)
 }
 
-// CreateBackup2FA - get new set of 2FA backup codes
+// CreateBackup2FA generates a new set of 2FA backup codes.
 //
-// - 2FA must already be enabled for the user account
+//   - 2FA must already be enabled for the user account
 //
 // dependency: relational database, JWT, 2FA service
 //
@@ -397,7 +397,7 @@ func CreateBackup2FA(c *gin.Context) {
 	renderer.Render(c, resp, statusCode)
 }
 
-// ValidateBackup2FA - issue new JWTs upon 2FA validation with backup code
+// ValidateBackup2FA issues new JWTs upon 2FA validation with a backup code.
 //
 // dependency: relational database, JWT, 2FA service
 //

@@ -8,7 +8,7 @@ import (
 	"github.com/pilinux/gorest/config"
 )
 
-// GetHash returns single or nested hash of the data
+// GetHash returns single or nested hash of the data.
 func GetHash(dataIn []byte) (dataOut []byte, err error) {
 	hashed := sha256.Sum256(dataIn)
 
@@ -26,7 +26,7 @@ func GetHash(dataIn []byte) (dataOut []byte, err error) {
 	return
 }
 
-// RandomByte returns a secure random byte slice of the given length
+// RandomByte returns a secure random byte slice of the given length.
 func RandomByte(length int) ([]byte, error) {
 	b := make([]byte, length)
 	_, err := rand.Read(b)
@@ -36,7 +36,7 @@ func RandomByte(length int) ([]byte, error) {
 	return b, nil
 }
 
-// GenerateCode generates a random alphanumeric code of the given length
+// GenerateCode generates a random alphanumeric code of the given length.
 func GenerateCode(length int) (string, error) {
 	const characters string = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 

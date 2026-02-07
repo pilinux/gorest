@@ -1,5 +1,5 @@
 // Package service contains common functions used by
-// the whole application
+// the whole application.
 package service
 
 import (
@@ -14,7 +14,7 @@ import (
 	"github.com/pilinux/gorest/database/model"
 )
 
-// GetUserByEmail fetches auth info by email or hash of the email
+// GetUserByEmail fetches auth info by email or hash of the email.
 func GetUserByEmail(email string, decryptEmail bool) (*model.Auth, error) {
 	db := database.GetDB()
 	var err error
@@ -53,7 +53,7 @@ func GetUserByEmail(email string, decryptEmail bool) (*model.Auth, error) {
 	return nil, err
 }
 
-// GetEmailByAuthID fetches user email by authID
+// GetEmailByAuthID fetches user email by authID.
 func GetEmailByAuthID(authID uint64) (string, error) {
 	db := database.GetDB()
 	var auth model.Auth
@@ -72,7 +72,7 @@ func GetEmailByAuthID(authID uint64) (string, error) {
 	return DecryptEmail(auth.EmailNonce, auth.EmailCipher)
 }
 
-// IsAuthIDValid checks if the given authID is available in the database
+// IsAuthIDValid checks if the given authID is available in the database.
 func IsAuthIDValid(authID uint64) bool {
 	db := database.GetDB()
 	var auth model.Auth
@@ -81,7 +81,7 @@ func IsAuthIDValid(authID uint64) bool {
 	return err == nil
 }
 
-// CalcHash generates a fixed-sized BLAKE2b-256 hash of the given text
+// CalcHash generates a fixed-sized BLAKE2b-256 hash of the given text.
 func CalcHash(plaintext, keyOptional []byte) ([]byte, error) {
 	blake2b256Hash, err := blake2b.New256(keyOptional)
 	if err != nil {
@@ -98,7 +98,7 @@ func CalcHash(plaintext, keyOptional []byte) ([]byte, error) {
 	return blake2b256Sum, nil
 }
 
-// DecryptEmail returns the plaintext email from the given cipher and nonce
+// DecryptEmail returns the plaintext email from the given cipher and nonce.
 func DecryptEmail(emailNonce, emailCipher string) (email string, err error) {
 	nonce, err := hex.DecodeString(emailNonce)
 	if err != nil {

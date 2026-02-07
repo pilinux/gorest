@@ -5,7 +5,7 @@ import (
 )
 
 // StrArrHTMLModel first slices a string into all substrings separated by `;`
-// and then slices each substring separated by `:` for `HTMLModel` function
+// and then slices each substring separated by `:` for HTMLModel function.
 //
 // Example: StrArrHTMLModel(key1:value1,key2:value2,key3:value3)
 // will return [key1 value1 key2 value2 key3 value3]
@@ -30,7 +30,7 @@ func StrArrHTMLModel(s string) []string {
 }
 
 // HTMLModel takes a slice and builds a model for populating
-// a templated email
+// a templated email.
 func HTMLModel(in []string) map[string]any {
 	length := len(in)
 

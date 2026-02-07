@@ -7,7 +7,7 @@ import (
 )
 
 // TwoFA validates 2-FA status from JWT before
-// forwarding the request to the controller
+// forwarding the request to the controller.
 func TwoFA(keywordOn, keywordOff, keywordVerified string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		statusFromJWT := c.GetString("tfa")

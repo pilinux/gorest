@@ -1,5 +1,5 @@
 // Package controller contains all the controllers
-// of the application
+// of the application.
 package controller
 
 import (
@@ -15,14 +15,14 @@ import (
 	"github.com/pilinux/gorest/example/handler"
 )
 
-// GetUsers - GET /users
+// GetUsers handles GET /users.
 func GetUsers(c *gin.Context) {
 	resp, statusCode := handler.GetUsers()
 
 	grenderer.Render(c, resp, statusCode)
 }
 
-// GetUser - GET /users/:id
+// GetUser handles GET /users/:id.
 func GetUser(c *gin.Context) {
 	id := strings.TrimSpace(c.Params.ByName("id"))
 
@@ -36,7 +36,7 @@ func GetUser(c *gin.Context) {
 	grenderer.Render(c, resp.Message, statusCode)
 }
 
-// CreateUser - POST /users
+// CreateUser handles POST /users.
 func CreateUser(c *gin.Context) {
 	userIDAuth := c.GetUint64("authID")
 	user := model.User{}
@@ -57,7 +57,7 @@ func CreateUser(c *gin.Context) {
 	grenderer.Render(c, resp.Message, statusCode)
 }
 
-// UpdateUser - PUT /users
+// UpdateUser handles PUT /users.
 func UpdateUser(c *gin.Context) {
 	userIDAuth := c.GetUint64("authID")
 	user := model.User{}
@@ -78,7 +78,7 @@ func UpdateUser(c *gin.Context) {
 	grenderer.Render(c, resp.Message, statusCode)
 }
 
-// AddHobby - PUT /users/hobbies
+// AddHobby handles PUT /users/hobbies.
 func AddHobby(c *gin.Context) {
 	userIDAuth := c.GetUint64("authID")
 	hobby := model.Hobby{}

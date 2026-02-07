@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// TwoFA model - 'two_fas' table
+// TwoFA represents the two_fas table.
 type TwoFA struct {
 	ID        uint64         `gorm:"primaryKey" json:"-"`
 	CreatedAt time.Time      `json:"-"`
@@ -21,7 +21,7 @@ type TwoFA struct {
 	IDAuth    uint64         `gorm:"index" json:"-"`
 }
 
-// TwoFABackup model - 'two_fa_backups' table
+// TwoFABackup represents the two_fa_backups table.
 type TwoFABackup struct {
 	ID        uint64    `gorm:"primaryKey" json:"-"`
 	CreatedAt time.Time `json:"-"`
@@ -30,7 +30,7 @@ type TwoFABackup struct {
 	IDAuth    uint64    `gorm:"index" json:"-"`
 }
 
-// Secret2FA - save encoded secrets in RAM temporarily
+// Secret2FA holds encoded secrets temporarily in RAM.
 type Secret2FA struct {
 	PassHash []byte `json:"-"`
 	KeySalt  []byte `json:"-"`
@@ -38,6 +38,6 @@ type Secret2FA struct {
 	Image    string `json:"-"`
 }
 
-// InMemorySecret2FA - keep secrets temporarily
-// in memory to setup 2FA
+// InMemorySecret2FA keeps secrets temporarily
+// in memory to set up 2FA.
 var InMemorySecret2FA = make(map[uint64]Secret2FA)

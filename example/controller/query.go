@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// QueryString - basic implementation
+// QueryString handles basic query string parsing.
 func QueryString(c *gin.Context) {
 	query := strings.TrimSpace(c.Query("q"))
 	if query != "" {

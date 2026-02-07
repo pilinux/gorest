@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// CheckOrigin - check whether the request generated from the allowed origin
+// CheckOrigin checks whether the request originated from an allowed origin.
 func CheckOrigin(originAllowed []string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// get origin from request header

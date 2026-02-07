@@ -8,7 +8,7 @@ import (
 	"github.com/pilinux/gorest/example/handler"
 )
 
-// GetHobbies - GET /hobbies
+// GetHobbies handles GET /hobbies.
 func GetHobbies(c *gin.Context) {
 	resp, statusCode := handler.GetHobbies()
 

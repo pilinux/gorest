@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-// GracefulShutdown listens for OS signals and gracefully shuts down the server
+// GracefulShutdown listens for OS signals and gracefully shuts down the server.
 func GracefulShutdown(srv *http.Server, timeout time.Duration, done chan struct{}, closeDB ...func() error) (err error) {
 	// create context that listens for the interrupt signal from the OS
 	sigCh := make(chan os.Signal, 1)

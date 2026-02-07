@@ -1,4 +1,4 @@
-// main function of the example application
+// Package main is the entry point of the example application.
 package main
 
 import (

@@ -6,7 +6,7 @@ import (
 	"github.com/mrz1836/postmark"
 )
 
-// PostmarkParams - parameters for postmark email delivery service
+// PostmarkParams holds parameters for the Postmark email delivery service.
 type PostmarkParams struct {
 	ServerToken   string
 	TemplateID    int64
@@ -19,13 +19,11 @@ type PostmarkParams struct {
 	HTMLModel     map[string]any
 }
 
-// Postmark email delivery service using HTML templates
+// Postmark email delivery service using HTML templates.
 //
-// https://postmarkapp.com/developer/api/email-api
-//
-// https://postmarkapp.com/developer/api/templates-api
-//
-// https://account.postmarkapp.com/servers/{ServerID}/templates
+//   - https://postmarkapp.com/developer/api/email-api
+//   - https://postmarkapp.com/developer/api/templates-api
+//   - https://account.postmarkapp.com/servers/{ServerID}/templates
 func Postmark(params PostmarkParams) (postmark.EmailResponse, error) {
 	client := postmark.NewClient(params.ServerToken, "")
 

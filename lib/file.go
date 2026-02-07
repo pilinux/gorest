@@ -13,7 +13,7 @@ import (
 )
 
 // FileExist returns true if the file exists,
-// otherwise returns false
+// otherwise returns false.
 func FileExist(path string) bool {
 	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
 		return false
@@ -22,7 +22,7 @@ func FileExist(path string) bool {
 	return true
 }
 
-// ValidatePath validates the given path to prevent directory traversal attacks
+// ValidatePath validates the given path to prevent directory traversal attacks.
 func ValidatePath(fullPath, allowedDir string) (string, error) {
 	// clean and get absolute path of the given fullPath
 	absPath, err := filepath.Abs(fullPath)

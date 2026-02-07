@@ -12,7 +12,7 @@ import (
 	"github.com/pilinux/gorest/service"
 )
 
-// VerifyEmail - verify email address of a newly registered user account
+// VerifyEmail verifies the email address of a newly registered user account.
 //
 // dependency: email verification service, Redis
 //
@@ -68,7 +68,7 @@ func VerifyEmail(c *gin.Context) {
 	renderer.Render(c, resp, statusCode)
 }
 
-// CreateVerificationEmail issues new verification code upon request
+// CreateVerificationEmail issues new verification code upon request.
 //
 // dependency: email service, email verification service, Redis
 //
@@ -130,7 +130,7 @@ func CreateVerificationEmail(c *gin.Context) {
 	renderer.Render(c, resp, statusCode)
 }
 
-// VerifyUpdatedEmail - verify request to modify user's email address
+// VerifyUpdatedEmail verifies a request to modify a user's email address.
 //
 // dependency: email verification service, relational database, redis
 //
@@ -167,7 +167,7 @@ func VerifyUpdatedEmail(c *gin.Context) {
 	renderer.Render(c, resp, statusCode)
 }
 
-// GetUnverifiedEmail - if any email is yet to be verified, return it to the logged-in user
+// GetUnverifiedEmail returns any unverified email to the logged-in user.
 //
 // When this email is verified, it will replace the existing active email of the user.
 //
@@ -199,7 +199,7 @@ func GetUnverifiedEmail(c *gin.Context) {
 	renderer.Render(c, resp, statusCode)
 }
 
-// ResendVerificationCodeToModifyActiveEmail issues new verification code upon request
+// ResendVerificationCodeToModifyActiveEmail issues new verification code upon request.
 //
 // dependency: email service, email verification service, Redis,
 // relational database, JWT

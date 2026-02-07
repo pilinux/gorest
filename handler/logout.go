@@ -14,7 +14,11 @@ import (
 	"github.com/pilinux/gorest/database/model"
 )
 
-// Logout handles jobs for controller.Logout
+// Logout invalidates access and refresh tokens.
+//
+// When Redis is enabled, it stores the token JTIs in a blacklist with TTLs based
+// on the token expirations. When Redis is disabled, it returns success without
+// server-side invalidation.
 func Logout(jtiAccess, jtiRefresh string, expAccess, expRefresh int64) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	// Redis not enabled
 	if !config.IsRedis() {

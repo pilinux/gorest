@@ -1,6 +1,5 @@
-// Package config is responsible for reading all environment
-// variables and set up the base configuration for a
-// functional application
+// Package config reads all environment variables and sets up
+// the base configuration for a functional application.
 package config
 
 import (
@@ -23,13 +22,13 @@ import (
 	"github.com/pilinux/gorest/lib/middleware"
 )
 
-// Activated - "yes" keyword to activate a service
+// Activated is the "yes" keyword used to activate a service.
 const Activated string = "yes"
 
-// PrefixJtiBlacklist - to manage JWT blacklist in Redis database
+// PrefixJtiBlacklist is used to manage JWT blacklist in Redis database.
 const PrefixJtiBlacklist string = "gorest-blacklist-jti:"
 
-// Configuration - server and db configuration variables
+// Configuration holds server and database configuration variables.
 type Configuration struct {
 	Version    string
 	Database   DatabaseConfig
@@ -42,13 +41,13 @@ type Configuration struct {
 
 var configAll *Configuration
 
-// Env - load the configurations from .env
+// Env loads the configurations from .env.
 func Env() error {
 	// Load environment variables
 	return godotenv.Load()
 }
 
-// Config - load all the configurations
+// Config loads all the configurations.
 func Config() (err error) {
 	// load environment variables
 	err = Env()
@@ -86,12 +85,12 @@ func Config() (err error) {
 	return
 }
 
-// GetConfig - return all the config variables
+// GetConfig returns all the config variables.
 func GetConfig() *Configuration {
 	return configAll
 }
 
-// database - all DB variables
+// database returns all DB variables.
 func database() (databaseConfig DatabaseConfig, err error) {
 	// RDBMS
 	activateRDBMS := strings.ToLower(strings.TrimSpace(os.Getenv("ACTIVATE_RDBMS")))
@@ -132,7 +131,7 @@ func database() (databaseConfig DatabaseConfig, err error) {
 	return
 }
 
-// databaseRDBMS - all RDBMS variables
+// databaseRDBMS returns all RDBMS variables.
 func databaseRDBMS() (databaseConfig DatabaseConfig, err error) {
 	// Env
 	databaseConfig.RDBMS.Env.Driver = strings.ToLower(strings.TrimSpace(os.Getenv("DBDRIVER")))
@@ -177,7 +176,7 @@ func databaseRDBMS() (databaseConfig DatabaseConfig, err error) {
 	return
 }
 
-// databaseRedis - all REDIS DB variables
+// databaseRedis returns all REDIS DB variables.
 func databaseRedis() (databaseConfig DatabaseConfig, err error) {
 	// REDIS
 	poolSize, errThis := strconv.Atoi(strings.TrimSpace(os.Getenv("POOLSIZE")))
@@ -199,7 +198,7 @@ func databaseRedis() (databaseConfig DatabaseConfig, err error) {
 	return
 }
 
-// databaseMongo - all MongoDB variables
+// databaseMongo returns all MongoDB variables.
 func databaseMongo() (databaseConfig DatabaseConfig, err error) {
 	// MongoDB
 	poolSize, errThis := strconv.ParseUint(strings.TrimSpace(os.Getenv("MONGO_POOLSIZE")), 10, 64)
@@ -222,7 +221,7 @@ func databaseMongo() (databaseConfig DatabaseConfig, err error) {
 	return
 }
 
-// email - config for using external email services
+// email returns config for using external email services.
 func email() (emailConfig EmailConfig, err error) {
 	emailConfig.Activate = strings.ToLower(strings.TrimSpace(os.Getenv("ACTIVATE_EMAIL_SERVICE")))
 	if emailConfig.Activate == Activated {
@@ -286,7 +285,7 @@ func email() (emailConfig EmailConfig, err error) {
 	return
 }
 
-// logger - config for sentry.io
+// logger returns config for sentry.io.
 func logger() (loggerConfig LoggerConfig) {
 	loggerConfig.Activate = strings.ToLower(strings.TrimSpace(os.Getenv("ACTIVATE_SENTRY")))
 	if loggerConfig.Activate == Activated {
@@ -298,7 +297,7 @@ func logger() (loggerConfig LoggerConfig) {
 	return
 }
 
-// security - configs for generating tokens and hashes
+// security returns configs for generating tokens and hashes.
 func security() (securityConfig SecurityConfig, err error) {
 	// Minimum password length
 	minPassLength := strings.TrimSpace(os.Getenv("MIN_PASS_LENGTH"))
@@ -662,7 +661,7 @@ func security() (securityConfig SecurityConfig, err error) {
 	return
 }
 
-// server - port and env
+// server returns port and env config.
 func server() (serverConfig ServerConfig) {
 	serverConfig.ServerHost = strings.TrimSpace(os.Getenv("APP_HOST"))
 	serverConfig.ServerPort = strings.TrimSpace(os.Getenv("APP_PORT"))
@@ -671,7 +670,7 @@ func server() (serverConfig ServerConfig) {
 	return
 }
 
-// view - HTML renderer
+// view returns HTML renderer config.
 func view() (viewConfig ViewConfig, err error) {
 	viewConfig.Activate = strings.ToLower(strings.TrimSpace(os.Getenv("ACTIVATE_VIEW")))
 	if viewConfig.Activate == Activated {
@@ -693,7 +692,7 @@ func view() (viewConfig ViewConfig, err error) {
 	return
 }
 
-// getParamsJWT - read parameters from env
+// getParamsJWT reads JWT parameters from env.
 func getParamsJWT() (params middleware.JWTParameters, err error) {
 	alg := strings.TrimSpace(os.Getenv("JWT_ALG"))
 	if alg == "" {
@@ -836,7 +835,7 @@ func getParamsJWT() (params middleware.JWTParameters, err error) {
 	return
 }
 
-// setParamsJWT - set parameters for JWT
+// setParamsJWT sets parameters for JWT.
 func setParamsJWT(c middleware.JWTParameters) {
 	middleware.JWTParams.Algorithm = c.Algorithm
 	middleware.JWTParams.AccessKey = c.AccessKey
@@ -857,7 +856,7 @@ func setParamsJWT(c middleware.JWTParameters) {
 	middleware.JWTParams.Subject = c.Subject
 }
 
-// getParamsHash - read parameters from env
+// getParamsHash reads hashing parameters from env.
 func getParamsHash() (params lib.HashPassConfig, err error) {
 	hashPassMemory64, errThis := strconv.ParseUint((strings.TrimSpace(os.Getenv("HASHPASSMEMORY"))), 10, 32)
 	if errThis != nil {

@@ -21,7 +21,11 @@ import (
 	"github.com/pilinux/gorest/service"
 )
 
-// Setup2FA handles jobs for controller.Setup2FA
+// Setup2FA prepares a new TOTP secret for a user and serves a QR code path.
+//
+// It verifies the user's password, generates a new TOTP secret and QR image,
+// stores the secret temporarily in memory for later validation, and returns the
+// QR image location.
 func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	// check auth validity
 	ok := service.ValidateAuthID(claims.AuthID)
@@ -204,7 +208,12 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	return
 }
 
-// Activate2FA handles jobs for controller.Activate2FA
+// Activate2FA activates 2FA using the OTP generated from a previously created secret.
+//
+// It validates the provided OTP against the in-memory secret, persists encrypted
+// 2FA material in the database, deletes temporary secrets/QR artifacts, and
+// returns a refreshed JWT pair with the 2FA claim marked as verified along with
+// a one-time recovery key.
 func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	// check auth validity
 	ok := service.ValidateAuthID(claims.AuthID)
@@ -444,7 +453,11 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	return
 }
 
-// Validate2FA handles jobs for controller.Validate2FA
+// Validate2FA validates an OTP for an account with 2FA enabled.
+//
+// On success, it updates the stored encrypted 2FA secret if needed, clears any
+// temporary in-memory state, and returns a refreshed JWT pair with the 2FA claim
+// marked as verified.
 func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	// check auth validity
 	ok := service.ValidateAuthID(claims.AuthID)
@@ -646,7 +659,10 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	return
 }
 
-// Deactivate2FA handles jobs for controller.Deactivate2FA
+// Deactivate2FA disables 2FA for an authenticated user.
+//
+// It verifies the user's password, clears 2FA secrets and backup codes from the
+// database, and returns a refreshed JWT pair.
 func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	// app security settings
 	configSecurity := config.GetConfig().Security
@@ -785,11 +801,13 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 	return
 }
 
-// CreateBackup2FA receives task from controller.CreateBackup2FA.
-// If 2FA is already enabled for the user, it generates secret
-// backup codes for the user.
+// CreateBackup2FA generates new 2FA backup codes for a user.
 //
-// Required: valid JWT with parameter "twoFA": "verified"
+// It requires the JWT 2FA claim to be verified, verifies the user's password,
+// generates backup codes, stores their hashes in the database, and returns the
+// plaintext codes once.
+//
+// Required: valid JWT with parameter "twoFA": "verified".
 func CreateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	// check auth validity
 	ok := service.ValidateAuthID(claims.AuthID)
@@ -916,12 +934,13 @@ func CreateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPay
 	return
 }
 
-// ValidateBackup2FA receives task from controller.ValidateBackup2FA.
-// User with 2FA enabled account can verify using their secret backup
-// code when they do not have access to their OTP generator app or
-// device.
+// ValidateBackup2FA validates a 2FA backup code and upgrades the session to verified.
 //
-// Required: valid JWT with parameter "twoFA": "on"
+// It checks the provided backup code against stored hashes, deletes the used
+// backup code, and returns a refreshed JWT pair with the 2FA claim marked as
+// verified.
+//
+// Required: valid JWT with parameter "twoFA": "on".
 func ValidateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	// check auth validity
 	ok := service.ValidateAuthID(claims.AuthID)

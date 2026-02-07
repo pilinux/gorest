@@ -7,7 +7,7 @@ import (
 	"github.com/qiniu/qmgo/options"
 )
 
-// MongoCreateIndex - create one index for a mongo collection
+// MongoCreateIndex creates one index for a mongo collection.
 func MongoCreateIndex(dbName, collectionName string, index options.IndexModel) error {
 	client := GetMongo()
 	db := client.Database(dbName)               // set database name
@@ -21,7 +21,7 @@ func MongoCreateIndex(dbName, collectionName string, index options.IndexModel) e
 	return collection.CreateOneIndex(ctx, index)
 }
 
-// MongoCreateIndexes - create many indexes for a mongo collection
+// MongoCreateIndexes creates multiple indexes for a mongo collection.
 func MongoCreateIndexes(dbName, collectionName string, indexes []options.IndexModel) error {
 	client := GetMongo()
 	db := client.Database(dbName)               // set database name
@@ -35,7 +35,7 @@ func MongoCreateIndexes(dbName, collectionName string, indexes []options.IndexMo
 	return collection.CreateIndexes(ctx, indexes)
 }
 
-// MongoDropIndex - drop one/multiple indexes from a mongo collection
+// MongoDropIndex drops one or multiple indexes from a mongo collection.
 func MongoDropIndex(dbName, collectionName string, indexes []string) error {
 	client := GetMongo()
 	db := client.Database(dbName)               // set database name
@@ -49,7 +49,7 @@ func MongoDropIndex(dbName, collectionName string, indexes []string) error {
 	return collection.DropIndex(ctx, indexes)
 }
 
-// MongoDropAllIndexes - drop all indexes from a mongo collection except the index on the _id field
+// MongoDropAllIndexes drops all indexes from a mongo collection except the index on the _id field.
 func MongoDropAllIndexes(dbName, collectionName string) error {
 	client := GetMongo()
 	db := client.Database(dbName)               // set database name
