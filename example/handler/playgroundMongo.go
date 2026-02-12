@@ -2,13 +2,14 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 
 	gdatabase "github.com/pilinux/gorest/database"
 	gmodel "github.com/pilinux/gorest/database/model"
@@ -27,7 +28,7 @@ func MongoCreateOne(data model.Geocoding) (httpResponse gmodel.HTTPResponse, htt
 	}
 
 	// generate a new ObjectID
-	data.ID = primitive.NewObjectID()
+	data.ID = bson.NewObjectID()
 
 	client := gdatabase.GetMongo()
 	db := client.Database("map")            // set database name
@@ -62,9 +63,18 @@ func MongoGetAll() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	defer cancel()
 
 	data := []model.Geocoding{}
-	err := collection.Find(ctx, bson.M{}).All(&data)
+	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
 		log.WithError(err).Error("error code: 1411")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+	defer func() {
+		_ = cursor.Close(ctx)
+	}()
+	if err := cursor.All(ctx, &data); err != nil {
+		log.WithError(err).Error("error code: 1412")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -83,7 +93,7 @@ func MongoGetAll() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 
 // MongoGetByID retrieves a geocoding document by ObjectID.
 func MongoGetByID(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	objID, err := primitive.ObjectIDFromHex(id)
+	objID, err := bson.ObjectIDFromHex(id)
 	if err != nil {
 		httpResponse.Message = "invalid id"
 		httpStatusCode = http.StatusBadRequest
@@ -99,10 +109,17 @@ func MongoGetByID(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode i
 	defer cancel()
 
 	data := model.Geocoding{}
-	err = collection.Find(ctx, bson.M{"_id": objID}).One(&data)
+	err = collection.FindOne(ctx, bson.M{"_id": objID}).Decode(&data)
 	if err != nil {
-		httpResponse.Message = "document not found"
-		httpStatusCode = http.StatusNotFound
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			httpResponse.Message = "document not found"
+			httpStatusCode = http.StatusNotFound
+			return
+		}
+
+		log.WithError(err).Error("error code: 1421")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 
@@ -134,9 +151,18 @@ func MongoGetByFilter(req model.Geocoding) (httpResponse gmodel.HTTPResponse, ht
 	defer cancel()
 
 	data := []model.Geocoding{}
-	err := collection.Find(ctx, filter).All(&data)
+	cursor, err := collection.Find(ctx, filter)
 	if err != nil {
-		log.WithError(err).Error("error code: 1421")
+		log.WithError(err).Error("error code: 1431")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+	defer func() {
+		_ = cursor.Close(ctx)
+	}()
+	if err := cursor.All(ctx, &data); err != nil {
+		log.WithError(err).Error("error code: 1432")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -184,8 +210,20 @@ func MongoUpdateByID(req model.Geocoding) (httpResponse gmodel.HTTPResponse, htt
 	}
 
 	// find one result and update it
-	err := collection.UpdateOne(ctx, filter, update)
+	res, err := collection.UpdateOne(ctx, filter, update)
 	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			httpResponse.Message = "document not found"
+			httpStatusCode = http.StatusNotFound
+			return
+		}
+
+		log.WithError(err).Error("error code: 1441")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+	if res.MatchedCount == 0 {
 		httpResponse.Message = "document not found"
 		httpStatusCode = http.StatusNotFound
 		return
@@ -226,8 +264,20 @@ func MongoDeleteFieldByID(req model.Geocoding) (httpResponse gmodel.HTTPResponse
 	}
 
 	// find one result and update it
-	err := collection.UpdateOne(ctx, filter, update)
+	res, err := collection.UpdateOne(ctx, filter, update)
 	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			httpResponse.Message = "document not found"
+			httpStatusCode = http.StatusNotFound
+			return
+		}
+
+		log.WithError(err).Error("error code: 1451")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+	if res.MatchedCount == 0 {
 		httpResponse.Message = "document not found"
 		httpStatusCode = http.StatusNotFound
 		return
@@ -240,7 +290,7 @@ func MongoDeleteFieldByID(req model.Geocoding) (httpResponse gmodel.HTTPResponse
 
 // MongoDeleteByID deletes a geocoding document by ObjectID.
 func MongoDeleteByID(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	objID, err := primitive.ObjectIDFromHex(id)
+	objID, err := bson.ObjectIDFromHex(id)
 	if err != nil {
 		httpResponse.Message = "invalid id"
 		httpStatusCode = http.StatusBadRequest
@@ -255,9 +305,21 @@ func MongoDeleteByID(id string) (httpResponse gmodel.HTTPResponse, httpStatusCod
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err = collection.Remove(ctx, bson.M{"_id": objID})
+	res, err := collection.DeleteOne(ctx, bson.M{"_id": objID})
 	if err != nil {
-		httpResponse.Message = "document not found/cannot be deleted"
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			httpResponse.Message = "document not found"
+			httpStatusCode = http.StatusNotFound
+			return
+		}
+
+		log.WithError(err).Error("error code: 1461")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+	if res.DeletedCount == 0 {
+		httpResponse.Message = "document not found"
 		httpStatusCode = http.StatusNotFound
 		return
 	}

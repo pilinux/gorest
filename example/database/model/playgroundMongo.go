@@ -3,23 +3,23 @@ package model
 import (
 	"reflect"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 // Geocoding represents an address for geocoding.
 type Geocoding struct {
-	ID               primitive.ObjectID `json:"id" bson:"_id"`
-	FormattedAddress string             `json:"formattedAddress,omitempty" bson:"formattedAddress,omitempty"`
-	StreetName       string             `json:"streetName,omitempty" bson:"streetName,omitempty"`
-	HouseNumber      string             `json:"houseNumber,omitempty" bson:"houseNumber,omitempty"`
-	PostalCode       string             `json:"postalCode,omitempty" bson:"postalCode,omitempty"`
-	County           string             `json:"county,omitempty" bson:"county,omitempty"`
-	City             string             `json:"city,omitempty" bson:"city,omitempty"`
-	State            string             `json:"state,omitempty" bson:"state,omitempty"`
-	StateCode        string             `json:"stateCode,omitempty" bson:"stateCode,omitempty"`
-	Country          string             `json:"country,omitempty" bson:"country,omitempty"`
-	CountryCode      string             `json:"countryCode,omitempty" bson:"countryCode,omitempty"`
-	Geometry         Geometry           `json:"geometry,omitempty" bson:"inline"`
+	ID               bson.ObjectID `json:"id" bson:"_id"`
+	FormattedAddress string        `json:"formattedAddress,omitempty" bson:"formattedAddress,omitempty"`
+	StreetName       string        `json:"streetName,omitempty" bson:"streetName,omitempty"`
+	HouseNumber      string        `json:"houseNumber,omitempty" bson:"houseNumber,omitempty"`
+	PostalCode       string        `json:"postalCode,omitempty" bson:"postalCode,omitempty"`
+	County           string        `json:"county,omitempty" bson:"county,omitempty"`
+	City             string        `json:"city,omitempty" bson:"city,omitempty"`
+	State            string        `json:"state,omitempty" bson:"state,omitempty"`
+	StateCode        string        `json:"stateCode,omitempty" bson:"stateCode,omitempty"`
+	Country          string        `json:"country,omitempty" bson:"country,omitempty"`
+	CountryCode      string        `json:"countryCode,omitempty" bson:"countryCode,omitempty"`
+	Geometry         Geometry      `json:"geometry,omitempty" bson:"inline"`
 }
 
 // Geometry represents latitude and longitude coordinates.

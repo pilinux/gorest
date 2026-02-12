@@ -3,20 +3,19 @@ package repo
 import (
 	"context"
 
-	"github.com/qiniu/qmgo"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 
 	"github.com/pilinux/gorest/example2/internal/database/model"
 )
 
 // AddressRepo provides methods for address-related MongoDB operations.
 type AddressRepo struct {
-	db *qmgo.Client
+	db *mongo.Client
 }
 
 // NewAddressRepo returns a new AddressRepo.
-func NewAddressRepo(conn *qmgo.Client) *AddressRepo {
+func NewAddressRepo(conn *mongo.Client) *AddressRepo {
 	return &AddressRepo{
 		db: conn,
 	}
@@ -24,12 +23,12 @@ func NewAddressRepo(conn *qmgo.Client) *AddressRepo {
 
 // AddressRepository defines the contract for address data operations.
 type AddressRepository interface {
-	AddAddress(ctx context.Context, address *model.Geocoding) (*qmgo.InsertOneResult, error)
+	AddAddress(ctx context.Context, address *model.Geocoding) (*mongo.InsertOneResult, error)
 	GetAddresses(ctx context.Context) ([]model.Geocoding, error)
-	GetAddress(ctx context.Context, id primitive.ObjectID) (*model.Geocoding, error)
+	GetAddress(ctx context.Context, id bson.ObjectID) (*model.Geocoding, error)
 	GetAddressByFilter(ctx context.Context, address *model.Geocoding, addDocIDInFilter bool) (*model.Geocoding, error)
 	UpdateAddressFields(ctx context.Context, address *model.Geocoding) error
-	DeleteAddress(ctx context.Context, id primitive.ObjectID) error
+	DeleteAddress(ctx context.Context, id bson.ObjectID) error
 }
 
 // Compile-time check:
@@ -46,30 +45,39 @@ func (r *AddressRepo) collName() string {
 }
 
 // coll returns the MongoDB collection for addresses.
-func (r *AddressRepo) coll() *qmgo.Collection {
+func (r *AddressRepo) coll() *mongo.Collection {
 	return r.db.Database(r.dbName()).Collection(r.collName())
 }
 
 // AddAddress inserts a new address into the MongoDB "geocodes" collection.
-func (r *AddressRepo) AddAddress(ctx context.Context, address *model.Geocoding) (*qmgo.InsertOneResult, error) {
-	address.ID = primitive.NewObjectID()
+func (r *AddressRepo) AddAddress(ctx context.Context, address *model.Geocoding) (*mongo.InsertOneResult, error) {
+	address.ID = bson.NewObjectID()
 	return r.coll().InsertOne(ctx, address)
 }
 
 // GetAddresses retrieves all addresses from the MongoDB "geocodes" collection.
 func (r *AddressRepo) GetAddresses(ctx context.Context) ([]model.Geocoding, error) {
 	var addresses []model.Geocoding
-	err := r.coll().Find(ctx, bson.M{}).All(&addresses)
+
+	cursor, err := r.coll().Find(ctx, bson.M{})
 	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = cursor.Close(ctx)
+	}()
+
+	if err := cursor.All(ctx, &addresses); err != nil {
 		return nil, err
 	}
 	return addresses, nil
 }
 
 // GetAddress retrieves a specific address by its ID from the MongoDB "geocodes" collection.
-func (r *AddressRepo) GetAddress(ctx context.Context, id primitive.ObjectID) (*model.Geocoding, error) {
+func (r *AddressRepo) GetAddress(ctx context.Context, id bson.ObjectID) (*model.Geocoding, error) {
 	var address model.Geocoding
-	err := r.coll().Find(ctx, bson.M{"_id": id}).One(&address)
+
+	err := r.coll().FindOne(ctx, bson.M{"_id": id}).Decode(&address)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +87,8 @@ func (r *AddressRepo) GetAddress(ctx context.Context, id primitive.ObjectID) (*m
 // GetAddressByFilter retrieves an address based on a filter from the MongoDB "geocodes" collection.
 func (r *AddressRepo) GetAddressByFilter(ctx context.Context, address *model.Geocoding, addDocIDInFilter bool) (*model.Geocoding, error) {
 	filter := addressFilter(address, addDocIDInFilter)
-	err := r.coll().Find(ctx, filter).One(address)
+
+	err := r.coll().FindOne(ctx, filter).Decode(address)
 	if err != nil {
 		return nil, err
 	}
@@ -89,38 +98,52 @@ func (r *AddressRepo) GetAddressByFilter(ctx context.Context, address *model.Geo
 // UpdateAddress updates an existing address in the MongoDB "geocodes" collection.
 func (r *AddressRepo) UpdateAddress(ctx context.Context, address *model.Geocoding) error {
 	if address == nil || address.ID.IsZero() {
-		return qmgo.ErrNoSuchDocuments
+		return mongo.ErrNoDocuments
 	}
 
-	filter := bson.M{"_id": bson.M{"$eq": address.ID}}
+	filter := bson.M{"_id": address.ID}
 	update := bson.M{"$set": address}
 
-	return r.coll().UpdateOne(ctx, filter, update)
+	res, err := r.coll().UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+	return nil
 }
 
 // DeleteFieldsFromAddress deletes specific fields from an address in the MongoDB "geocodes" collection.
 func (r *AddressRepo) DeleteFieldsFromAddress(ctx context.Context, address *model.Geocoding, fields ...string) error {
 	if address == nil || address.ID.IsZero() {
-		return qmgo.ErrNoSuchDocuments
+		return mongo.ErrNoDocuments
 	}
 
-	filter := bson.M{"_id": bson.M{"$eq": address.ID}}
-	update := bson.M{"$unset": bson.M{}}
-
+	filter := bson.M{"_id": address.ID}
+	unset := bson.M{}
 	for _, field := range fields {
-		update["$unset"].(bson.M)[field] = ""
+		unset[field] = ""
 	}
+	update := bson.M{"$unset": unset}
 
-	return r.coll().UpdateOne(ctx, filter, update)
+	res, err := r.coll().UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+	return nil
 }
 
 // UpdateAddressFields updates an existing address (adding or deleting fields as necessary) in the MongoDB "geocodes" collection.
 func (r *AddressRepo) UpdateAddressFields(ctx context.Context, address *model.Geocoding) error {
 	if address == nil || address.ID.IsZero() {
-		return qmgo.ErrNoSuchDocuments
+		return mongo.ErrNoDocuments
 	}
 
-	filter := bson.M{"_id": bson.M{"$eq": address.ID}}
+	filter := bson.M{"_id": address.ID}
 	setFields := bson.M{}
 	unsetFields := bson.M{}
 
@@ -169,17 +192,31 @@ func (r *AddressRepo) UpdateAddressFields(ctx context.Context, address *model.Ge
 		update["$unset"] = unsetFields
 	}
 
-	return r.coll().UpdateOne(ctx, filter, update)
+	res, err := r.coll().UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+	return nil
 }
 
 // DeleteAddress deletes an address by its ID from the MongoDB "geocodes" collection.
-func (r *AddressRepo) DeleteAddress(ctx context.Context, id primitive.ObjectID) error {
+func (r *AddressRepo) DeleteAddress(ctx context.Context, id bson.ObjectID) error {
 	if id.IsZero() {
-		return qmgo.ErrNoSuchDocuments
+		return mongo.ErrNoDocuments
 	}
 
-	filter := bson.M{"_id": bson.M{"$eq": id}}
-	return r.coll().Remove(ctx, filter)
+	filter := bson.M{"_id": id}
+	res, err := r.coll().DeleteOne(ctx, filter)
+	if err != nil {
+		return err
+	}
+	if res.DeletedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+	return nil
 }
 
 // addressFilter builds a MongoDB search filter for the given address fields.

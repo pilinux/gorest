@@ -9,7 +9,8 @@ import (
 	gconfig "github.com/pilinux/gorest/config"
 	gdatabase "github.com/pilinux/gorest/database"
 	gserver "github.com/pilinux/gorest/lib/server"
-	"github.com/qiniu/qmgo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 
 	"github.com/pilinux/gorest/example/database/migrate"
 	"github.com/pilinux/gorest/example/router"
@@ -87,24 +88,26 @@ func main() {
 		*/
 
 		// Create new index for "countryCode" field
-		index := options.IndexModel{
-			Key: []string{"countryCode"},
-		}
-		// Example of creating many indexes
-		/*
-			indexes := []options.IndexModel{
-				{
-					Key: []string{"state"},
-				},
-				{
-					Key: []string{"countryCode"},
-				},
-			}
-		*/
+		index := mongo.IndexModel{Keys: bson.D{{Key: "countryCode", Value: 1}}}
 		if err := gdatabase.MongoCreateIndex("map", "geocodes", index); err != nil {
 			fmt.Println(err)
 			return
 		}
+		// Example of creating many indexes
+		/*
+			indexes := []mongo.IndexModel{
+				{
+					Keys: bson.D{{Key: "state", Value: 1}},
+				},
+				{
+					Keys: bson.D{{Key: "countryCode", Value: 1}},
+				},
+			}
+			if err := gdatabase.MongoCreateIndexes("map", "geocodes", indexes); err != nil {
+				fmt.Println(err)
+				return
+			}
+		*/
 	}
 
 	// example of using sentry in separate goroutines

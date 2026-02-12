@@ -29,10 +29,10 @@ import (
 	"github.com/mediocregopher/radix/v4"
 
 	// Import Mongo driver
-	"github.com/qiniu/qmgo"
-	"github.com/qiniu/qmgo/options"
-	"go.mongodb.org/mongo-driver/event"
-	opts "go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/event"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	opts "go.mongodb.org/mongo-driver/v2/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
 )
 
 // dbClient holds the gorm DB connection instance.
@@ -48,7 +48,7 @@ var redisClient radix.Client
 var RedisConnTTL int
 
 // mongoClient holds the MongoDB client connection instance.
-var mongoClient *qmgo.Client
+var mongoClient *mongo.Client
 
 // InitDB initializes the database connection.
 func InitDB() *gorm.DB {
@@ -232,45 +232,69 @@ func GetRedis() radix.Client {
 }
 
 // InitMongo initializes the MongoDB client connection.
-func InitMongo() (*qmgo.Client, error) {
+func InitMongo() (*mongo.Client, error) {
 	configureMongo := config.GetConfig().Database.MongoDB
 
-	// Connect to the database or cluster
+	// connect to the database or cluster
 	uri := configureMongo.Env.URI
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(configureMongo.Env.ConnTTL)*time.Second)
 	defer cancel()
 
-	clientConfig := &qmgo.Config{
-		Uri:         uri,
-		MaxPoolSize: &configureMongo.Env.PoolSize,
-	}
 	serverAPIOptions := opts.ServerAPI(opts.ServerAPIVersion1)
 
-	opt := opts.Client().SetAppName(configureMongo.Env.AppName)
-	opt.SetServerAPIOptions(serverAPIOptions)
+	clientOptions := opts.Client().
+		ApplyURI(uri).
+		SetAppName(configureMongo.Env.AppName).
+		SetServerAPIOptions(serverAPIOptions).
+		SetMaxPoolSize(configureMongo.Env.PoolSize).
+		SetConnectTimeout(time.Duration(configureMongo.Env.ConnTTL) * time.Second)
 
 	// for monitoring pool
 	if configureMongo.Env.PoolMon == "yes" {
 		poolMonitor := &event.PoolMonitor{
 			Event: func(evt *event.PoolEvent) {
 				switch evt.Type {
-				case event.GetSucceeded:
-					fmt.Println("GetSucceeded")
-				case event.ConnectionReturned:
-					fmt.Println("ConnectionReturned")
+				case event.ConnectionPoolCreated:
+					fmt.Println("ConnectionPoolCreated")
+				case event.ConnectionPoolReady:
+					fmt.Println("ConnectionPoolReady")
+				case event.ConnectionPoolCleared:
+					fmt.Println("ConnectionPoolCleared")
+				case event.ConnectionPoolClosed:
+					fmt.Println("ConnectionPoolClosed")
+				case event.ConnectionCreated:
+					fmt.Println("ConnectionCreated")
+				case event.ConnectionReady:
+					fmt.Println("ConnectionReady")
+				case event.ConnectionClosed:
+					fmt.Println("ConnectionClosed")
+				case event.ConnectionCheckOutStarted:
+					fmt.Println("ConnectionCheckOutStarted")
+				case event.ConnectionCheckOutFailed:
+					fmt.Println("ConnectionCheckOutFailed")
+				case event.ConnectionCheckedOut:
+					fmt.Println("ConnectionCheckedOut")
+				case event.ConnectionCheckedIn:
+					fmt.Println("ConnectionCheckedIn")
 				}
 			},
 		}
-		opt.SetPoolMonitor(poolMonitor)
+		clientOptions.SetPoolMonitor(poolMonitor)
 	}
 
-	client, err := qmgo.NewClient(ctx, clientConfig, options.ClientOptions{ClientOptions: opt})
+	client, err := mongo.Connect(clientOptions)
 	if err != nil {
-		return client, err
+		return nil, err
 	}
 
-	// Only for debugging
+	// validate connectivity to the database or cluster by pinging it
+	if err := client.Ping(ctx, readpref.Primary()); err != nil {
+		_ = client.Disconnect(context.Background())
+		return nil, err
+	}
+
+	// only for debugging
 	fmt.Println("MongoDB pool connection successful!")
 
 	mongoClient = client
@@ -279,7 +303,7 @@ func InitMongo() (*qmgo.Client, error) {
 }
 
 // GetMongo returns the current MongoDB client connection.
-func GetMongo() *qmgo.Client {
+func GetMongo() *mongo.Client {
 	return mongoClient
 }
 
@@ -340,7 +364,7 @@ func CloseRedis() error {
 func CloseMongo() error {
 	if mongoClient != nil {
 		fmt.Println("Closing MongoDB connection...")
-		if err := mongoClient.Close(context.Background()); err != nil {
+		if err := mongoClient.Disconnect(context.Background()); err != nil {
 			return err
 		}
 		mongoClient = nil

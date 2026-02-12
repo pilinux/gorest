@@ -7,9 +7,9 @@ import (
 	"reflect"
 
 	gmodel "github.com/pilinux/gorest/database/model"
-	"github.com/qiniu/qmgo"
 	log "github.com/sirupsen/logrus"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 
 	"github.com/pilinux/gorest/example2/internal/database/model"
 	"github.com/pilinux/gorest/example2/internal/repo"
@@ -77,7 +77,7 @@ func (s *AddressService) GetAddresses(ctx context.Context) (httpResponse gmodel.
 
 // GetAddress retrieves an address by its ID.
 func (s *AddressService) GetAddress(ctx context.Context, id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	_id, err := primitive.ObjectIDFromHex(id)
+	_id, err := bson.ObjectIDFromHex(id)
 	if err != nil {
 		resp := gmodel.HTTPResponse{
 			Message: "invalid address ID format",
@@ -95,7 +95,7 @@ func (s *AddressService) GetAddress(ctx context.Context, id string) (httpRespons
 			return
 		}
 
-		if errors.Is(err, qmgo.ErrNoSuchDocuments) {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			httpResponse.Message = "address not found"
 			httpStatusCode = http.StatusNotFound
 			return
@@ -122,7 +122,7 @@ func (s *AddressService) GetAddressByFilter(ctx context.Context, address *model.
 			return
 		}
 
-		if errors.Is(err, qmgo.ErrNoSuchDocuments) {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			httpResponse.Message = "address not found"
 			httpStatusCode = http.StatusNotFound
 			return
@@ -156,7 +156,7 @@ func (s *AddressService) UpdateAddress(ctx context.Context, address *model.Geoco
 			return
 		}
 
-		if errors.Is(err, qmgo.ErrNoSuchDocuments) {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			httpResponse.Message = "address not found"
 			httpStatusCode = http.StatusNotFound
 			return
@@ -183,7 +183,7 @@ func (s *AddressService) UpdateAddress(ctx context.Context, address *model.Geoco
 			return
 		}
 
-		if errors.Is(err, qmgo.ErrNoSuchDocuments) {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			httpResponse.Message = "address not found"
 			httpStatusCode = http.StatusNotFound
 			return
@@ -202,7 +202,7 @@ func (s *AddressService) UpdateAddress(ctx context.Context, address *model.Geoco
 
 // DeleteAddress deletes an address by its ID.
 func (s *AddressService) DeleteAddress(ctx context.Context, id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
-	_id, err := primitive.ObjectIDFromHex(id)
+	_id, err := bson.ObjectIDFromHex(id)
 	if err != nil {
 		resp := gmodel.HTTPResponse{
 			Message: "invalid address ID format",
@@ -220,7 +220,7 @@ func (s *AddressService) DeleteAddress(ctx context.Context, id string) (httpResp
 			return
 		}
 
-		if errors.Is(err, qmgo.ErrNoSuchDocuments) {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			httpResponse.Message = "address not found"
 			httpStatusCode = http.StatusNotFound
 			return
