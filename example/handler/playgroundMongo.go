@@ -250,7 +250,7 @@ func MongoUpdateByID(req model.Geocoding) (httpResponse gmodel.HTTPResponse, htt
 
 	// fetch the updated document
 	var updatedDoc model.Geocoding
-	err = collection.FindOne(ctx, filter).Decode(&updatedDoc)
+	err = collection.FindOne(ctx, bson.M{"_id": req.ID}).Decode(&updatedDoc)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			httpResponse.Message = "document not found after update"
@@ -411,44 +411,44 @@ func mongoFilter(geocoding model.Geocoding, addDocIDInFilter bool) bson.M {
 
 	if addDocIDInFilter {
 		if !geocoding.ID.IsZero() {
-			filter["_id"] = geocoding.ID
+			filter["_id"] = bson.M{"$eq": geocoding.ID}
 		}
 	}
 	if geocoding.FormattedAddress != nil && *geocoding.FormattedAddress != "" {
-		filter["formattedAddress"] = *geocoding.FormattedAddress
+		filter["formattedAddress"] = bson.M{"$eq": *geocoding.FormattedAddress}
 	}
 	if geocoding.StreetName != nil && *geocoding.StreetName != "" {
-		filter["streetName"] = *geocoding.StreetName
+		filter["streetName"] = bson.M{"$eq": *geocoding.StreetName}
 	}
 	if geocoding.HouseNumber != nil && *geocoding.HouseNumber != "" {
-		filter["houseNumber"] = *geocoding.HouseNumber
+		filter["houseNumber"] = bson.M{"$eq": *geocoding.HouseNumber}
 	}
 	if geocoding.PostalCode != nil && *geocoding.PostalCode != "" {
-		filter["postalCode"] = *geocoding.PostalCode
+		filter["postalCode"] = bson.M{"$eq": *geocoding.PostalCode}
 	}
 	if geocoding.County != nil && *geocoding.County != "" {
-		filter["county"] = *geocoding.County
+		filter["county"] = bson.M{"$eq": *geocoding.County}
 	}
 	if geocoding.City != nil && *geocoding.City != "" {
-		filter["city"] = *geocoding.City
+		filter["city"] = bson.M{"$eq": *geocoding.City}
 	}
 	if geocoding.State != nil && *geocoding.State != "" {
-		filter["state"] = *geocoding.State
+		filter["state"] = bson.M{"$eq": *geocoding.State}
 	}
 	if geocoding.StateCode != nil && *geocoding.StateCode != "" {
-		filter["stateCode"] = *geocoding.StateCode
+		filter["stateCode"] = bson.M{"$eq": *geocoding.StateCode}
 	}
 	if geocoding.Country != nil && *geocoding.Country != "" {
-		filter["country"] = *geocoding.Country
+		filter["country"] = bson.M{"$eq": *geocoding.Country}
 	}
 	if geocoding.CountryCode != nil && *geocoding.CountryCode != "" {
-		filter["countryCode"] = *geocoding.CountryCode
+		filter["countryCode"] = bson.M{"$eq": *geocoding.CountryCode}
 	}
 	if geocoding.Geometry != nil && geocoding.Geometry.Latitude != nil {
-		filter["lat"] = *geocoding.Geometry.Latitude
+		filter["lat"] = bson.M{"$eq": *geocoding.Geometry.Latitude}
 	}
 	if geocoding.Geometry != nil && geocoding.Geometry.Longitude != nil {
-		filter["lng"] = *geocoding.Geometry.Longitude
+		filter["lng"] = bson.M{"$eq": *geocoding.Geometry.Longitude}
 	}
 
 	return filter
@@ -481,6 +481,9 @@ func mongoValidateGeocodingQuery(geocoding model.Geocoding) error {
 		}
 		if !utf8.ValidString(*v) {
 			return errors.New("field contains invalid utf-8")
+		}
+		if strings.HasPrefix(*v, "$") {
+			return errors.New("field contains invalid character")
 		}
 	}
 
