@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -133,6 +134,12 @@ func MongoGetByFilter(req model.Geocoding) (httpResponse gmodel.HTTPResponse, ht
 	// remove all leading and trailing white spaces
 	req = mongoTrimSpace(req)
 
+	if err := mongoValidateGeocodingQuery(req); err != nil {
+		httpResponse.Message = "invalid query payload"
+		httpStatusCode = http.StatusBadRequest
+		return
+	}
+
 	// search filter
 	filter := mongoFilter(req, true)
 
@@ -190,9 +197,15 @@ func MongoUpdateByID(req model.Geocoding) (httpResponse gmodel.HTTPResponse, htt
 	// remove all leading and trailing white spaces
 	req = mongoTrimSpace(req)
 
+	if err := mongoValidateGeocodingQuery(req); err != nil {
+		httpResponse.Message = "invalid query payload"
+		httpStatusCode = http.StatusBadRequest
+		return
+	}
+
 	// search filter
 	filter := bson.M{
-		"_id": bson.M{"$eq": req.ID},
+		"_id": req.ID,
 	}
 
 	client := gdatabase.GetMongo()
@@ -205,8 +218,14 @@ func MongoUpdateByID(req model.Geocoding) (httpResponse gmodel.HTTPResponse, htt
 
 	// create the update
 	// https://docs.mongodb.com/manual/reference/operator/update/
+	setFields := mongoSetFields(req)
+	if len(setFields) == 0 {
+		httpResponse.Message = "received empty json payload"
+		httpStatusCode = http.StatusBadRequest
+		return
+	}
 	update := bson.M{
-		"$set": req,
+		"$set": setFields,
 	}
 
 	// find one result and update it
@@ -229,7 +248,23 @@ func MongoUpdateByID(req model.Geocoding) (httpResponse gmodel.HTTPResponse, htt
 		return
 	}
 
-	httpResponse.Message = req
+	// fetch the updated document
+	var updatedDoc model.Geocoding
+	err = collection.FindOne(ctx, filter).Decode(&updatedDoc)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			httpResponse.Message = "document not found after update"
+			httpStatusCode = http.StatusNotFound
+			return
+		}
+
+		log.WithError(err).Error("error code: 1442")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+
+	httpResponse.Message = updatedDoc
 	httpStatusCode = http.StatusOK
 	return
 }
@@ -242,11 +277,16 @@ func MongoDeleteFieldByID(req model.Geocoding) (httpResponse gmodel.HTTPResponse
 		return
 	}
 
-	deleteFields := mongoFilter(req, false)
+	deleteFields := mongoUnsetFields(req)
+	if len(deleteFields) == 0 {
+		httpResponse.Message = "received empty json payload"
+		httpStatusCode = http.StatusBadRequest
+		return
+	}
 
 	// search filter
 	filter := bson.M{
-		"_id": bson.M{"$eq": req.ID},
+		"_id": req.ID,
 	}
 
 	client := gdatabase.GetMongo()
@@ -331,16 +371,36 @@ func MongoDeleteByID(id string) (httpResponse gmodel.HTTPResponse, httpStatusCod
 
 // mongoTrimSpace removes all leading and trailing white spaces from geocoding fields.
 func mongoTrimSpace(geocoding model.Geocoding) model.Geocoding {
-	geocoding.FormattedAddress = strings.TrimSpace(geocoding.FormattedAddress)
-	geocoding.StreetName = strings.TrimSpace(geocoding.StreetName)
-	geocoding.HouseNumber = strings.TrimSpace(geocoding.HouseNumber)
-	geocoding.PostalCode = strings.TrimSpace(geocoding.PostalCode)
-	geocoding.County = strings.TrimSpace(geocoding.County)
-	geocoding.City = strings.TrimSpace(geocoding.City)
-	geocoding.State = strings.TrimSpace(geocoding.State)
-	geocoding.StateCode = strings.TrimSpace(geocoding.StateCode)
-	geocoding.Country = strings.TrimSpace(geocoding.Country)
-	geocoding.CountryCode = strings.TrimSpace(geocoding.CountryCode)
+	if geocoding.FormattedAddress != nil {
+		*geocoding.FormattedAddress = strings.TrimSpace(*geocoding.FormattedAddress)
+	}
+	if geocoding.StreetName != nil {
+		*geocoding.StreetName = strings.TrimSpace(*geocoding.StreetName)
+	}
+	if geocoding.HouseNumber != nil {
+		*geocoding.HouseNumber = strings.TrimSpace(*geocoding.HouseNumber)
+	}
+	if geocoding.PostalCode != nil {
+		*geocoding.PostalCode = strings.TrimSpace(*geocoding.PostalCode)
+	}
+	if geocoding.County != nil {
+		*geocoding.County = strings.TrimSpace(*geocoding.County)
+	}
+	if geocoding.City != nil {
+		*geocoding.City = strings.TrimSpace(*geocoding.City)
+	}
+	if geocoding.State != nil {
+		*geocoding.State = strings.TrimSpace(*geocoding.State)
+	}
+	if geocoding.StateCode != nil {
+		*geocoding.StateCode = strings.TrimSpace(*geocoding.StateCode)
+	}
+	if geocoding.Country != nil {
+		*geocoding.Country = strings.TrimSpace(*geocoding.Country)
+	}
+	if geocoding.CountryCode != nil {
+		*geocoding.CountryCode = strings.TrimSpace(*geocoding.CountryCode)
+	}
 
 	return geocoding
 }
@@ -351,45 +411,171 @@ func mongoFilter(geocoding model.Geocoding, addDocIDInFilter bool) bson.M {
 
 	if addDocIDInFilter {
 		if !geocoding.ID.IsZero() {
-			filter["_id"] = bson.M{"$eq": geocoding.ID}
+			filter["_id"] = geocoding.ID
 		}
 	}
-	if geocoding.FormattedAddress != "" {
-		filter["formattedAddress"] = bson.M{"$eq": geocoding.FormattedAddress}
+	if geocoding.FormattedAddress != nil && *geocoding.FormattedAddress != "" {
+		filter["formattedAddress"] = *geocoding.FormattedAddress
 	}
-	if geocoding.StreetName != "" {
-		filter["streetName"] = bson.M{"$eq": geocoding.StreetName}
+	if geocoding.StreetName != nil && *geocoding.StreetName != "" {
+		filter["streetName"] = *geocoding.StreetName
 	}
-	if geocoding.HouseNumber != "" {
-		filter["houseNumber"] = bson.M{"$eq": geocoding.HouseNumber}
+	if geocoding.HouseNumber != nil && *geocoding.HouseNumber != "" {
+		filter["houseNumber"] = *geocoding.HouseNumber
 	}
-	if geocoding.PostalCode != "" {
-		filter["postalCode"] = bson.M{"$eq": geocoding.PostalCode}
+	if geocoding.PostalCode != nil && *geocoding.PostalCode != "" {
+		filter["postalCode"] = *geocoding.PostalCode
 	}
-	if geocoding.County != "" {
-		filter["county"] = bson.M{"$eq": geocoding.County}
+	if geocoding.County != nil && *geocoding.County != "" {
+		filter["county"] = *geocoding.County
 	}
-	if geocoding.City != "" {
-		filter["city"] = bson.M{"$eq": geocoding.City}
+	if geocoding.City != nil && *geocoding.City != "" {
+		filter["city"] = *geocoding.City
 	}
-	if geocoding.State != "" {
-		filter["state"] = bson.M{"$eq": geocoding.State}
+	if geocoding.State != nil && *geocoding.State != "" {
+		filter["state"] = *geocoding.State
 	}
-	if geocoding.StateCode != "" {
-		filter["stateCode"] = bson.M{"$eq": geocoding.StateCode}
+	if geocoding.StateCode != nil && *geocoding.StateCode != "" {
+		filter["stateCode"] = *geocoding.StateCode
 	}
-	if geocoding.Country != "" {
-		filter["country"] = bson.M{"$eq": geocoding.Country}
+	if geocoding.Country != nil && *geocoding.Country != "" {
+		filter["country"] = *geocoding.Country
 	}
-	if geocoding.CountryCode != "" {
-		filter["countryCode"] = bson.M{"$eq": geocoding.CountryCode}
+	if geocoding.CountryCode != nil && *geocoding.CountryCode != "" {
+		filter["countryCode"] = *geocoding.CountryCode
 	}
-	if geocoding.Geometry.Latitude != 0 {
-		filter["lat"] = bson.M{"$eq": geocoding.Geometry.Latitude}
+	if geocoding.Geometry != nil && geocoding.Geometry.Latitude != nil {
+		filter["lat"] = *geocoding.Geometry.Latitude
 	}
-	if geocoding.Geometry.Longitude != 0 {
-		filter["lng"] = bson.M{"$eq": geocoding.Geometry.Longitude}
+	if geocoding.Geometry != nil && geocoding.Geometry.Longitude != nil {
+		filter["lng"] = *geocoding.Geometry.Longitude
 	}
 
 	return filter
+}
+
+func mongoValidateGeocodingQuery(geocoding model.Geocoding) error {
+	const maxLen = 256
+
+	fields := []*string{
+		geocoding.FormattedAddress,
+		geocoding.StreetName,
+		geocoding.HouseNumber,
+		geocoding.PostalCode,
+		geocoding.County,
+		geocoding.City,
+		geocoding.State,
+		geocoding.StateCode,
+		geocoding.Country,
+		geocoding.CountryCode,
+	}
+	for _, v := range fields {
+		if v == nil || *v == "" {
+			continue
+		}
+		if len(*v) > maxLen {
+			return errors.New("field too long")
+		}
+		if strings.ContainsRune(*v, '\x00') {
+			return errors.New("field contains null byte")
+		}
+		if !utf8.ValidString(*v) {
+			return errors.New("field contains invalid utf-8")
+		}
+	}
+
+	if geocoding.Geometry != nil && geocoding.Geometry.Latitude != nil && *geocoding.Geometry.Latitude != 0 && (*geocoding.Geometry.Latitude < -90 || *geocoding.Geometry.Latitude > 90) {
+		return errors.New("latitude out of range")
+	}
+	if geocoding.Geometry != nil && geocoding.Geometry.Longitude != nil && *geocoding.Geometry.Longitude != 0 && (*geocoding.Geometry.Longitude < -180 || *geocoding.Geometry.Longitude > 180) {
+		return errors.New("longitude out of range")
+	}
+
+	return nil
+}
+
+func mongoSetFields(geocoding model.Geocoding) bson.M {
+	setFields := bson.M{}
+
+	if geocoding.FormattedAddress != nil {
+		setFields["formattedAddress"] = *geocoding.FormattedAddress
+	}
+	if geocoding.StreetName != nil {
+		setFields["streetName"] = *geocoding.StreetName
+	}
+	if geocoding.HouseNumber != nil {
+		setFields["houseNumber"] = *geocoding.HouseNumber
+	}
+	if geocoding.PostalCode != nil {
+		setFields["postalCode"] = *geocoding.PostalCode
+	}
+	if geocoding.County != nil {
+		setFields["county"] = *geocoding.County
+	}
+	if geocoding.City != nil {
+		setFields["city"] = *geocoding.City
+	}
+	if geocoding.State != nil {
+		setFields["state"] = *geocoding.State
+	}
+	if geocoding.StateCode != nil {
+		setFields["stateCode"] = *geocoding.StateCode
+	}
+	if geocoding.Country != nil {
+		setFields["country"] = *geocoding.Country
+	}
+	if geocoding.CountryCode != nil {
+		setFields["countryCode"] = *geocoding.CountryCode
+	}
+	if geocoding.Geometry != nil && geocoding.Geometry.Latitude != nil {
+		setFields["lat"] = *geocoding.Geometry.Latitude
+	}
+	if geocoding.Geometry != nil && geocoding.Geometry.Longitude != nil {
+		setFields["lng"] = *geocoding.Geometry.Longitude
+	}
+
+	return setFields
+}
+
+func mongoUnsetFields(geocoding model.Geocoding) bson.M {
+	unsetFields := bson.M{}
+
+	if geocoding.FormattedAddress != nil {
+		unsetFields["formattedAddress"] = 1
+	}
+	if geocoding.StreetName != nil {
+		unsetFields["streetName"] = 1
+	}
+	if geocoding.HouseNumber != nil {
+		unsetFields["houseNumber"] = 1
+	}
+	if geocoding.PostalCode != nil {
+		unsetFields["postalCode"] = 1
+	}
+	if geocoding.County != nil {
+		unsetFields["county"] = 1
+	}
+	if geocoding.City != nil {
+		unsetFields["city"] = 1
+	}
+	if geocoding.State != nil {
+		unsetFields["state"] = 1
+	}
+	if geocoding.StateCode != nil {
+		unsetFields["stateCode"] = 1
+	}
+	if geocoding.Country != nil {
+		unsetFields["country"] = 1
+	}
+	if geocoding.CountryCode != nil {
+		unsetFields["countryCode"] = 1
+	}
+	if geocoding.Geometry != nil && geocoding.Geometry.Latitude != nil {
+		unsetFields["lat"] = 1
+	}
+	if geocoding.Geometry != nil && geocoding.Geometry.Longitude != nil {
+		unsetFields["lng"] = 1
+	}
+
+	return unsetFields
 }
