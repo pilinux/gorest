@@ -1298,6 +1298,12 @@ gdb.MongoDropAllIndexes("mydb", "users")
 
 #### Repository Pattern (Example)
 
+Based on the Clean Architecture in `example2`.
+
+**Repository Layer (`repo/address.go`):**
+
+Uses `bson.D` (ordered) for security/determinism over `bson.M`. Implements smart updates (nil=ignore, empty=unset).
+
 ```go
 package repo
 
@@ -1307,51 +1313,91 @@ import (
     "go.mongodb.org/mongo-driver/v2/mongo"
 )
 
-type Address struct {
-    ID          bson.ObjectID `bson:"_id" json:"id"`
-    Street      string        `bson:"street" json:"street"`
-    City        string        `bson:"city" json:"city"`
-    CountryCode string        `bson:"countryCode" json:"countryCode"`
-}
-
+// AddressRepo provides methods for address-related MongoDB operations.
 type AddressRepo struct {
     db *mongo.Client
 }
 
-func (r *AddressRepo) coll() *mongo.Collection {
-    return r.db.Database("mydb").Collection("addresses")
-}
+// UpdateAddressFields updates fields dynamically.
+// - nil: ignore field (no change)
+// - "": unset field (delete from DB)
+// - value: set field
+func (r *AddressRepo) UpdateAddressFields(ctx context.Context, address *model.Geocoding) error {
+    filter := bson.D{{Key: "_id", Value: address.ID}}
+    setFields := bson.D{}
+    unsetFields := bson.D{}
 
-func (r *AddressRepo) Create(ctx context.Context, addr *Address) error {
-    addr.ID = bson.NewObjectID()
-    _, err := r.coll().InsertOne(ctx, addr)
-    return err
-}
-
-func (r *AddressRepo) FindByID(ctx context.Context, id bson.ObjectID) (*Address, error) {
-    var addr Address
-    err := r.coll().FindOne(ctx, bson.M{"_id": id}).Decode(&addr)
-    return &addr, err
-}
-
-func (r *AddressRepo) FindAll(ctx context.Context) ([]Address, error) {
-    cursor, err := r.coll().Find(ctx, bson.M{})
-    if err != nil {
-        return nil, err
+    setOrUnset := func(key string, val *string) {
+        if val == nil {
+            return
+        }
+        if *val == "" {
+            unsetFields = append(unsetFields, bson.E{Key: key, Value: ""})
+        } else {
+            setFields = append(setFields, bson.E{Key: key, Value: *val})
+        }
     }
-    var addrs []Address
-    err = cursor.All(ctx, &addrs)
-    return addrs, err
-}
 
-func (r *AddressRepo) Update(ctx context.Context, addr *Address) error {
-    _, err := r.coll().UpdateOne(ctx, bson.M{"_id": addr.ID}, bson.M{"$set": addr})
+    setOrUnset("city", address.City)
+    setOrUnset("country", address.Country)
+    // ... other fields
+
+    update := bson.D{}
+    if len(setFields) > 0 {
+        update = append(update, bson.E{Key: "$set", Value: setFields})
+    }
+    if len(unsetFields) > 0 {
+        update = append(update, bson.E{Key: "$unset", Value: unsetFields})
+    }
+
+    // Safety check: don't run empty update
+    if len(update) == 0 {
+        return nil
+    }
+
+    _, err := r.coll().UpdateOne(ctx, filter, update)
     return err
 }
 
-func (r *AddressRepo) Delete(ctx context.Context, id bson.ObjectID) error {
-    _, err := r.coll().DeleteOne(ctx, bson.M{"_id": id})
-    return err
+// Secure Filter Construction (Avoiding injection)
+func addressFilter(address *model.Geocoding) bson.D {
+    filter := bson.D{}
+    if address.City != nil && *address.City != "" {
+        // Use explicit $eq operator for security
+        filter = append(filter, bson.E{Key: "city", Value: bson.M{"$eq": *address.City}})
+    }
+    return filter
+}
+```
+
+**Service Layer Validation (`service/address.go`):**
+
+Strict input validation logic ensures data integrity before DB calls.
+
+```go
+// Explicit validation checks
+func validateAddress(geocoding *model.Geocoding) error {
+    const maxLen = 256
+
+    fields := []*string{geocoding.City, geocoding.Country /*...*/}
+
+    for _, v := range fields {
+        if v == nil || *v == "" { continue }
+
+        // Sanity Checks
+        if len(*v) > maxLen { return errors.New("field too long") }
+        if strings.ContainsRune(*v, '\x00') { return errors.New("null byte detected") } // Prevent null byte injection
+        if !utf8.ValidString(*v) { return errors.New("invalid utf-8") }
+        if strings.HasPrefix(*v, "$") { return errors.New("invalid char") } // Prevent operator injection
+    }
+
+    // Logic Validation (e.g., Coordinates)
+    if geocoding.Geometry != nil {
+         if lat := geocoding.Geometry.Latitude; lat != nil && (*lat < -90 || *lat > 90) {
+             return errors.New("latitude out of range")
+         }
+    }
+    return nil
 }
 ```
 
