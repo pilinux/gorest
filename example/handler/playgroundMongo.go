@@ -28,6 +28,12 @@ func MongoCreateOne(data model.Geocoding) (httpResponse gmodel.HTTPResponse, htt
 		return
 	}
 
+	if err := mongoValidateGeocodingQuery(data); err != nil {
+		httpResponse.Message = "invalid query payload"
+		httpStatusCode = http.StatusBadRequest
+		return
+	}
+
 	// generate a new ObjectID
 	data.ID = bson.NewObjectID()
 
@@ -64,7 +70,7 @@ func MongoGetAll() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	defer cancel()
 
 	data := []model.Geocoding{}
-	cursor, err := collection.Find(ctx, bson.M{})
+	cursor, err := collection.Find(ctx, bson.D{})
 	if err != nil {
 		log.WithError(err).Error("error code: 1411")
 		httpResponse.Message = "internal server error"
@@ -110,7 +116,7 @@ func MongoGetByID(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode i
 	defer cancel()
 
 	data := model.Geocoding{}
-	err = collection.FindOne(ctx, bson.M{"_id": objID}).Decode(&data)
+	err = collection.FindOne(ctx, bson.D{{Key: "_id", Value: objID}}).Decode(&data)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			httpResponse.Message = "document not found"
@@ -204,9 +210,7 @@ func MongoUpdateByID(req model.Geocoding) (httpResponse gmodel.HTTPResponse, htt
 	}
 
 	// search filter
-	filter := bson.M{
-		"_id": req.ID,
-	}
+	filter := bson.D{{Key: "_id", Value: req.ID}}
 
 	client := gdatabase.GetMongo()
 	db := client.Database("map")            // set database name
@@ -224,9 +228,7 @@ func MongoUpdateByID(req model.Geocoding) (httpResponse gmodel.HTTPResponse, htt
 		httpStatusCode = http.StatusBadRequest
 		return
 	}
-	update := bson.M{
-		"$set": setFields,
-	}
+	update := bson.D{{Key: "$set", Value: setFields}}
 
 	// find one result and update it
 	res, err := collection.UpdateOne(ctx, filter, update)
@@ -250,7 +252,7 @@ func MongoUpdateByID(req model.Geocoding) (httpResponse gmodel.HTTPResponse, htt
 
 	// fetch the updated document
 	var updatedDoc model.Geocoding
-	err = collection.FindOne(ctx, bson.M{"_id": req.ID}).Decode(&updatedDoc)
+	err = collection.FindOne(ctx, bson.D{{Key: "_id", Value: req.ID}}).Decode(&updatedDoc)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			httpResponse.Message = "document not found after update"
@@ -285,9 +287,7 @@ func MongoDeleteFieldByID(req model.Geocoding) (httpResponse gmodel.HTTPResponse
 	}
 
 	// search filter
-	filter := bson.M{
-		"_id": req.ID,
-	}
+	filter := bson.D{{Key: "_id", Value: req.ID}}
 
 	client := gdatabase.GetMongo()
 	db := client.Database("map")            // set database name
@@ -299,9 +299,7 @@ func MongoDeleteFieldByID(req model.Geocoding) (httpResponse gmodel.HTTPResponse
 
 	// create the update
 	// https://docs.mongodb.com/manual/reference/operator/update/
-	update := bson.M{
-		"$unset": deleteFields,
-	}
+	update := bson.D{{Key: "$unset", Value: deleteFields}}
 
 	// find one result and update it
 	res, err := collection.UpdateOne(ctx, filter, update)
@@ -345,7 +343,7 @@ func MongoDeleteByID(id string) (httpResponse gmodel.HTTPResponse, httpStatusCod
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	res, err := collection.DeleteOne(ctx, bson.M{"_id": objID})
+	res, err := collection.DeleteOne(ctx, bson.D{{Key: "_id", Value: objID}})
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			httpResponse.Message = "document not found"
@@ -406,49 +404,49 @@ func mongoTrimSpace(geocoding model.Geocoding) model.Geocoding {
 }
 
 // mongoFilter builds a search filter for MongoDB queries.
-func mongoFilter(geocoding model.Geocoding, addDocIDInFilter bool) bson.M {
-	filter := bson.M{}
+func mongoFilter(geocoding model.Geocoding, addDocIDInFilter bool) bson.D {
+	filter := bson.D{}
 
 	if addDocIDInFilter {
 		if !geocoding.ID.IsZero() {
-			filter["_id"] = bson.M{"$eq": geocoding.ID}
+			filter = append(filter, bson.E{Key: "_id", Value: geocoding.ID})
 		}
 	}
 	if geocoding.FormattedAddress != nil && *geocoding.FormattedAddress != "" {
-		filter["formattedAddress"] = bson.M{"$eq": *geocoding.FormattedAddress}
+		filter = append(filter, bson.E{Key: "formattedAddress", Value: bson.M{"$eq": *geocoding.FormattedAddress}})
 	}
 	if geocoding.StreetName != nil && *geocoding.StreetName != "" {
-		filter["streetName"] = bson.M{"$eq": *geocoding.StreetName}
+		filter = append(filter, bson.E{Key: "streetName", Value: bson.M{"$eq": *geocoding.StreetName}})
 	}
 	if geocoding.HouseNumber != nil && *geocoding.HouseNumber != "" {
-		filter["houseNumber"] = bson.M{"$eq": *geocoding.HouseNumber}
+		filter = append(filter, bson.E{Key: "houseNumber", Value: bson.M{"$eq": *geocoding.HouseNumber}})
 	}
 	if geocoding.PostalCode != nil && *geocoding.PostalCode != "" {
-		filter["postalCode"] = bson.M{"$eq": *geocoding.PostalCode}
+		filter = append(filter, bson.E{Key: "postalCode", Value: bson.M{"$eq": *geocoding.PostalCode}})
 	}
 	if geocoding.County != nil && *geocoding.County != "" {
-		filter["county"] = bson.M{"$eq": *geocoding.County}
+		filter = append(filter, bson.E{Key: "county", Value: bson.M{"$eq": *geocoding.County}})
 	}
 	if geocoding.City != nil && *geocoding.City != "" {
-		filter["city"] = bson.M{"$eq": *geocoding.City}
+		filter = append(filter, bson.E{Key: "city", Value: bson.M{"$eq": *geocoding.City}})
 	}
 	if geocoding.State != nil && *geocoding.State != "" {
-		filter["state"] = bson.M{"$eq": *geocoding.State}
+		filter = append(filter, bson.E{Key: "state", Value: bson.M{"$eq": *geocoding.State}})
 	}
 	if geocoding.StateCode != nil && *geocoding.StateCode != "" {
-		filter["stateCode"] = bson.M{"$eq": *geocoding.StateCode}
+		filter = append(filter, bson.E{Key: "stateCode", Value: bson.M{"$eq": *geocoding.StateCode}})
 	}
 	if geocoding.Country != nil && *geocoding.Country != "" {
-		filter["country"] = bson.M{"$eq": *geocoding.Country}
+		filter = append(filter, bson.E{Key: "country", Value: bson.M{"$eq": *geocoding.Country}})
 	}
 	if geocoding.CountryCode != nil && *geocoding.CountryCode != "" {
-		filter["countryCode"] = bson.M{"$eq": *geocoding.CountryCode}
+		filter = append(filter, bson.E{Key: "countryCode", Value: bson.M{"$eq": *geocoding.CountryCode}})
 	}
 	if geocoding.Geometry != nil && geocoding.Geometry.Latitude != nil {
-		filter["lat"] = bson.M{"$eq": *geocoding.Geometry.Latitude}
+		filter = append(filter, bson.E{Key: "lat", Value: bson.M{"$eq": *geocoding.Geometry.Latitude}})
 	}
 	if geocoding.Geometry != nil && geocoding.Geometry.Longitude != nil {
-		filter["lng"] = bson.M{"$eq": *geocoding.Geometry.Longitude}
+		filter = append(filter, bson.E{Key: "lng", Value: bson.M{"$eq": *geocoding.Geometry.Longitude}})
 	}
 
 	return filter
@@ -497,87 +495,87 @@ func mongoValidateGeocodingQuery(geocoding model.Geocoding) error {
 	return nil
 }
 
-func mongoSetFields(geocoding model.Geocoding) bson.M {
-	setFields := bson.M{}
+func mongoSetFields(geocoding model.Geocoding) bson.D {
+	setFields := bson.D{}
 
 	if geocoding.FormattedAddress != nil {
-		setFields["formattedAddress"] = *geocoding.FormattedAddress
+		setFields = append(setFields, bson.E{Key: "formattedAddress", Value: *geocoding.FormattedAddress})
 	}
 	if geocoding.StreetName != nil {
-		setFields["streetName"] = *geocoding.StreetName
+		setFields = append(setFields, bson.E{Key: "streetName", Value: *geocoding.StreetName})
 	}
 	if geocoding.HouseNumber != nil {
-		setFields["houseNumber"] = *geocoding.HouseNumber
+		setFields = append(setFields, bson.E{Key: "houseNumber", Value: *geocoding.HouseNumber})
 	}
 	if geocoding.PostalCode != nil {
-		setFields["postalCode"] = *geocoding.PostalCode
+		setFields = append(setFields, bson.E{Key: "postalCode", Value: *geocoding.PostalCode})
 	}
 	if geocoding.County != nil {
-		setFields["county"] = *geocoding.County
+		setFields = append(setFields, bson.E{Key: "county", Value: *geocoding.County})
 	}
 	if geocoding.City != nil {
-		setFields["city"] = *geocoding.City
+		setFields = append(setFields, bson.E{Key: "city", Value: *geocoding.City})
 	}
 	if geocoding.State != nil {
-		setFields["state"] = *geocoding.State
+		setFields = append(setFields, bson.E{Key: "state", Value: *geocoding.State})
 	}
 	if geocoding.StateCode != nil {
-		setFields["stateCode"] = *geocoding.StateCode
+		setFields = append(setFields, bson.E{Key: "stateCode", Value: *geocoding.StateCode})
 	}
 	if geocoding.Country != nil {
-		setFields["country"] = *geocoding.Country
+		setFields = append(setFields, bson.E{Key: "country", Value: *geocoding.Country})
 	}
 	if geocoding.CountryCode != nil {
-		setFields["countryCode"] = *geocoding.CountryCode
+		setFields = append(setFields, bson.E{Key: "countryCode", Value: *geocoding.CountryCode})
 	}
 	if geocoding.Geometry != nil && geocoding.Geometry.Latitude != nil {
-		setFields["lat"] = *geocoding.Geometry.Latitude
+		setFields = append(setFields, bson.E{Key: "lat", Value: *geocoding.Geometry.Latitude})
 	}
 	if geocoding.Geometry != nil && geocoding.Geometry.Longitude != nil {
-		setFields["lng"] = *geocoding.Geometry.Longitude
+		setFields = append(setFields, bson.E{Key: "lng", Value: *geocoding.Geometry.Longitude})
 	}
 
 	return setFields
 }
 
-func mongoUnsetFields(geocoding model.Geocoding) bson.M {
-	unsetFields := bson.M{}
+func mongoUnsetFields(geocoding model.Geocoding) bson.D {
+	unsetFields := bson.D{}
 
 	if geocoding.FormattedAddress != nil {
-		unsetFields["formattedAddress"] = 1
+		unsetFields = append(unsetFields, bson.E{Key: "formattedAddress", Value: 1})
 	}
 	if geocoding.StreetName != nil {
-		unsetFields["streetName"] = 1
+		unsetFields = append(unsetFields, bson.E{Key: "streetName", Value: 1})
 	}
 	if geocoding.HouseNumber != nil {
-		unsetFields["houseNumber"] = 1
+		unsetFields = append(unsetFields, bson.E{Key: "houseNumber", Value: 1})
 	}
 	if geocoding.PostalCode != nil {
-		unsetFields["postalCode"] = 1
+		unsetFields = append(unsetFields, bson.E{Key: "postalCode", Value: 1})
 	}
 	if geocoding.County != nil {
-		unsetFields["county"] = 1
+		unsetFields = append(unsetFields, bson.E{Key: "county", Value: 1})
 	}
 	if geocoding.City != nil {
-		unsetFields["city"] = 1
+		unsetFields = append(unsetFields, bson.E{Key: "city", Value: 1})
 	}
 	if geocoding.State != nil {
-		unsetFields["state"] = 1
+		unsetFields = append(unsetFields, bson.E{Key: "state", Value: 1})
 	}
 	if geocoding.StateCode != nil {
-		unsetFields["stateCode"] = 1
+		unsetFields = append(unsetFields, bson.E{Key: "stateCode", Value: 1})
 	}
 	if geocoding.Country != nil {
-		unsetFields["country"] = 1
+		unsetFields = append(unsetFields, bson.E{Key: "country", Value: 1})
 	}
 	if geocoding.CountryCode != nil {
-		unsetFields["countryCode"] = 1
+		unsetFields = append(unsetFields, bson.E{Key: "countryCode", Value: 1})
 	}
 	if geocoding.Geometry != nil && geocoding.Geometry.Latitude != nil {
-		unsetFields["lat"] = 1
+		unsetFields = append(unsetFields, bson.E{Key: "lat", Value: 1})
 	}
 	if geocoding.Geometry != nil && geocoding.Geometry.Longitude != nil {
-		unsetFields["lng"] = 1
+		unsetFields = append(unsetFields, bson.E{Key: "lng", Value: 1})
 	}
 
 	return unsetFields
