@@ -59,7 +59,7 @@ func (r *AddressRepo) AddAddress(ctx context.Context, address *model.Geocoding) 
 func (r *AddressRepo) GetAddresses(ctx context.Context) ([]model.Geocoding, error) {
 	var addresses []model.Geocoding
 
-	cursor, err := r.coll().Find(ctx, bson.M{})
+	cursor, err := r.coll().Find(ctx, bson.D{})
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (r *AddressRepo) GetAddresses(ctx context.Context) ([]model.Geocoding, erro
 func (r *AddressRepo) GetAddress(ctx context.Context, id bson.ObjectID) (*model.Geocoding, error) {
 	var address model.Geocoding
 
-	err := r.coll().FindOne(ctx, bson.M{"_id": id}).Decode(&address)
+	err := r.coll().FindOne(ctx, bson.D{{Key: "_id", Value: id}}).Decode(&address)
 	if err != nil {
 		return nil, err
 	}
@@ -101,8 +101,8 @@ func (r *AddressRepo) UpdateAddress(ctx context.Context, address *model.Geocodin
 		return mongo.ErrNoDocuments
 	}
 
-	filter := bson.M{"_id": address.ID}
-	update := bson.M{"$set": address}
+	filter := bson.D{{Key: "_id", Value: address.ID}}
+	update := bson.D{{Key: "$set", Value: address}}
 
 	res, err := r.coll().UpdateOne(ctx, filter, update)
 	if err != nil {
@@ -120,12 +120,12 @@ func (r *AddressRepo) DeleteFieldsFromAddress(ctx context.Context, address *mode
 		return mongo.ErrNoDocuments
 	}
 
-	filter := bson.M{"_id": address.ID}
-	unset := bson.M{}
+	filter := bson.D{{Key: "_id", Value: address.ID}}
+	unset := bson.D{}
 	for _, field := range fields {
-		unset[field] = ""
+		unset = append(unset, bson.E{Key: field, Value: ""})
 	}
-	update := bson.M{"$unset": unset}
+	update := bson.D{{Key: "$unset", Value: unset}}
 
 	res, err := r.coll().UpdateOne(ctx, filter, update)
 	if err != nil {
@@ -143,17 +143,20 @@ func (r *AddressRepo) UpdateAddressFields(ctx context.Context, address *model.Ge
 		return mongo.ErrNoDocuments
 	}
 
-	filter := bson.M{"_id": address.ID}
-	setFields := bson.M{}
-	unsetFields := bson.M{}
+	filter := bson.D{{Key: "_id", Value: address.ID}}
+	setFields := bson.D{}
+	unsetFields := bson.D{}
 
 	// helper to set/unset string fields
-	setOrUnset := func(fieldName, value string) {
-		if value != "" {
-			setFields[fieldName] = value
-		} else {
-			unsetFields[fieldName] = ""
+	setOrUnset := func(fieldName string, value *string) {
+		if value == nil {
+			return
 		}
+		if *value == "" {
+			unsetFields = append(unsetFields, bson.E{Key: fieldName, Value: ""})
+			return
+		}
+		setFields = append(setFields, bson.E{Key: fieldName, Value: *value})
 	}
 
 	setOrUnset("formattedAddress", address.FormattedAddress)
@@ -170,26 +173,23 @@ func (r *AddressRepo) UpdateAddressFields(ctx context.Context, address *model.Ge
 	// geometry fields
 	if address.Geometry != nil {
 		if address.Geometry.Latitude != nil {
-			setFields["latitude"] = *address.Geometry.Latitude
-		} else {
-			unsetFields["latitude"] = ""
+			setFields = append(setFields, bson.E{Key: "latitude", Value: *address.Geometry.Latitude})
 		}
 		if address.Geometry.Longitude != nil {
-			setFields["longitude"] = *address.Geometry.Longitude
-		} else {
-			unsetFields["longitude"] = ""
+			setFields = append(setFields, bson.E{Key: "longitude", Value: *address.Geometry.Longitude})
 		}
-	} else {
-		unsetFields["latitude"] = ""
-		unsetFields["longitude"] = ""
 	}
 
-	update := bson.M{}
+	update := bson.D{}
 	if len(setFields) > 0 {
-		update["$set"] = setFields
+		update = append(update, bson.E{Key: "$set", Value: setFields})
 	}
 	if len(unsetFields) > 0 {
-		update["$unset"] = unsetFields
+		update = append(update, bson.E{Key: "$unset", Value: unsetFields})
+	}
+
+	if len(update) == 0 {
+		return nil
 	}
 
 	res, err := r.coll().UpdateOne(ctx, filter, update)
@@ -208,7 +208,7 @@ func (r *AddressRepo) DeleteAddress(ctx context.Context, id bson.ObjectID) error
 		return mongo.ErrNoDocuments
 	}
 
-	filter := bson.M{"_id": id}
+	filter := bson.D{{Key: "_id", Value: id}}
 	res, err := r.coll().DeleteOne(ctx, filter)
 	if err != nil {
 		return err
@@ -220,51 +220,51 @@ func (r *AddressRepo) DeleteAddress(ctx context.Context, id bson.ObjectID) error
 }
 
 // addressFilter builds a MongoDB search filter for the given address fields.
-func addressFilter(address *model.Geocoding, addDocIDInFilter bool) bson.M {
-	filter := bson.M{}
+func addressFilter(address *model.Geocoding, addDocIDInFilter bool) bson.D {
+	filter := bson.D{}
 	if address == nil {
 		return filter
 	}
 
 	if addDocIDInFilter && !address.ID.IsZero() {
-		filter["_id"] = bson.M{"$eq": address.ID}
+		filter = append(filter, bson.E{Key: "_id", Value: address.ID})
 	}
-	if address.FormattedAddress != "" {
-		filter["formattedAddress"] = bson.M{"$eq": address.FormattedAddress}
+	if address.FormattedAddress != nil && *address.FormattedAddress != "" {
+		filter = append(filter, bson.E{Key: "formattedAddress", Value: bson.M{"$eq": *address.FormattedAddress}})
 	}
-	if address.StreetName != "" {
-		filter["streetName"] = bson.M{"$eq": address.StreetName}
+	if address.StreetName != nil && *address.StreetName != "" {
+		filter = append(filter, bson.E{Key: "streetName", Value: bson.M{"$eq": *address.StreetName}})
 	}
-	if address.HouseNumber != "" {
-		filter["houseNumber"] = bson.M{"$eq": address.HouseNumber}
+	if address.HouseNumber != nil && *address.HouseNumber != "" {
+		filter = append(filter, bson.E{Key: "houseNumber", Value: bson.M{"$eq": *address.HouseNumber}})
 	}
-	if address.PostalCode != "" {
-		filter["postalCode"] = bson.M{"$eq": address.PostalCode}
+	if address.PostalCode != nil && *address.PostalCode != "" {
+		filter = append(filter, bson.E{Key: "postalCode", Value: bson.M{"$eq": *address.PostalCode}})
 	}
-	if address.County != "" {
-		filter["county"] = bson.M{"$eq": address.County}
+	if address.County != nil && *address.County != "" {
+		filter = append(filter, bson.E{Key: "county", Value: bson.M{"$eq": *address.County}})
 	}
-	if address.City != "" {
-		filter["city"] = bson.M{"$eq": address.City}
+	if address.City != nil && *address.City != "" {
+		filter = append(filter, bson.E{Key: "city", Value: bson.M{"$eq": *address.City}})
 	}
-	if address.State != "" {
-		filter["state"] = bson.M{"$eq": address.State}
+	if address.State != nil && *address.State != "" {
+		filter = append(filter, bson.E{Key: "state", Value: bson.M{"$eq": *address.State}})
 	}
-	if address.StateCode != "" {
-		filter["stateCode"] = bson.M{"$eq": address.StateCode}
+	if address.StateCode != nil && *address.StateCode != "" {
+		filter = append(filter, bson.E{Key: "stateCode", Value: bson.M{"$eq": *address.StateCode}})
 	}
-	if address.Country != "" {
-		filter["country"] = bson.M{"$eq": address.Country}
+	if address.Country != nil && *address.Country != "" {
+		filter = append(filter, bson.E{Key: "country", Value: bson.M{"$eq": *address.Country}})
 	}
-	if address.CountryCode != "" {
-		filter["countryCode"] = bson.M{"$eq": address.CountryCode}
+	if address.CountryCode != nil && *address.CountryCode != "" {
+		filter = append(filter, bson.E{Key: "countryCode", Value: bson.M{"$eq": *address.CountryCode}})
 	}
 	if address.Geometry != nil {
 		if address.Geometry.Latitude != nil {
-			filter["latitude"] = bson.M{"$eq": *address.Geometry.Latitude}
+			filter = append(filter, bson.E{Key: "latitude", Value: bson.M{"$eq": *address.Geometry.Latitude}})
 		}
 		if address.Geometry.Longitude != nil {
-			filter["longitude"] = bson.M{"$eq": *address.Geometry.Longitude}
+			filter = append(filter, bson.E{Key: "longitude", Value: bson.M{"$eq": *address.Geometry.Longitude}})
 		}
 	}
 

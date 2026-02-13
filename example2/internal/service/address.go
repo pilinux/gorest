@@ -5,6 +5,8 @@ import (
 	"errors"
 	"net/http"
 	"reflect"
+	"strings"
+	"unicode/utf8"
 
 	gmodel "github.com/pilinux/gorest/database/model"
 	log "github.com/sirupsen/logrus"
@@ -29,6 +31,12 @@ func NewAddressService(addressRepo repo.AddressRepository) *AddressService {
 
 // AddAddress adds a new address to the database.
 func (s *AddressService) AddAddress(ctx context.Context, address *model.Geocoding) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	if err := validateAddress(address); err != nil {
+		httpResponse.Message = err.Error()
+		httpStatusCode = http.StatusBadRequest
+		return
+	}
+
 	res, err := s.addressRepo.AddAddress(ctx, address)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
@@ -114,6 +122,12 @@ func (s *AddressService) GetAddress(ctx context.Context, id string) (httpRespons
 
 // GetAddressByFilter retrieves an address based on a filter.
 func (s *AddressService) GetAddressByFilter(ctx context.Context, address *model.Geocoding, addDocIDInFilter bool) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	if err := validateAddress(address); err != nil {
+		httpResponse.Message = err.Error()
+		httpStatusCode = http.StatusBadRequest
+		return
+	}
+
 	addr, err := s.addressRepo.GetAddressByFilter(ctx, address, addDocIDInFilter)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
@@ -141,6 +155,12 @@ func (s *AddressService) GetAddressByFilter(ctx context.Context, address *model.
 
 // UpdateAddress updates an existing address in the database.
 func (s *AddressService) UpdateAddress(ctx context.Context, address *model.Geocoding) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
+	if err := validateAddress(address); err != nil {
+		httpResponse.Message = err.Error()
+		httpStatusCode = http.StatusBadRequest
+		return
+	}
+
 	if address == nil || address.ID.IsZero() {
 		httpResponse.Message = "address ID is required"
 		httpStatusCode = http.StatusBadRequest
@@ -235,4 +255,49 @@ func (s *AddressService) DeleteAddress(ctx context.Context, id string) (httpResp
 	httpResponse.Message = "address deleted successfully"
 	httpStatusCode = http.StatusOK
 	return
+}
+
+func validateAddress(geocoding *model.Geocoding) error {
+	const maxLen = 256
+
+	fields := []*string{
+		geocoding.FormattedAddress,
+		geocoding.StreetName,
+		geocoding.HouseNumber,
+		geocoding.PostalCode,
+		geocoding.County,
+		geocoding.City,
+		geocoding.State,
+		geocoding.StateCode,
+		geocoding.Country,
+		geocoding.CountryCode,
+	}
+	for _, v := range fields {
+		if v == nil || *v == "" {
+			continue
+		}
+		if len(*v) > maxLen {
+			return errors.New("field too long")
+		}
+		if strings.ContainsRune(*v, '\x00') {
+			return errors.New("field contains null byte")
+		}
+		if !utf8.ValidString(*v) {
+			return errors.New("field contains invalid utf-8")
+		}
+		if strings.HasPrefix(*v, "$") {
+			return errors.New("field contains invalid character")
+		}
+	}
+
+	if geocoding.Geometry != nil {
+		if geocoding.Geometry.Latitude != nil && *geocoding.Geometry.Latitude != 0 && (*geocoding.Geometry.Latitude < -90 || *geocoding.Geometry.Latitude > 90) {
+			return errors.New("latitude out of range")
+		}
+		if geocoding.Geometry.Longitude != nil && *geocoding.Geometry.Longitude != 0 && (*geocoding.Geometry.Longitude < -180 || *geocoding.Geometry.Longitude > 180) {
+			return errors.New("longitude out of range")
+		}
+	}
+
+	return nil
 }
