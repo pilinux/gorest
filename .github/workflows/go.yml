@@ -93,7 +93,3 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: pilinux/gorest
-
-      - name: Update Go report card
-        if: github.event_name == 'push'
-        uses: creekorful/goreportcard-action@v1.0
