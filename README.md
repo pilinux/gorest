@@ -47,7 +47,13 @@ Additional agent-specific behavior is documented in [AGENTS.md][20].
 - `Go 1.21+` (for versions `1.7.x`)
 - `Go 1.20+` (for versions `1.6.x`)
 
-For all new projects, it is recommended to use version `1.10.x` or higher.
+For all new projects, it is recommended to use version `1.11.x` or higher.
+
+## Migration guides for breaking changes
+
+- From `1.10.x` to `1.11.x`:
+  - If you are using 2FA feature from gorest, see release notes for version [`1.10.5`](https://github.com/pilinux/gorest/releases/tag/v1.10.5).
+  - If you are using MongoDB, see [example code](https://github.com/pilinux/gorest/tree/v1.11.0/example2) for the new MongoDB implementation.
 
 ## Important
 

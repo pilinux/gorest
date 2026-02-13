@@ -442,7 +442,7 @@ for {
     }
     break
 }
-client := gdb.GetMongo() // get *qmgo.Client
+client := gdb.GetMongo() // get *mongo.Client
 
 // Index management
 gdb.MongoCreateIndex("db", "collection", index)

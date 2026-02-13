@@ -69,7 +69,7 @@ All settings live in cmd/app/.env. Key sections:
 
 ## Project Structure
 
-```
+```text
 example2/
 ├── cmd/
 │   └── app/
@@ -109,21 +109,21 @@ Migrations run automatically at startup if `ACTIVATE_RDBMS=yes`.
 
 To customize tables:
 
-```
+```go
 // internal/database/migrate/migrate.go
 func StartMigration(configure gconfig.Configuration) error {
-	db := gdb.GetDB()
-	configureDB := configure.Database.RDBMS
-	driver := configureDB.Env.Driver
+  db := gdb.GetDB()
+  configureDB := configure.Database.RDBMS
+  driver := configureDB.Env.Driver
 
-	if err := db.AutoMigrate(
-		&auth{},
-		&twoFA{},
-		&twoFABackup{},
-		&tempEmail{},
-		&user{},
-		&post{},
-		&hobby{},
+  if err := db.AutoMigrate(
+    &auth{},
+    &twoFA{},
+    &twoFABackup{},
+    &tempEmail{},
+    &user{},
+    &post{},
+    &hobby{},
         // add &model.YourNewModel{} here
     )
 }
