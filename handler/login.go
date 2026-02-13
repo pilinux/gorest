@@ -116,16 +116,21 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 					}
 					key = lib.GetArgon2Key([]byte(payload.Password), salt, 32)
 				} else {
-					// fallback to old 2FA mechanism
-					// hash user's pass
-					hashPass, err := service.GetHash([]byte(payload.Password))
-					if err != nil {
-						log.WithError(err).Error("error code: 1013.4.2")
-						httpResponse.Message = "internal server error"
-						httpStatusCode = http.StatusInternalServerError
-						return
-					}
-					key = hashPass
+					// if KeySalt is not available, it means the user configured 2FA before
+					// the KeySalt feature was introduced in v1.10.5.
+					// in v1.11.0, support for users without KeySalt is dropped,
+					// and there is no fallback to old 2FA mechanism.
+					// please check release notes of v1.10.5 to solve this issue for
+					// existing users before migrating to v1.11.x.
+					log.WithFields(
+						log.Fields{
+							"authID": v.AuthID,
+							"reason": "missing KeySalt for 2FA",
+						}).
+						Error("error code: 1013.4.2")
+					httpResponse.Message = "internal server error"
+					httpStatusCode = http.StatusInternalServerError
+					return
 				}
 
 				// save the hashed pass (key) in memory for OTP validation step

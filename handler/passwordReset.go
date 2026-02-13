@@ -525,16 +525,21 @@ func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayl
 			}
 			keyCurrent = lib.GetArgon2Key([]byte(authPayload.Password), salt, 32)
 		} else {
-			// fallback to old 2FA mechanism
-			// hash user's pass
-			hashPass, err := service.GetHash([]byte(authPayload.Password))
-			if err != nil {
-				log.WithError(err).Error("error code: 1027.1.2")
-				httpResponse.Message = "internal server error"
-				httpStatusCode = http.StatusInternalServerError
-				return
-			}
-			keyCurrent = hashPass
+			// if KeySalt is not available, it means the user configured 2FA before
+			// the KeySalt feature was introduced in v1.10.5.
+			// in v1.11.0, support for users without KeySalt is dropped,
+			// and there is no fallback to old 2FA mechanism.
+			// please check release notes of v1.10.5 to solve this issue for
+			// existing users before migrating to v1.11.x.
+			log.WithFields(
+				log.Fields{
+					"authID": claims.AuthID,
+					"reason": "missing KeySalt for 2FA",
+				}).
+				Error("error code: 1027.1.2")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
 		}
 
 		// step 2: derive key from new password
