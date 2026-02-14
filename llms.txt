@@ -1120,11 +1120,11 @@ func (r *CachedUserRepo) GetUserByID(ctx context.Context, id uint64) (*User, err
     key := r.cacheKey(id)
 
     // Redis should not block the request
-    cctx, cancel := context.WithTimeout(ctx, 200*time.Millisecond)
+    ctx, cancel := context.WithTimeout(ctx, 200*time.Millisecond)
     defer cancel()
 
     var raw string
-    if err := r.rdb.Do(cctx, radix.FlatCmd(&raw, "GET", key)); err == nil && raw != "" {
+    if err := r.rdb.Do(ctx, radix.FlatCmd(&raw, "GET", key)); err == nil && raw != "" {
         var u User
         if json.Unmarshal([]byte(raw), &u) == nil {
             return &u, nil
@@ -1139,7 +1139,7 @@ func (r *CachedUserRepo) GetUserByID(ctx context.Context, id uint64) (*User, err
 
     // Best-effort cache fill
     b, _ := json.Marshal(u)
-    _ = r.rdb.Do(cctx, radix.FlatCmd(new(string), "SET", key, string(b), "EX", int(r.ttl.Seconds())))
+    _ = r.rdb.Do(ctx, radix.FlatCmd(new(string), "SET", key, string(b), "EX", int(r.ttl.Seconds())))
 
     return u, nil
 }
@@ -1758,13 +1758,13 @@ protected.Use(gservice.JWTBlacklistChecker())
 
 // Admin-only area
 admin := protected.Group("/admin")
-admin.Use(mymiddleware.RequireRoles("admin"))
-admin.GET("/stats", myhandler.AdminStats)
+admin.Use(myMiddleware.RequireRoles("admin"))
+admin.GET("/stats", myHandler.AdminStats)
 
 // Fine-grained permissions
 posts := protected.Group("/posts")
-posts.GET("", mymiddleware.RequireScopes("post:read"), myhandler.ListPosts)
-posts.POST("", mymiddleware.RequireScopes("post:write"), myhandler.CreatePost)
+posts.GET("", myMiddleware.RequireScopes("post:read"), myHandler.ListPosts)
+posts.POST("", myMiddleware.RequireScopes("post:write"), myHandler.CreatePost)
 ```
 
 #### App-specific RBAC (authID/sub -> DB/cache lookup)
@@ -1866,8 +1866,8 @@ Router usage:
 
 ```go
 posts := protected.Group("/posts")
-posts.PUT(":postID", mymiddleware.RequirePostOwnerOrRoles(postRepo, "postID", "admin"), myhandler.UpdatePost)
-posts.DELETE(":postID", mymiddleware.RequirePostOwnerOrRoles(postRepo, "postID", "admin"), myhandler.DeletePost)
+posts.PUT(":postID", myMiddleware.RequirePostOwnerOrRoles(postRepo, "postID", "admin"), myHandler.UpdatePost)
+posts.DELETE(":postID", myMiddleware.RequirePostOwnerOrRoles(postRepo, "postID", "admin"), myHandler.DeletePost)
 ```
 
 If you authenticate via an external provider where the stable identifier is `sub` (string), map `sub` to your internal `authID` (or store permissions keyed by `sub`) and reuse the same pattern.

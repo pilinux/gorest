@@ -2,11 +2,15 @@ name: Go
 
 on:
   push:
-    branches:
-      - main
+    paths:
+      - '**/*.go'
+      - 'go.mod'
+      - 'go.sum'
   pull_request:
-    branches:
-      - main
+    paths:
+      - '**/*.go'
+      - 'go.mod'
+      - 'go.sum'
 
 permissions:
   contents: read
@@ -14,6 +18,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [1.24.x, 1.25.x, 1.26.x]
     permissions:
       actions: read
       contents: read
@@ -26,7 +33,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
-          go-version: 1.24.x
+          go-version: ${{ matrix.go-version }}
           cache: true
       - run: go version
 
@@ -57,7 +64,7 @@ jobs:
         uses: golang/govulncheck-action@v1
         with:
           repo-checkout: false
-          go-version-input: 1.24.x
+          go-version-input: ${{ matrix.go-version }}
           go-package: ./...
 
       - name: Build for Linux AMD
@@ -79,7 +86,7 @@ jobs:
         run: GOOS=windows GOARCH=arm64 go build -v ./...
 
       - name: Test
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           TEST_ENV_URL: ${{ secrets.TEST_ENV_URL }}
           TEST_INDEX_HTML_URL: ${{ secrets.TEST_INDEX_HTML_URL }}
@@ -88,7 +95,7 @@ jobs:
         run: go test -v -cover -coverprofile=coverage.txt -covermode=atomic ./...
 
       - name: Upload coverage reports to Codecov
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

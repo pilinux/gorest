@@ -13,12 +13,15 @@ name: "CodeQL"
 
 on:
   push:
-    branches:
-      - main
+    paths:
+      - '**/*.go'
+      - 'go.mod'
+      - 'go.sum'
   pull_request:
-    # The branches below must be a subset of the branches above
-    branches:
-      - main
+    paths:
+      - '**/*.go'
+      - 'go.mod'
+      - 'go.sum'
   schedule:
     - cron: "19 7 * * 2"
 
