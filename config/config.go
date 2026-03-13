@@ -710,11 +710,8 @@ func ensureConfigDir(dir string) error {
 // sanitizeConfigDir ensures that the provided directory is a valid relative path and does not lead outside the workspace.
 func sanitizeConfigDir(dir string) (string, error) {
 	cleanDir := filepath.Clean(strings.TrimSpace(dir))
-	if cleanDir == "." || cleanDir == "" || filepath.IsAbs(cleanDir) {
-		return "", errInvalidConfigDir
-	}
 
-	path, err := lib.ValidatePath(filepath.Join(".", cleanDir), ".")
+	path, err := lib.ValidatePath(cleanDir, ".")
 	if err != nil {
 		return "", errInvalidConfigDir
 	}

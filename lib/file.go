@@ -1,6 +1,6 @@
 // github.com/pilinux/gorest
 // The MIT License (MIT)
-// Copyright (c) 2022 pilinux
+// Copyright (c) 2022 - 2026 pilinux
 
 package lib
 
@@ -24,26 +24,32 @@ func FileExist(path string) bool {
 
 // ValidatePath validates the given path to prevent directory traversal attacks.
 func ValidatePath(fullPath, allowedDir string) (string, error) {
-	// clean and get absolute path of the given fullPath
-	absPath, err := filepath.Abs(fullPath)
-	if err != nil {
-		return "", err
-	}
-
-	// check for directory traversal patterns
-	if strings.Contains(absPath, "../") || strings.Contains(absPath, "..\\") {
+	fullPath = strings.TrimSpace(fullPath)
+	allowedDir = strings.TrimSpace(allowedDir)
+	if fullPath == "" || allowedDir == "" {
 		return "", os.ErrInvalid
 	}
 
-	// clean and get absolute path of the allowedDir
-	// this is the directory where the file should be saved
-	absPathAllowedDir, err := filepath.Abs(allowedDir)
+	// get absolute path for allowedDir
+	absPathAllowedDir, err := filepath.Abs(filepath.Clean(allowedDir))
 	if err != nil {
 		return "", err
 	}
 
-	// ensure the absPath is within the allowed directory
-	if !strings.HasPrefix(absPath, filepath.Clean(absPathAllowedDir)) {
+	// get absolute path for fullPath
+	absPath, err := filepath.Abs(filepath.Clean(fullPath))
+	if err != nil {
+		return "", err
+	}
+
+	// check if absPath is within absPathAllowedDir
+	relPath, err := filepath.Rel(absPathAllowedDir, absPath)
+	if err != nil {
+		return "", err
+	}
+
+	// check directory traversal by looking for ".." in the relative path
+	if relPath == ".." || strings.HasPrefix(relPath, ".."+string(os.PathSeparator)) {
 		return "", os.ErrInvalid
 	}
 

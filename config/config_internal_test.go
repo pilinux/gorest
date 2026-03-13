@@ -27,6 +27,19 @@ func TestSanitizeConfigDir(t *testing.T) {
 			dir:     filepath.Join(string(filepath.Separator), "tmp", "config-test"),
 			wantErr: errInvalidConfigDir,
 		},
+		{
+			name: "parent segments resolved inside workspace",
+			dir:  "tmp/../tmp/config-test",
+		},
+		{
+			name: "current dir allowed",
+			dir:  ".",
+		},
+		{
+			name:    "multiple parent segments rejected",
+			dir:     "tmp/../../tmp/config-test",
+			wantErr: errInvalidConfigDir,
+		},
 	}
 
 	for i := range tests {
@@ -36,7 +49,7 @@ func TestSanitizeConfigDir(t *testing.T) {
 
 			if tc.wantErr != nil {
 				if !errors.Is(err, tc.wantErr) {
-					t.Fatalf("expected error %v, got %v", tc.wantErr, err)
+					t.Fatalf("expected error: %v, got: %v", tc.wantErr, err)
 				}
 				if path != "" {
 					t.Fatalf("expected empty path, got %q", path)
