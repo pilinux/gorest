@@ -693,7 +693,7 @@ func ensureConfigDir(dir string) error {
 		return err
 	}
 
-	if _, err = os.Stat(path); err == nil {
+	if _, err = os.Stat(path); err == nil { // #nosec G703 -- path is constrained to the workspace root by sanitizeConfigDir
 		return nil
 	}
 	if !os.IsNotExist(err) {

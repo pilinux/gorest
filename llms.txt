@@ -2180,7 +2180,7 @@ if glib.FileExist("/path/to/file") {
 }
 
 // Validate path (prevent traversal attacks)
-safePath, err := glib.ValidatePath("/uploads/../etc/passwd", "/uploads")
+safePath, err := glib.ValidatePath("uploads/../etc/passwd", "uploads")
 // Returns error if path escapes allowed directory
 
 // Remove all whitespace from a string
