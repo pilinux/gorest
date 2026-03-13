@@ -41,6 +41,8 @@ type Configuration struct {
 
 var configAll *Configuration
 
+var errInvalidConfigDir = errors.New("only relative paths are allowed to prevent directory traversal vulnerabilities")
+
 // Env loads the configurations from .env.
 func Env() error {
 	// Load environment variables
@@ -442,14 +444,10 @@ func security() (securityConfig SecurityConfig, err error) {
 		securityConfig.TwoFA.PathQR = strings.TrimRight(strings.TrimSpace(os.Getenv("TWO_FA_QR_PATH")), "/")
 
 		if securityConfig.TwoFA.PathQR != "" {
-			// verify directory exists
-			if _, errThis = os.Stat(securityConfig.TwoFA.PathQR); os.IsNotExist(errThis) {
-				// directory does not exist, create the directory
-				path := filepath.Join(".", securityConfig.TwoFA.PathQR)
-				err = os.MkdirAll(path, 0750)
-				if err != nil {
-					return
-				}
+			err = ensureConfigDir(securityConfig.TwoFA.PathQR)
+			if err != nil {
+				err = errors.New("invalid 2FA QR path: " + err.Error())
+				return
 			}
 		}
 
@@ -677,19 +675,51 @@ func view() (viewConfig ViewConfig, err error) {
 		viewConfig.Directory = strings.TrimRight(strings.TrimSpace(os.Getenv("TEMPLATE_DIR")), "/")
 
 		if viewConfig.Directory != "" {
-			// verify directory for templates exists
-			if _, errThis := os.Stat(viewConfig.Directory); os.IsNotExist(errThis) {
-				// directory does not exist, create the directory
-				path := filepath.Join(".", viewConfig.Directory)
-				err = os.MkdirAll(path, 0750)
-				if err != nil {
-					return
-				}
+			err = ensureConfigDir(viewConfig.Directory)
+			if err != nil {
+				err = errors.New("invalid template directory: " + err.Error())
+				return
 			}
 		}
 	}
 
 	return
+}
+
+// ensureConfigDir checks if the provided directory exists and is a valid relative path. If it doesn't exist, it creates the directory.
+func ensureConfigDir(dir string) error {
+	path, err := sanitizeConfigDir(dir)
+	if err != nil {
+		return err
+	}
+
+	if _, err = os.Stat(path); err == nil {
+		return nil
+	}
+	if !os.IsNotExist(err) {
+		return err
+	}
+
+	if err = os.MkdirAll(path, 0750); err != nil { // #nosec G703 -- path is constrained to the workspace root by sanitizeConfigDir
+		return err
+	}
+
+	return nil
+}
+
+// sanitizeConfigDir ensures that the provided directory is a valid relative path and does not lead outside the workspace.
+func sanitizeConfigDir(dir string) (string, error) {
+	cleanDir := filepath.Clean(strings.TrimSpace(dir))
+	if cleanDir == "." || cleanDir == "" || filepath.IsAbs(cleanDir) {
+		return "", errInvalidConfigDir
+	}
+
+	path, err := lib.ValidatePath(filepath.Join(".", cleanDir), ".")
+	if err != nil {
+		return "", errInvalidConfigDir
+	}
+
+	return path, nil
 }
 
 // getParamsJWT reads JWT parameters from env.
