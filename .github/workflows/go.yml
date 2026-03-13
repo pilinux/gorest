@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: [1.24.x, 1.25.x, 1.26.x]
+        go-version: [1.25.x, 1.26.x]
     permissions:
       actions: read
       contents: read
