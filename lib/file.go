@@ -12,6 +12,12 @@ import (
 	"strings"
 )
 
+// package-level indirections so tests can inject failures
+var (
+	filepathAbs = filepath.Abs
+	filepathRel = filepath.Rel
+)
+
 // FileExist returns true if the file exists,
 // otherwise returns false.
 func FileExist(path string) bool {
@@ -31,19 +37,19 @@ func ValidatePath(fullPath, allowedDir string) (string, error) {
 	}
 
 	// get absolute path for allowedDir
-	absPathAllowedDir, err := filepath.Abs(filepath.Clean(allowedDir))
+	absPathAllowedDir, err := filepathAbs(filepath.Clean(allowedDir))
 	if err != nil {
 		return "", err
 	}
 
 	// get absolute path for fullPath
-	absPath, err := filepath.Abs(filepath.Clean(fullPath))
+	absPath, err := filepathAbs(filepath.Clean(fullPath))
 	if err != nil {
 		return "", err
 	}
 
 	// check if absPath is within absPathAllowedDir
-	relPath, err := filepath.Rel(absPathAllowedDir, absPath)
+	relPath, err := filepathRel(absPathAllowedDir, absPath)
 	if err != nil {
 		return "", err
 	}

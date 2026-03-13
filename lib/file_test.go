@@ -2,6 +2,7 @@ package lib_test
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -118,5 +119,66 @@ func TestValidatePath(t *testing.T) {
 				t.Errorf("expected no error, got '%v'", err)
 			}
 		})
+	}
+}
+
+// TestValidatePath_AbsAllowedDirError tests that ValidatePath returns an
+// error when filepath.Abs fails for the allowedDir argument.
+func TestValidatePath_AbsAllowedDirError(t *testing.T) {
+	errAbs := fmt.Errorf("abs error")
+	restore := lib.SetFilepathAbs(func(_ string) (string, error) {
+		return "", errAbs
+	})
+	defer restore()
+
+	result, err := lib.ValidatePath("/some/path", "/allowed")
+	if result != "" {
+		t.Errorf("expected empty result, got %q", result)
+	}
+	if !errors.Is(err, errAbs) {
+		t.Errorf("expected abs error, got %v", err)
+	}
+}
+
+// TestValidatePath_AbsFullPathError tests that ValidatePath returns an
+// error when filepath.Abs fails for the fullPath argument (second call).
+func TestValidatePath_AbsFullPathError(t *testing.T) {
+	errAbs := fmt.Errorf("abs fullPath error")
+	callCount := 0
+	restore := lib.SetFilepathAbs(func(path string) (string, error) {
+		callCount++
+		if callCount == 1 {
+			// first call (allowedDir) succeeds
+			return filepath.Abs(path)
+		}
+		// second call (fullPath) fails
+		return "", errAbs
+	})
+	defer restore()
+
+	result, err := lib.ValidatePath("/some/path", "/allowed")
+	if result != "" {
+		t.Errorf("expected empty result, got %q", result)
+	}
+	if !errors.Is(err, errAbs) {
+		t.Errorf("expected abs fullPath error, got %v", err)
+	}
+}
+
+// TestValidatePath_RelError tests that ValidatePath returns an error
+// when filepath.Rel fails.
+func TestValidatePath_RelError(t *testing.T) {
+	errRel := fmt.Errorf("rel error")
+	restore := lib.SetFilepathRel(func(_, _ string) (string, error) {
+		return "", errRel
+	})
+	defer restore()
+
+	result, err := lib.ValidatePath("/allowed/file.txt", "/allowed")
+	if result != "" {
+		t.Errorf("expected empty result, got %q", result)
+	}
+	if !errors.Is(err, errRel) {
+		t.Errorf("expected rel error, got %v", err)
 	}
 }
