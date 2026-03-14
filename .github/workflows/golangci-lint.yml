@@ -5,11 +5,13 @@ on:
       - '**/*.go'
       - 'go.mod'
       - 'go.sum'
+      - '**/*.yml'
   pull_request:
     paths:
       - '**/*.go'
       - 'go.mod'
       - 'go.sum'
+      - '**/*.yml'
 permissions:
   contents: read
   # Optional: allow read access to pull request. Use with `only-new-issues` option.
