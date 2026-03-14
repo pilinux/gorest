@@ -52,7 +52,7 @@ func generateTestCA(t *testing.T, dir string) (caPath, caKeyPath string) {
 	if err := pem.Encode(caFile, &pem.Block{Type: "CERTIFICATE", Bytes: caDER}); err != nil {
 		t.Fatalf("encode CA PEM: %v", err)
 	}
-	caFile.Close()
+	_ = caFile.Close()
 
 	caKeyPath = filepath.Join(dir, "ca-key.pem")
 	caKeyFile, err := os.Create(caKeyPath)
@@ -66,7 +66,7 @@ func generateTestCA(t *testing.T, dir string) (caPath, caKeyPath string) {
 	if err := pem.Encode(caKeyFile, &pem.Block{Type: "EC PRIVATE KEY", Bytes: caKeyDER}); err != nil {
 		t.Fatalf("encode CA key PEM: %v", err)
 	}
-	caKeyFile.Close()
+	_ = caKeyFile.Close()
 
 	// print contents for debugging
 	// t.Logf("Generated CA cert:\n%s", string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: caDER})))
@@ -128,7 +128,7 @@ func generateTestClientCert(t *testing.T, dir string, caCertPath, caKeyPath stri
 	if err := pem.Encode(cf, &pem.Block{Type: "CERTIFICATE", Bytes: clientDER}); err != nil {
 		t.Fatalf("encode client cert PEM: %v", err)
 	}
-	cf.Close()
+	_ = cf.Close()
 
 	keyPath = filepath.Join(dir, "client-key.pem")
 	kf, err := os.Create(keyPath)
@@ -142,7 +142,7 @@ func generateTestClientCert(t *testing.T, dir string, caCertPath, caKeyPath stri
 	if err := pem.Encode(kf, &pem.Block{Type: "EC PRIVATE KEY", Bytes: clientKeyDER}); err != nil {
 		t.Fatalf("encode client key PEM: %v", err)
 	}
-	kf.Close()
+	_ = kf.Close()
 
 	// print contents for debugging
 	// t.Logf("Generated client cert:\n%s", string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: clientDER})))
