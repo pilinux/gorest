@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/go-sql-driver/mysql"
+	"github.com/mediocregopher/radix/v4"
 	"gorm.io/gorm"
 )
 
@@ -41,4 +42,15 @@ func SetDBClient(db *gorm.DB) {
 // ResetDBClient sets dbClient to nil.
 func ResetDBClient() {
 	dbClient = nil
+}
+
+// SetRedisClient replaces the package-level redisClient with the given
+// radix.Client so tests can exercise CloseRedis paths.
+func SetRedisClient(c radix.Client) {
+	redisClient = c
+}
+
+// ResetRedisClient sets redisClient to nil.
+func ResetRedisClient() {
+	redisClient = nil
 }
