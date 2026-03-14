@@ -12,6 +12,10 @@ import (
 	"github.com/pilinux/gorest/config"
 )
 
+// registerTLSConfig is a package-level indirection for mysql.RegisterTLSConfig
+// to allow error-path testing via export_test.go.
+var registerTLSConfig = mysql.RegisterTLSConfig
+
 // InitTLSMySQL registers a custom tls.Config for MySQL/PostgreSQL connections.
 //
 // Tutorial: How to configure MySQL instance and enable TLS support
@@ -139,7 +143,7 @@ func InitTLSMySQL() error {
 		tlsConfig.Certificates = []tls.Certificate{cert}
 	}
 
-	err = mysql.RegisterTLSConfig("custom", &tlsConfig)
+	err = registerTLSConfig("custom", &tlsConfig)
 	if err != nil {
 		return fmt.Errorf("failed to register custom TLS config: %w", err)
 	}
