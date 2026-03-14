@@ -51,6 +51,10 @@ var RedisConnTTL int
 // mongoClient holds the MongoDB client connection instance.
 var mongoClient *mongo.Client
 
+// sqlOpen is a package-level indirection for sql.Open to allow
+// error-path testing via export_test.go.
+var sqlOpen = sql.Open
+
 // protect CloseAllDB from concurrent calls
 var closeAllOnce sync.Once
 
@@ -100,7 +104,7 @@ func InitDB() *gorm.DB {
 				}
 			}
 		}
-		sqlDB, err = sql.Open(driver, dsn)
+		sqlDB, err = sqlOpen(driver, dsn)
 		if err != nil {
 			err = fmt.Errorf("failed to open SQL connection: %w", err)
 			db.Error = err
@@ -149,7 +153,7 @@ func InitDB() *gorm.DB {
 		}
 		dsn += " sslmode=" + sslmode
 
-		sqlDB, err = sql.Open("pgx", dsn)
+		sqlDB, err = sqlOpen("pgx", dsn)
 		if err != nil {
 			err = fmt.Errorf("failed to open SQL connection: %w", err)
 			db.Error = err
