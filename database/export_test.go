@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/mediocregopher/radix/v4"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 	"gorm.io/gorm"
 )
 
@@ -53,4 +54,15 @@ func SetRedisClient(c radix.Client) {
 // ResetRedisClient sets redisClient to nil.
 func ResetRedisClient() {
 	redisClient = nil
+}
+
+// SetMongoClient replaces the package-level mongoClient with the given
+// *mongo.Client so tests can exercise CloseMongo paths.
+func SetMongoClient(c *mongo.Client) {
+	mongoClient = c
+}
+
+// ResetMongoClient sets mongoClient to nil.
+func ResetMongoClient() {
+	mongoClient = nil
 }
