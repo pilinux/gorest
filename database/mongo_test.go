@@ -8,7 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	opts "go.mongodb.org/mongo-driver/v2/mongo/options"
 
-	"github.com/pilinux/gorest/config"
 	gdb "github.com/pilinux/gorest/database"
 )
 
@@ -16,7 +15,7 @@ import (
 // This covers the URI parsing, context creation, client options setup,
 // and the error path.
 func TestInitMongo_Error(t *testing.T) {
-	cfg := config.GetConfig()
+	cfg := mustGetConfig(t)
 	cfg.Database.MongoDB.Env.URI = "mongodb://127.0.0.1:27099/?serverSelectionTimeoutMS=500"
 	cfg.Database.MongoDB.Env.AppName = "gorest-test"
 	cfg.Database.MongoDB.Env.PoolSize = 1
@@ -36,7 +35,7 @@ func TestInitMongo_Error(t *testing.T) {
 // The connection will still fail (no server), but the pool monitor setup
 // code path is covered.
 func TestInitMongo_PoolMonitor(t *testing.T) {
-	cfg := config.GetConfig()
+	cfg := mustGetConfig(t)
 	cfg.Database.MongoDB.Env.URI = "mongodb://127.0.0.1:27099/?serverSelectionTimeoutMS=500"
 	cfg.Database.MongoDB.Env.AppName = "gorest-test"
 	cfg.Database.MongoDB.Env.PoolSize = 1
@@ -58,7 +57,7 @@ func TestInitMongo_PoolMonitor(t *testing.T) {
 // TestInitMongo_InvalidURI tests InitMongo with a completely invalid URI
 // that causes mongo.Connect to fail before even attempting a ping.
 func TestInitMongo_InvalidURI(t *testing.T) {
-	cfg := config.GetConfig()
+	cfg := mustGetConfig(t)
 	cfg.Database.MongoDB.Env.URI = "://invalid"
 	cfg.Database.MongoDB.Env.AppName = "gorest-test"
 	cfg.Database.MongoDB.Env.PoolSize = 1

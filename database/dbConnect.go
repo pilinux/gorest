@@ -5,6 +5,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -51,6 +52,9 @@ var RedisConnTTL int
 // mongoClient holds the MongoDB client connection instance.
 var mongoClient *mongo.Client
 
+// errConfigNotInitialized is returned when the configuration is not available.
+var errConfigNotInitialized = errors.New("config is not initialized")
+
 // sqlOpen is a package-level indirection for sql.Open to allow
 // error-path testing via export_test.go.
 var sqlOpen = sql.Open
@@ -61,8 +65,17 @@ var closeAllOnce sync.Once
 // InitDB initializes the database connection.
 func InitDB() *gorm.DB {
 	var db = dbClient
+	if db == nil {
+		db = &gorm.DB{}
+	}
 
-	configureDB := config.GetConfig().Database.RDBMS
+	cfg := config.GetConfig()
+	if cfg == nil {
+		db.Error = errConfigNotInitialized
+		return db
+	}
+
+	configureDB := cfg.Database.RDBMS
 
 	driver := configureDB.Env.Driver
 	username := configureDB.Access.User
@@ -211,7 +224,12 @@ func GetDB() *gorm.DB {
 
 // InitRedis initializes the Redis client connection.
 func InitRedis() (radix.Client, error) {
-	configureRedis := config.GetConfig().Database.REDIS
+	cfg := config.GetConfig()
+	if cfg == nil {
+		return nil, errConfigNotInitialized
+	}
+
+	configureRedis := cfg.Database.REDIS
 
 	RedisConnTTL = configureRedis.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(RedisConnTTL)*time.Second)
@@ -241,7 +259,12 @@ func GetRedis() radix.Client {
 
 // InitMongo initializes the MongoDB client connection.
 func InitMongo() (*mongo.Client, error) {
-	configureMongo := config.GetConfig().Database.MongoDB
+	cfg := config.GetConfig()
+	if cfg == nil {
+		return nil, errConfigNotInitialized
+	}
+
+	configureMongo := cfg.Database.MongoDB
 
 	// connect to the database or cluster
 	uri := configureMongo.Env.URI

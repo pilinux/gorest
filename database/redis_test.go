@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/mediocregopher/radix/v4"
-	"github.com/pilinux/gorest/config"
 	gdb "github.com/pilinux/gorest/database"
 )
 
@@ -15,7 +14,7 @@ import (
 // server. This covers the DSN building, context creation, and the
 // error-handling return path.
 func TestInitRedis_Error(t *testing.T) {
-	cfg := config.GetConfig()
+	cfg := mustGetConfig(t)
 	cfg.Database.REDIS.Env.Host = "127.0.0.1"
 	cfg.Database.REDIS.Env.Port = "16379" // unlikely to be running
 	cfg.Database.REDIS.Conn.PoolSize = 1

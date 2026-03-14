@@ -90,7 +90,12 @@ var registerTLSConfig = mysql.RegisterTLSConfig
 //
 // `openssl rsa -in client-key.pem -out client-key.pem`
 func InitTLSMySQL() error {
-	configureDB := config.GetConfig().Database.RDBMS
+	cfg := config.GetConfig()
+	if cfg == nil {
+		return errConfigNotInitialized
+	}
+
+	configureDB := cfg.Database.RDBMS
 	minTLS := configureDB.Ssl.MinTLS
 	rootCA := configureDB.Ssl.RootCA
 	serverCert := configureDB.Ssl.ServerCert

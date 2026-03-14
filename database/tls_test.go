@@ -16,7 +16,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pilinux/gorest/config"
 	gdb "github.com/pilinux/gorest/database"
 )
 
@@ -157,7 +156,7 @@ func TestInitTLSMySQL_RootCA_Success(t *testing.T) {
 	dir := t.TempDir()
 	caPath, _ := generateTestCA(t, dir)
 
-	cfg := config.GetConfig()
+	cfg := mustGetConfig(t)
 	cfg.Database.RDBMS.Ssl.RootCA = caPath
 	cfg.Database.RDBMS.Ssl.ServerCert = ""
 	cfg.Database.RDBMS.Ssl.ClientCert = ""
@@ -175,7 +174,7 @@ func TestInitTLSMySQL_ServerCert_Success(t *testing.T) {
 	dir := t.TempDir()
 	caPath, _ := generateTestCA(t, dir) // reuse CA cert as "server cert"
 
-	cfg := config.GetConfig()
+	cfg := mustGetConfig(t)
 	cfg.Database.RDBMS.Ssl.RootCA = ""
 	cfg.Database.RDBMS.Ssl.ServerCert = caPath
 	cfg.Database.RDBMS.Ssl.ClientCert = ""
@@ -190,7 +189,7 @@ func TestInitTLSMySQL_ServerCert_Success(t *testing.T) {
 // TestInitTLSMySQL_MissingServerCert tests that InitTLSMySQL returns
 // an error when both rootCA and serverCert are empty.
 func TestInitTLSMySQL_MissingServerCert(t *testing.T) {
-	cfg := config.GetConfig()
+	cfg := mustGetConfig(t)
 	cfg.Database.RDBMS.Ssl.RootCA = ""
 	cfg.Database.RDBMS.Ssl.ServerCert = ""
 	cfg.Database.RDBMS.Ssl.ClientCert = ""
@@ -209,7 +208,7 @@ func TestInitTLSMySQL_MissingServerCert(t *testing.T) {
 // TestInitTLSMySQL_RootCA_ReadError tests that InitTLSMySQL returns
 // an error when the rootCA path does not exist.
 func TestInitTLSMySQL_RootCA_ReadError(t *testing.T) {
-	cfg := config.GetConfig()
+	cfg := mustGetConfig(t)
 	cfg.Database.RDBMS.Ssl.RootCA = "/nonexistent/ca.pem"
 	cfg.Database.RDBMS.Ssl.ServerCert = ""
 	cfg.Database.RDBMS.Ssl.ClientCert = ""
@@ -225,7 +224,7 @@ func TestInitTLSMySQL_RootCA_ReadError(t *testing.T) {
 // TestInitTLSMySQL_ServerCert_ReadError tests that InitTLSMySQL returns
 // an error when the serverCert path does not exist.
 func TestInitTLSMySQL_ServerCert_ReadError(t *testing.T) {
-	cfg := config.GetConfig()
+	cfg := mustGetConfig(t)
 	cfg.Database.RDBMS.Ssl.RootCA = ""
 	cfg.Database.RDBMS.Ssl.ServerCert = "/nonexistent/server.pem"
 	cfg.Database.RDBMS.Ssl.ClientCert = ""
@@ -247,7 +246,7 @@ func TestInitTLSMySQL_InvalidPEM(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg := config.GetConfig()
+	cfg := mustGetConfig(t)
 	cfg.Database.RDBMS.Ssl.RootCA = badPEM
 	cfg.Database.RDBMS.Ssl.ServerCert = ""
 	cfg.Database.RDBMS.Ssl.ClientCert = ""
@@ -270,7 +269,7 @@ func TestInitTLSMySQL_ClientCertKeyPair(t *testing.T) {
 	caPath, caKeyPath := generateTestCA(t, dir)
 	clientCert, clientKey := generateTestClientCert(t, dir, caPath, caKeyPath)
 
-	cfg := config.GetConfig()
+	cfg := mustGetConfig(t)
 	cfg.Database.RDBMS.Ssl.RootCA = caPath
 	cfg.Database.RDBMS.Ssl.ServerCert = ""
 	cfg.Database.RDBMS.Ssl.ClientCert = clientCert
@@ -298,7 +297,7 @@ func TestInitTLSMySQL_ClientCertKeyPair_Invalid(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg := config.GetConfig()
+	cfg := mustGetConfig(t)
 	cfg.Database.RDBMS.Ssl.RootCA = caPath
 	cfg.Database.RDBMS.Ssl.ServerCert = ""
 	cfg.Database.RDBMS.Ssl.ClientCert = badCert
@@ -330,7 +329,7 @@ func TestInitTLSMySQL_MinTLS(t *testing.T) {
 	for i := range tests {
 		tc := tests[i]
 		t.Run(tc.name, func(t *testing.T) {
-			cfg := config.GetConfig()
+			cfg := mustGetConfig(t)
 			cfg.Database.RDBMS.Ssl.RootCA = caPath
 			cfg.Database.RDBMS.Ssl.ServerCert = ""
 			cfg.Database.RDBMS.Ssl.ClientCert = ""
@@ -350,7 +349,7 @@ func TestInitTLSMySQL_RegisterTLSConfigError(t *testing.T) {
 	dir := t.TempDir()
 	caPath, _ := generateTestCA(t, dir)
 
-	cfg := config.GetConfig()
+	cfg := mustGetConfig(t)
 	cfg.Database.RDBMS.Ssl.RootCA = caPath
 	cfg.Database.RDBMS.Ssl.ServerCert = ""
 	cfg.Database.RDBMS.Ssl.ClientCert = ""

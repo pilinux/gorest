@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pilinux/gorest/config"
 	gdb "github.com/pilinux/gorest/database"
 
 	"gorm.io/gorm"
@@ -18,7 +17,7 @@ import (
 // in-memory database, then verifies GetDB returns a valid connection
 // and CloseSQL cleanly shuts it down.
 func TestInitDB_Sqlite3(t *testing.T) {
-	cfg := config.GetConfig()
+	cfg := mustGetConfig(t)
 	cfg.Database.RDBMS.Env.Driver = "sqlite3"
 	cfg.Database.RDBMS.Access.DbName = ":memory:"
 	cfg.Database.RDBMS.Log.LogLevel = 1
@@ -54,7 +53,7 @@ func TestInitDB_Sqlite3(t *testing.T) {
 // the internal dbClient is non-nil (otherwise setting db.Error panics).
 func TestInitDB_DefaultDriver(t *testing.T) {
 	// first, init a valid sqlite3 connection so dbClient is non-nil
-	cfg := config.GetConfig()
+	cfg := mustGetConfig(t)
 	cfg.Database.RDBMS.Env.Driver = "sqlite3"
 	cfg.Database.RDBMS.Access.DbName = ":memory:"
 	cfg.Database.RDBMS.Log.LogLevel = 1
@@ -87,7 +86,7 @@ func TestInitDB_DefaultDriver(t *testing.T) {
 // fails on the connection attempt, covering the DSN building and
 // error-handling code.
 func TestInitDB_MysqlDSN(t *testing.T) {
-	cfg := config.GetConfig()
+	cfg := mustGetConfig(t)
 
 	// first, ensure dbClient is non-nil via sqlite3
 	cfg.Database.RDBMS.Env.Driver = "sqlite3"
@@ -163,7 +162,7 @@ func TestInitDB_MysqlDSN(t *testing.T) {
 
 // TestInitDB_PostgresDSN exercises the Postgres branch of InitDB.
 func TestInitDB_PostgresDSN(t *testing.T) {
-	cfg := config.GetConfig()
+	cfg := mustGetConfig(t)
 
 	// ensure dbClient is non-nil
 	cfg.Database.RDBMS.Env.Driver = "sqlite3"
@@ -279,7 +278,7 @@ func TestInitDB_PostgresDSN(t *testing.T) {
 // InitTLSMySQL is expected to fail because no valid certs are configured,
 // which covers the TLS-error return path inside InitDB.
 func TestInitDB_MysqlVerifyCA(t *testing.T) {
-	cfg := config.GetConfig()
+	cfg := mustGetConfig(t)
 
 	// ensure dbClient is non-nil
 	cfg.Database.RDBMS.Env.Driver = "sqlite3"
@@ -338,7 +337,7 @@ func TestInitDB_MysqlVerifyCA(t *testing.T) {
 // directory path still succeeds on gorm.Open (sqlite3 is lazy). This
 // exercises the success path of the sqlite3 branch.
 func TestInitDB_Sqlite3_LazyPath(t *testing.T) {
-	cfg := config.GetConfig()
+	cfg := mustGetConfig(t)
 
 	// ensure dbClient is non-nil first
 	cfg.Database.RDBMS.Env.Driver = "sqlite3"
@@ -369,7 +368,7 @@ func TestInitDB_Sqlite3_LazyPath(t *testing.T) {
 // when sql.Open fails for the MySQL driver. A database name containing
 // an invalid percent-escape causes mysql.ParseDSN to fail.
 func TestInitDB_MysqlSqlOpenError(t *testing.T) {
-	cfg := config.GetConfig()
+	cfg := mustGetConfig(t)
 
 	// ensure dbClient is non-nil
 	cfg.Database.RDBMS.Env.Driver = "sqlite3"
@@ -413,7 +412,7 @@ func TestInitDB_MysqlSqlOpenError(t *testing.T) {
 // when sqlOpen fails for the Postgres driver by injecting a failing
 // sqlOpen function.
 func TestInitDB_PostgresSqlOpenError(t *testing.T) {
-	cfg := config.GetConfig()
+	cfg := mustGetConfig(t)
 
 	// ensure dbClient is non-nil
 	cfg.Database.RDBMS.Env.Driver = "sqlite3"
