@@ -747,6 +747,34 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 			ExpErr:   errors.New("credentialed request cannot have '*' as Access-Control-Allow-Methods"),
 		},
 		{
+			// invalid template directory (traversal)
+			Key:      "TEMPLATE_DIR",
+			TestNo:   33,
+			SetValue: "../escape",
+			ExpErr:   errors.New("invalid template directory"),
+		},
+		{
+			// invalid 2FA QR path (traversal)
+			Key:      "TWO_FA_QR_PATH",
+			TestNo:   34,
+			SetValue: "../escape",
+			ExpErr:   errors.New("invalid 2FA QR path"),
+		},
+		{
+			// SERVE_JWT_AS_RESPONSE_BODY set to "no"
+			Key:       "SERVE_JWT_AS_RESPONSE_BODY",
+			TestNo:    35,
+			SetValue:  "no",
+			ExpValue1: false,
+		},
+		{
+			// AUTH_COOKIE_SameSite with unknown value (not strict/lax/none)
+			Key:       "AUTH_COOKIE_SameSite",
+			TestNo:    36,
+			SetValue:  "unknown",
+			ExpValue2: 0,
+		},
+		{
 			// cors is activated but empty
 			Key:      "ACTIVATE_CORS",
 			TestNo:   28,
@@ -1135,6 +1163,47 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 			if tc.TestNo == 28 {
 				if err == nil {
 					t.Errorf("expected error, got nil for test no: '%v'", tc.TestNo)
+				}
+			}
+
+			// invalid template directory (traversal)
+			if tc.TestNo == 33 {
+				if err == nil {
+					t.Errorf("expected error, got nil for test no: '%v'", tc.TestNo)
+				}
+				if err != nil && !strings.Contains(err.Error(), "invalid template directory") {
+					t.Errorf("expected 'invalid template directory' error, got: %v", err)
+				}
+			}
+
+			// invalid 2FA QR path (traversal)
+			if tc.TestNo == 34 {
+				if err == nil {
+					t.Errorf("expected error, got nil for test no: '%v'", tc.TestNo)
+				}
+				if err != nil && !strings.Contains(err.Error(), "invalid 2FA QR path") {
+					t.Errorf("expected 'invalid 2FA QR path' error, got: %v", err)
+				}
+			}
+
+			// SERVE_JWT_AS_RESPONSE_BODY set to "no"
+			if tc.TestNo == 35 {
+				if err != nil {
+					t.Errorf("got error '%v' when setting %v", err, tc.Key)
+				}
+				if config.GetConfig().Security.ServeJwtAsResBody {
+					t.Errorf("expected ServeJwtAsResBody false, got true")
+				}
+			}
+
+			// AUTH_COOKIE_SameSite with unknown value
+			if tc.TestNo == 36 {
+				if err != nil {
+					t.Errorf("got error '%v' when setting %v", err, tc.Key)
+				}
+				got := config.GetConfig().Security.AuthCookieSameSite
+				if got != tc.ExpValue2 {
+					t.Errorf("expected %v, got %v when setting %v", tc.ExpValue2, got, tc.Key)
 				}
 			}
 
