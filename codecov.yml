@@ -1,7 +1,7 @@
 ignore:
   - "controller"
-  - "database"
   - "example"
+  - "example2"
   - "handler"
   - "service"
 # validate codecov.yml
