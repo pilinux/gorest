@@ -5,6 +5,8 @@ package middleware
 // Copyright (c) 2022-2026 pilinux
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -16,6 +18,88 @@ import (
 )
 
 var globalSentryHook sentrylogrus.Hook // global hook
+
+var sentryLevelMap = map[log.Level]sentry.Level{
+	log.TraceLevel: sentry.LevelDebug,
+	log.DebugLevel: sentry.LevelDebug,
+	log.InfoLevel:  sentry.LevelInfo,
+	log.WarnLevel:  sentry.LevelWarning,
+	log.ErrorLevel: sentry.LevelError,
+	log.FatalLevel: sentry.LevelFatal,
+	log.PanicLevel: sentry.LevelFatal,
+}
+
+type sentryCombinedHook struct {
+	logHook sentrylogrus.Hook
+	client  *sentry.Client
+}
+
+func (h *sentryCombinedHook) SetHubProvider(provider func() *sentry.Hub) {
+	h.logHook.SetHubProvider(provider)
+}
+
+func (h *sentryCombinedHook) AddTags(tags map[string]string) {
+	h.logHook.AddTags(tags)
+}
+
+func (h *sentryCombinedHook) SetFallback(fb sentrylogrus.FallbackFunc) {
+	h.logHook.SetFallback(fb)
+}
+
+func (h *sentryCombinedHook) SetKey(oldKey, newKey string) {
+	h.logHook.SetKey(oldKey, newKey)
+}
+
+func (h *sentryCombinedHook) Levels() []log.Level {
+	return h.logHook.Levels()
+}
+
+func (h *sentryCombinedHook) Fire(entry *log.Entry) error {
+	if err := h.logHook.Fire(entry); err != nil {
+		return err
+	}
+
+	h.captureIssue(entry)
+	return nil
+}
+
+func (h *sentryCombinedHook) Flush(timeout time.Duration) bool {
+	return h.logHook.Flush(timeout)
+}
+
+func (h *sentryCombinedHook) FlushWithContext(ctx context.Context) bool {
+	return h.logHook.FlushWithContext(ctx)
+}
+
+func (h *sentryCombinedHook) captureIssue(entry *log.Entry) {
+	if h.client == nil {
+		return
+	}
+
+	if entry.Level < log.ErrorLevel {
+		return
+	}
+
+	scope := sentry.NewScope()
+	scope.SetLevel(sentryLevelMap[entry.Level])
+
+	for k, v := range entry.Data {
+		switch val := v.(type) {
+		case string:
+			scope.SetTag(k, val)
+		default:
+			scope.SetTag(k, fmt.Sprint(v))
+		}
+	}
+
+	if errVal, ok := entry.Data[log.ErrorKey].(error); ok {
+		scope.SetContext("logrus", sentry.Context{"message": entry.Message})
+		h.client.CaptureException(errVal, &sentry.EventHint{OriginalException: errVal}, scope)
+		return
+	}
+
+	h.client.CaptureMessage(entry.Message, nil, scope)
+}
 
 // InitSentry initializes sentry for middleware or separate goroutines.
 //
@@ -109,10 +193,16 @@ func createSentryHook(sentryDsn string, v ...string) (sentrylogrus.Hook, error) 
 		EnableLogs:       true, // enable logs to be captured
 	}
 
-	// Hook with desired log levels
-	hook, err := sentrylogrus.NewEventHook(log.AllLevels, clientOptions)
+	client, err := sentry.NewClient(clientOptions)
 	if err != nil {
 		return nil, err
+	}
+	client.SetSDKIdentifier("sentry.go.logrus")
+
+	logHook := sentrylogrus.NewLogHookFromClient(log.AllLevels, client)
+	hook := &sentryCombinedHook{
+		logHook: logHook,
+		client:  client,
 	}
 
 	// Add fallback behavior if Sentry fails
