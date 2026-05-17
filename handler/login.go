@@ -136,7 +136,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 				// save the hashed pass (key) in memory for OTP validation step
 				data2FA := model.Secret2FA{}
 				data2FA.PassHash = key
-				model.InMemorySecret2FA[claims.AuthID] = data2FA
+				model.InMemorySecret2FA.Set(claims.AuthID, data2FA)
 			}
 		}
 	}
