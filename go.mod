@@ -11,7 +11,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
-	github.com/mediocregopher/radix/v4 v4.1.4
+	github.com/mediocregopher/radix/v4 v4.1.5
 	github.com/mrz1836/postmark v1.9.2
 	github.com/pilinux/argon2 v0.23.0
 	github.com/pilinux/crypt v0.0.18
