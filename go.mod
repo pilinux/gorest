@@ -3,7 +3,7 @@ module github.com/pilinux/gorest
 go 1.25.0
 
 require (
-	github.com/flosch/pongo2/v6 v6.0.0
+	github.com/flosch/pongo2/v6 v6.1.0
 	github.com/getsentry/sentry-go v0.46.1
 	github.com/getsentry/sentry-go/logrus v0.46.1
 	github.com/gin-gonic/gin v1.12.0
