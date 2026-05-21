@@ -25,8 +25,7 @@ func TestInitDB_Sqlite3(t *testing.T) {
 	db := gdb.InitDB()
 	if db == nil {
 		t.Fatal("InitDB returned nil")
-	}
-	if db.Error != nil {
+	} else if db.Error != nil {
 		t.Fatalf("InitDB error: %v", db.Error)
 	}
 
@@ -59,7 +58,9 @@ func TestInitDB_DefaultDriver(t *testing.T) {
 	cfg.Database.RDBMS.Log.LogLevel = 1
 
 	db := gdb.InitDB()
-	if db == nil || db.Error != nil {
+	if db == nil {
+		t.Fatal("prerequisite InitDB failed: InitDB returned nil")
+	} else if db.Error != nil {
 		t.Fatalf("prerequisite InitDB failed: %v", db.Error)
 	}
 
@@ -69,8 +70,7 @@ func TestInitDB_DefaultDriver(t *testing.T) {
 	db = gdb.InitDB()
 	if db == nil {
 		t.Fatal("InitDB returned nil for unsupported driver")
-	}
-	if db.Error == nil {
+	} else if db.Error == nil {
 		t.Fatal("expected error for unsupported driver, got nil")
 	}
 
@@ -92,7 +92,9 @@ func TestInitDB_MysqlDSN(t *testing.T) {
 	cfg.Database.RDBMS.Env.Driver = "sqlite3"
 	cfg.Database.RDBMS.Access.DbName = ":memory:"
 	db := gdb.InitDB()
-	if db == nil || db.Error != nil {
+	if db == nil {
+		t.Fatal("prerequisite InitDB failed: InitDB returned nil")
+	} else if db.Error != nil {
 		t.Fatalf("prerequisite InitDB failed: %v", db.Error)
 	}
 
@@ -145,9 +147,8 @@ func TestInitDB_MysqlDSN(t *testing.T) {
 			db := gdb.InitDB()
 			if db == nil {
 				t.Fatal("InitDB returned nil")
-			}
-			// gorm.Open will fail connecting, which is expected
-			if db.Error == nil {
+			} else if db.Error == nil {
+				// gorm.Open will fail connecting, which is expected
 				// if it somehow connected, clean up
 				_ = gdb.CloseSQL()
 			}
@@ -168,7 +169,9 @@ func TestInitDB_PostgresDSN(t *testing.T) {
 	cfg.Database.RDBMS.Env.Driver = "sqlite3"
 	cfg.Database.RDBMS.Access.DbName = ":memory:"
 	db := gdb.InitDB()
-	if db == nil || db.Error != nil {
+	if db == nil {
+		t.Fatal("prerequisite InitDB failed: InitDB returned nil")
+	} else if db.Error != nil {
 		t.Fatalf("prerequisite InitDB failed: %v", db.Error)
 	}
 
@@ -256,8 +259,7 @@ func TestInitDB_PostgresDSN(t *testing.T) {
 			db := gdb.InitDB()
 			if db == nil {
 				t.Fatal("InitDB returned nil")
-			}
-			if db.Error == nil {
+			} else if db.Error == nil {
 				_ = gdb.CloseSQL()
 			}
 		})
@@ -284,7 +286,9 @@ func TestInitDB_MysqlVerifyCA(t *testing.T) {
 	cfg.Database.RDBMS.Env.Driver = "sqlite3"
 	cfg.Database.RDBMS.Access.DbName = ":memory:"
 	db := gdb.InitDB()
-	if db == nil || db.Error != nil {
+	if db == nil {
+		t.Fatal("prerequisite InitDB failed: InitDB returned nil")
+	} else if db.Error != nil {
 		t.Fatalf("prerequisite InitDB failed: %v", db.Error)
 	}
 
@@ -318,8 +322,7 @@ func TestInitDB_MysqlVerifyCA(t *testing.T) {
 			db := gdb.InitDB()
 			if db == nil {
 				t.Fatal("InitDB returned nil")
-			}
-			if db.Error == nil {
+			} else if db.Error == nil {
 				_ = gdb.CloseSQL()
 				t.Fatal("expected error for mysql verify-ca without certs, got nil")
 			}
@@ -343,7 +346,9 @@ func TestInitDB_Sqlite3_LazyPath(t *testing.T) {
 	cfg.Database.RDBMS.Env.Driver = "sqlite3"
 	cfg.Database.RDBMS.Access.DbName = ":memory:"
 	db := gdb.InitDB()
-	if db == nil || db.Error != nil {
+	if db == nil {
+		t.Fatal("prerequisite InitDB failed: InitDB returned nil")
+	} else if db.Error != nil {
 		t.Fatalf("prerequisite InitDB failed: %v", db.Error)
 	}
 
@@ -374,7 +379,9 @@ func TestInitDB_MysqlSqlOpenError(t *testing.T) {
 	cfg.Database.RDBMS.Env.Driver = "sqlite3"
 	cfg.Database.RDBMS.Access.DbName = ":memory:"
 	db := gdb.InitDB()
-	if db == nil || db.Error != nil {
+	if db == nil {
+		t.Fatal("prerequisite InitDB failed: InitDB returned nil")
+	} else if db.Error != nil {
 		t.Fatalf("prerequisite InitDB failed: %v", db.Error)
 	}
 
@@ -393,12 +400,10 @@ func TestInitDB_MysqlSqlOpenError(t *testing.T) {
 	db = gdb.InitDB()
 	if db == nil {
 		t.Fatal("InitDB returned nil")
-	}
-	if db.Error == nil {
+	} else if db.Error == nil {
 		_ = gdb.CloseSQL()
 		t.Fatal("expected error for invalid MySQL DSN, got nil")
-	}
-	if !strings.Contains(db.Error.Error(), "failed to open SQL connection") {
+	} else if !strings.Contains(db.Error.Error(), "failed to open SQL connection") {
 		t.Fatalf("unexpected error: %v", db.Error)
 	}
 
@@ -418,7 +423,9 @@ func TestInitDB_PostgresSqlOpenError(t *testing.T) {
 	cfg.Database.RDBMS.Env.Driver = "sqlite3"
 	cfg.Database.RDBMS.Access.DbName = ":memory:"
 	db := gdb.InitDB()
-	if db == nil || db.Error != nil {
+	if db == nil {
+		t.Fatal("prerequisite InitDB failed: InitDB returned nil")
+	} else if db.Error != nil {
 		t.Fatalf("prerequisite InitDB failed: %v", db.Error)
 	}
 
@@ -443,12 +450,10 @@ func TestInitDB_PostgresSqlOpenError(t *testing.T) {
 	db = gdb.InitDB()
 	if db == nil {
 		t.Fatal("InitDB returned nil")
-	}
-	if db.Error == nil {
+	} else if db.Error == nil {
 		_ = gdb.CloseSQL()
 		t.Fatal("expected error for injected sql.Open failure, got nil")
-	}
-	if !strings.Contains(db.Error.Error(), "failed to open SQL connection") {
+	} else if !strings.Contains(db.Error.Error(), "failed to open SQL connection") {
 		t.Fatalf("unexpected error: %v", db.Error)
 	}
 
