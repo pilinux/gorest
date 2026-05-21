@@ -186,7 +186,7 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	key := lib.GetArgon2Key([]byte(authPayload.Password), salt, 32)
 
 	// step 6: check if client secret is available in memory
-	data2FA, ok := model.InMemorySecret2FA[claims.AuthID]
+	data2FA, ok := model.InMemorySecret2FA.Get(claims.AuthID)
 	if ok {
 		// delete old QR image if available
 		if lib.FileExist(configSecurity.TwoFA.PathQR + "/" + data2FA.Image) {
@@ -202,7 +202,7 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 	data2FA.KeySalt = salt
 	data2FA.Secret = otpByte
 	data2FA.Image = img
-	model.InMemorySecret2FA[claims.AuthID] = data2FA
+	model.InMemorySecret2FA.Set(claims.AuthID, data2FA)
 
 	// serve the QR to the client
 	httpResponse.Message = configSecurity.TwoFA.PathQR + "/" + img
@@ -242,7 +242,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	// start 2FA activation procedure
 	//
 	// step 1: check if client secret is available in memory
-	data2FA, ok := model.InMemorySecret2FA[claims.AuthID]
+	data2FA, ok := model.InMemorySecret2FA.Get(claims.AuthID)
 	if !ok {
 		// request user to visit setup endpoint first
 		httpResponse.Message = "request for a new 2-fa secret"
@@ -269,7 +269,7 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 		if status == configSecurity.TwoFA.Status.Invalid {
 			// save the secret with failed attempt in memory for future validation procedure
 			data2FA.Secret = otpByte
-			model.InMemorySecret2FA[claims.AuthID] = data2FA
+			model.InMemorySecret2FA.Set(claims.AuthID, data2FA)
 
 			httpResponse.Message = "wrong one-time password"
 			httpStatusCode = http.StatusBadRequest
@@ -488,7 +488,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	// start 2FA validation procedure
 	//
 	// step 1: check if client secret is available in memory
-	data2FA, ok := model.InMemorySecret2FA[claims.AuthID]
+	data2FA, ok := model.InMemorySecret2FA.Get(claims.AuthID)
 	if !ok {
 		httpResponse.Message = "log in again"
 		httpStatusCode = http.StatusBadRequest
@@ -572,7 +572,7 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 		if status == configSecurity.TwoFA.Status.Invalid {
 			// save the new secret in memory for future validation procedure
 			data2FA.Secret = otpByte
-			model.InMemorySecret2FA[claims.AuthID] = data2FA
+			model.InMemorySecret2FA.Set(claims.AuthID, data2FA)
 
 			// save in DB to protect from accidental data loss
 			//

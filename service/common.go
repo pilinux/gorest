@@ -76,7 +76,7 @@ func Validate2FA(encryptedMessage []byte, issuer string, userInput string) ([]by
 
 // DelMem2FA deletes 2FA secrets from memory.
 func DelMem2FA(authID uint64) {
-	delete(model.InMemorySecret2FA, authID)
+	model.InMemorySecret2FA.Delete(authID)
 }
 
 // SendEmail sends a verification/password recovery email if
