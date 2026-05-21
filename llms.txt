@@ -682,8 +682,10 @@ type Secret2FA struct {
     Image    string `json:"-"`
 }
 
-// InMemorySecret2FA keeps secrets temporarily in memory to set up 2FA
-var InMemorySecret2FA = make(map[uint64]Secret2FA)
+// InMemorySecret2FA keeps secrets temporarily in memory to set up 2FA.
+// It uses a thread-safe store and clones values on Get and Set
+// that prevents callers from mutating shared in-memory state through slices.
+var InMemorySecret2FA = NewSecret2FAStore()
 
 // TempEmail model - holds data temporarily during email replacement
 type TempEmail struct {
