@@ -17,7 +17,7 @@ require (
 	github.com/pilinux/crypt v0.0.18
 	github.com/pilinux/libgo v0.0.5
 	github.com/pilinux/structs v1.1.1
-	github.com/pilinux/twofactor v1.1.12
+	github.com/pilinux/twofactor v1.1.13
 	github.com/rs/cors v1.11.1
 	github.com/rs/cors/wrapper/gin v0.0.0-20240830163046-1084d89a1692
 	github.com/sirupsen/logrus v1.9.4
@@ -58,7 +58,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
-	github.com/pilinux/cryptoengine v0.1.13 // indirect
+	github.com/pilinux/cryptoengine v0.1.14 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/quic-go/quic-go v0.59.0 // indirect
