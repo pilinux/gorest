@@ -88,6 +88,7 @@ func TestGetConfig(t *testing.T) {
 		t.Errorf("expected IsRDBMS() to return true, but got false")
 	}
 	expected.Database.RDBMS.Env.Driver = "mysql"
+	expected.Database.RDBMS.Env.URI = ""
 	expected.Database.RDBMS.Env.Host = "127.0.0.1"
 	expected.Database.RDBMS.Env.Port = "3306"
 	expected.Database.RDBMS.Env.TimeZone = "Europe/Berlin"
@@ -775,6 +776,12 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 			ExpValue2: 0,
 		},
 		{
+			Key:       "DB_URI",
+			TestNo:    37,
+			SetValue:  "postgres://db_user:db_pass@127.0.0.1:5432/db_name?sslmode=disable",
+			ExpValue6: "postgres://db_user:db_pass@127.0.0.1:5432/db_name?sslmode=disable",
+		},
+		{
 			// cors is activated but empty
 			Key:      "ACTIVATE_CORS",
 			TestNo:   28,
@@ -956,6 +963,16 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 					t.Errorf("got error '%v' when setting %v", err, tc.Key)
 				}
 				got := config.GetConfig().Security.JWT.Algorithm
+				if got != tc.ExpValue6 {
+					t.Errorf("expected %v, got %v when setting %v", tc.ExpValue6, got, tc.Key)
+				}
+			}
+
+			if tc.TestNo == 37 {
+				if err != nil {
+					t.Errorf("got error '%v' when setting %v", err, tc.Key)
+				}
+				got := config.GetConfig().Database.RDBMS.Env.URI
 				if got != tc.ExpValue6 {
 					t.Errorf("expected %v, got %v when setting %v", tc.ExpValue6, got, tc.Key)
 				}

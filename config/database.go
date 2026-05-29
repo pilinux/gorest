@@ -21,6 +21,7 @@ type RDBMS struct {
 	Activate string
 	Env      struct {
 		Driver   string `json:"-"`
+		URI      string `json:"-"`
 		Host     string `json:"-"`
 		Port     string `json:"-"`
 		TimeZone string `json:"-"`

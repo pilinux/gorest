@@ -137,6 +137,7 @@ func database() (databaseConfig DatabaseConfig, err error) {
 func databaseRDBMS() (databaseConfig DatabaseConfig, err error) {
 	// Env
 	databaseConfig.RDBMS.Env.Driver = strings.ToLower(strings.TrimSpace(os.Getenv("DBDRIVER")))
+	databaseConfig.RDBMS.Env.URI = strings.TrimSpace(os.Getenv("DB_URI"))
 	databaseConfig.RDBMS.Env.Host = strings.TrimSpace(os.Getenv("DBHOST"))
 	databaseConfig.RDBMS.Env.Port = strings.TrimSpace(os.Getenv("DBPORT"))
 	databaseConfig.RDBMS.Env.TimeZone = strings.TrimSpace(os.Getenv("DBTIMEZONE"))

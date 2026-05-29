@@ -170,6 +170,7 @@ type RDBMS struct {
     Activate string
     Env      struct {
         Driver   string
+        URI      string
         Host     string
         Port     string
         TimeZone string
@@ -442,6 +443,7 @@ gconfig.IsPasswordRecoverCodeUUIDv4()   // EMAIL_PASS_RECOVER_USE_UUIDv4 (bool c
 | Variable | Description | Example |
 | -------- | ----------- | ------- |
 | `ACTIVATE_RDBMS` | Enable RDBMS | `yes` |
+| `DB_URI` | Optional DSN/connection URI. If set, `InitDB()` uses it as-is and ignores the field-based SQL connection settings below | `postgres://user:pass@localhost:5432/myapp?sslmode=disable` |
 | `DBDRIVER` | Driver | `mysql`, `postgres`, `sqlite3` |
 | `DBHOST` | Database host | `localhost` |
 | `DBPORT` | Database port | `3306`, `5432` |
@@ -574,6 +576,15 @@ gconfig.IsPasswordRecoverCodeUUIDv4()   // EMAIL_PASS_RECOVER_USE_UUIDv4 (bool c
 ## Database Layer
 
 ### RDBMS (MySQL, PostgreSQL, SQLite)
+
+`InitDB()` supports two RDBMS configuration modes:
+
+- Preferred URI mode: set `DB_URI` and the SQL connection uses that value directly.
+- Field-based mode: if `DB_URI` is empty, gorest builds the connection string from `DBDRIVER`, `DBHOST`, `DBPORT`, `DBNAME`, `DBUSER`, `DBPASS`, `DBTIMEZONE`, and SSL-related settings.
+
+Notes:
+
+- `DB_URI` works with `mysql`, `postgres`, and `sqlite3`.
 
 #### Initialization
 

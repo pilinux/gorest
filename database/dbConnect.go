@@ -78,6 +78,7 @@ func InitDB() *gorm.DB {
 	configureDB := cfg.Database.RDBMS
 
 	driver := configureDB.Env.Driver
+	uri := configureDB.Env.URI
 	username := configureDB.Access.User
 	password := configureDB.Access.Pass
 	database := configureDB.Access.DbName
@@ -92,28 +93,31 @@ func InitDB() *gorm.DB {
 
 	switch driver {
 	case "mysql":
-		address := host
-		if port != "" {
-			address += ":" + port
-		}
-		dsn := username + ":" + password + "@tcp(" + address + ")/" + database + "?charset=utf8mb4&parseTime=True&loc=Local"
-		if sslmode == "" {
-			sslmode = "disable"
-		}
-		if sslmode != "disable" {
-			// use host machine's root CAs to verify
-			if sslmode == "require" {
-				dsn += "&tls=true"
+		dsn := uri
+		if dsn == "" {
+			address := host
+			if port != "" {
+				address += ":" + port
 			}
+			dsn = username + ":" + password + "@tcp(" + address + ")/" + database + "?charset=utf8mb4&parseTime=True&loc=Local"
+			if sslmode == "" {
+				sslmode = "disable"
+			}
+			if sslmode != "disable" {
+				// use host machine's root CAs to verify
+				if sslmode == "require" {
+					dsn += "&tls=true"
+				}
 
-			// perform comprehensive SSL/TLS certificate validation using
-			// certificate signed by a recognized CA or by a self-signed certificate
-			if sslmode == "verify-ca" || sslmode == "verify-full" {
-				dsn += "&tls=custom"
-				err = InitTLSMySQL()
-				if err != nil {
-					db.Error = err
-					return db
+				// perform comprehensive SSL/TLS certificate validation using
+				// certificate signed by a recognized CA or by a self-signed certificate
+				if sslmode == "verify-ca" || sslmode == "verify-full" {
+					dsn += "&tls=custom"
+					err = InitTLSMySQL()
+					if err != nil {
+						db.Error = err
+						return db
+					}
 				}
 			}
 		}
@@ -143,28 +147,31 @@ func InitDB() *gorm.DB {
 		}
 
 	case "postgres":
-		address := "host=" + host
-		if port != "" {
-			address += " port=" + port
-		}
-		dsn := address + " user=" + username + " dbname=" + database + " password=" + password + " TimeZone=" + timeZone
-		if sslmode == "" {
-			sslmode = "disable"
-		}
-		if sslmode != "disable" {
-			if configureDB.Ssl.RootCA != "" {
-				dsn += " sslrootcert=" + configureDB.Ssl.RootCA
-			} else if configureDB.Ssl.ServerCert != "" {
-				dsn += " sslrootcert=" + configureDB.Ssl.ServerCert
+		dsn := uri
+		if dsn == "" {
+			address := "host=" + host
+			if port != "" {
+				address += " port=" + port
 			}
-			if configureDB.Ssl.ClientCert != "" {
-				dsn += " sslcert=" + configureDB.Ssl.ClientCert
+			dsn = address + " user=" + username + " dbname=" + database + " password=" + password + " TimeZone=" + timeZone
+			if sslmode == "" {
+				sslmode = "disable"
 			}
-			if configureDB.Ssl.ClientKey != "" {
-				dsn += " sslkey=" + configureDB.Ssl.ClientKey
+			if sslmode != "disable" {
+				if configureDB.Ssl.RootCA != "" {
+					dsn += " sslrootcert=" + configureDB.Ssl.RootCA
+				} else if configureDB.Ssl.ServerCert != "" {
+					dsn += " sslrootcert=" + configureDB.Ssl.ServerCert
+				}
+				if configureDB.Ssl.ClientCert != "" {
+					dsn += " sslcert=" + configureDB.Ssl.ClientCert
+				}
+				if configureDB.Ssl.ClientKey != "" {
+					dsn += " sslkey=" + configureDB.Ssl.ClientKey
+				}
 			}
+			dsn += " sslmode=" + sslmode
 		}
-		dsn += " sslmode=" + sslmode
 
 		sqlDB, err = sqlOpen("pgx", dsn)
 		if err != nil {
@@ -192,7 +199,11 @@ func InitDB() *gorm.DB {
 		}
 
 	case "sqlite3":
-		db, err = gorm.Open(sqlite.Open(database), &gorm.Config{
+		dsn := database
+		if uri != "" {
+			dsn = uri
+		}
+		db, err = gorm.Open(sqlite.Open(dsn), &gorm.Config{
 			Logger:                                   logger.Default.LogMode(logger.Silent),
 			DisableForeignKeyConstraintWhenMigrating: true,
 		})
