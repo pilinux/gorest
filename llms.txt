@@ -201,6 +201,7 @@ type RDBMS struct {
 type REDIS struct {
     Activate string
     Env      struct {
+        URI  string
         Host string
         Port string
     }
@@ -472,6 +473,7 @@ gconfig.IsPasswordRecoverCodeUUIDv4()   // EMAIL_PASS_RECOVER_USE_UUIDv4 (bool c
 | Variable | Description | Example |
 | -------- | ----------- | ------- |
 | `ACTIVATE_REDIS` | Enable Redis | `yes` |
+| `REDIS_URI` | Optional Redis URI. If set, `InitRedis()` uses it as-is and ignores `REDISHOST` and `REDISPORT` | `redis://user:pass@127.0.0.1:6379` |
 | `REDISHOST` | Redis host | `127.0.0.1` |
 | `REDISPORT` | Redis port | `6379` |
 | `POOLSIZE` | Connection pool size | `10` |
@@ -1083,6 +1085,11 @@ Notes:
 - If listing users based on gorest `Auth` rows, avoid exposing sensitive fields; `Auth` has custom `MarshalJSON` that only outputs `authID` and `email`.
 
 ### Redis (Caching, JWT Blacklist)
+
+`InitRedis()` supports two Redis configuration modes:
+
+- Preferred URI mode: set `REDIS_URI` and the Redis client uses that value directly.
+- Field-based mode: if `REDIS_URI` is empty, gorest builds the Redis address from `REDISHOST` and `REDISPORT`.
 
 #### Initialization (Radix v4)
 

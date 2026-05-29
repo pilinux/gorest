@@ -193,6 +193,7 @@ func databaseRedis() (databaseConfig DatabaseConfig, err error) {
 		return
 	}
 
+	databaseConfig.REDIS.Env.URI = strings.TrimSpace(os.Getenv("REDIS_URI"))
 	databaseConfig.REDIS.Env.Host = strings.TrimSpace(os.Getenv("REDISHOST"))
 	databaseConfig.REDIS.Env.Port = strings.TrimSpace(os.Getenv("REDISPORT"))
 	databaseConfig.REDIS.Conn.PoolSize = poolSize

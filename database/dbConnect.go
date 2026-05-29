@@ -246,11 +246,16 @@ func InitRedis() (radix.Client, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(RedisConnTTL)*time.Second)
 	defer cancel()
 
+	redisAddr := configureRedis.Env.URI
+	if redisAddr == "" {
+		redisAddr = fmt.Sprintf("redis://%v:%v",
+			configureRedis.Env.Host,
+			configureRedis.Env.Port)
+	}
+
 	rClient, err := (radix.PoolConfig{
 		Size: configureRedis.Conn.PoolSize,
-	}).New(ctx, "tcp", fmt.Sprintf("%v:%v",
-		configureRedis.Env.Host,
-		configureRedis.Env.Port))
+	}).New(ctx, "tcp", redisAddr)
 	if err != nil {
 		err = fmt.Errorf("failed to connect to Redis: %w", err)
 		return rClient, err

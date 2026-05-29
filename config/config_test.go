@@ -110,6 +110,7 @@ func TestGetConfig(t *testing.T) {
 	if !config.IsRedis() {
 		t.Errorf("expected IsRedis() to return true, but got false")
 	}
+	expected.Database.REDIS.Env.URI = ""
 	expected.Database.REDIS.Env.Host = "127.0.0.1"
 	expected.Database.REDIS.Env.Port = "6379"
 	expected.Database.REDIS.Conn.PoolSize = 10
@@ -782,6 +783,12 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 			ExpValue6: "postgres://db_user:db_pass@127.0.0.1:5432/db_name?sslmode=disable",
 		},
 		{
+			Key:       "REDIS_URI",
+			TestNo:    38,
+			SetValue:  "redis://127.0.0.1:6379/0",
+			ExpValue6: "redis://127.0.0.1:6379/0",
+		},
+		{
 			// cors is activated but empty
 			Key:      "ACTIVATE_CORS",
 			TestNo:   28,
@@ -973,6 +980,16 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 					t.Errorf("got error '%v' when setting %v", err, tc.Key)
 				}
 				got := config.GetConfig().Database.RDBMS.Env.URI
+				if got != tc.ExpValue6 {
+					t.Errorf("expected %v, got %v when setting %v", tc.ExpValue6, got, tc.Key)
+				}
+			}
+
+			if tc.TestNo == 38 {
+				if err != nil {
+					t.Errorf("got error '%v' when setting %v", err, tc.Key)
+				}
+				got := config.GetConfig().Database.REDIS.Env.URI
 				if got != tc.ExpValue6 {
 					t.Errorf("expected %v, got %v when setting %v", tc.ExpValue6, got, tc.Key)
 				}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"strings"
 	"testing"
 
 	"github.com/mediocregopher/radix/v4"
@@ -15,6 +16,7 @@ import (
 // error-handling return path.
 func TestInitRedis_Error(t *testing.T) {
 	cfg := mustGetConfig(t)
+	cfg.Database.REDIS.Env.URI = ""
 	cfg.Database.REDIS.Env.Host = "127.0.0.1"
 	cfg.Database.REDIS.Env.Port = "16379" // unlikely to be running
 	cfg.Database.REDIS.Conn.PoolSize = 1
@@ -27,6 +29,34 @@ func TestInitRedis_Error(t *testing.T) {
 	if client != nil {
 		// if a partial client was returned, try to close it
 		t.Log("InitRedis returned a non-nil client with error; closing")
+	}
+}
+
+// TestInitRedis_UseRedisURI verifies that REDIS_URI is preferred over
+// REDISHOST and REDISPORT when both are present.
+func TestInitRedis_UseRedisURI(t *testing.T) {
+	cfg := mustGetConfig(t)
+	cfg.Database.REDIS.Env.URI = "redis://127.0.0.1:16379/0"
+	cfg.Database.REDIS.Env.Host = "wrong-host"
+	cfg.Database.REDIS.Env.Port = "65535"
+	cfg.Database.REDIS.Conn.PoolSize = 1
+	cfg.Database.REDIS.Conn.ConnTTL = 2
+
+	client, err := gdb.InitRedis()
+	if err == nil {
+		if client != nil {
+			_ = gdb.CloseRedis()
+		}
+		t.Fatal("expected error from InitRedis with no server, got nil")
+	}
+	if !strings.Contains(err.Error(), "127.0.0.1:16379") {
+		t.Fatalf("expected REDIS_URI host/port in error, got: %v", err)
+	}
+	if strings.Contains(err.Error(), "wrong-host") {
+		t.Fatalf("expected REDIS_URI to override REDISHOST, got: %v", err)
+	}
+	if client != nil {
+		_ = gdb.CloseRedis()
 	}
 }
 

@@ -53,6 +53,7 @@ type RDBMS struct {
 type REDIS struct {
 	Activate string
 	Env      struct {
+		URI  string `json:"-"`
 		Host string `json:"-"`
 		Port string `json:"-"`
 	}
