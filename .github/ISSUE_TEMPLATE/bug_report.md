@@ -1,38 +1,67 @@
 ---
 name: Bug report
-about: Create a report to help us improve
-title: ''
+about: Report a reproducible problem in gorest
+title: '[bug] '
 labels: ''
 assignees: ''
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+## Summary
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+Describe the bug clearly and concisely.
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+## Affected area
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+- [ ] config
+- [ ] database / migrate
+- [ ] controller / handler
+- [ ] middleware
+- [ ] service
+- [ ] example / example2
+- [ ] documentation
+- [ ] other
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+## Reproduction
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+Provide a minimal reproduction.
 
-**Additional context**
-Add any other context about the problem here.
+1. Configuration or environment used
+2. Exact commands run
+3. Request, input, or code sample
+4. Actual result
+
+## Minimal code or request sample
+
+```go
+// Paste a minimal reproduction here, or replace with HTTP request / curl output.
+```
+
+## Expected behavior
+
+Describe what should have happened instead.
+
+## Logs or error output
+
+```text
+Paste panic output, logs, stack trace, or failing test output here.
+```
+
+## Environment
+
+- gorest version or commit SHA:
+- Go version:
+- OS and architecture:
+- Database(s) involved: RDBMS / Redis / MongoDB / none
+- Relevant env flags: `ACTIVATE_RDBMS`, `ACTIVATE_REDIS`, `ACTIVATE_MONGO`, `ACTIVATE_JWT`, etc.
+
+## Verification already attempted
+
+- [ ] I searched existing issues first
+- [ ] I tested against the latest `main` branch or latest release
+- [ ] I included exact reproduction steps
+- [ ] I included relevant config values with secrets removed
+
+## Additional context
+
+Add anything else that may help reproduce or diagnose the issue.
