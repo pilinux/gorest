@@ -190,7 +190,6 @@ func createSentryHook(sentryDsn string, v ...string) (sentrylogrus.Hook, error) 
 		Release:          release,
 		EnableTracing:    enableTracing,
 		TracesSampleRate: tracesSampleRate,
-		EnableLogs:       true, // enable logs to be captured
 	}
 
 	client, err := sentry.NewClient(clientOptions)
