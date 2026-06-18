@@ -191,6 +191,10 @@ func testLogLevel(sentryDsn string, v []string, expectedLevel log.Level, t *test
 		return
 	}
 
+	// init succeeded and mutated the global hook/log level; ensure it does not
+	// leak into subsequent tests
+	t.Cleanup(middleware.DestroySentry)
+
 	// check if the log level was set correctly
 	if log.GetLevel() != expectedLevel {
 		t.Errorf("Expected log level %v, but got %v", expectedLevel, log.GetLevel())
@@ -346,5 +350,51 @@ func TestInitSentryDoubleHook(t *testing.T) {
 	}
 	if third == first {
 		t.Errorf("expected a new hook after destroy, but got the previous hook")
+	}
+}
+
+// TestSentryCaptureRecoversPanic covers the panic-recovery path in SentryCapture,
+// which logs the panic and responds 500.
+//
+//	defer func() {
+//		if r := recover(); r != nil {
+//			log.
+//				WithContext(c.Request.Context()).
+//				WithField("panic", r).
+//				Error("panic msg: middleware -> sentry panicked")
+//
+//			c.AbortWithStatus(http.StatusInternalServerError)
+//			return
+//		}
+//	}()
+func TestSentryCaptureRecoversPanic(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	if err := router.SetTrustedProxies(nil); err != nil {
+		t.Fatalf("failed to set trusted proxies to nil: %v", err)
+	}
+
+	middleware.DestroySentry()
+	if _, err := middleware.InitSentry(testDSN, "production"); err != nil {
+		t.Fatalf("failed to initialize sentry: %v", err)
+	}
+	t.Cleanup(middleware.DestroySentry)
+	router.Use(middleware.SentryCapture())
+
+	router.GET("/panic", func(_ *gin.Context) {
+		panic("boom inside handler")
+	})
+
+	req, err := http.NewRequest("GET", "/panic", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Host = "localhost"
+	res := httptest.NewRecorder()
+
+	router.ServeHTTP(res, req)
+
+	if res.Code != http.StatusInternalServerError {
+		t.Errorf("expected response code %v, got '%v'", http.StatusInternalServerError, res.Code)
 	}
 }
