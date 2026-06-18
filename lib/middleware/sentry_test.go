@@ -29,6 +29,8 @@ func TestSentryCapture(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to initialize sentry: %v", err)
 	}
+	// avoid leaking the global hook/log level into subsequent tests
+	t.Cleanup(middleware.DestroySentry)
 	router.Use(middleware.SentryCapture())
 
 	// check sentry in a separate goroutine
@@ -63,16 +65,14 @@ func TestSentryCapture(t *testing.T) {
 
 	if GoroutineLogger != nil {
 		if sentryDSN != "" {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				GoroutineLogger.
 					WithFields(log.Fields{
 						"time": time.Now().Format(time.RFC3339),
 						"ref":  "goroutine - 1",
 					}).
 					Info("testing sentry integration in a separate goroutine")
-			}()
+			})
 			wg.Wait()
 		}
 	}
@@ -110,16 +110,14 @@ func TestSentryCapture(t *testing.T) {
 	// check sentry in another goroutine
 	if GoroutineLogger != nil {
 		if sentryDSN != "" {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				GoroutineLogger.
 					WithFields(log.Fields{
 						"time": time.Now().Format(time.RFC3339),
 						"ref":  "goroutine - 2",
 					}).
 					Info("testing sentry integration in a separate goroutine")
-			}()
+			})
 			wg.Wait()
 		}
 	}
@@ -128,7 +126,7 @@ func TestSentryCapture(t *testing.T) {
 func TestInitSentryLogLevel(t *testing.T) {
 	// test case 1: when sentry dsn is wrong
 	t.Run("Sentry DSN wrong", func(t *testing.T) {
-		testLogLevel("mockDSN", []string{"development"}, log.DebugLevel, t)
+		testLogLevel("mockDSN", []string{"development"}, log.TraceLevel, t)
 	})
 
 	// test case 2: when v[0] is "production", log level should be InfoLevel
@@ -136,14 +134,14 @@ func TestInitSentryLogLevel(t *testing.T) {
 		testLogLevel("https://username@sentry.io/project-id", []string{"production"}, log.InfoLevel, t)
 	})
 
-	// test case 3: when v[0] is not "production", log level should be DebugLevel
+	// test case 3: when v[0] is not "production", log level should be TraceLevel
 	t.Run("Log level non-production", func(t *testing.T) {
-		testLogLevel("https://username@sentry.io/project-id", []string{"development"}, log.DebugLevel, t)
+		testLogLevel("https://username@sentry.io/project-id", []string{"development"}, log.TraceLevel, t)
 	})
 
-	// test case 4: when v is empty, log level should default to DebugLevel
+	// test case 4: when v is empty, log level should default to TraceLevel
 	t.Run("Log level default", func(t *testing.T) {
-		testLogLevel("https://username@sentry.io/project-id", []string{}, log.DebugLevel, t)
+		testLogLevel("https://username@sentry.io/project-id", []string{}, log.TraceLevel, t)
 	})
 }
 
@@ -157,12 +155,10 @@ func testLogLevel(sentryDsn string, v []string, expectedLevel log.Level, t *test
 	if err == nil && sentryDsn == "mockDSN" {
 		// if DSN is incorrect, expect an error
 		t.Fatalf("Expected error, but got nil")
-		return
 	}
 	if err != nil && sentryDsn != "mockDSN" {
 		// if DSN is correct, but there was an error
 		t.Fatalf("Error initializing sentry: %v", err)
-		return
 	}
 	if err != nil && sentryDsn == "mockDSN" {
 		// if DSN is incorrect and there was an error, stop the test here
