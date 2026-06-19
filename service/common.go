@@ -179,24 +179,18 @@ func SendEmail(email string, emailType int, opts ...string) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(redisConnTTL)*time.Second)
 	defer cancel()
 
-	// Set key in Redis
+	// Set key and TTL atomically so a verification/recovery secret can never
+	// exist in Redis without an expiry (a non-expiring code widens the window
+	// for brute-force/replay).
 	r1 := ""
-	if err := client.Do(ctx, radix.FlatCmd(&r1, "SET", data.key, data.value)); err != nil {
+	if err := client.Do(ctx, radix.FlatCmd(&r1, "SET", data.key, data.value,
+		"EX", strconv.FormatUint(keyTTL, 10))); err != nil {
 		log.WithError(err).Error("error code: 401")
 		return false, err
 	}
 	if r1 != "OK" {
 		log.Error("error code: 402")
 		return false, errors.New("failed to save in redis")
-	}
-
-	// Set expiry time
-	r2 := 0
-	if err := client.Do(ctx, radix.FlatCmd(&r2, "EXPIRE", data.key, keyTTL)); err != nil {
-		log.WithError(err).Error("error code: 403")
-	}
-	if r2 != 1 {
-		log.Error("error code: 404")
 	}
 
 	// check which email service
