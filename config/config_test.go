@@ -728,6 +728,25 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 			ExpKeyErr: true,
 		},
 		{
+			// fail test - asymmetric alg with an empty private key path
+			// (PRIV_KEY_FILE_PATH is required for asymmetric JWT algorithms)
+			TestNo:    30,
+			Alg:       "ES256",
+			PrivPath:  "",
+			PubPath:   "",
+			ExpKeyErr: true,
+		},
+		{
+			// fail test - asymmetric alg, valid private key but empty public key path
+			// (PUB_KEY_FILE_PATH is required for asymmetric JWT algorithms)
+			TestNo:    31,
+			Alg:       "ES256",
+			PrivFile:  "private-keyES256.pem",
+			PrivPath:  "./private-keyES256.pem",
+			PubPath:   "",
+			ExpKeyErr: true,
+		},
+		{
 			Key:       "EMAIL_VERIFY_USE_UUIDv4",
 			TestNo:    22,
 			SetValue:  "yes",
@@ -850,7 +869,7 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 	// themselves, so the generic env setter/reset is skipped for them.
 	isKeyTest := func(no int) bool {
 		switch no {
-		case 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 29:
+		case 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 29, 30, 31:
 			return true
 		}
 		return false
