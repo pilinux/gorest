@@ -42,8 +42,11 @@ func ValidateEmail(e string) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), EmailMXLookupTimeout)
 	defer cancel()
 
-	parts := strings.Split(e, "@")
-	mx, err := net.DefaultResolver.LookupMX(ctx, parts[1])
+	_, domain, ok := strings.Cut(e, "@")
+	if !ok {
+		return false
+	}
+	mx, err := net.DefaultResolver.LookupMX(ctx, domain)
 	// Note: RFC 5321 §5.1 allows a sender to fall back to the domain's A/AAAA
 	// record when no MX record exists (implicit MX). gorest intentionally does
 	// not support this fallback: modern mail servers rely almost exclusively on
