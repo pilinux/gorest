@@ -14,8 +14,6 @@ func SecureRandomNumber(totalDigit uint64) uint64 {
 		return 0
 	}
 
-	var result *big.Int
-
 	// Compute the bounds with big.Int.Exp for exact powers of ten. Using
 	// math.Pow + int64 loses precision for totalDigit >= 16, since float64
 	// only has 53-bit integer precision, and overflows int64 for
@@ -30,14 +28,18 @@ func SecureRandomNumber(totalDigit uint64) uint64 {
 		big.NewInt(1),
 	)
 
-	for {
-		x, err := rand.Int(rand.Reader, maxVal)
+	// Draw uniformly from the inclusive range [minVal, maxVal]. rand.Int yields
+	// [0, span), so sample a span of size (maxVal-minVal+1) and shift by minVal.
+	// This covers both endpoints (e.g. 100 and 999 for totalDigit==3) and avoids
+	// the rejection-sampling loop.
+	span := new(big.Int).Add(new(big.Int).Sub(maxVal, minVal), big.NewInt(1))
 
+	var result *big.Int
+	for {
+		x, err := rand.Int(rand.Reader, span)
 		if err == nil {
-			if x.Cmp(minVal) == +1 {
-				result = x
-				break
-			}
+			result = new(big.Int).Add(x, minVal)
+			break
 		}
 	}
 
