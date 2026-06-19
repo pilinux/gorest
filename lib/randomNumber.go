@@ -9,8 +9,13 @@ import (
 // To generate a random number consisting of x number of digits, pass x as
 // the parameter. For example, SecureRandomNumber(3) will generate a number
 // between 100 and 999.
+//
+// The result is returned as a uint64, so totalDigit must be in the range
+// [1, 19]; a 20-digit number can exceed math.MaxUint64 and could not be
+// represented faithfully. For totalDigit == 0 or totalDigit > 19 the function
+// returns 0.
 func SecureRandomNumber(totalDigit uint64) uint64 {
-	if totalDigit == 0 {
+	if totalDigit == 0 || totalDigit > 19 {
 		return 0
 	}
 

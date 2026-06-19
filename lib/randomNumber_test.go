@@ -59,6 +59,13 @@ func TestSecureRandomNumber(t *testing.T) {
 			minimum:    1000000000000000000,
 			maximum:    9999999999999999999,
 		},
+		{
+			// 20-digit numbers can exceed math.MaxUint64; guarded to return 0
+			name:       "edge: above uint64 capacity",
+			totalDigit: 20,
+			minimum:    0,
+			maximum:    0,
+		},
 	}
 
 	for i := range tests {
