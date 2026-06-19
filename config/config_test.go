@@ -847,6 +847,14 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 			SetValue: "short_refresh_key",
 			ExpErr:   errors.New("ACCESS_KEY and REFRESH_KEY must each be at least 32 bytes for HMAC algorithms"),
 		},
+		{
+			// fail test - HASHPASSMEMORY above MaxUint32/1024 would overflow when
+			// HashPass multiplies Memory by 1024, so it must be rejected
+			Key:      "HASHPASSMEMORY",
+			TestNo:   41,
+			SetValue: "4194304", // math.MaxUint32/1024 + 1
+			ExpErr:   errors.New("HASHPASSMEMORY too large: must be <= 4194303"),
+		},
 	}
 
 	// download a file from a remote location and save it
@@ -1145,6 +1153,16 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 
 			// empty or too-short HMAC ACCESS_KEY/REFRESH_KEY must be rejected
 			if tc.TestNo == 39 || tc.TestNo == 40 {
+				if err == nil {
+					t.Errorf("expected error, got nil when setting %v to '%v'", tc.Key, tc.SetValue)
+				}
+				if err != nil && err.Error() != tc.ExpErr.Error() {
+					t.Errorf("expected error '%v', got '%v' when setting %v", tc.ExpErr, err, tc.Key)
+				}
+			}
+
+			// HASHPASSMEMORY too large (would overflow Memory*1024) must be rejected
+			if tc.TestNo == 41 {
 				if err == nil {
 					t.Errorf("expected error, got nil when setting %v to '%v'", tc.Key, tc.SetValue)
 				}

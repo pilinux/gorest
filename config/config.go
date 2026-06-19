@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"crypto/sha3"
 	"errors"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -905,6 +906,11 @@ func getParamsHash() (params lib.HashPassConfig, err error) {
 	hashPassMemory64, errThis := strconv.ParseUint((strings.TrimSpace(os.Getenv("HASHPASSMEMORY"))), 10, 32)
 	if errThis != nil {
 		err = errThis
+		return
+	}
+	// HashPass multiplies Memory by 1024 (MiB -> KiB); guard against uint32 overflow.
+	if hashPassMemory64 > math.MaxUint32/1024 {
+		err = errors.New("HASHPASSMEMORY too large: must be <= " + strconv.FormatUint(math.MaxUint32/1024, 10))
 		return
 	}
 	hashPassIterations64, errThis := strconv.ParseUint((strings.TrimSpace(os.Getenv("HASHPASSITERATIONS"))), 10, 32)
