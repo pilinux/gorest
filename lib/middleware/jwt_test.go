@@ -875,19 +875,19 @@ func TestValidateAccessJWT(t *testing.T) {
 		{
 			Algorithm:   "HS256",
 			ExpectedAlg: "HS256",
-			ExpectedKey: []byte("cryptographic_key_1"),
+			ExpectedKey: []byte("this_is_a_long_cryptographic_key_1"),
 			ExpectedErr: nil,
 		},
 		{
 			Algorithm:   "HS384",
 			ExpectedAlg: "HS384",
-			ExpectedKey: []byte("cryptographic_key_1"),
+			ExpectedKey: []byte("this_is_a_long_cryptographic_key_1"),
 			ExpectedErr: nil,
 		},
 		{
 			Algorithm:   "HS512",
 			ExpectedAlg: "HS512",
-			ExpectedKey: []byte("cryptographic_key_1"),
+			ExpectedKey: []byte("this_is_a_long_cryptographic_key_1"),
 			ExpectedErr: nil,
 		},
 		// unknown algorithm
@@ -1108,19 +1108,19 @@ func TestValidateRefreshJWT(t *testing.T) {
 		{
 			Algorithm:   "HS256",
 			ExpectedAlg: "HS256",
-			ExpectedKey: []byte("cryptographic_key_2"),
+			ExpectedKey: []byte("this_is_a_long_cryptographic_key_2"),
 			ExpectedErr: nil,
 		},
 		{
 			Algorithm:   "HS384",
 			ExpectedAlg: "HS384",
-			ExpectedKey: []byte("cryptographic_key_2"),
+			ExpectedKey: []byte("this_is_a_long_cryptographic_key_2"),
 			ExpectedErr: nil,
 		},
 		{
 			Algorithm:   "HS512",
 			ExpectedAlg: "HS512",
-			ExpectedKey: []byte("cryptographic_key_2"),
+			ExpectedKey: []byte("this_is_a_long_cryptographic_key_2"),
 			ExpectedErr: nil,
 		},
 		// unknown algorithm
@@ -1413,9 +1413,9 @@ func assertBytesEqual(t *testing.T, got, want []byte) {
 // setParamsJWT sets JWT parameters for testing.
 func setParamsJWT() {
 	middleware.JWTParams.Algorithm = "HS256"
-	middleware.JWTParams.AccessKey = []byte("cryptographic_key_1")
+	middleware.JWTParams.AccessKey = []byte("this_is_a_long_cryptographic_key_1")
 	middleware.JWTParams.AccessKeyTTL = 5
-	middleware.JWTParams.RefreshKey = []byte("cryptographic_key_2")
+	middleware.JWTParams.RefreshKey = []byte("this_is_a_long_cryptographic_key_2")
 	middleware.JWTParams.RefreshKeyTTL = 60
 
 	middleware.JWTParams.Audience = "audience"

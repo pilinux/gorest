@@ -757,6 +757,17 @@ func getParamsJWT() (params middleware.JWTParameters, err error) {
 		return
 	}
 
+	// For HMAC algorithms (HS256/HS384/HS512), the signing secret comes directly
+	// from ACCESS_KEY/REFRESH_KEY. An empty or weak key allows an attacker to forge
+	// tokens, so enforce a minimum length of 32 bytes for both keys.
+	if alg == "HS256" || alg == "HS384" || alg == "HS512" {
+		const minHMACKeyLen = 32
+		if len(params.AccessKey) < minHMACKeyLen || len(params.RefreshKey) < minHMACKeyLen {
+			err = errors.New("ACCESS_KEY and REFRESH_KEY must each be at least 32 bytes for HMAC algorithms")
+			return
+		}
+	}
+
 	privateKeyFile := strings.TrimSpace(os.Getenv("PRIV_KEY_FILE_PATH"))
 	if privateKeyFile != "" {
 		// load the private key

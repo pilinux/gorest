@@ -174,9 +174,9 @@ func TestGetConfig(t *testing.T) {
 		t.Errorf("expected IsJWT() to return true, but got false")
 	}
 	expected.Security.JWT.Algorithm = "HS256"
-	expected.Security.JWT.AccessKey = []byte("cryptographic_key_1")
+	expected.Security.JWT.AccessKey = []byte("this_is_a_long_cryptographic_key_1")
 	expected.Security.JWT.AccessKeyTTL = 5
-	expected.Security.JWT.RefreshKey = []byte("cryptographic_key_2")
+	expected.Security.JWT.RefreshKey = []byte("this_is_a_long_cryptographic_key_2")
 	expected.Security.JWT.RefreshKeyTTL = 60
 	expected.Security.JWT.PrivKeyECDSA = nil
 	expected.Security.JWT.PubKeyECDSA = nil
@@ -795,6 +795,20 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 			SetValue: "yes",
 			ExpErr:   errors.New(("empty CORS header")),
 		},
+		{
+			// fail test - ACCESS_KEY shorter than 32 bytes is rejected for HMAC algorithms
+			Key:      "ACCESS_KEY",
+			TestNo:   39,
+			SetValue: "short_access_key",
+			ExpErr:   errors.New("ACCESS_KEY and REFRESH_KEY must each be at least 32 bytes for HMAC algorithms"),
+		},
+		{
+			// fail test - REFRESH_KEY shorter than 32 bytes is rejected for HMAC algorithms
+			Key:      "REFRESH_KEY",
+			TestNo:   40,
+			SetValue: "short_refresh_key",
+			ExpErr:   errors.New("ACCESS_KEY and REFRESH_KEY must each be at least 32 bytes for HMAC algorithms"),
+		},
 	}
 
 	// download a file from a remote location and save it
@@ -1238,6 +1252,16 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 				got := config.GetConfig().Security.AuthCookieSameSite
 				if got != tc.ExpValue2 {
 					t.Errorf("expected %v, got %v when setting %v", tc.ExpValue2, got, tc.Key)
+				}
+			}
+
+			// empty or too-short HMAC ACCESS_KEY/REFRESH_KEY must be rejected
+			if tc.TestNo == 39 || tc.TestNo == 40 {
+				if err == nil {
+					t.Errorf("expected error, got nil when setting %v to '%v'", tc.Key, tc.SetValue)
+				}
+				if err != nil && err.Error() != tc.ExpErr.Error() {
+					t.Errorf("expected error '%v', got '%v' when setting %v", tc.ExpErr, err, tc.Key)
 				}
 			}
 
