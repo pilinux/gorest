@@ -768,27 +768,35 @@ func getParamsJWT() (params middleware.JWTParameters, err error) {
 		}
 	}
 
-	privateKeyFile := strings.TrimSpace(os.Getenv("PRIV_KEY_FILE_PATH"))
-	if privateKeyFile != "" {
+	// Asymmetric algorithms (ECDSA, EdDSA, RSA) sign and verify tokens with
+	// key pairs loaded from PEM files.
+	isECDSA := alg == "ES256" || alg == "ES384" || alg == "ES512"
+	isEdDSA := alg == "EdDSA"
+	isRSA := alg == "RS256" || alg == "RS384" || alg == "RS512"
+
+	if isECDSA || isEdDSA || isRSA {
 		// load the private key
+		privateKeyFile := strings.TrimSpace(os.Getenv("PRIV_KEY_FILE_PATH"))
+		if privateKeyFile == "" {
+			err = errors.New("PRIV_KEY_FILE_PATH is required for asymmetric JWT algorithms")
+			return
+		}
 		privateKeyBytes, errThis := os.ReadFile(privateKeyFile) // #nosec G703 G304 -- file path is from env variable, not user input
 		if errThis != nil {
 			err = errThis
 			return
 		}
 
-		// ECDSA
-		if alg == "ES256" || alg == "ES384" || alg == "ES512" {
+		switch {
+		case isECDSA:
 			privateKey, errThis := jwt.ParseECPrivateKeyFromPEM(privateKeyBytes)
 			if errThis != nil {
 				err = errThis
 				return
 			}
 			params.PrivKeyECDSA = privateKey
-		}
 
-		// EdDSA
-		if alg == "EdDSA" {
+		case isEdDSA:
 			privateKey, errThis := jwt.ParseEdPrivateKeyFromPEM(privateKeyBytes)
 			if errThis != nil {
 				err = errThis
@@ -801,10 +809,8 @@ func getParamsJWT() (params middleware.JWTParameters, err error) {
 				return
 			}
 			params.PrivKeyEdDSA = privateKeyEdDSA
-		}
 
-		// RSA
-		if alg == "RS256" || alg == "RS384" || alg == "RS512" {
+		case isRSA:
 			privateKey, errThis := jwt.ParseRSAPrivateKeyFromPEM(privateKeyBytes)
 			if errThis != nil {
 				err = errThis
@@ -812,29 +818,29 @@ func getParamsJWT() (params middleware.JWTParameters, err error) {
 			}
 			params.PrivKeyRSA = privateKey
 		}
-	}
 
-	publicKeyFile := strings.TrimSpace(os.Getenv("PUB_KEY_FILE_PATH"))
-	if publicKeyFile != "" {
 		// load the public key
+		publicKeyFile := strings.TrimSpace(os.Getenv("PUB_KEY_FILE_PATH"))
+		if publicKeyFile == "" {
+			err = errors.New("PUB_KEY_FILE_PATH is required for asymmetric JWT algorithms")
+			return
+		}
 		publicKeyBytes, errThis := os.ReadFile(publicKeyFile) // #nosec G703 G304 -- file path is from env variable, not user input
 		if errThis != nil {
 			err = errThis
 			return
 		}
 
-		// ECDSA
-		if alg == "ES256" || alg == "ES384" || alg == "ES512" {
+		switch {
+		case isECDSA:
 			publicKey, errThis := jwt.ParseECPublicKeyFromPEM(publicKeyBytes)
 			if errThis != nil {
 				err = errThis
 				return
 			}
 			params.PubKeyECDSA = publicKey
-		}
 
-		// EdDSA
-		if alg == "EdDSA" {
+		case isEdDSA:
 			publicKey, errThis := jwt.ParseEdPublicKeyFromPEM(publicKeyBytes)
 			if errThis != nil {
 				err = errThis
@@ -847,10 +853,8 @@ func getParamsJWT() (params middleware.JWTParameters, err error) {
 				return
 			}
 			params.PubKeyEdDSA = publicKeyEdDSA
-		}
 
-		// RSA
-		if alg == "RS256" || alg == "RS384" || alg == "RS512" {
+		case isRSA:
 			publicKey, errThis := jwt.ParseRSAPublicKeyFromPEM(publicKeyBytes)
 			if errThis != nil {
 				err = errThis

@@ -490,7 +490,6 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 	testCases := []struct {
 		Key       string
 		TestNo    int
-		FileName  string
 		SetValue  string
 		ExpErr    error
 		ExpValue1 bool
@@ -499,6 +498,17 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 		ExpValue4 crypto.Hash
 		ExpValue5 []middleware.CORSPolicy
 		ExpValue6 string
+
+		// fields below drive the JWT key-file tests (asymmetric algorithms).
+		// Alg is the JWT_ALG to set; PrivFile/PubFile are remote key files to
+		// download (empty = skip); PrivPath/PubPath are the values for
+		// PRIV_KEY_FILE_PATH/PUB_KEY_FILE_PATH; ExpKeyErr marks a failure case.
+		Alg       string
+		PrivFile  string
+		PubFile   string
+		PrivPath  string
+		PubPath   string
+		ExpKeyErr bool
 	}{
 		{
 			Key:       "EMAIL_TRACK_OPENS",
@@ -603,110 +613,119 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 			SetValue: "any",
 		},
 		{
-			Key:      "PRIV_KEY_FILE_PATH",
-			TestNo:   10,
-			SetValue: "./wrong_path",
+			// fail test - asymmetric alg with a non-existent private key path
+			TestNo:    10,
+			Alg:       "ES256",
+			PrivPath:  "./wrong_path",
+			PubPath:   "",
+			ExpKeyErr: true,
 		},
 		{
-			Key:      "PUB_KEY_FILE_PATH",
-			TestNo:   11,
-			SetValue: "./wrong_path",
+			// fail test - asymmetric alg, valid private key but non-existent public key path
+			TestNo:    11,
+			Alg:       "ES256",
+			PrivFile:  "private-keyES256.pem",
+			PrivPath:  "./private-keyES256.pem",
+			PubPath:   "./wrong_path",
+			ExpKeyErr: true,
 		},
 		{
-			// test private key for ES256
-			Key:      "PRIV_KEY_FILE_PATH",
+			// test valid ES256 key pair
 			TestNo:   12,
-			FileName: "private-keyES256.pem",
-			SetValue: "./private-keyES256.pem",
+			Alg:      "ES256",
+			PrivFile: "private-keyES256.pem",
+			PubFile:  "public-keyES256.pem",
+			PrivPath: "./private-keyES256.pem",
+			PubPath:  "./public-keyES256.pem",
 		},
 		{
-			// test private key for EdDSA Ed25519
-			Key:      "PRIV_KEY_FILE_PATH",
-			TestNo:   29,
-			FileName: "private-keyEdDSA.pem",
-			SetValue: "./private-keyEdDSA.pem",
-		},
-		{
-			// test private key for RS256
-			Key:      "PRIV_KEY_FILE_PATH",
+			// test valid RS256 key pair
 			TestNo:   13,
-			FileName: "private-keyRS256.pem",
-			SetValue: "./private-keyRS256.pem",
+			Alg:      "RS256",
+			PrivFile: "private-keyRS256.pem",
+			PubFile:  "public-keyRS256.pem",
+			PrivPath: "./private-keyRS256.pem",
+			PubPath:  "./public-keyRS256.pem",
 		},
 		{
-			// test public key for ES256
-			Key:      "PUB_KEY_FILE_PATH",
-			TestNo:   14,
-			FileName: "public-keyES256.pem",
-			SetValue: "./public-keyES256.pem",
+			// fail test - asymmetric alg, private key file missing on disk
+			TestNo:    14,
+			Alg:       "ES256",
+			PrivPath:  "./private-keyES256.pem",
+			PubPath:   "./public-keyES256.pem",
+			ExpKeyErr: true,
 		},
 		{
-			// test public key for EdDSA Ed25519
-			Key:      "PUB_KEY_FILE_PATH",
-			TestNo:   30,
-			FileName: "public-keyEdDSA.pem",
-			SetValue: "./public-keyEdDSA.pem",
+			// fail test - asymmetric alg, valid private key but public key file missing on disk
+			TestNo:    15,
+			Alg:       "ES256",
+			PrivFile:  "private-keyES256.pem",
+			PrivPath:  "./private-keyES256.pem",
+			PubPath:   "./public-keyES256.pem",
+			ExpKeyErr: true,
 		},
 		{
-			// test public key for RS256
-			Key:      "PUB_KEY_FILE_PATH",
-			TestNo:   15,
-			FileName: "public-keyRS256.pem",
-			SetValue: "./public-keyRS256.pem",
+			// fail test - wrong private key for ES256 (RSA key supplied)
+			TestNo:    16,
+			Alg:       "ES256",
+			PrivFile:  "private-keyRS256.pem",
+			PrivPath:  "./private-keyRS256.pem",
+			ExpKeyErr: true,
 		},
 		{
-			// fail test - no private key present for ES256, EdDSA or RS256
-			Key:      "PRIV_KEY_FILE_PATH",
-			TestNo:   16,
-			SetValue: "./private-keyES256.pem",
+			// fail test - wrong private key for RS256 (ECDSA key supplied)
+			TestNo:    17,
+			Alg:       "RS256",
+			PrivFile:  "private-keyES256.pem",
+			PrivPath:  "./private-keyES256.pem",
+			ExpKeyErr: true,
 		},
 		{
-			// fail test - no public key present for ES256, EdDSA or RS256
-			Key:      "PUB_KEY_FILE_PATH",
-			TestNo:   17,
-			SetValue: "./public-keyES256.pem",
+			// fail test - valid private key but wrong public key for ES256 (RSA key supplied)
+			TestNo:    18,
+			Alg:       "ES256",
+			PrivFile:  "private-keyES256.pem",
+			PubFile:   "public-keyRS256.pem",
+			PrivPath:  "./private-keyES256.pem",
+			PubPath:   "./public-keyRS256.pem",
+			ExpKeyErr: true,
 		},
 		{
-			// fail test - wrong private key for ES256
-			Key:      "PRIV_KEY_FILE_PATH",
-			TestNo:   18,
-			FileName: "private-keyRS256.pem",
-			SetValue: "./private-keyRS256.pem",
+			// fail test - valid private key but wrong public key for RS256 (ECDSA key supplied)
+			TestNo:    19,
+			Alg:       "RS256",
+			PrivFile:  "private-keyRS256.pem",
+			PubFile:   "public-keyES256.pem",
+			PrivPath:  "./private-keyRS256.pem",
+			PubPath:   "./public-keyES256.pem",
+			ExpKeyErr: true,
 		},
 		{
-			// fail test - wrong private key for EdDSA Ed25519
-			Key:      "PRIV_KEY_FILE_PATH",
-			TestNo:   31,
-			FileName: "private-keyRS256.pem",
-			SetValue: "./private-keyRS256.pem",
-		},
-		{
-			// fail test - wrong private key for RS256
-			Key:      "PRIV_KEY_FILE_PATH",
-			TestNo:   19,
-			FileName: "private-keyES256.pem",
-			SetValue: "./private-keyES256.pem",
-		},
-		{
-			// fail test - wrong public key for ES256
-			Key:      "PUB_KEY_FILE_PATH",
+			// test valid EdDSA Ed25519 key pair
 			TestNo:   20,
-			FileName: "public-keyRS256.pem",
-			SetValue: "./public-keyRS256.pem",
+			Alg:      "EdDSA",
+			PrivFile: "private-keyEdDSA.pem",
+			PubFile:  "public-keyEdDSA.pem",
+			PrivPath: "./private-keyEdDSA.pem",
+			PubPath:  "./public-keyEdDSA.pem",
 		},
 		{
-			// fail test - wrong public key for EdDSA Ed25519
-			Key:      "PUB_KEY_FILE_PATH",
-			TestNo:   32,
-			FileName: "public-keyRS256.pem",
-			SetValue: "./public-keyRS256.pem",
+			// fail test - wrong private key for EdDSA Ed25519 (RSA key supplied)
+			TestNo:    21,
+			Alg:       "EdDSA",
+			PrivFile:  "private-keyRS256.pem",
+			PrivPath:  "./private-keyRS256.pem",
+			ExpKeyErr: true,
 		},
 		{
-			// fail test - wrong public key for RS256
-			Key:      "PUB_KEY_FILE_PATH",
-			TestNo:   21,
-			FileName: "public-keyES256.pem",
-			SetValue: "./public-keyES256.pem",
+			// fail test - valid private key but wrong public key for EdDSA Ed25519 (RSA key supplied)
+			TestNo:    29,
+			Alg:       "EdDSA",
+			PrivFile:  "private-keyEdDSA.pem",
+			PubFile:   "public-keyRS256.pem",
+			PrivPath:  "./private-keyEdDSA.pem",
+			PubPath:   "./public-keyRS256.pem",
+			ExpKeyErr: true,
 		},
 		{
 			Key:       "EMAIL_VERIFY_USE_UUIDv4",
@@ -826,79 +845,58 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 		t.Errorf("got error when calling config.Env(): %v", err)
 	}
 
+	// isKeyTest reports whether a test exercises the asymmetric JWT key files.
+	// These tests manage JWT_ALG, PRIV_KEY_FILE_PATH and PUB_KEY_FILE_PATH
+	// themselves, so the generic env setter/reset is skipped for them.
+	isKeyTest := func(no int) bool {
+		switch no {
+		case 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 29:
+			return true
+		}
+		return false
+	}
+
 	for i := range testCases {
 		tc := testCases[i]
-		t.Run("Setting "+tc.Key, func(t *testing.T) {
+		name := fmt.Sprintf("Setting TestNo %d", tc.TestNo)
+		if tc.Key != "" {
+			name = fmt.Sprintf("Setting %s TestNo %d", tc.Key, tc.TestNo)
+		}
+		t.Run(name, func(t *testing.T) {
 			currentValue := os.Getenv(tc.Key)
 
 			// set new value
-			err = os.Setenv(tc.Key, tc.SetValue)
-			if err != nil {
-				t.Errorf("got error '%v' when setting %v", err, tc.Key)
-			}
-
-			if tc.TestNo == 12 || tc.TestNo == 13 || tc.TestNo == 14 || tc.TestNo == 15 ||
-				tc.TestNo == 18 || tc.TestNo == 19 || tc.TestNo == 20 || tc.TestNo == 21 ||
-				tc.TestNo == 29 || tc.TestNo == 30 || tc.TestNo == 31 || tc.TestNo == 32 {
-				// download private-public key file from a remote location and save it
-				fmt.Println("downloading...", tc.FileName)
-				err := downloadFile(tc.FileName, testKeyFilePath+"/"+tc.FileName)
+			if !isKeyTest(tc.TestNo) {
+				err = os.Setenv(tc.Key, tc.SetValue)
 				if err != nil {
-					t.Error(err)
+					t.Errorf("got error '%v' when setting %v", err, tc.Key)
 				}
 			}
 
-			if tc.TestNo == 12 || tc.TestNo == 14 {
-				// test with keys for ES256
-				fmt.Println("test with keys for ES256")
-				err = os.Setenv("JWT_ALG", "ES256")
-				if err != nil {
-					t.Errorf("got error '%v' when setting JWT_ALG for test no: '%v'", err, tc.TestNo)
+			if isKeyTest(tc.TestNo) {
+				// download the required private/public key files (if any)
+				if tc.PrivFile != "" {
+					fmt.Println("downloading...", tc.PrivFile)
+					if e := downloadFile(tc.PrivFile, testKeyFilePath+"/"+tc.PrivFile); e != nil {
+						t.Error(e)
+					}
 				}
-			}
-
-			if tc.TestNo == 29 || tc.TestNo == 30 {
-				// test with keys for EdDSA Ed25519
-				fmt.Println("test with keys for EdDSA Ed25519")
-				err = os.Setenv("JWT_ALG", "EdDSA")
-				if err != nil {
-					t.Errorf("got error '%v' when setting JWT_ALG for test no: '%v'", err, tc.TestNo)
+				if tc.PubFile != "" {
+					fmt.Println("downloading...", tc.PubFile)
+					if e := downloadFile(tc.PubFile, testKeyFilePath+"/"+tc.PubFile); e != nil {
+						t.Error(e)
+					}
 				}
-			}
 
-			if tc.TestNo == 13 || tc.TestNo == 15 {
-				// test with keys for RS256
-				fmt.Println("test with keys for RS256")
-				err = os.Setenv("JWT_ALG", "RS256")
-				if err != nil {
-					t.Errorf("got error '%v' when setting JWT_ALG for test no: '%v'", err, tc.TestNo)
+				// set the algorithm and key paths for this test
+				if e := os.Setenv("JWT_ALG", tc.Alg); e != nil {
+					t.Errorf("got error '%v' when setting JWT_ALG for test no: '%v'", e, tc.TestNo)
 				}
-			}
-
-			if tc.TestNo == 18 || tc.TestNo == 20 {
-				// test with wrong keys for ES256
-				fmt.Println("test with wrong keys for ES256")
-				err = os.Setenv("JWT_ALG", "ES256")
-				if err != nil {
-					t.Errorf("got error '%v' when setting JWT_ALG for test no: '%v'", err, tc.TestNo)
+				if e := os.Setenv("PRIV_KEY_FILE_PATH", tc.PrivPath); e != nil {
+					t.Errorf("got error '%v' when setting PRIV_KEY_FILE_PATH for test no: '%v'", e, tc.TestNo)
 				}
-			}
-
-			if tc.TestNo == 31 || tc.TestNo == 32 {
-				// test with wrong keys for EdDSA Ed25519
-				fmt.Println("test with wrong keys for EdDSA Ed25519")
-				err = os.Setenv("JWT_ALG", "EdDSA")
-				if err != nil {
-					t.Errorf("got error '%v' when setting JWT_ALG for test no: '%v'", err, tc.TestNo)
-				}
-			}
-
-			if tc.TestNo == 19 || tc.TestNo == 21 {
-				// test with wrong keys for RS256
-				fmt.Println("test with wrong keys for RS256")
-				err = os.Setenv("JWT_ALG", "RS256")
-				if err != nil {
-					t.Errorf("got error '%v' when setting JWT_ALG for test no: '%v'", err, tc.TestNo)
+				if e := os.Setenv("PUB_KEY_FILE_PATH", tc.PubPath); e != nil {
+					t.Errorf("got error '%v' when setting PUB_KEY_FILE_PATH for test no: '%v'", e, tc.TestNo)
 				}
 			}
 
@@ -1015,172 +1013,43 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 				}
 			}
 
-			if tc.TestNo == 10 || tc.TestNo == 11 {
-				if err == nil {
-					t.Errorf("expected error, got nil when setting %v", tc.Key)
+			// JWT key-file tests (asymmetric algorithms): asymmetric algorithms
+			// require both a private and a public key. ExpKeyErr marks the cases
+			// that must fail (missing/non-existent/mismatched keys).
+			if isKeyTest(tc.TestNo) {
+				if tc.ExpKeyErr {
+					if err == nil {
+						t.Errorf("expected error, got nil for test no: '%v'", tc.TestNo)
+					}
+				} else {
+					if err != nil {
+						t.Errorf("got error '%v' for test no: '%v'", err, tc.TestNo)
+					}
 				}
-			}
 
-			// test with keys for ES256
-			if tc.TestNo == 12 || tc.TestNo == 14 {
-				if err != nil {
-					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				// reset algorithm and key paths
+				if e := os.Setenv("JWT_ALG", "HS256"); e != nil {
+					t.Errorf("got error '%v' when resetting JWT_ALG for test no: '%v'", e, tc.TestNo)
 				}
-				// reset value
-				err = os.Setenv("JWT_ALG", "HS256")
-				if err != nil {
-					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				if e := os.Setenv("PRIV_KEY_FILE_PATH", ""); e != nil {
+					t.Errorf("got error '%v' when resetting PRIV_KEY_FILE_PATH for test no: '%v'", e, tc.TestNo)
 				}
-				err = os.Setenv("PRIV_KEY_FILE_PATH", "")
-				if err != nil {
-					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				if e := os.Setenv("PUB_KEY_FILE_PATH", ""); e != nil {
+					t.Errorf("got error '%v' when resetting PUB_KEY_FILE_PATH for test no: '%v'", e, tc.TestNo)
 				}
-				err = os.Setenv("PUB_KEY_FILE_PATH", "")
-				if err != nil {
-					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
-				}
-				// remove the downloaded file at the end of the test
-				fmt.Println("deleting...", tc.SetValue)
-				err = os.RemoveAll(tc.SetValue)
-				if err != nil {
-					t.Error(err)
-				}
-			}
 
-			// test with keys for EdDSA Ed25519
-			if tc.TestNo == 29 || tc.TestNo == 30 {
-				if err != nil {
-					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
+				// remove the downloaded key files at the end of the test
+				if tc.PrivFile != "" {
+					fmt.Println("deleting...", tc.PrivPath)
+					if e := os.RemoveAll(tc.PrivPath); e != nil {
+						t.Error(e)
+					}
 				}
-				// reset value
-				err = os.Setenv("JWT_ALG", "HS256")
-				if err != nil {
-					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
-				}
-				err = os.Setenv("PRIV_KEY_FILE_PATH", "")
-				if err != nil {
-					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
-				}
-				err = os.Setenv("PUB_KEY_FILE_PATH", "")
-				if err != nil {
-					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
-				}
-				// remove the downloaded file at the end of the test
-				fmt.Println("deleting...", tc.SetValue)
-				err = os.RemoveAll(tc.SetValue)
-				if err != nil {
-					t.Error(err)
-				}
-			}
-
-			// test with keys for RS256
-			if tc.TestNo == 13 || tc.TestNo == 15 {
-				if err != nil {
-					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
-				}
-				// reset value
-				err = os.Setenv("JWT_ALG", "HS256")
-				if err != nil {
-					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
-				}
-				err = os.Setenv("PRIV_KEY_FILE_PATH", "")
-				if err != nil {
-					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
-				}
-				err = os.Setenv("PUB_KEY_FILE_PATH", "")
-				if err != nil {
-					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
-				}
-				// remove the downloaded file at the end of the test
-				fmt.Println("deleting...", tc.SetValue)
-				err = os.RemoveAll(tc.SetValue)
-				if err != nil {
-					t.Error(err)
-				}
-			}
-
-			// fail test - without keys of ES256, EdDSA or RS256
-			if tc.TestNo == 16 || tc.TestNo == 17 {
-				if err == nil {
-					t.Errorf("expected error, got nil when setting '%v' for test no: '%v'", tc.Key, tc.TestNo)
-				}
-			}
-
-			// fail test with wrong keys for ES256
-			if tc.TestNo == 18 || tc.TestNo == 20 {
-				if err == nil {
-					t.Errorf("expected error, got nil when setting '%v' for test no: '%v'", tc.Key, tc.TestNo)
-				}
-				// reset value
-				err = os.Setenv("JWT_ALG", "HS256")
-				if err != nil {
-					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
-				}
-				err = os.Setenv("PRIV_KEY_FILE_PATH", "")
-				if err != nil {
-					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
-				}
-				err = os.Setenv("PUB_KEY_FILE_PATH", "")
-				if err != nil {
-					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
-				}
-				// remove the downloaded file at the end of the test
-				fmt.Println("deleting...", tc.SetValue)
-				err = os.RemoveAll(tc.SetValue)
-				if err != nil {
-					t.Error(err)
-				}
-			}
-
-			// fail test with wrong keys for EdDSA Ed25519
-			if tc.TestNo == 31 || tc.TestNo == 32 {
-				if err == nil {
-					t.Errorf("expected error, got nil when setting '%v' for test no: '%v'", tc.Key, tc.TestNo)
-				}
-				// reset value
-				err = os.Setenv("JWT_ALG", "HS256")
-				if err != nil {
-					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
-				}
-				err = os.Setenv("PRIV_KEY_FILE_PATH", "")
-				if err != nil {
-					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
-				}
-				err = os.Setenv("PUB_KEY_FILE_PATH", "")
-				if err != nil {
-					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
-				}
-				// remove the downloaded file at the end of the test
-				fmt.Println("deleting...", tc.SetValue)
-				err = os.RemoveAll(tc.SetValue)
-				if err != nil {
-					t.Error(err)
-				}
-			}
-
-			// fail test with wrong keys for RS256
-			if tc.TestNo == 19 || tc.TestNo == 21 {
-				if err == nil {
-					t.Errorf("expected error, got nil when setting '%v' for test no: '%v'", tc.Key, tc.TestNo)
-				}
-				// reset value
-				err = os.Setenv("JWT_ALG", "HS256")
-				if err != nil {
-					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
-				}
-				err = os.Setenv("PRIV_KEY_FILE_PATH", "")
-				if err != nil {
-					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
-				}
-				err = os.Setenv("PUB_KEY_FILE_PATH", "")
-				if err != nil {
-					t.Errorf("got error '%v' when setting '%v' for test no: '%v'", err, tc.Key, tc.TestNo)
-				}
-				// remove the downloaded file at the end of the test
-				fmt.Println("deleting...", tc.SetValue)
-				err = os.RemoveAll(tc.SetValue)
-				if err != nil {
-					t.Error(err)
+				if tc.PubFile != "" {
+					fmt.Println("deleting...", tc.PubPath)
+					if e := os.RemoveAll(tc.PubPath); e != nil {
+						t.Error(e)
+					}
 				}
 			}
 
@@ -1265,10 +1134,12 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 				}
 			}
 
-			// set old value
-			err = os.Setenv(tc.Key, currentValue)
-			if err != nil {
-				t.Errorf("got error '%v' when setting %v", err, tc.Key)
+			// set old value (key tests manage their own env, handled above)
+			if !isKeyTest(tc.TestNo) {
+				err = os.Setenv(tc.Key, currentValue)
+				if err != nil {
+					t.Errorf("got error '%v' when setting %v", err, tc.Key)
+				}
 			}
 		})
 	}
