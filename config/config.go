@@ -364,7 +364,7 @@ func security() (securityConfig SecurityConfig, err error) {
 			}
 		}
 
-		if strings.ToLower(strings.TrimSpace(os.Getenv("SERVE_JWT_AS_RESPONSE_BODY"))) != "no" {
+		if strings.ToLower(strings.TrimSpace(os.Getenv("SERVE_JWT_AS_RESPONSE_BODY"))) == "yes" {
 			securityConfig.ServeJwtAsResBody = true
 		}
 	}
