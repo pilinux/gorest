@@ -39,14 +39,17 @@ func SecureRandomNumber(totalDigit uint64) uint64 {
 	// the rejection-sampling loop.
 	span := new(big.Int).Add(new(big.Int).Sub(maxVal, minVal), big.NewInt(1))
 
-	var result *big.Int
-	for {
+	// Retry a bounded number of times so a persistent rand.Reader failure cannot
+	// hang the caller. crypto/rand effectively never fails on supported
+	// platforms, so this loop normally succeeds on the first attempt; on
+	// repeated failure we fall back to the 0 sentinel used for invalid input.
+	const maxAttempts = 5
+	for range maxAttempts {
 		x, err := rand.Int(rand.Reader, span)
 		if err == nil {
-			result = new(big.Int).Add(x, minVal)
-			break
+			return new(big.Int).Add(x, minVal).Uint64()
 		}
 	}
 
-	return result.Uint64()
+	return 0
 }
