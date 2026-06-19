@@ -23,6 +23,11 @@ func ValidateEmail(e string) bool {
 
 	parts := strings.Split(e, "@")
 	mx, err := net.LookupMX(parts[1])
+	// Note: RFC 5321 §5.1 allows a sender to fall back to the domain's A/AAAA
+	// record when no MX record exists (implicit MX). gorest intentionally does
+	// not support this fallback: modern mail servers rely almost exclusively on
+	// MX records, so a domain that accepts mail only via an implicit A/AAAA
+	// record is highly suspicious today and is treated as invalid here.
 	if err != nil || len(mx) == 0 {
 		return false
 	}
