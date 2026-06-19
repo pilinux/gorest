@@ -2,7 +2,6 @@ package lib
 
 import (
 	"crypto/rand"
-	"math"
 	"math/big"
 )
 
@@ -17,8 +16,19 @@ func SecureRandomNumber(totalDigit uint64) uint64 {
 
 	var result *big.Int
 
-	minVal := big.NewInt(int64(math.Pow(10, float64(totalDigit)-1)))
-	maxVal := big.NewInt(int64(math.Pow(10, float64(totalDigit)) - 1))
+	// Compute the bounds with big.Int.Exp for exact powers of ten. Using
+	// math.Pow + int64 loses precision for totalDigit >= 16, since float64
+	// only has 53-bit integer precision, and overflows int64 for
+	// totalDigit >= 19. Both yield invalid bounds (a garbage or non-positive
+	// maxVal), which can make rand.Int panic.
+	ten := big.NewInt(10)
+	// minVal = 10^(totalDigit-1)
+	minVal := new(big.Int).Exp(ten, new(big.Int).SetUint64(totalDigit-1), nil)
+	// maxVal = 10^totalDigit - 1
+	maxVal := new(big.Int).Sub(
+		new(big.Int).Exp(ten, new(big.Int).SetUint64(totalDigit), nil),
+		big.NewInt(1),
+	)
 
 	for {
 		x, err := rand.Int(rand.Reader, maxVal)
