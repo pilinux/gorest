@@ -44,37 +44,19 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
 
-	// is key available in redis
-	result := 0
-	if err := client.Do(ctx, radix.FlatCmd(&result, "EXISTS", data.key)); err != nil {
+	// atomically fetch and delete the code so it can only be consumed once
+	// (GETDEL prevents a concurrent replay between read and delete)
+	if err := client.Do(ctx, radix.FlatCmd(&data.value, "GETDEL", data.key)); err != nil {
 		log.WithError(err).Error("error code: 1061.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 
-	if result == 0 {
+	if data.value == "" {
 		httpResponse.Message = "wrong/expired verification code"
 		httpStatusCode = http.StatusBadRequest
 		return
-	}
-
-	// find key in redis
-	if err := client.Do(ctx, radix.FlatCmd(&data.value, "GET", data.key)); err != nil {
-		log.WithError(err).Error("error code: 1061.2")
-		httpResponse.Message = "internal server error"
-		httpStatusCode = http.StatusInternalServerError
-		return
-	}
-
-	// delete key from redis
-	result = 0
-	if err := client.Do(ctx, radix.FlatCmd(&result, "DEL", data.key)); err != nil {
-		log.WithError(err).Error("error code: 1061.3")
-	}
-	if result == 0 {
-		err := errors.New("failed to delete recovery key from redis")
-		log.WithError(err).Error("error code: 1061.4")
 	}
 
 	// update verification status in database
@@ -237,37 +219,19 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
 
-	// is key available in redis
-	result := 0
-	if err := client.Do(ctx, radix.FlatCmd(&result, "EXISTS", data.key)); err != nil {
+	// atomically fetch and delete the code so it can only be consumed once
+	// (GETDEL prevents a concurrent replay between read and delete)
+	if err := client.Do(ctx, radix.FlatCmd(&data.value, "GETDEL", data.key)); err != nil {
 		log.WithError(err).Error("error code: 1063.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 
-	if result == 0 {
+	if data.value == "" {
 		httpResponse.Message = "wrong/expired verification code"
 		httpStatusCode = http.StatusBadRequest
 		return
-	}
-
-	// find key in redis
-	if err := client.Do(ctx, radix.FlatCmd(&data.value, "GET", data.key)); err != nil {
-		log.WithError(err).Error("error code: 1063.2")
-		httpResponse.Message = "internal server error"
-		httpStatusCode = http.StatusInternalServerError
-		return
-	}
-
-	// delete key from redis
-	result = 0
-	if err := client.Do(ctx, radix.FlatCmd(&result, "DEL", data.key)); err != nil {
-		log.WithError(err).Error("error code: 1063.3")
-	}
-	if result == 0 {
-		err := errors.New("failed to delete recovery key from redis")
-		log.WithError(err).Error("error code: 1063.4")
 	}
 
 	// update user email in database
