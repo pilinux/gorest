@@ -4,7 +4,6 @@ package controller
 
 import (
 	"net/http"
-	"reflect"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -28,7 +27,7 @@ func GetUser(c *gin.Context) {
 
 	resp, statusCode := handler.GetUser(id)
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	if _, ok := resp.Message.(string); ok {
 		grenderer.Render(c, resp, statusCode)
 		return
 	}
@@ -49,7 +48,7 @@ func CreateUser(c *gin.Context) {
 
 	resp, statusCode := handler.CreateUser(userIDAuth, user)
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	if _, ok := resp.Message.(string); ok {
 		grenderer.Render(c, resp, statusCode)
 		return
 	}
@@ -70,7 +69,7 @@ func UpdateUser(c *gin.Context) {
 
 	resp, statusCode := handler.UpdateUser(userIDAuth, user)
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	if _, ok := resp.Message.(string); ok {
 		grenderer.Render(c, resp, statusCode)
 		return
 	}
@@ -91,7 +90,7 @@ func AddHobby(c *gin.Context) {
 
 	resp, statusCode := handler.AddHobby(userIDAuth, hobby)
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	if _, ok := resp.Message.(string); ok {
 		grenderer.Render(c, resp, statusCode)
 		return
 	}

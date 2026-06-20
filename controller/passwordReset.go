@@ -2,7 +2,6 @@ package controller
 
 import (
 	"net/http"
-	"reflect"
 
 	"github.com/gin-gonic/gin"
 
@@ -137,7 +136,7 @@ func PasswordRecover(c *gin.Context) {
 
 	resp, statusCode := handler.PasswordRecover(payload)
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	if _, ok := resp.Message.(string); ok {
 		renderer.Render(c, resp, statusCode)
 		return
 	}

@@ -2,7 +2,6 @@ package controller
 
 import (
 	"net/http"
-	"reflect"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -94,7 +93,7 @@ func Login(c *gin.Context) {
 		}
 	}
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	if _, ok := resp.Message.(string); ok {
 		renderer.Render(c, resp, statusCode)
 		return
 	}
@@ -190,7 +189,7 @@ func Refresh(c *gin.Context) {
 		}
 	}
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	if _, ok := resp.Message.(string); ok {
 		renderer.Render(c, resp, statusCode)
 		return
 	}

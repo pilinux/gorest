@@ -3,7 +3,6 @@ package controller
 import (
 	"fmt"
 	"net/http"
-	"reflect"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -150,7 +149,7 @@ func Activate2FA(c *gin.Context) {
 		}
 	}
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	if _, ok := resp.Message.(string); ok {
 		renderer.Render(c, resp, statusCode)
 		return
 	}
@@ -249,7 +248,7 @@ func Validate2FA(c *gin.Context) {
 		}
 	}
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	if _, ok := resp.Message.(string); ok {
 		renderer.Render(c, resp, statusCode)
 		return
 	}
@@ -346,7 +345,7 @@ func Deactivate2FA(c *gin.Context) {
 		}
 	}
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	if _, ok := resp.Message.(string); ok {
 		renderer.Render(c, resp, statusCode)
 		return
 	}

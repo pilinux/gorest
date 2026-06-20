@@ -2,7 +2,6 @@ package controller
 
 import (
 	"net/http"
-	"reflect"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +22,7 @@ func MongoCreateOne(c *gin.Context) {
 
 	resp, statusCode := handler.MongoCreateOne(data)
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	if _, ok := resp.Message.(string); ok {
 		grenderer.Render(c, resp, statusCode)
 		return
 	}
@@ -44,7 +43,7 @@ func MongoGetByID(c *gin.Context) {
 
 	resp, statusCode := handler.MongoGetByID(id)
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	if _, ok := resp.Message.(string); ok {
 		grenderer.Render(c, resp, statusCode)
 		return
 	}
@@ -79,7 +78,7 @@ func MongoUpdateByID(c *gin.Context) {
 
 	resp, statusCode := handler.MongoUpdateByID(req)
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	if _, ok := resp.Message.(string); ok {
 		grenderer.Render(c, resp, statusCode)
 		return
 	}
@@ -97,7 +96,7 @@ func MongoDeleteFieldByID(c *gin.Context) {
 
 	resp, statusCode := handler.MongoDeleteFieldByID(req)
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	if _, ok := resp.Message.(string); ok {
 		grenderer.Render(c, resp, statusCode)
 		return
 	}

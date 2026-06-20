@@ -3,7 +3,6 @@ package controller
 import (
 	"fmt"
 	"net/http"
-	"reflect"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -52,7 +51,7 @@ func CreatePost(c *gin.Context) {
 
 	resp, statusCode := handler.CreatePost(userIDAuth, post)
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	if _, ok := resp.Message.(string); ok {
 		grenderer.Render(c, resp, statusCode)
 		return
 	}
@@ -74,7 +73,7 @@ func UpdatePost(c *gin.Context) {
 
 	resp, statusCode := handler.UpdatePost(userIDAuth, id, post)
 
-	if reflect.TypeOf(resp.Message).Kind() == reflect.String {
+	if _, ok := resp.Message.(string); ok {
 		grenderer.Render(c, resp, statusCode)
 		return
 	}
