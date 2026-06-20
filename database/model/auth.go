@@ -35,6 +35,12 @@ const (
 	PasswordRecoveryKeyPrefix  string = "gorest-pass-recover-" // #nosec G101 —- Redis key prefix only; contains no secret credentials
 )
 
+// Password recovery is stored as a Redis hash.
+const (
+	PasswordRecoveryFieldEmail    string = "email"    // hash field holding the (hashed) email
+	PasswordRecoveryFieldAttempts string = "attempts" // hash field holding the failed-attempt count
+)
+
 // Auth represents the auths table.
 type Auth struct {
 	AuthID      uint64         `gorm:"primaryKey" json:"authID,omitempty"`

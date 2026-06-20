@@ -23,6 +23,34 @@ import (
 	"github.com/pilinux/gorest/service"
 )
 
+// maxRecoveryAttempts is the number of failed 2FA recovery-key verifications
+// allowed per password-recovery secret code. Once reached, the secret code is
+// invalidated (deleted from Redis) and the user must request a new one.
+const maxRecoveryAttempts = 3
+
+// limitRecoveryAttempt records a failed 2FA recovery-key verification for the
+// given password-recovery secret code. The attempt counter lives in the same
+// Redis hash as the secret code (field "attempts"), so it shares the code's TTL
+// and lifecycle (HINCRBY does not reset the key's expiry). Once the counter
+// reaches maxRecoveryAttempts it deletes the whole hash, invalidating the secret
+// code. It returns true if this attempt invalidated the secret code.
+func limitRecoveryAttempt(ctx context.Context, client radix.Client, secretKey string) (invalidated bool, err error) {
+	attempts := 0
+	if err = client.Do(ctx, radix.FlatCmd(&attempts, "HINCRBY", secretKey,
+		model.PasswordRecoveryFieldAttempts, "1")); err != nil {
+		return false, err
+	}
+
+	if attempts >= maxRecoveryAttempts {
+		if err = client.Do(ctx, radix.FlatCmd(nil, "DEL", secretKey)); err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+
+	return false, nil
+}
+
 // PasswordForgot starts the password recovery flow.
 //
 // It validates the email, ensures the account exists and is email-verified, and
@@ -142,8 +170,9 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 		return
 	}
 
-	// find key in redis
-	if err := client.Do(ctx, radix.FlatCmd(&data.value, "GET", data.key)); err != nil {
+	// find key in redis (email value is stored in the hash field)
+	if err := client.Do(ctx, radix.FlatCmd(&data.value, "HGET", data.key,
+		model.PasswordRecoveryFieldEmail)); err != nil {
 		log.WithError(err).Error("error code: 1021.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
@@ -255,6 +284,18 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 				// first verification: signature will fail for wrong recovery key
 				uuidPlaintextByte, err := lib.Decrypt(uuidCipherByte, hashRecoveryKey)
 				if err != nil {
+					invalidated, e := limitRecoveryAttempt(ctx, client, data.key)
+					if e != nil {
+						log.WithError(e).Error("error code: 1022.3")
+						httpResponse.Message = "internal server error"
+						httpStatusCode = http.StatusInternalServerError
+						return
+					}
+					if invalidated {
+						httpResponse.Message = "too many failed attempts, request a new recovery code"
+						httpStatusCode = http.StatusUnauthorized
+						return
+					}
 					httpResponse.Message = "invalid recovery key"
 					httpStatusCode = http.StatusUnauthorized
 					return
@@ -262,7 +303,7 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 				// hash of decrypted uuid secret
 				uuidPlaintextSHA, err := service.GetHash(uuidPlaintextByte)
 				if err != nil {
-					log.WithError(err).Error("error code: 1022.3")
+					log.WithError(err).Error("error code: 1022.4")
 					httpResponse.Message = "internal server error"
 					httpStatusCode = http.StatusInternalServerError
 					return
@@ -270,6 +311,18 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 				// second verification: compare
 				uuidPlaintextBase64 := base64.StdEncoding.EncodeToString(uuidPlaintextSHA)
 				if uuidPlaintextBase64 != twoFA.UUIDSHA {
+					invalidated, e := limitRecoveryAttempt(ctx, client, data.key)
+					if e != nil {
+						log.WithError(e).Error("error code: 1022.5")
+						httpResponse.Message = "internal server error"
+						httpStatusCode = http.StatusInternalServerError
+						return
+					}
+					if invalidated {
+						httpResponse.Message = "too many failed attempts, request a new recovery code"
+						httpStatusCode = http.StatusUnauthorized
+						return
+					}
 					httpResponse.Message = "invalid recovery key"
 					httpStatusCode = http.StatusUnauthorized
 					return

@@ -22,6 +22,15 @@ import (
 	"github.com/pilinux/libgo/timestring"
 )
 
+// passRecoverStoreScript stores the password-recovery secret as a Redis hash and
+// sets its TTL in a single atomic step, so the code can never exist without an
+// expiry. KEYS[1]=key, ARGV[1]=email field, ARGV[2]=value, ARGV[3]=ttl seconds.
+// It returns the result of EXPIRE (1 on success).
+var passRecoverStoreScript = radix.NewEvalScript(`
+redis.call('HSET', KEYS[1], ARGV[1], ARGV[2])
+return redis.call('EXPIRE', KEYS[1], ARGV[3])
+`)
+
 // GetClaims returns JWT custom claims.
 func GetClaims(c *gin.Context) middleware.MyCustomClaims {
 	// get claims
@@ -182,15 +191,33 @@ func SendEmail(email string, emailType int, opts ...string) (bool, error) {
 	// Set key and TTL atomically so a verification/recovery secret can never
 	// exist in Redis without an expiry (a non-expiring code widens the window
 	// for brute-force/replay).
-	r1 := ""
-	if err := client.Do(ctx, radix.FlatCmd(&r1, "SET", data.key, data.value,
-		"EX", strconv.FormatUint(keyTTL, 10))); err != nil {
-		log.WithError(err).Error("error code: 401")
-		return false, err
-	}
-	if r1 != "OK" {
-		log.Error("error code: 402")
-		return false, errors.New("failed to save in redis")
+	if emailType == model.EmailTypePassRecovery {
+		// store password recovery as a hash (so the email value and the
+		// failed-attempt counter share one key and one TTL) and set the TTL
+		// atomically via a Lua script
+		expireSet := 0
+		if err := client.Do(ctx, passRecoverStoreScript.Cmd(&expireSet,
+			[]string{data.key},
+			model.PasswordRecoveryFieldEmail, data.value,
+			strconv.FormatUint(keyTTL, 10))); err != nil {
+			log.WithError(err).Error("error code: 401.1")
+			return false, err
+		}
+		if expireSet != 1 {
+			log.Error("error code: 401.2")
+			return false, errors.New("failed to save in redis")
+		}
+	} else {
+		r1 := ""
+		if err := client.Do(ctx, radix.FlatCmd(&r1, "SET", data.key, data.value,
+			"EX", strconv.FormatUint(keyTTL, 10))); err != nil {
+			log.WithError(err).Error("error code: 401.3")
+			return false, err
+		}
+		if r1 != "OK" {
+			log.Error("error code: 401.4")
+			return false, errors.New("failed to save in redis")
+		}
 	}
 
 	// check which email service
