@@ -21,6 +21,9 @@ func Render(c *gin.Context, data any, statusCode int, htmlTpl ...string) {
 
 		// Server HTML
 		if strings.Contains(reqType, "text/html") {
+			// apply the status code before handing off to the template
+			// middleware so error pages are not served as HTTP 200
+			c.Status(statusCode)
 			c.Set("template", htmlTpl[0])
 			c.Set("data", structs.Map(data))
 			return
