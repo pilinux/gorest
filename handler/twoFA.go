@@ -781,6 +781,9 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 		}
 	}
 
+	// clear any lingering in-memory 2FA secret for this account
+	service.DelMem2FA(claims.AuthID)
+
 	// generate new tokens
 	accessJWT, _, err := middleware.GetJWT(claims, "access")
 	if err != nil {
