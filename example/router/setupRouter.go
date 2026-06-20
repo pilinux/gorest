@@ -195,30 +195,31 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			}
 
 			// Update/reset password
-			rPass := v1.Group("password")
-			// Reset forgotten password
+			// Reset forgotten password - public routes
 			if gconfig.IsEmailService() {
+				rPassPublic := v1.Group("password")
 				// send password recovery email
-				rPass.POST("forgot", gcontroller.PasswordForgot)
+				rPassPublic.POST("forgot", gcontroller.PasswordForgot)
 				// recover account and set new password
-				rPass.POST("reset", gcontroller.PasswordRecover)
+				rPassPublic.POST("reset", gcontroller.PasswordRecover)
 			}
-			rPass.Use(gmiddleware.JWT()).Use(gservice.JWTBlacklistChecker())
+			// Change password while logged in - protected routes
+			rPassAuth := v1.Group("password")
+			rPassAuth.Use(gmiddleware.JWT()).Use(gservice.JWTBlacklistChecker())
 			if gconfig.Is2FA() {
-				rPass.Use(gmiddleware.TwoFA(
+				rPassAuth.Use(gmiddleware.TwoFA(
 					configure.Security.TwoFA.Status.On,
 					configure.Security.TwoFA.Status.Off,
 					configure.Security.TwoFA.Status.Verified,
 				))
 			}
-			// change password while logged in
-			rPass.POST("edit", gcontroller.PasswordUpdate)
+			rPassAuth.POST("edit", gcontroller.PasswordUpdate)
 
-			// Change existing email
+			// Change existing email - protected routes
 			rEmail := v1.Group("email")
 			rEmail.Use(gmiddleware.JWT()).Use(gservice.JWTBlacklistChecker())
 			if gconfig.Is2FA() {
-				rPass.Use(gmiddleware.TwoFA(
+				rEmail.Use(gmiddleware.TwoFA(
 					configure.Security.TwoFA.Status.On,
 					configure.Security.TwoFA.Status.Off,
 					configure.Security.TwoFA.Status.Verified,
@@ -232,36 +233,40 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			rEmail.POST("resend-verification-email", gcontroller.ResendVerificationCodeToModifyActiveEmail)
 
 			// User
-			rUsers := v1.Group("users")
-			rUsers.GET("", controller.GetUsers)    // Non-protected
-			rUsers.GET("/:id", controller.GetUser) // Non-protected
-			rUsers.Use(gmiddleware.JWT()).Use(gservice.JWTBlacklistChecker())
+			rUsersPublic := v1.Group("users")
+			rUsersPublic.GET("", controller.GetUsers)    // Non-protected
+			rUsersPublic.GET("/:id", controller.GetUser) // Non-protected
+
+			rUsersAuth := v1.Group("users")
+			rUsersAuth.Use(gmiddleware.JWT()).Use(gservice.JWTBlacklistChecker())
 			if gconfig.Is2FA() {
-				rUsers.Use(gmiddleware.TwoFA(
+				rUsersAuth.Use(gmiddleware.TwoFA(
 					configure.Security.TwoFA.Status.On,
 					configure.Security.TwoFA.Status.Off,
 					configure.Security.TwoFA.Status.Verified,
 				))
 			}
-			rUsers.POST("", controller.CreateUser)      // Protected
-			rUsers.PUT("", controller.UpdateUser)       // Protected
-			rUsers.PUT("/hobbies", controller.AddHobby) // Protected
+			rUsersAuth.POST("", controller.CreateUser)      // Protected
+			rUsersAuth.PUT("", controller.UpdateUser)       // Protected
+			rUsersAuth.PUT("/hobbies", controller.AddHobby) // Protected
 
 			// Post
-			rPosts := v1.Group("posts")
-			rPosts.GET("", controller.GetPosts)    // Non-protected
-			rPosts.GET("/:id", controller.GetPost) // Non-protected
-			rPosts.Use(gmiddleware.JWT()).Use(gservice.JWTBlacklistChecker())
+			rPostsPublic := v1.Group("posts")
+			rPostsPublic.GET("", controller.GetPosts)    // Non-protected
+			rPostsPublic.GET("/:id", controller.GetPost) // Non-protected
+
+			rPostsAuth := v1.Group("posts")
+			rPostsAuth.Use(gmiddleware.JWT()).Use(gservice.JWTBlacklistChecker())
 			if gconfig.Is2FA() {
-				rPosts.Use(gmiddleware.TwoFA(
+				rPostsAuth.Use(gmiddleware.TwoFA(
 					configure.Security.TwoFA.Status.On,
 					configure.Security.TwoFA.Status.Off,
 					configure.Security.TwoFA.Status.Verified,
 				))
 			}
-			rPosts.POST("", controller.CreatePost)       // Protected
-			rPosts.PUT("/:id", controller.UpdatePost)    // Protected
-			rPosts.DELETE("/:id", controller.DeletePost) // Protected
+			rPostsAuth.POST("", controller.CreatePost)       // Protected
+			rPostsAuth.PUT("/:id", controller.UpdatePost)    // Protected
+			rPostsAuth.DELETE("/:id", controller.DeletePost) // Protected
 
 			// Hobby
 			rHobbies := v1.Group("hobbies")

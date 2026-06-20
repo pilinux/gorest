@@ -170,30 +170,31 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			}
 
 			// Update/reset password
-			rPass := v1.Group("password")
-			// Reset forgotten password
+			// Reset forgotten password - public routes
 			if gconfig.IsEmailService() {
+				rPassPublic := v1.Group("password")
 				// send password recovery email
-				rPass.POST("forgot", gcontroller.PasswordForgot)
+				rPassPublic.POST("forgot", gcontroller.PasswordForgot)
 				// recover account and set new password
-				rPass.POST("reset", gcontroller.PasswordRecover)
+				rPassPublic.POST("reset", gcontroller.PasswordRecover)
 			}
-			rPass.Use(gmiddleware.JWT()).Use(gservice.JWTBlacklistChecker())
+			// Change password while logged in - protected routes
+			rPassAuth := v1.Group("password")
+			rPassAuth.Use(gmiddleware.JWT()).Use(gservice.JWTBlacklistChecker())
 			if gconfig.Is2FA() {
-				rPass.Use(gmiddleware.TwoFA(
+				rPassAuth.Use(gmiddleware.TwoFA(
 					configure.Security.TwoFA.Status.On,
 					configure.Security.TwoFA.Status.Off,
 					configure.Security.TwoFA.Status.Verified,
 				))
 			}
-			// change password while logged in
-			rPass.POST("edit", gcontroller.PasswordUpdate)
+			rPassAuth.POST("edit", gcontroller.PasswordUpdate)
 
-			// Change existing email
+			// Change existing email - protected routes
 			rEmail := v1.Group("email")
 			rEmail.Use(gmiddleware.JWT()).Use(gservice.JWTBlacklistChecker())
 			if gconfig.Is2FA() {
-				rPass.Use(gmiddleware.TwoFA(
+				rEmail.Use(gmiddleware.TwoFA(
 					configure.Security.TwoFA.Status.On,
 					configure.Security.TwoFA.Status.Off,
 					configure.Security.TwoFA.Status.Verified,
@@ -217,62 +218,68 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 			userSrv := service.NewUserService(userRepo, postRepo, hobbyRepo)
 			userAPI := handler.NewUserAPI(userSrv)
 
-			rUsers := v1.Group("users")
-			rUsers.GET("", userAPI.GetUsers)    // Not protected
-			rUsers.GET("/:id", userAPI.GetUser) // Not protected
-			rUsers.Use(gmiddleware.JWT())
-			rUsers.Use(gservice.JWTBlacklistChecker())
+			rUsersPublic := v1.Group("users")
+			rUsersPublic.GET("", userAPI.GetUsers)    // Not protected
+			rUsersPublic.GET("/:id", userAPI.GetUser) // Not protected
+
+			rUsersAuth := v1.Group("users")
+			rUsersAuth.Use(gmiddleware.JWT())
+			rUsersAuth.Use(gservice.JWTBlacklistChecker())
 			if gconfig.Is2FA() {
-				rUsers.Use(gmiddleware.TwoFA(
+				rUsersAuth.Use(gmiddleware.TwoFA(
 					configure.Security.TwoFA.Status.On,
 					configure.Security.TwoFA.Status.Off,
 					configure.Security.TwoFA.Status.Verified,
 				))
 			}
-			rUsers.POST("", userAPI.CreateUser)   // Protected
-			rUsers.PUT("", userAPI.UpdateUser)    // Protected
-			rUsers.DELETE("", userAPI.DeleteUser) // Protected, irreversible
+			rUsersAuth.POST("", userAPI.CreateUser)   // Protected
+			rUsersAuth.PUT("", userAPI.UpdateUser)    // Protected
+			rUsersAuth.DELETE("", userAPI.DeleteUser) // Protected, irreversible
 
 			// Post
 			postSrv := service.NewPostService(postRepo, userRepo)
 			postAPI := handler.NewPostAPI(postSrv)
 
-			rPosts := v1.Group("posts")
-			rPosts.GET("", postAPI.GetPosts)    // Not protected
-			rPosts.GET("/:id", postAPI.GetPost) // Not protected
-			rPosts.Use(gmiddleware.JWT())
-			rPosts.Use(gservice.JWTBlacklistChecker())
+			rPostsPublic := v1.Group("posts")
+			rPostsPublic.GET("", postAPI.GetPosts)    // Not protected
+			rPostsPublic.GET("/:id", postAPI.GetPost) // Not protected
+
+			rPostsAuth := v1.Group("posts")
+			rPostsAuth.Use(gmiddleware.JWT())
+			rPostsAuth.Use(gservice.JWTBlacklistChecker())
 			if gconfig.Is2FA() {
-				rPosts.Use(gmiddleware.TwoFA(
+				rPostsAuth.Use(gmiddleware.TwoFA(
 					configure.Security.TwoFA.Status.On,
 					configure.Security.TwoFA.Status.Off,
 					configure.Security.TwoFA.Status.Verified,
 				))
 			}
-			rPosts.POST("", postAPI.CreatePost)                // Protected
-			rPosts.PUT("/:id", postAPI.UpdatePost)             // Protected
-			rPosts.DELETE("/:id", postAPI.DeletePost)          // Protected
-			rPosts.DELETE("all", postAPI.DeleteAllPostsOfUser) // Protected
+			rPostsAuth.POST("", postAPI.CreatePost)                // Protected
+			rPostsAuth.PUT("/:id", postAPI.UpdatePost)             // Protected
+			rPostsAuth.DELETE("/:id", postAPI.DeletePost)          // Protected
+			rPostsAuth.DELETE("all", postAPI.DeleteAllPostsOfUser) // Protected
 
 			// Hobby
 			hobbySrv := service.NewHobbyService(hobbyRepo, userRepo)
 			hobbyAPI := handler.NewHobbyAPI(hobbySrv)
 
-			rHobbies := v1.Group("hobbies")
-			rHobbies.GET("", hobbyAPI.GetHobbies)   // Not protected
-			rHobbies.GET("/:id", hobbyAPI.GetHobby) // Not protected
-			rHobbies.Use(gmiddleware.JWT())
-			rHobbies.Use(gservice.JWTBlacklistChecker())
+			rHobbiesPublic := v1.Group("hobbies")
+			rHobbiesPublic.GET("", hobbyAPI.GetHobbies)   // Not protected
+			rHobbiesPublic.GET("/:id", hobbyAPI.GetHobby) // Not protected
+
+			rHobbiesAuth := v1.Group("hobbies")
+			rHobbiesAuth.Use(gmiddleware.JWT())
+			rHobbiesAuth.Use(gservice.JWTBlacklistChecker())
 			if gconfig.Is2FA() {
-				rHobbies.Use(gmiddleware.TwoFA(
+				rHobbiesAuth.Use(gmiddleware.TwoFA(
 					configure.Security.TwoFA.Status.On,
 					configure.Security.TwoFA.Status.Off,
 					configure.Security.TwoFA.Status.Verified,
 				))
 			}
-			rHobbies.GET("me", hobbyAPI.GetHobbiesMe)             // Protected
-			rHobbies.POST("", hobbyAPI.AddHobbyToUser)            // Protected
-			rHobbies.DELETE("/:id", hobbyAPI.DeleteHobbyFromUser) // Protected
+			rHobbiesAuth.GET("me", hobbyAPI.GetHobbiesMe)             // Protected
+			rHobbiesAuth.POST("", hobbyAPI.AddHobbyToUser)            // Protected
+			rHobbiesAuth.DELETE("/:id", hobbyAPI.DeleteHobbyFromUser) // Protected
 		}
 
 		// REDIS Playground - kv
