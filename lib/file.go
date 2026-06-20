@@ -5,6 +5,8 @@
 package lib
 
 import (
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,8 +14,9 @@ import (
 
 // package-level indirections so tests can inject failures
 var (
-	filepathAbs = filepath.Abs
-	filepathRel = filepath.Rel
+	filepathAbs          = filepath.Abs
+	filepathRel          = filepath.Rel
+	filepathEvalSymlinks = filepath.EvalSymlinks
 )
 
 // FileExist returns true only if the file exists and is stat-able.
@@ -44,8 +47,20 @@ func ValidatePath(fullPath, allowedDir string) (string, error) {
 		return "", err
 	}
 
-	// check if absPath is within absPathAllowedDir
-	relPath, err := filepathRel(absPathAllowedDir, absPath)
+	// resolve symbolic links before the containment check so that a link
+	// inside allowedDir (or its tree) cannot point the path outside the
+	// allowed directory while still looking lexically "inside" it
+	realAllowedDir, err := resolveSymlinks(absPathAllowedDir)
+	if err != nil {
+		return "", err
+	}
+	realPath, err := resolveSymlinks(absPath)
+	if err != nil {
+		return "", err
+	}
+
+	// check if the resolved path is within the resolved allowed directory
+	relPath, err := filepathRel(realAllowedDir, realPath)
 	if err != nil {
 		return "", err
 	}
@@ -55,5 +70,34 @@ func ValidatePath(fullPath, allowedDir string) (string, error) {
 		return "", os.ErrInvalid
 	}
 
+	// NOTE: the returned path is validated but opened separately by the
+	// caller, leaving a residual TOCTOU window if a path component is
+	// replaced with a symlink between validation and use.
 	return absPath, nil
+}
+
+// resolveSymlinks returns path with the symbolic links in its existing
+// components resolved. The final target may not exist yet (e.g. a file about
+// to be created), so it resolves the deepest existing ancestor and re-attaches
+// the remaining, not-yet-existing components.
+func resolveSymlinks(path string) (string, error) {
+	resolved, err := filepathEvalSymlinks(path)
+	if err == nil {
+		return resolved, nil
+	}
+	if !errors.Is(err, fs.ErrNotExist) {
+		return "", err
+	}
+
+	parent := filepath.Dir(path)
+	if parent == path {
+		// reached the filesystem root; nothing left to resolve
+		return path, nil
+	}
+
+	resolvedParent, err := resolveSymlinks(parent)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(resolvedParent, filepath.Base(path)), nil
 }

@@ -122,6 +122,84 @@ func TestValidatePath(t *testing.T) {
 	}
 }
 
+// TestValidatePath_Symlink tests that ValidatePath resolves symbolic links
+// so that a link inside allowedDir which points outside the allowed tree is
+// rejected, while a link that stays inside is accepted.
+func TestValidatePath_Symlink(t *testing.T) {
+	baseDir := t.TempDir()
+	allowedDir := filepath.Join(baseDir, "allowed")
+	outsideDir := filepath.Join(baseDir, "outside")
+	for _, d := range []string{allowedDir, outsideDir} {
+		if err := os.MkdirAll(d, 0750); err != nil {
+			t.Fatalf("failed to create dir %s: %v", d, err)
+		}
+	}
+
+	// a symlink inside allowedDir that escapes to outsideDir
+	escapeLink := filepath.Join(allowedDir, "escape")
+	if err := os.Symlink(outsideDir, escapeLink); err != nil {
+		t.Skipf("symlinks not supported on this platform: %v", err)
+	}
+
+	// a symlink inside allowedDir that points to a subdir within allowedDir
+	innerDir := filepath.Join(allowedDir, "inner")
+	if err := os.MkdirAll(innerDir, 0750); err != nil {
+		t.Fatalf("failed to create inner dir: %v", err)
+	}
+	stayLink := filepath.Join(allowedDir, "stay")
+	if err := os.Symlink(innerDir, stayLink); err != nil {
+		t.Fatalf("failed to create stay symlink: %v", err)
+	}
+
+	tests := []struct {
+		name        string
+		fullPath    string
+		expectError bool
+	}{
+		{
+			name:        "symlink escaping allowed dir is rejected",
+			fullPath:    filepath.Join(escapeLink, "evil.txt"),
+			expectError: true,
+		},
+		{
+			name:        "symlink staying inside allowed dir is accepted",
+			fullPath:    filepath.Join(stayLink, "file.txt"),
+			expectError: false,
+		},
+	}
+
+	for i := range tests {
+		tt := tests[i]
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := lib.ValidatePath(tt.fullPath, allowedDir)
+			if tt.expectError && err == nil {
+				t.Errorf("expected error for %q, got nil", tt.fullPath)
+			}
+			if !tt.expectError && err != nil {
+				t.Errorf("expected no error for %q, got %v", tt.fullPath, err)
+			}
+		})
+	}
+}
+
+// TestValidatePath_EvalSymlinksError tests that ValidatePath surfaces a
+// non-"not exist" error returned while resolving symlinks.
+func TestValidatePath_EvalSymlinksError(t *testing.T) {
+	errEval := fmt.Errorf("eval symlinks error")
+	restore := lib.SetFilepathEvalSymlinks(func(_ string) (string, error) {
+		return "", errEval
+	})
+	defer restore()
+
+	result, err := lib.ValidatePath("/allowed/file.txt", "/allowed")
+	if result != "" {
+		t.Errorf("expected empty result, got %q", result)
+	}
+	if !errors.Is(err, errEval) {
+		t.Errorf("expected eval symlinks error, got %v", err)
+	}
+}
+
 // TestValidatePath_AbsAllowedDirError tests that ValidatePath returns an
 // error when filepath.Abs fails for the allowedDir argument.
 func TestValidatePath_AbsAllowedDirError(t *testing.T) {

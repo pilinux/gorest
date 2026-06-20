@@ -18,8 +18,17 @@ func SetFilepathRel(fn func(string, string) (string, error)) func() {
 	return func() { filepathRel = orig }
 }
 
+// SetFilepathEvalSymlinks replaces the internal filepathEvalSymlinks function
+// and returns a restore function. Intended for use in tests only.
+func SetFilepathEvalSymlinks(fn func(string) (string, error)) func() {
+	orig := filepathEvalSymlinks
+	filepathEvalSymlinks = fn
+	return func() { filepathEvalSymlinks = orig }
+}
+
 // ResetFilepathFuncs restores all filepath indirections to their defaults.
 func ResetFilepathFuncs() {
 	filepathAbs = filepath.Abs
 	filepathRel = filepath.Rel
+	filepathEvalSymlinks = filepath.EvalSymlinks
 }
