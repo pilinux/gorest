@@ -40,17 +40,9 @@ func Logout(jtiAccess, jtiRefresh string, expAccess, expRefresh int64) (httpResp
 		jwtAccess.Key = config.PrefixJtiBlacklist + jtiAccess
 		jwtAccess.Value = strconv.FormatInt(expAccess, 10)
 
-		// set key in Redis
-		if err := client.Do(ctx, radix.FlatCmd(nil, "SET", jwtAccess.Key, jwtAccess.Value)); err != nil {
+		// set key and TTL atomically to avoid a TTL-less entry on crash
+		if err := client.Do(ctx, radix.FlatCmd(nil, "SET", jwtAccess.Key, jwtAccess.Value, "EXAT", jwtAccess.Value)); err != nil {
 			log.WithError(err).Error("error code: 1016.1")
-			httpResponse.Message = "internal server error"
-			httpStatusCode = http.StatusInternalServerError
-			return
-		}
-
-		// set TTL
-		if err := client.Do(ctx, radix.FlatCmd(nil, "EXPIREAT", jwtAccess.Key, expAccess)); err != nil {
-			log.WithError(err).Error("error code: 1016.2")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -61,17 +53,9 @@ func Logout(jtiAccess, jtiRefresh string, expAccess, expRefresh int64) (httpResp
 		jwtRefresh.Key = config.PrefixJtiBlacklist + jtiRefresh
 		jwtRefresh.Value = strconv.FormatInt(expRefresh, 10)
 
-		// set key in Redis
-		if err := client.Do(ctx, radix.FlatCmd(nil, "SET", jwtRefresh.Key, jwtRefresh.Value)); err != nil {
+		// set key and TTL atomically to avoid a TTL-less entry on crash
+		if err := client.Do(ctx, radix.FlatCmd(nil, "SET", jwtRefresh.Key, jwtRefresh.Value, "EXAT", jwtRefresh.Value)); err != nil {
 			log.WithError(err).Error("error code: 1016.3")
-			httpResponse.Message = "internal server error"
-			httpStatusCode = http.StatusInternalServerError
-			return
-		}
-
-		// set TTL
-		if err := client.Do(ctx, radix.FlatCmd(nil, "EXPIREAT", jwtRefresh.Key, expRefresh)); err != nil {
-			log.WithError(err).Error("error code: 1016.4")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
