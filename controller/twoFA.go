@@ -485,5 +485,10 @@ func ValidateBackup2FA(c *gin.Context) {
 		}
 	}
 
-	renderer.Render(c, resp, statusCode)
+	if _, ok := resp.Message.(string); ok {
+		renderer.Render(c, resp, statusCode)
+		return
+	}
+
+	renderer.Render(c, resp.Message, statusCode)
 }
