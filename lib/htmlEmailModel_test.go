@@ -24,6 +24,16 @@ func TestStrArrHTMLModel(t *testing.T) {
 			"title: My Page; body: Welcome to my page!; footer: Copyright 2023",
 			[]string{"title", "My Page", "body", "Welcome to my page!", "footer", "Copyright 2023"},
 		},
+		{
+			// values may contain ":" (e.g. a URL); split on the first ":" only
+			"product_url:https://github.com/pilinux/gorest;product_name:gorest;company_name:pilinux;company_address:Country",
+			[]string{
+				"product_url", "https://github.com/pilinux/gorest",
+				"product_name", "gorest",
+				"company_name", "pilinux",
+				"company_address", "Country",
+			},
+		},
 	}
 
 	for i := range testCases {

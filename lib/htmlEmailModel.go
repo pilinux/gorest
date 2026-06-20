@@ -14,7 +14,9 @@ func StrArrHTMLModel(s string) []string {
 
 	for seg := range strings.SplitSeq(s, ";") {
 		seg = strings.TrimSpace(seg)
-		if k, v, ok := strings.Cut(seg, ":"); ok && !strings.Contains(v, ":") {
+		// split on the first ":" only, so values may themselves contain ":"
+		// (e.g. a URL like https://example.com)
+		if k, v, ok := strings.Cut(seg, ":"); ok {
 			out = append(out, strings.TrimSpace(k), strings.TrimSpace(v))
 		}
 	}
