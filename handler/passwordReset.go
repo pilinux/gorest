@@ -296,9 +296,13 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 				}
 
 				// step 6: generate new recovery key
-				keyRecovery := uuid.NewString()
-				keyRecovery = strings.ReplaceAll(keyRecovery, "-", "")
-				keyRecovery = keyRecovery[len(keyRecovery)-configSecurity.TwoFA.Digits:]
+				keyRecovery, err := service.GenerateCode(configSecurity.TwoFA.Digits)
+				if err != nil {
+					log.WithError(err).Error("error code: 1024.0")
+					httpResponse.Message = "internal server error"
+					httpStatusCode = http.StatusInternalServerError
+					return
+				}
 				keyRecoveryHash, err := service.GetHash([]byte(keyRecovery))
 				if err != nil {
 					log.WithError(err).Error("error code: 1024.1")

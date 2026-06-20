@@ -331,9 +331,13 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 	}
 
 	// step 6: generate recovery key
-	keyRecovery := uuid.NewString()
-	keyRecovery = strings.ReplaceAll(keyRecovery, "-", "")
-	keyRecovery = keyRecovery[len(keyRecovery)-configSecurity.TwoFA.Digits:]
+	keyRecovery, err := service.GenerateCode(configSecurity.TwoFA.Digits)
+	if err != nil {
+		log.WithError(err).Error("error code: 1052.60")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	keyRecoveryHash, err := service.GetHash([]byte(keyRecovery))
 	if err != nil {
 		log.WithError(err).Error("error code: 1052.61")
