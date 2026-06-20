@@ -343,17 +343,16 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 	auth.EmailNonce = tempEmail.EmailNonce
 	auth.EmailHash = tempEmail.EmailHash
 
-	// delete data from 'temp_emails'
+	// delete 'temp_emails' and update 'auths' in a single transaction so the
+	// pending request and the live email change commit or roll back together
 	tx := db.Begin()
 	if err := tx.Delete(&tempEmail).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Error("error code: 1063.8")
-	} else {
-		tx.Commit()
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
 	}
-
-	// update data in 'auths'
-	tx = db.Begin()
 	if err := tx.Save(&auth).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Error("error code: 1063.9")
