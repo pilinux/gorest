@@ -17,7 +17,7 @@ import (
 func Firewall(listType string, ipList string) gin.HandlerFunc {
 	// parse the IP list once at construction time so each middleware instance
 	// keeps its own state instead of sharing package-level globals
-	ipNets, ipListMap, ipCIDR := parseIPList(listType, ipList)
+	ipNets, ipListMap, ipCIDR, wildcard := parseIPList(listType, ipList)
 
 	return func(c *gin.Context) {
 		// get the real client IP
@@ -28,7 +28,7 @@ func Firewall(listType string, ipList string) gin.HandlerFunc {
 		}
 		clientIP := clientNetIP.String()
 
-		if !strings.Contains(ipList, "*") {
+		if !wildcard {
 			if listType == "whitelist" {
 				var allowIP bool
 				if len(ipListMap) > 0 {
@@ -72,7 +72,7 @@ func Firewall(listType string, ipList string) gin.HandlerFunc {
 			}
 		}
 
-		if strings.Contains(ipList, "*") {
+		if wildcard {
 			if listType == "blacklist" {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, "IP blocked")
 				return
@@ -84,7 +84,7 @@ func Firewall(listType string, ipList string) gin.HandlerFunc {
 }
 
 // helper function to parse the IP list and CIDR notations
-func parseIPList(listType, ipList string) (ipNets []*net.IPNet, ipListMap map[string]bool, ipCIDR bool) {
+func parseIPList(listType, ipList string) (ipNets []*net.IPNet, ipListMap map[string]bool, ipCIDR bool, wildcard bool) {
 	ipListMap = make(map[string]bool)
 
 	// split the list by comma and trim spaces
@@ -92,6 +92,11 @@ func parseIPList(listType, ipList string) (ipNets []*net.IPNet, ipListMap map[st
 	for ip := range ipSeq {
 		ip = strings.TrimSpace(ip)
 		if ip == "" {
+			continue
+		}
+		// only an exact "*" entry means match-all
+		if ip == "*" {
+			wildcard = true
 			continue
 		}
 		if strings.Contains(ip, "/") {
@@ -124,7 +129,7 @@ func parseIPList(listType, ipList string) (ipNets []*net.IPNet, ipListMap map[st
 
 	fmt.Println("application firewall initialized")
 	if listType == "whitelist" {
-		if strings.Contains(validIPs, "*") {
+		if wildcard {
 			fmt.Println("whitelisted IPs: *")
 		} else {
 			if len(validIPs) > 0 {
@@ -136,7 +141,7 @@ func parseIPList(listType, ipList string) (ipNets []*net.IPNet, ipListMap map[st
 		}
 	}
 	if listType == "blacklist" {
-		if strings.Contains(validIPs, "*") {
+		if wildcard {
 			fmt.Println("blacklisted IPs: *")
 		} else {
 			if len(validIPs) > 0 {
@@ -148,5 +153,5 @@ func parseIPList(listType, ipList string) (ipNets []*net.IPNet, ipListMap map[st
 		}
 	}
 
-	return ipNets, ipListMap, ipCIDR
+	return ipNets, ipListMap, ipCIDR, wildcard
 }
