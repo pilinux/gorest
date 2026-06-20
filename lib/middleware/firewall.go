@@ -9,27 +9,17 @@ import (
 	"net"
 	"net/http"
 	"strings"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 )
 
-// firewall package-level variables
-var (
-	parsedOnce sync.Once
-	ipNets     []*net.IPNet
-	ipListMap  map[string]bool
-	ipCIDR     bool
-)
-
 // Firewall applies whitelist/blacklist IP filtering.
 func Firewall(listType string, ipList string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// parse the IP list only once
-		parsedOnce.Do(func() {
-			parseIPList(listType, ipList)
-		})
+	// parse the IP list once at construction time so each middleware instance
+	// keeps its own state instead of sharing package-level globals
+	ipNets, ipListMap, ipCIDR := parseIPList(listType, ipList)
 
+	return func(c *gin.Context) {
 		// get the real client IP
 		clientNetIP := net.ParseIP(c.ClientIP())
 		if clientNetIP == nil {
@@ -94,7 +84,7 @@ func Firewall(listType string, ipList string) gin.HandlerFunc {
 }
 
 // helper function to parse the IP list and CIDR notations
-func parseIPList(listType, ipList string) {
+func parseIPList(listType, ipList string) (ipNets []*net.IPNet, ipListMap map[string]bool, ipCIDR bool) {
 	ipListMap = make(map[string]bool)
 
 	// split the list by comma and trim spaces
@@ -157,12 +147,6 @@ func parseIPList(listType, ipList string) {
 			}
 		}
 	}
-}
 
-// ResetFirewallState resets firewall package-level variables.
-func ResetFirewallState() {
-	parsedOnce = sync.Once{}
-	ipNets = nil
-	ipListMap = nil
-	ipCIDR = false
+	return ipNets, ipListMap, ipCIDR
 }

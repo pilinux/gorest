@@ -263,9 +263,6 @@ func TestFirewall(t *testing.T) {
 	for i := range testCases {
 		tc := testCases[i]
 		t.Run("TestCase"+tc.testNo, func(t *testing.T) {
-			// reset firewall state between test cases
-			middleware.ResetFirewallState()
-
 			// set up a gin router and handler
 			gin.SetMode(gin.TestMode)
 			router := gin.New()
