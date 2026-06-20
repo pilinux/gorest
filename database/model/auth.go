@@ -32,13 +32,20 @@ const (
 const (
 	EmailVerificationKeyPrefix string = "gorest-email-verification-"
 	EmailUpdateKeyPrefix       string = "gorest-email-update-"
-	PasswordRecoveryKeyPrefix  string = "gorest-pass-recover-" // #nosec G101 —- Redis key prefix only; contains no secret credentials
+	PasswordRecoveryKeyPrefix  string = "gorest-pass-recover-"     // #nosec G101 —- Redis key prefix only; contains no secret credentials
+	Backup2FALimitKeyPrefix    string = "gorest-2fa-backup-limit-" // #nosec G101 —- Redis key prefix only; contains no secret credentials
 )
 
 // Password recovery is stored as a Redis hash.
 const (
 	PasswordRecoveryFieldEmail    string = "email"    // hash field holding the (hashed) email
 	PasswordRecoveryFieldAttempts string = "attempts" // hash field holding the failed-attempt count
+)
+
+// 2FA backup-code brute-force limiter is stored as a Redis hash.
+const (
+	Backup2FAFieldAttempts      string = "attempts"       // hash field holding the failed-attempt count
+	Backup2FAFieldCooldownUntil string = "cooldown_until" // hash field holding the unix time until which attempts are blocked
 )
 
 // Auth represents the auths table.

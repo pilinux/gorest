@@ -980,6 +980,20 @@ func ValidateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthP
 		return
 	}
 
+	// brute-force limiter: reject while the account is in cooldown
+	cooldown, err := service.Backup2FACooldown(claims.AuthID)
+	if err != nil {
+		log.WithError(err).Error("error code: 1056.0")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+	if cooldown > 0 {
+		httpResponse.Message = "too many failed attempts, try again in " + cooldown.Round(time.Second).String()
+		httpStatusCode = http.StatusTooManyRequests
+		return
+	}
+
 	// retrieve existing 2FA backup codes
 	db := database.GetDB()
 	twoFABackup := []model.TwoFABackup{}
@@ -1021,9 +1035,28 @@ func ValidateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthP
 	}
 
 	if !isOtpValid {
+		// record the failure and apply the escalating cooldown
+		cooldown, e := service.RegisterBackup2FAFailure(claims.AuthID)
+		if e != nil {
+			log.WithError(e).Error("error code: 1056.21")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
+		}
+		if cooldown > 0 {
+			httpResponse.Message = "too many failed attempts, try again in " + cooldown.Round(time.Second).String()
+			httpStatusCode = http.StatusTooManyRequests
+			return
+		}
+
 		httpResponse.Message = "invalid 2-fa backup code"
 		httpStatusCode = http.StatusBadRequest
 		return
+	}
+
+	// valid code: clear the brute-force limiter state
+	if err := service.ClearBackup2FALimit(claims.AuthID); err != nil {
+		log.WithError(err).Error("error code: 1056.22")
 	}
 
 	// delete used code from database
