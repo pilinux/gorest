@@ -36,7 +36,11 @@ func Logout(jtiAccess, jtiRefresh string, expAccess, expRefresh int64) (httpResp
 	jwtAccess := model.KeyValue{}
 	jwtRefresh := model.KeyValue{}
 
-	if len(jtiAccess) > 0 {
+	now := time.Now().Unix()
+
+	// only blacklist tokens that are still valid; an already-expired token cannot
+	// be used and writing it with a past EXAT would drop the key immediately
+	if len(jtiAccess) > 0 && expAccess > now {
 		jwtAccess.Key = config.PrefixJtiBlacklist + jtiAccess
 		jwtAccess.Value = strconv.FormatInt(expAccess, 10)
 
@@ -49,7 +53,7 @@ func Logout(jtiAccess, jtiRefresh string, expAccess, expRefresh int64) (httpResp
 		}
 	}
 
-	if len(jtiRefresh) > 0 {
+	if len(jtiRefresh) > 0 && expRefresh > now {
 		jwtRefresh.Key = config.PrefixJtiBlacklist + jtiRefresh
 		jwtRefresh.Value = strconv.FormatInt(expRefresh, 10)
 
