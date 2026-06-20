@@ -309,8 +309,57 @@ func (s *UserService) DeleteUser(ctx context.Context, authID uint64) (httpRespon
 		return
 	}
 
-	// delete the user's posts
-	if err := s.postRepo.DeletePostsByUserID(ctx, user.UserID); err != nil {
+	// delete the user profile and every associated record (posts, hobbies,
+	// 2FA, 2FA backup codes, temp email, auth) in a single transaction so the
+	// cascade is all-or-nothing: if any step fails, nothing is committed and no
+	// orphaned/half-deleted rows remain.
+	err = gdb.GetDB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		postRepo := repo.NewPostRepo(tx)
+		hobbyRepo := repo.NewHobbyRepo(tx)
+		userRepo := repo.NewUserRepo(tx)
+		authRepo := repo.NewAuthRepo(tx)
+		tempEmailRepo := repo.NewTempEmailRepo(tx)
+		twoFARepo := repo.NewTwoFARepo(tx)
+		twoFABackupRepo := repo.NewTwoFABackupRepo(tx)
+
+		// delete the user's posts
+		if err := postRepo.DeletePostsByUserID(ctx, user.UserID); err != nil {
+			return err
+		}
+
+		// delete the user's hobbies
+		if err := hobbyRepo.DeleteHobbiesFromUser(ctx, user); err != nil {
+			return err
+		}
+
+		// delete the user profile
+		if err := userRepo.DeleteUser(ctx, user.UserID); err != nil {
+			return err
+		}
+
+		// delete all 2fa backup codes for the user
+		if err := twoFABackupRepo.DeleteTwoFABackup(ctx, authID); err != nil {
+			return err
+		}
+
+		// delete the 2fa record for the user
+		if err := twoFARepo.DeleteTwoFA(ctx, authID); err != nil {
+			return err
+		}
+
+		// delete the temporary email for the user
+		if err := tempEmailRepo.DeleteTempEmail(ctx, authID); err != nil {
+			return err
+		}
+
+		// delete the auth record for the user
+		if err := authRepo.DeleteAuth(ctx, authID); err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
 		if errors.Is(err, context.Canceled) {
 			httpResponse.Message = "request canceled"
 			httpStatusCode = http.StatusRequestTimeout
@@ -321,85 +370,6 @@ func (s *UserService) DeleteUser(ctx context.Context, authID uint64) (httpRespon
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
-	}
-
-	// delete the user's hobbies
-	if err := s.hobbyRepo.DeleteHobbiesFromUser(ctx, user); err != nil {
-		if errors.Is(err, context.Canceled) {
-			httpResponse.Message = "request canceled"
-			httpStatusCode = http.StatusRequestTimeout
-			return
-		}
-
-		log.WithError(err).Error("DeleteUser.s.3")
-		httpResponse.Message = "internal server error"
-		httpStatusCode = http.StatusInternalServerError
-		return
-	}
-
-	// delete the user profile
-	if err := s.userRepo.DeleteUser(ctx, user.UserID); err != nil {
-		if errors.Is(err, context.Canceled) {
-			httpResponse.Message = "request canceled"
-			httpStatusCode = http.StatusRequestTimeout
-			return
-		}
-
-		log.WithError(err).Error("DeleteUser.s.4")
-		httpResponse.Message = "internal server error"
-		httpStatusCode = http.StatusInternalServerError
-		return
-	}
-
-	// start deleting all auth-related data
-	db := gdb.GetDB()
-	authRepo := repo.NewAuthRepo(db)
-	tempEmailRepo := repo.NewTempEmailRepo(db)
-	twoFARepo := repo.NewTwoFARepo(db)
-	twoFABackupRepo := repo.NewTwoFABackupRepo(db)
-
-	// delete all 2fa backup codes for the user
-	if err := twoFABackupRepo.DeleteTwoFABackup(ctx, authID); err != nil {
-		if errors.Is(err, context.Canceled) {
-			httpResponse.Message = "request canceled"
-			httpStatusCode = http.StatusRequestTimeout
-			return
-		}
-
-		log.WithError(err).Error("DeleteUser.s.5")
-	}
-
-	// delete the 2fa record for the user
-	if err := twoFARepo.DeleteTwoFA(ctx, authID); err != nil {
-		if errors.Is(err, context.Canceled) {
-			httpResponse.Message = "request canceled"
-			httpStatusCode = http.StatusRequestTimeout
-			return
-		}
-
-		log.WithError(err).Error("DeleteUser.s.6")
-	}
-
-	// delete the temporary email for the user
-	if err := tempEmailRepo.DeleteTempEmail(ctx, authID); err != nil {
-		if errors.Is(err, context.Canceled) {
-			httpResponse.Message = "request canceled"
-			httpStatusCode = http.StatusRequestTimeout
-			return
-		}
-
-		log.WithError(err).Error("DeleteUser.s.7")
-	}
-
-	// delete the auth record for the user
-	if err := authRepo.DeleteAuth(ctx, authID); err != nil {
-		if errors.Is(err, context.Canceled) {
-			httpResponse.Message = "request canceled"
-			httpStatusCode = http.StatusRequestTimeout
-			return
-		}
-
-		log.WithError(err).Error("DeleteUser.s.8")
 	}
 
 	httpResponse.Message = "user deleted successfully"
