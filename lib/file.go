@@ -5,8 +5,6 @@
 package lib
 
 import (
-	"errors"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,14 +16,12 @@ var (
 	filepathRel = filepath.Rel
 )
 
-// FileExist returns true if the file exists,
-// otherwise returns false.
+// FileExist returns true only if the file exists and is stat-able.
+// Any error (including ambiguous ones such as permission or I/O errors)
+// yields false, since existence cannot be confirmed.
 func FileExist(path string) bool {
-	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
-		return false
-	}
-
-	return true
+	_, err := os.Stat(path)
+	return err == nil
 }
 
 // ValidatePath validates the given path to prevent directory traversal attacks.
