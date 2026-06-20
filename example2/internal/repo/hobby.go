@@ -25,6 +25,7 @@ func NewHobbyRepo(conn *gorm.DB) *HobbyRepo {
 type HobbyRepository interface {
 	GetHobbies(ctx context.Context) ([]model.Hobby, error)
 	GetHobbiesByUserID(ctx context.Context, userID uint64) ([]model.Hobby, error)
+	GetHobbiesByUserIDs(ctx context.Context, userIDs []uint64) (map[uint64][]model.Hobby, error)
 	GetHobby(ctx context.Context, hobbyID uint64) (*model.Hobby, error)
 	AddHobbyToUser(ctx context.Context, hobby *model.Hobby, user *model.User) error
 	DeleteHobbyFromUser(ctx context.Context, hobbyID uint64, user *model.User) error
@@ -56,6 +57,27 @@ func (r *HobbyRepo) GetHobbiesByUserID(ctx context.Context, userID uint64) ([]mo
 		return nil, gorm.ErrRecordNotFound
 	}
 	return user.Hobbies, nil
+}
+
+// GetHobbiesByUserIDs returns hobbies for the given userIDs grouped by user ID,
+// loaded in a single preloaded query to avoid per-user (N+1) lookups.
+func (r *HobbyRepo) GetHobbiesByUserIDs(ctx context.Context, userIDs []uint64) (map[uint64][]model.Hobby, error) {
+	grouped := make(map[uint64][]model.Hobby)
+	if len(userIDs) == 0 {
+		return grouped, nil
+	}
+
+	var users []model.User
+	if err := r.db.WithContext(ctx).Preload("Hobbies").Where("user_id IN ?", userIDs).Find(&users).Error; err != nil {
+		return nil, err
+	}
+
+	for _, user := range users {
+		if len(user.Hobbies) > 0 {
+			grouped[user.UserID] = user.Hobbies
+		}
+	}
+	return grouped, nil
 }
 
 // GetHobby retrieves a hobby by its ID.

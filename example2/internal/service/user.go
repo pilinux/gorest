@@ -54,31 +54,39 @@ func (s *UserService) GetUsers(ctx context.Context) (httpResponse gmodel.HTTPRes
 		return
 	}
 
-	// fetch posts for each user
-	for j, user := range users {
-		posts, err := s.postRepo.GetPostsByUserID(ctx, user.UserID)
-		if err == nil {
-			users[j].Posts = posts
-		} else if errors.Is(err, context.Canceled) {
+	// collect user IDs to batch-load related data
+	userIDs := make([]uint64, len(users))
+	for j := range users {
+		userIDs[j] = users[j].UserID
+	}
+
+	// fetch posts for all users in a single query (avoids N+1)
+	postsByUser, err := s.postRepo.GetPostsByUserIDs(ctx, userIDs)
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
 			httpResponse.Message = "request canceled"
 			httpStatusCode = http.StatusRequestTimeout
 			return
-		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-			log.WithError(err).Error("GetUsers.s.2")
+		}
+		log.WithError(err).Error("GetUsers.s.2")
+	} else {
+		for j := range users {
+			users[j].Posts = postsByUser[users[j].UserID]
 		}
 	}
 
-	// fetch hobbies for each user
-	for j, user := range users {
-		hobbies, err := s.hobbyRepo.GetHobbiesByUserID(ctx, user.UserID)
-		if err == nil {
-			users[j].Hobbies = hobbies
-		} else if errors.Is(err, context.Canceled) {
+	// fetch hobbies for all users in a single query (avoids N+1)
+	hobbiesByUser, err := s.hobbyRepo.GetHobbiesByUserIDs(ctx, userIDs)
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
 			httpResponse.Message = "request canceled"
 			httpStatusCode = http.StatusRequestTimeout
 			return
-		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-			log.WithError(err).Error("GetUsers.s.3")
+		}
+		log.WithError(err).Error("GetUsers.s.3")
+	} else {
+		for j := range users {
+			users[j].Hobbies = hobbiesByUser[users[j].UserID]
 		}
 	}
 

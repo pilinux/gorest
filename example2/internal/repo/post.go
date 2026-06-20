@@ -28,6 +28,7 @@ type PostRepository interface {
 	CountPosts(ctx context.Context) (int64, error)
 	GetPost(ctx context.Context, postID uint64) (*model.Post, error)
 	GetPostsByUserID(ctx context.Context, userID uint64) ([]model.Post, error)
+	GetPostsByUserIDs(ctx context.Context, userIDs []uint64) (map[uint64][]model.Post, error)
 	CreatePost(ctx context.Context, post *model.Post) error
 	UpdatePost(ctx context.Context, post *model.Post) error
 	DeletePost(ctx context.Context, postID uint64) error
@@ -90,6 +91,25 @@ func (r *PostRepo) GetPostsByUserID(ctx context.Context, userID uint64) ([]model
 		return nil, err
 	}
 	return posts, nil
+}
+
+// GetPostsByUserIDs returns posts for the given userIDs grouped by user ID,
+// loaded in a single query to avoid per-user (N+1) lookups.
+func (r *PostRepo) GetPostsByUserIDs(ctx context.Context, userIDs []uint64) (map[uint64][]model.Post, error) {
+	grouped := make(map[uint64][]model.Post)
+	if len(userIDs) == 0 {
+		return grouped, nil
+	}
+
+	var posts []model.Post
+	if err := r.db.WithContext(ctx).Where("id_user IN ?", userIDs).Find(&posts).Error; err != nil {
+		return nil, err
+	}
+
+	for _, post := range posts {
+		grouped[post.IDUser] = append(grouped[post.IDUser], post)
+	}
+	return grouped, nil
 }
 
 // CreatePost creates a new post in the database.
