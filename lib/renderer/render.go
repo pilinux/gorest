@@ -25,7 +25,12 @@ func Render(c *gin.Context, data any, statusCode int, htmlTpl ...string) {
 			// middleware so error pages are not served as HTTP 200
 			c.Status(statusCode)
 			c.Set("template", htmlTpl[0])
-			c.Set("data", structs.Map(data))
+			// structs.Map panics on non-struct data; pass such values through
+			model := data
+			if structs.IsStruct(data) {
+				model = structs.Map(data)
+			}
+			c.Set("data", model)
 			return
 		}
 	}
