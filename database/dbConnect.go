@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -163,28 +164,37 @@ func InitDB() *gorm.DB {
 	case "postgres":
 		dsn := uri
 		if dsn == "" {
-			address := "host=" + host
-			if port != "" {
-				address += " port=" + port
-			}
-			dsn = address + " user=" + username + " dbname=" + database + " password=" + password + " TimeZone=" + timeZone
 			if sslmode == "" {
 				sslmode = "disable"
 			}
+			// build the keyword/value DSN with each value quoted/escaped so
+			// that credentials containing spaces, quotes or backslashes do
+			// not truncate or alter the connection parameters
+			pairs := []string{"host=" + quotePostgresDSNValue(host)}
+			if port != "" {
+				pairs = append(pairs, "port="+quotePostgresDSNValue(port))
+			}
+			pairs = append(pairs,
+				"user="+quotePostgresDSNValue(username),
+				"dbname="+quotePostgresDSNValue(database),
+				"password="+quotePostgresDSNValue(password),
+				"TimeZone="+quotePostgresDSNValue(timeZone),
+			)
 			if sslmode != "disable" {
 				if configureDB.Ssl.RootCA != "" {
-					dsn += " sslrootcert=" + configureDB.Ssl.RootCA
+					pairs = append(pairs, "sslrootcert="+quotePostgresDSNValue(configureDB.Ssl.RootCA))
 				} else if configureDB.Ssl.ServerCert != "" {
-					dsn += " sslrootcert=" + configureDB.Ssl.ServerCert
+					pairs = append(pairs, "sslrootcert="+quotePostgresDSNValue(configureDB.Ssl.ServerCert))
 				}
 				if configureDB.Ssl.ClientCert != "" {
-					dsn += " sslcert=" + configureDB.Ssl.ClientCert
+					pairs = append(pairs, "sslcert="+quotePostgresDSNValue(configureDB.Ssl.ClientCert))
 				}
 				if configureDB.Ssl.ClientKey != "" {
-					dsn += " sslkey=" + configureDB.Ssl.ClientKey
+					pairs = append(pairs, "sslkey="+quotePostgresDSNValue(configureDB.Ssl.ClientKey))
 				}
 			}
-			dsn += " sslmode=" + sslmode
+			pairs = append(pairs, "sslmode="+quotePostgresDSNValue(sslmode))
+			dsn = strings.Join(pairs, " ")
 		}
 
 		sqlDB, err = sqlOpen("pgx", dsn)
@@ -245,6 +255,16 @@ func InitDB() *gorm.DB {
 // GetDB returns the current database connection.
 func GetDB() *gorm.DB {
 	return dbClient
+}
+
+// quotePostgresDSNValue quotes and escapes a value for the libpq
+// keyword/value DSN format. Single quotes and backslashes are escaped
+// with a backslash and the value is wrapped in single quotes so that
+// spaces, quotes or backslashes cannot truncate or alter parameters.
+func quotePostgresDSNValue(v string) string {
+	v = strings.ReplaceAll(v, `\`, `\\`)
+	v = strings.ReplaceAll(v, `'`, `\'`)
+	return "'" + v + "'"
 }
 
 // InitRedis initializes the Redis client connection.

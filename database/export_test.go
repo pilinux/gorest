@@ -66,3 +66,8 @@ func SetMongoClient(c *mongo.Client) {
 func ResetMongoClient() {
 	mongoClient = nil
 }
+
+// QuotePostgresDSNValue exposes quotePostgresDSNValue for testing.
+func QuotePostgresDSNValue(v string) string {
+	return quotePostgresDSNValue(v)
+}
