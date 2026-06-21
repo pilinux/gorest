@@ -63,8 +63,14 @@ var errConfigNotInitialized = errors.New("config is not initialized")
 // error-path testing via export_test.go.
 var sqlOpen = sql.Open
 
-// protect CloseAllDB from concurrent calls
-var closeAllOnce sync.Once
+// closeAllMu serializes CloseAllDB against concurrent calls, and
+// allDBClosed records whether every connection has been closed
+// successfully. allDBClosed is only set once all closers succeed, so a
+// call that hit an error can be retried later instead of being a no-op.
+var (
+	closeAllMu  sync.Mutex
+	allDBClosed bool
+)
 
 // InitDB initializes the database connection.
 func InitDB() *gorm.DB {
@@ -389,25 +395,26 @@ func GetMongo() *mongo.Client {
 }
 
 // CloseAllDB closes all database connections.
+//
+// Every closer is attempted regardless of individual failures and the
+// errors are aggregated, so a single failing closer cannot leak the
+// remaining connections. The connections are only marked closed once
+// all closers succeed; if any fails, a later call retries the ones that
+// are still open.
 func CloseAllDB() error {
-	var err error
-	closeAllOnce.Do(func() {
-		err = CloseSQL()
-		if err != nil {
-			return
-		}
+	closeAllMu.Lock()
+	defer closeAllMu.Unlock()
 
-		err = CloseRedis()
-		if err != nil {
-			return
-		}
+	if allDBClosed {
+		return nil
+	}
 
-		err = CloseMongo()
-		if err != nil {
-			return
-		}
-	})
-	return err
+	if err := errors.Join(CloseSQL(), CloseRedis(), CloseMongo()); err != nil {
+		return err
+	}
+
+	allDBClosed = true
+	return nil
 }
 
 // CloseSQL closes the SQL database connection.

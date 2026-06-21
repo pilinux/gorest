@@ -67,6 +67,14 @@ func ResetMongoClient() {
 	mongoClient = nil
 }
 
+// ResetCloseAllOnce resets the state used by CloseAllDB so it
+// performs its work again in subsequent tests.
+func ResetCloseAllOnce() {
+	closeAllMu.Lock()
+	defer closeAllMu.Unlock()
+	allDBClosed = false
+}
+
 // QuotePostgresDSNValue exposes quotePostgresDSNValue for testing.
 func QuotePostgresDSNValue(v string) string {
 	return quotePostgresDSNValue(v)
