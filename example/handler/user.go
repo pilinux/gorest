@@ -2,10 +2,13 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 
 	gdatabase "github.com/pilinux/gorest/database"
 	gmodel "github.com/pilinux/gorest/database/model"
@@ -56,9 +59,23 @@ func GetUser(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	posts := []model.Post{}
 	hobbies := []model.Hobby{}
 
-	if err := db.Where("user_id = ?", id).First(&user).Error; err != nil {
-		httpResponse.Message = "user not found"
-		httpStatusCode = http.StatusNotFound
+	userID, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		httpResponse.Message = "invalid userID format"
+		httpStatusCode = http.StatusBadRequest
+		return
+	}
+
+	if err := db.Where("user_id = ?", userID).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			httpResponse.Message = "user not found"
+			httpStatusCode = http.StatusNotFound
+			return
+		}
+
+		log.WithError(err).Error("error code: 1102")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 
