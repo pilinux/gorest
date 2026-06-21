@@ -157,17 +157,17 @@ func TestInitSentryLogLevel(t *testing.T) {
 
 	// test case 2: when v[0] is "production", log level should be InfoLevel
 	t.Run("Log level production", func(t *testing.T) {
-		testLogLevel("https://username@sentry.io/project-id", []string{"production"}, log.InfoLevel, t)
+		testLogLevel(os.Getenv("TEST_SENTRY_DSN"), []string{"production"}, log.InfoLevel, t)
 	})
 
 	// test case 3: when v[0] is not "production", log level should be TraceLevel
 	t.Run("Log level non-production", func(t *testing.T) {
-		testLogLevel("https://username@sentry.io/project-id", []string{"development"}, log.TraceLevel, t)
+		testLogLevel(os.Getenv("TEST_SENTRY_DSN"), []string{"development"}, log.TraceLevel, t)
 	})
 
 	// test case 4: when v is empty, log level should default to TraceLevel
 	t.Run("Log level default", func(t *testing.T) {
-		testLogLevel("https://username@sentry.io/project-id", []string{}, log.TraceLevel, t)
+		testLogLevel(os.Getenv("TEST_SENTRY_DSN"), []string{}, log.TraceLevel, t)
 	})
 }
 
@@ -375,7 +375,7 @@ func TestSentryCaptureRecoversPanic(t *testing.T) {
 	}
 
 	middleware.DestroySentry()
-	if _, err := middleware.InitSentry(testDSN, "production"); err != nil {
+	if _, err := middleware.InitSentry(os.Getenv("TEST_SENTRY_DSN"), "production"); err != nil {
 		t.Fatalf("failed to initialize sentry: %v", err)
 	}
 	t.Cleanup(middleware.DestroySentry)
