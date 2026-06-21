@@ -237,10 +237,14 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 	// current time
 	timeNow := time.Now()
 
+	// twoFA holds the user's 2FA secrets; twoFAUpdated records whether they
+	// were rotated and must be persisted together with the new password below
+	twoFA := model.TwoFA{}
+	twoFAUpdated := false
+
 	// is OTP required
 	if configSecurity.Must2FA == config.Activated {
 		authPayload.RecoveryKey = lib.RemoveAllSpace(authPayload.RecoveryKey)
-		twoFA := model.TwoFA{}
 		// is user account protected by 2FA
 		err := db.Where("id_auth = ?", auth.AuthID).First(&twoFA).Error
 		if err != nil {
@@ -418,29 +422,50 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 				twoFA.KeySalt = base64.StdEncoding.EncodeToString(salt)
 				twoFA.UUIDEnc = base64.StdEncoding.EncodeToString(uuidEncByte)
 
-				// update DB
+				// stage 2FA updates; they are persisted together with the new
+				// password below, only after the recovery code is consumed
 				twoFA.UpdatedAt = timeNow
 				twoFA.UUIDSHA = uuidSHAStr
-
-				tx := db.Begin()
-				if err := tx.Save(&twoFA).Error; err != nil {
-					tx.Rollback()
-					log.WithError(err).Error("error code: 1024.7")
-					httpResponse.Message = "internal server error"
-					httpStatusCode = http.StatusInternalServerError
-					return
-				}
-				tx.Commit()
+				twoFAUpdated = true
 
 				response.RecoveryKey = keyRecovery
 			}
 		}
 	}
 
+	// atomically consume the one-time recovery code before writing any
+	// changes: DEL reports how many keys it removed, so only the request
+	// that actually removes the key (count == 1) may proceed. A concurrent
+	// request, or one whose code expired meanwhile, sees 0 and is rejected
+	// without touching the database, preventing replay.
+	claimed := 0
+	if err := client.Do(ctx, radix.FlatCmd(&claimed, "DEL", data.key)); err != nil {
+		log.WithError(err).Error("error code: 1024.11")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+	if claimed == 0 {
+		httpResponse.Message = "wrong/expired secret code"
+		httpStatusCode = http.StatusUnauthorized
+		return
+	}
+
 	auth.UpdatedAt = timeNow
 	auth.Password = pass
 
+	// persist the new password and, if rotated, the new 2FA secrets in a
+	// single transaction so they cannot diverge
 	tx := db.Begin()
+	if twoFAUpdated {
+		if err := tx.Save(&twoFA).Error; err != nil {
+			tx.Rollback()
+			log.WithError(err).Error("error code: 1025.0")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
+		}
+	}
 	if err := tx.Save(&auth).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Error("error code: 1025.1")
@@ -449,16 +474,6 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 		return
 	}
 	tx.Commit()
-
-	// delete key from redis
-	result = 0
-	if err := client.Do(ctx, radix.FlatCmd(&result, "DEL", data.key)); err != nil {
-		log.WithError(err).Error("error code: 1025.2")
-	}
-	if result == 0 {
-		err := errors.New("failed to delete password recovery secret key from redis")
-		log.WithError(err).Error("error code: 1025.3")
-	}
 
 	response.Message = "password updated"
 	httpResponse.Message = response
