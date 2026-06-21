@@ -15,6 +15,9 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
+	// Import MySQL DSN builder
+	mysqldriver "github.com/go-sql-driver/mysql"
+
 	// Import MySQL database driver
 	// _ "github.com/jinzhu/gorm/dialects/mysql"
 	"gorm.io/driver/mysql"
@@ -99,20 +102,30 @@ func InitDB() *gorm.DB {
 			if port != "" {
 				address += ":" + port
 			}
-			dsn = username + ":" + password + "@tcp(" + address + ")/" + database + "?charset=utf8mb4&parseTime=True&loc=Local"
+			// build the DSN with the driver's structured config builder to ensure
+			// proper escaping of special characters in credentials and parameters
+			mysqlCfg := mysqldriver.NewConfig()
+			mysqlCfg.User = username
+			mysqlCfg.Passwd = password
+			mysqlCfg.Net = "tcp"
+			mysqlCfg.Addr = address
+			mysqlCfg.DBName = database
+			mysqlCfg.Params = map[string]string{"charset": "utf8mb4"}
+			mysqlCfg.ParseTime = true
+			mysqlCfg.Loc = time.Local
 			if sslmode == "" {
 				sslmode = "disable"
 			}
 			if sslmode != "disable" {
 				// use host machine's root CAs to verify
 				if sslmode == "require" {
-					dsn += "&tls=true"
+					mysqlCfg.TLSConfig = "true"
 				}
 
 				// perform comprehensive SSL/TLS certificate validation using
 				// certificate signed by a recognized CA or by a self-signed certificate
 				if sslmode == "verify-ca" || sslmode == "verify-full" {
-					dsn += "&tls=custom"
+					mysqlCfg.TLSConfig = "custom"
 					err = InitTLSMySQL()
 					if err != nil {
 						db.Error = err
@@ -120,6 +133,7 @@ func InitDB() *gorm.DB {
 					}
 				}
 			}
+			dsn = mysqlCfg.FormatDSN()
 		}
 		sqlDB, err = sqlOpen(driver, dsn)
 		if err != nil {
