@@ -13,6 +13,35 @@ import (
 	"gorm.io/gorm"
 )
 
+type captureDriver struct{}
+
+func (captureDriver) Open(string) (driver.Conn, error) {
+	return captureConn{}, nil
+}
+
+type captureConn struct{}
+
+func (captureConn) Prepare(string) (driver.Stmt, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (captureConn) Close() error {
+	return nil
+}
+
+func (captureConn) Begin() (driver.Tx, error) {
+	return nil, errors.New("not implemented")
+}
+
+// captureDriverName is the name captureDriver is registered under. It is
+// registered exactly once in init() so the tests stay safe to run with
+// -count > 1 (sql.Register panics on a duplicate name).
+const captureDriverName = "capture-mysql-uri"
+
+func init() {
+	sql.Register(captureDriverName, captureDriver{})
+}
+
 // TestInitDB_Sqlite3 tests InitDB with the sqlite3 driver using an
 // in-memory database, then verifies GetDB returns a valid connection
 // and CloseSQL cleanly shuts it down.
@@ -48,8 +77,8 @@ func TestInitDB_Sqlite3(t *testing.T) {
 }
 
 // TestInitDB_DefaultDriver tests InitDB with an unsupported driver name.
-// The function must have been initialised with a valid db first so that
-// the internal dbClient is non-nil (otherwise setting db.Error panics).
+// A valid sqlite3 connection is initialised first so the unsupported-driver
+// path runs against an existing dbClient and returns it with db.Error set.
 func TestInitDB_DefaultDriver(t *testing.T) {
 	// first, init a valid sqlite3 connection so dbClient is non-nil
 	cfg := mustGetConfig(t)
@@ -370,8 +399,8 @@ func TestInitDB_Sqlite3_LazyPath(t *testing.T) {
 }
 
 // TestInitDB_MysqlSqlOpenError tests that InitDB returns an error
-// when sql.Open fails for the MySQL driver. A database name containing
-// an invalid percent-escape causes mysql.ParseDSN to fail.
+// when sqlOpen fails for the MySQL driver by injecting a failing
+// sqlOpen function.
 func TestInitDB_MysqlSqlOpenError(t *testing.T) {
 	cfg := mustGetConfig(t)
 
@@ -385,13 +414,18 @@ func TestInitDB_MysqlSqlOpenError(t *testing.T) {
 		t.Fatalf("prerequisite InitDB failed: %v", db.Error)
 	}
 
-	// switch to mysql with a database name that makes ParseDSN fail
+	// inject a failing sqlOpen
+	gdb.SetSQLOpen(func(_ string, _ string) (*sql.DB, error) {
+		return nil, errors.New("injected sql.Open error")
+	})
+	defer gdb.ResetSQLOpen()
+
 	cfg.Database.RDBMS.Env.Driver = "mysql"
 	cfg.Database.RDBMS.Env.Host = "127.0.0.1"
 	cfg.Database.RDBMS.Env.Port = "13306"
 	cfg.Database.RDBMS.Access.User = "test_user"
 	cfg.Database.RDBMS.Access.Pass = "test_pass"
-	cfg.Database.RDBMS.Access.DbName = "db%xx_name" // invalid percent-escape
+	cfg.Database.RDBMS.Access.DbName = "test_db"
 	cfg.Database.RDBMS.Ssl.Sslmode = "disable"
 	cfg.Database.RDBMS.Conn.MaxIdleConns = 2
 	cfg.Database.RDBMS.Conn.MaxOpenConns = 5
@@ -402,7 +436,7 @@ func TestInitDB_MysqlSqlOpenError(t *testing.T) {
 		t.Fatal("InitDB returned nil")
 	} else if db.Error == nil {
 		_ = gdb.CloseSQL()
-		t.Fatal("expected error for invalid MySQL DSN, got nil")
+		t.Fatal("expected error for injected sql.Open failure, got nil")
 	} else if !strings.Contains(db.Error.Error(), "failed to open SQL connection") {
 		t.Fatalf("unexpected error: %v", db.Error)
 	}
@@ -464,6 +498,100 @@ func TestInitDB_PostgresSqlOpenError(t *testing.T) {
 	_ = gdb.CloseSQL()
 }
 
+// TestInitDB_MysqlWithDB_URI verifies that DB_URI is preferred over the
+// field-based MySQL DSN composition when both are present.
+func TestInitDB_MysqlWithDB_URI(t *testing.T) {
+	cfg := mustGetConfig(t)
+
+	gdb.SetDBClient(&gorm.DB{Config: &gorm.Config{}})
+	defer gdb.ResetDBClient()
+
+	const expectedDSN = "user:pass@tcp(127.0.0.1:13306)/db_uri_name?charset=utf8mb4&parseTime=True&loc=Local"
+
+	gdb.SetSQLOpen(func(driverName string, dsn string) (*sql.DB, error) {
+		if driverName != "mysql" {
+			t.Fatalf("expected driver mysql, got %q", driverName)
+		}
+		if dsn != expectedDSN {
+			t.Fatalf("expected DB_URI DSN %q, got %q", expectedDSN, dsn)
+		}
+		return sql.Open(captureDriverName, "")
+	})
+	defer gdb.ResetSQLOpen()
+
+	cfg.Database.RDBMS.Env.Driver = "mysql"
+	cfg.Database.RDBMS.Env.URI = expectedDSN
+	cfg.Database.RDBMS.Env.Host = "wrong-host"
+	cfg.Database.RDBMS.Env.Port = "65535"
+	cfg.Database.RDBMS.Access.User = "wrong-user"
+	cfg.Database.RDBMS.Access.Pass = "wrong-pass"
+	cfg.Database.RDBMS.Access.DbName = "wrong-db%xx"
+	cfg.Database.RDBMS.Ssl.Sslmode = "disable"
+	cfg.Database.RDBMS.Conn.MaxIdleConns = 2
+	cfg.Database.RDBMS.Conn.MaxOpenConns = 5
+	cfg.Database.RDBMS.Log.LogLevel = 1
+
+	db := gdb.InitDB()
+	if db == nil {
+		t.Fatal("InitDB returned nil")
+	}
+	if db.Error == nil {
+		_ = gdb.CloseSQL()
+		t.Fatal("expected GORM open error from capture driver, got nil")
+	}
+	if !strings.Contains(db.Error.Error(), "failed to open GORM connection") {
+		t.Fatalf("unexpected error: %v", db.Error)
+	}
+
+	_ = gdb.CloseSQL()
+}
+
+// TestInitDB_PostgresWithDB_URI verifies that DB_URI is preferred over the
+// field-based Postgres DSN composition when both are present.
+func TestInitDB_PostgresWithDB_URI(t *testing.T) {
+	cfg := mustGetConfig(t)
+
+	gdb.SetDBClient(&gorm.DB{Config: &gorm.Config{}})
+	defer gdb.ResetDBClient()
+
+	const expectedDSN = "postgres://db_user:db_pass@127.0.0.1:15432/db_name?sslmode=disable"
+	gdb.SetSQLOpen(func(driverName string, dsn string) (*sql.DB, error) {
+		if driverName != "pgx" {
+			t.Fatalf("expected driver pgx, got %q", driverName)
+		}
+		if dsn != expectedDSN {
+			t.Fatalf("expected DB_URI DSN %q, got %q", expectedDSN, dsn)
+		}
+		return nil, errors.New("captured")
+	})
+	defer gdb.ResetSQLOpen()
+
+	cfg.Database.RDBMS.Env.Driver = "postgres"
+	cfg.Database.RDBMS.Env.URI = expectedDSN
+	cfg.Database.RDBMS.Env.Host = "wrong-host"
+	cfg.Database.RDBMS.Env.Port = "65535"
+	cfg.Database.RDBMS.Env.TimeZone = "Wrong/Zone"
+	cfg.Database.RDBMS.Access.User = "wrong-user"
+	cfg.Database.RDBMS.Access.Pass = "wrong-pass"
+	cfg.Database.RDBMS.Access.DbName = "wrong-db"
+	cfg.Database.RDBMS.Ssl.Sslmode = "require"
+	cfg.Database.RDBMS.Ssl.RootCA = "/nonexistent/ca.pem"
+	cfg.Database.RDBMS.Conn.MaxIdleConns = 2
+	cfg.Database.RDBMS.Conn.MaxOpenConns = 5
+	cfg.Database.RDBMS.Log.LogLevel = 1
+
+	db := gdb.InitDB()
+	if db == nil {
+		t.Fatal("InitDB returned nil")
+	}
+	if db.Error == nil {
+		t.Fatal("expected error for injected sql.Open failure, got nil")
+	}
+	if !strings.Contains(db.Error.Error(), "failed to open SQL connection") {
+		t.Fatalf("unexpected error: %v", db.Error)
+	}
+}
+
 // TestCloseSQL_DBMethodError tests that CloseSQL returns an error
 // when dbClient.DB() fails. This happens when dbClient has a nil
 // ConnPool (a bare *gorm.DB with an empty Config).
@@ -512,14 +640,11 @@ func TestCloseSQL_CloseError(t *testing.T) {
 	// create a *sql.DB with a connector that produces fail-close connections
 	sqlDB := sql.OpenDB(failCloseDriver{})
 
-	// ping to establish an idle connection in the pool
-	if err := sqlDB.Ping(); err != nil {
-		// Ping calls Connect, which returns failCloseConn; the driver
-		// doesn't implement driver.Pinger so the default path calls
-		// Prepare, which fails. But the connection is still created.
-		// We need to check if a connection was created despite the error.
-		_ = err
-	}
+	// Ping establishes an idle connection in the pool. failCloseConn does
+	// not implement driver.Pinger, so the connection is treated as valid
+	// and returned to the pool (Ping returns nil). CloseSQL later closes
+	// that idle connection, which is where the failing Close() fires.
+	_ = sqlDB.Ping()
 
 	// wrap in a gorm.DB and set as dbClient
 	gormDB := &gorm.DB{Config: &gorm.Config{}}

@@ -44,9 +44,6 @@ import (
 // dbClient holds the gorm DB connection instance.
 var dbClient *gorm.DB
 
-var sqlDB *sql.DB
-var err error
-
 // redisClient holds the Redis client connection instance.
 var redisClient radix.Client
 
@@ -78,6 +75,14 @@ func InitDB() *gorm.DB {
 	if db == nil {
 		db = &gorm.DB{}
 	}
+
+	// function-local handles so concurrent InitDB calls cannot race on
+	// shared mutable globals; only the long-lived dbClient is kept at
+	// package scope
+	var (
+		err   error
+		sqlDB *sql.DB
+	)
 
 	cfg := config.GetConfig()
 	if cfg == nil {
@@ -163,9 +168,7 @@ func InitDB() *gorm.DB {
 			return db
 		}
 		// Only for debugging
-		if err == nil {
-			fmt.Println("DB connection successful!")
-		}
+		fmt.Println("DB connection successful!")
 
 	case "postgres":
 		dsn := uri
@@ -224,9 +227,7 @@ func InitDB() *gorm.DB {
 			return db
 		}
 		// Only for debugging
-		if err == nil {
-			fmt.Println("DB connection successful!")
-		}
+		fmt.Println("DB connection successful!")
 
 	case "sqlite3":
 		dsn := database
@@ -243,9 +244,7 @@ func InitDB() *gorm.DB {
 			return db
 		}
 		// Only for debugging
-		if err == nil {
-			fmt.Println("DB connection successful!")
-		}
+		fmt.Println("DB connection successful!")
 
 	default:
 		err = fmt.Errorf("the driver %s is not implemented yet", driver)
@@ -429,7 +428,6 @@ func CloseSQL() error {
 			return err
 		}
 		dbClient = nil
-		sqlDB = nil
 		fmt.Println("SQL DB connection closed!")
 	}
 
