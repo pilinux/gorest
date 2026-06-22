@@ -22,6 +22,12 @@ import (
 	"github.com/pilinux/gorest/service"
 )
 
+// genericEmailInUseMessage is returned in production instead of confirming that
+// an email is already registered, to reduce account enumeration. (The HTTP
+// status still differs from the success path, so this only obscures the
+// message; the descriptive text is kept in non-production to ease debugging.)
+const genericEmailInUseMessage = "unable to complete the request"
+
 // CreateUserAuth validates the sign-up request and creates a new user account.
 //
 // It enforces unique email constraints and supports both:
@@ -58,6 +64,11 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 		}
 	}
 	if err == nil {
+		if config.IsProd() {
+			httpResponse.Message = genericEmailInUseMessage
+			httpStatusCode = http.StatusBadRequest
+			return
+		}
 		httpResponse.Message = "email already registered"
 		httpStatusCode = http.StatusBadRequest
 		return
@@ -116,6 +127,11 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 			}
 		}
 		if err == nil {
+			if config.IsProd() {
+				httpResponse.Message = genericEmailInUseMessage
+				httpStatusCode = http.StatusBadRequest
+				return
+			}
 			httpResponse.Message = "email already registered"
 			httpStatusCode = http.StatusBadRequest
 			return
@@ -215,6 +231,11 @@ func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpRes
 		}
 	}
 	if err == nil {
+		if config.IsProd() {
+			httpResponse.Message = genericEmailInUseMessage
+			httpStatusCode = http.StatusBadRequest
+			return
+		}
 		httpResponse.Message = "email already registered"
 		httpStatusCode = http.StatusBadRequest
 		return

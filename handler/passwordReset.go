@@ -28,6 +28,10 @@ import (
 // invalidated (deleted from Redis) and the user must request a new one.
 const maxRecoveryAttempts = 3
 
+// genericRecoveryMessage is returned by PasswordForgot in production for every
+// outcome so a caller cannot tell whether an account exists or is verified.
+const genericRecoveryMessage = "if the account exists, a password recovery email has been sent"
+
 // limitRecoveryAttempt records a failed 2FA recovery-key verification for the
 // given password-recovery secret code. The attempt counter lives in the same
 // Redis hash as the secret code (field "attempts"), so it shares the code's TTL
@@ -75,6 +79,14 @@ func PasswordForgot(authPayload model.AuthPayload) (httpResponse model.HTTPRespo
 			return
 		}
 
+		// avoid account enumeration in production: an unknown email returns the
+		// same generic response as a successful request; the descriptive message
+		// is kept in non-production to ease debugging
+		if config.IsProd() {
+			httpResponse.Message = genericRecoveryMessage
+			httpStatusCode = http.StatusOK
+			return
+		}
 		httpResponse.Message = "user not found"
 		httpStatusCode = http.StatusNotFound
 		return
@@ -82,6 +94,12 @@ func PasswordForgot(authPayload model.AuthPayload) (httpResponse model.HTTPRespo
 
 	// is email already verified
 	if v.VerifyEmail != model.EmailVerified {
+		// in production, do not reveal the verification state of an account
+		if config.IsProd() {
+			httpResponse.Message = genericRecoveryMessage
+			httpStatusCode = http.StatusOK
+			return
+		}
 		httpResponse.Message = "email not verified yet"
 		httpStatusCode = http.StatusBadRequest
 		return
@@ -101,6 +119,13 @@ func PasswordForgot(authPayload model.AuthPayload) (httpResponse model.HTTPRespo
 		return
 	}
 
+	// in production, return the same generic message used for unknown/unverified
+	// accounts so the outcome cannot be distinguished
+	if config.IsProd() {
+		httpResponse.Message = genericRecoveryMessage
+		httpStatusCode = http.StatusOK
+		return
+	}
 	httpResponse.Message = "sent password recovery email"
 	httpStatusCode = http.StatusOK
 	return

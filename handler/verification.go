@@ -146,6 +146,14 @@ func CreateVerificationEmail(payload model.AuthPayload) (httpResponse model.HTTP
 			return
 		}
 
+		// avoid account enumeration in production: an unknown email returns the
+		// same response as wrong credentials; the descriptive message is kept in
+		// non-production to ease debugging
+		if config.IsProd() {
+			httpResponse.Message = "wrong credentials"
+			httpStatusCode = http.StatusUnauthorized
+			return
+		}
 		httpResponse.Message = "user not found"
 		httpStatusCode = http.StatusNotFound
 		return
