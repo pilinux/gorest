@@ -682,9 +682,18 @@ func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayl
 		twoFA.KeyMain = base64.StdEncoding.EncodeToString(keyMainCipherByte)
 		twoFA.KeySalt = base64.StdEncoding.EncodeToString(salt)
 
-		// update DB
+		// stage the 2FA update; it is persisted together with the new password
+		// below so the re-encrypted main key and the password cannot diverge
 		twoFA.UpdatedAt = timeNow
-		tx := db.Begin()
+	}
+
+	auth.UpdatedAt = timeNow
+
+	// persist the new password and, if rotated, the re-encrypted 2FA secret in a
+	// single transaction so a partial write cannot leave twoFA.KeyMain encrypted
+	// under the new password while auth.Password is still the old one (2FA lockout)
+	tx := db.Begin()
+	if process2FA {
 		if err := tx.Save(&twoFA).Error; err != nil {
 			tx.Rollback()
 			log.WithError(err).Error("error code: 1029.1")
@@ -692,11 +701,7 @@ func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayl
 			httpStatusCode = http.StatusInternalServerError
 			return
 		}
-		tx.Commit()
 	}
-
-	auth.UpdatedAt = timeNow
-	tx := db.Begin()
 	if err := tx.Save(&auth).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Error("error code: 1029.2")
