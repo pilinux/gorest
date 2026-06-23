@@ -194,20 +194,6 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
 
-	// is key available in redis
-	result := 0
-	if err := client.Do(ctx, radix.FlatCmd(&result, "EXISTS", data.key)); err != nil {
-		log.WithError(err).Error("error code: 1021.1")
-		httpResponse.Message = "internal server error"
-		httpStatusCode = http.StatusInternalServerError
-		return
-	}
-	if result == 0 {
-		httpResponse.Message = "wrong/expired secret code"
-		httpStatusCode = http.StatusUnauthorized
-		return
-	}
-
 	// find key in redis (email value is stored in the hash field)
 	if err := client.Do(ctx, radix.FlatCmd(&data.value, "HGET", data.key,
 		model.PasswordRecoveryFieldEmail)); err != nil {
@@ -216,9 +202,6 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
-	// the key may have expired in the EXISTS→HGET window (TOCTOU), leaving an
-	// empty value; treat it as an expired code instead of falling through to a
-	// misleading "unknown user" after an empty email_hash lookup
 	if data.value == "" {
 		httpResponse.Message = "wrong/expired secret code"
 		httpStatusCode = http.StatusUnauthorized
