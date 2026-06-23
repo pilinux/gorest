@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/pilinux/argon2"
 	log "github.com/sirupsen/logrus"
@@ -17,6 +18,37 @@ import (
 	"github.com/pilinux/gorest/lib/middleware"
 	"github.com/pilinux/gorest/service"
 )
+
+// dummyHashOnce guards the lazily-built dummyHash so the expensive Argon2id
+// hash is generated only once for the lifetime of the process.
+var (
+	dummyHashOnce sync.Once
+	dummyHash     string
+)
+
+// timingSafeDummyHash returns a cached Argon2id hash generated with the
+// configured password-hashing parameters. Comparing an attacker-supplied
+// password against it when the account does not exist makes Login spend
+// roughly the same time hashing whether or not the email is registered,
+// closing the timing side-channel that would otherwise leak account existence.
+func timingSafeDummyHash(configSecurity config.SecurityConfig) string {
+	dummyHashOnce.Do(func() {
+		configHash := lib.HashPassConfig{
+			Memory:      configSecurity.HashPass.Memory,
+			Iterations:  configSecurity.HashPass.Iterations,
+			Parallelism: configSecurity.HashPass.Parallelism,
+			SaltLength:  configSecurity.HashPass.SaltLength,
+			KeyLength:   configSecurity.HashPass.KeyLength,
+		}
+		h, err := lib.HashPass(configHash, "timing-safe-dummy-password", configSecurity.HashSec)
+		if err != nil {
+			log.WithError(err).Error("error code: 1013.0")
+			return
+		}
+		dummyHash = h
+	})
+	return dummyHash
+}
 
 // Login authenticates a user and returns a new access/refresh token pair.
 //
@@ -31,6 +63,9 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 		return
 	}
 
+	// app settings
+	configSecurity := config.GetConfig().Security
+
 	v, err := service.GetUserByEmail(payload.Email, false)
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -39,6 +74,13 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
+		}
+
+		// perform a dummy password comparison so the response time does not
+		// depend on whether the account exists (mitigates a timing oracle that
+		// would otherwise leak account existence even with a generic message)
+		if config.IsHashPass() {
+			_, _ = argon2.ComparePasswordAndHash(payload.Password, configSecurity.HashSec, timingSafeDummyHash(configSecurity))
 		}
 
 		// avoid account enumeration in production: an unknown email returns the
@@ -53,9 +95,6 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 		httpStatusCode = http.StatusNotFound
 		return
 	}
-
-	// app settings
-	configSecurity := config.GetConfig().Security
 
 	// check whether email verification is required
 	if configSecurity.VerifyEmail {
