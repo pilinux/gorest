@@ -15,6 +15,12 @@ import (
 // GetPosts retrieves all posts.
 func GetPosts() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
+	if db == nil {
+		log.Error("error code: 1200.10: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	posts := []model.Post{}
 
 	if err := db.Find(&posts).Error; err != nil {
@@ -38,6 +44,12 @@ func GetPosts() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 // GetPost retrieves a single post by ID.
 func GetPost(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
+	if db == nil {
+		log.Error("error code: 1200.20: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	post := model.Post{}
 
 	if err := db.Where("post_id = ?", id).First(&post).Error; err != nil {
@@ -54,6 +66,12 @@ func GetPost(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 // CreatePost creates a new post for the authenticated user's profile.
 func CreatePost(userIDAuth uint64, post model.Post) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
+	if db == nil {
+		log.Error("error code: 1200.30: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	user := model.User{}
 	postFinal := model.Post{}
 
@@ -87,6 +105,12 @@ func CreatePost(userIDAuth uint64, post model.Post) (httpResponse gmodel.HTTPRes
 // UpdatePost updates an existing post owned by the authenticated user.
 func UpdatePost(userIDAuth uint64, id string, post model.Post) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
+	if db == nil {
+		log.Error("error code: 1200.40: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	user := model.User{}
 	postFinal := model.Post{}
 
@@ -127,6 +151,12 @@ func UpdatePost(userIDAuth uint64, id string, post model.Post) (httpResponse gmo
 // DeletePost deletes an existing post owned by the authenticated user.
 func DeletePost(userIDAuth uint64, id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
+	if db == nil {
+		log.Error("error code: 1200.50: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	user := model.User{}
 	post := model.Post{}
 

@@ -321,7 +321,14 @@ func (s *UserService) DeleteUser(ctx context.Context, authID uint64) (httpRespon
 	// 2FA, 2FA backup codes, temp email, auth) in a single transaction so the
 	// cascade is all-or-nothing: if any step fails, nothing is committed and no
 	// orphaned/half-deleted rows remain.
-	err = gdb.GetDB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	db := gdb.GetDB()
+	if db == nil {
+		log.Error("DeleteUser.s.0: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+	err = db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		postRepo := repo.NewPostRepo(tx)
 		hobbyRepo := repo.NewHobbyRepo(tx)
 		userRepo := repo.NewUserRepo(tx)

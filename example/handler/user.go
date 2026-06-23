@@ -19,6 +19,12 @@ import (
 // GetUsers retrieves all users and populates their related posts and hobbies.
 func GetUsers() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
+	if db == nil {
+		log.Error("error code: 1100.10: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	users := []model.User{}
 	posts := []model.Post{}
 	hobbies := []model.Hobby{}
@@ -55,6 +61,12 @@ func GetUsers() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 // GetUser retrieves a single user by ID and populates their related posts and hobbies.
 func GetUser(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
+	if db == nil {
+		log.Error("error code: 1100.20: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	user := model.User{}
 	posts := []model.Post{}
 	hobbies := []model.Hobby{}
@@ -98,6 +110,12 @@ func GetUser(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 // It prevents creating a duplicate profile for the same auth ID.
 func CreateUser(userIDAuth uint64, user model.User) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
+	if db == nil {
+		log.Error("error code: 1100.30: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	userFinal := model.User{}
 
 	// does the user have an existing profile
@@ -130,6 +148,12 @@ func CreateUser(userIDAuth uint64, user model.User) (httpResponse gmodel.HTTPRes
 // UpdateUser updates the user profile for the given auth ID.
 func UpdateUser(userIDAuth uint64, user model.User) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
+	if db == nil {
+		log.Error("error code: 1100.40: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	userFinal := model.User{}
 
 	// does the user have an existing profile
@@ -165,6 +189,12 @@ func UpdateUser(userIDAuth uint64, user model.User) (httpResponse gmodel.HTTPRes
 // it with the user.
 func AddHobby(userIDAuth uint64, hobby model.Hobby) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
+	if db == nil {
+		log.Error("error code: 1100.50: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	user := model.User{}
 	hobbyNew := model.Hobby{}
 	hobbyFound := 0 // default (do not create new hobby) = 0, create new hobby = 1

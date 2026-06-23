@@ -24,6 +24,9 @@ type userHobby model.UserHobby
 // DropAllTables drops all the tables from the database.
 func DropAllTables() error {
 	db := gdatabase.GetDB()
+	if db == nil {
+		return gdatabase.ErrDBNotInitialized
+	}
 
 	if err := db.Migrator().DropTable(
 		&userHobby{},
@@ -48,6 +51,9 @@ func DropAllTables() error {
 //   - Will not change/delete any existing columns and their types
 func StartMigration(configure gconfig.Configuration) error {
 	db := gdatabase.GetDB()
+	if db == nil {
+		return gdatabase.ErrDBNotInitialized
+	}
 	configureDB := configure.Database.RDBMS
 	driver := configureDB.Env.Driver
 
@@ -88,6 +94,9 @@ func StartMigration(configure gconfig.Configuration) error {
 // SetPkFk manually sets foreign keys for MySQL and PostgreSQL.
 func SetPkFk() error {
 	db := gdatabase.GetDB()
+	if db == nil {
+		return gdatabase.ErrDBNotInitialized
+	}
 
 	if !db.Migrator().HasConstraint(&user{}, "Posts") {
 		err := db.Migrator().CreateConstraint(&user{}, "Posts")

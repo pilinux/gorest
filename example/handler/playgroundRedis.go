@@ -18,6 +18,12 @@ import (
 // RedisCreate stores a key/value pair in Redis.
 func RedisCreate(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	client := gdatabase.GetRedis()
+	if client == nil {
+		log.Error("error code: 1300.10: redis client not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
@@ -45,6 +51,12 @@ func RedisCreate(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpSt
 // RedisRead retrieves the value for a key from Redis.
 func RedisRead(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	client := gdatabase.GetRedis()
+	if client == nil {
+		log.Error("error code: 1300.20: redis client not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
@@ -80,6 +92,12 @@ func RedisRead(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpStat
 // RedisDelete deletes a key from Redis.
 func RedisDelete(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	client := gdatabase.GetRedis()
+	if client == nil {
+		log.Error("error code: 1300.30: redis client not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
@@ -107,6 +125,12 @@ func RedisDelete(data model.RedisData) (httpResponse gmodel.HTTPResponse, httpSt
 // RedisCreateHash stores a hash (field/value set) in Redis.
 func RedisCreateHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	client := gdatabase.GetRedis()
+	if client == nil {
+		log.Error("error code: 1300.40: redis client not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
@@ -127,6 +151,12 @@ func RedisCreateHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse
 // RedisReadHash retrieves a hash from Redis.
 func RedisReadHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	client := gdatabase.GetRedis()
+	if client == nil {
+		log.Error("error code: 1300.50: redis client not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
@@ -162,6 +192,12 @@ func RedisReadHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse, 
 // RedisDeleteHash deletes one or more hash fields from Redis.
 func RedisDeleteHash(data model.RedisDataHash) (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	client := gdatabase.GetRedis()
+	if client == nil {
+		log.Error("error code: 1300.60: redis client not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	rConnTTL := gconfig.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()

@@ -209,6 +209,9 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 
 			// db client
 			db := gdb.GetDB()
+			if db == nil {
+				return r, gdb.ErrDBNotInitialized
+			}
 
 			userRepo := repo.NewUserRepo(db)
 			postRepo := repo.NewPostRepo(db)
@@ -286,6 +289,9 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 		if gconfig.IsRedis() {
 			// Redis connection from the pool
 			conn := gdb.GetRedis()
+			if conn == nil {
+				return r, gdb.ErrRedisNotInitialized
+			}
 
 			kvRepo := repo.NewKeyValueRepo(conn)
 			kvSrv := service.NewKeyValueService(kvRepo)
@@ -304,6 +310,9 @@ func SetupRouter(configure *gconfig.Configuration) (*gin.Engine, error) {
 		if gconfig.IsMongo() {
 			// MongoDB connection from the pool
 			conn := gdb.GetMongo()
+			if conn == nil {
+				return r, gdb.ErrMongoNotInitialized
+			}
 
 			addressRepo := repo.NewAddressRepo(conn)
 			addressSrv := service.NewAddressService(addressRepo)

@@ -38,6 +38,12 @@ func MongoCreateOne(data model.Geocoding) (httpResponse gmodel.HTTPResponse, htt
 	data.ID = bson.NewObjectID()
 
 	client := gdatabase.GetMongo()
+	if client == nil {
+		log.Error("error code: 1400.10: mongo client not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	db := client.Database("map")            // set database name
 	collection := db.Collection("geocodes") // set collection name
 
@@ -62,6 +68,12 @@ func MongoCreateOne(data model.Geocoding) (httpResponse gmodel.HTTPResponse, htt
 // MongoGetAll retrieves all geocoding documents from MongoDB.
 func MongoGetAll() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	client := gdatabase.GetMongo()
+	if client == nil {
+		log.Error("error code: 1400.20: mongo client not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	db := client.Database("map")            // set database name
 	collection := db.Collection("geocodes") // set collection name
 
@@ -108,6 +120,12 @@ func MongoGetByID(id string) (httpResponse gmodel.HTTPResponse, httpStatusCode i
 	}
 
 	client := gdatabase.GetMongo()
+	if client == nil {
+		log.Error("error code: 1400.30: mongo client not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	db := client.Database("map")            // set database name
 	collection := db.Collection("geocodes") // set collection name
 
@@ -156,6 +174,12 @@ func MongoGetByFilter(req model.Geocoding) (httpResponse gmodel.HTTPResponse, ht
 	}
 
 	client := gdatabase.GetMongo()
+	if client == nil {
+		log.Error("error code: 1400.40: mongo client not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	db := client.Database("map")            // set database name
 	collection := db.Collection("geocodes") // set collection name
 
@@ -213,6 +237,12 @@ func MongoUpdateByID(req model.Geocoding) (httpResponse gmodel.HTTPResponse, htt
 	filter := bson.D{{Key: "_id", Value: req.ID}}
 
 	client := gdatabase.GetMongo()
+	if client == nil {
+		log.Error("error code: 1400.50: mongo client not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	db := client.Database("map")            // set database name
 	collection := db.Collection("geocodes") // set collection name
 
@@ -290,6 +320,12 @@ func MongoDeleteFieldByID(req model.Geocoding) (httpResponse gmodel.HTTPResponse
 	filter := bson.D{{Key: "_id", Value: req.ID}}
 
 	client := gdatabase.GetMongo()
+	if client == nil {
+		log.Error("error code: 1400.60: mongo client not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	db := client.Database("map")            // set database name
 	collection := db.Collection("geocodes") // set collection name
 
@@ -336,6 +372,12 @@ func MongoDeleteByID(id string) (httpResponse gmodel.HTTPResponse, httpStatusCod
 	}
 
 	client := gdatabase.GetMongo()
+	if client == nil {
+		log.Error("error code: 1400.70: mongo client not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	db := client.Database("map")            // set database name
 	collection := db.Collection("geocodes") // set collection name
 

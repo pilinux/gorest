@@ -24,6 +24,9 @@ type userHobby model.UserHobby
 // DropAllTables drops all the tables. Use with caution!
 func DropAllTables() error {
 	db := gdb.GetDB()
+	if db == nil {
+		return gdb.ErrDBNotInitialized
+	}
 
 	if err := db.Migrator().DropTable(
 		&userHobby{},
@@ -48,6 +51,9 @@ func DropAllTables() error {
 //   - Will not change/delete any existing columns and their types.
 func StartMigration(configure gconfig.Configuration) error {
 	db := gdb.GetDB()
+	if db == nil {
+		return gdb.ErrDBNotInitialized
+	}
 	configureDB := configure.Database.RDBMS
 	driver := configureDB.Env.Driver
 

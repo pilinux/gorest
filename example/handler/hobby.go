@@ -14,6 +14,12 @@ import (
 // GetHobbies retrieves all hobbies.
 func GetHobbies() (httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	db := gdatabase.GetDB()
+	if db == nil {
+		log.Error("error code: 1250: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	hobbies := []model.Hobby{}
 
 	if err := db.Find(&hobbies).Error; err != nil {

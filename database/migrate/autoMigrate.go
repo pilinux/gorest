@@ -18,6 +18,9 @@ type tempEmail model.TempEmail
 // DropAllTables drops all database tables. Use with caution.
 func DropAllTables() error {
 	db := database.GetDB()
+	if db == nil {
+		return database.ErrDBNotInitialized
+	}
 
 	if err := db.Migrator().DropTable(
 		&tempEmail{},
@@ -38,6 +41,9 @@ func DropAllTables() error {
 //   - Will not change/delete any existing columns and their types
 func StartMigration(configure config.Configuration) error {
 	db := database.GetDB()
+	if db == nil {
+		return database.ErrDBNotInitialized
+	}
 	configureDB := configure.Database.RDBMS
 	driver := configureDB.Env.Driver
 
