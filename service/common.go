@@ -99,7 +99,7 @@ func DelMem2FA(authID uint64) {
 //   - {true, nil} => email delivered successfully
 //   - {false, nil} => email delivery not required/service not configured
 //   - {false, error} => email delivery failed
-func SendEmail(email string, emailType int, opts ...string) (bool, error) {
+func SendEmail(ctx context.Context, email string, emailType int, opts ...string) (bool, error) {
 	// send email if required by the application
 	appConfig := config.GetConfig()
 
@@ -175,7 +175,7 @@ func SendEmail(email string, emailType int, opts ...string) (bool, error) {
 			config.GetConfig().Security.Blake2bSec,
 		)
 		if err != nil {
-			log.WithError(err).Error("error code: 406.1")
+			log.WithContext(ctx).WithError(err).Error("error code: 406.1")
 			return false, err
 		}
 		data.value = hex.EncodeToString(value)
@@ -184,12 +184,12 @@ func SendEmail(email string, emailType int, opts ...string) (bool, error) {
 	// save in redis with expiry time
 	client := database.GetRedis()
 	if client == nil {
-		log.Error("error code: 400.0: redis client not initialized")
+		log.WithContext(ctx).Error("error code: 400.0: redis client not initialized")
 		return false, database.ErrRedisNotInitialized
 	}
 	redisConnTTL := appConfig.Database.REDIS.Conn.ConnTTL
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(redisConnTTL)*time.Second)
+	redisCtx, cancel := context.WithTimeout(context.Background(), time.Duration(redisConnTTL)*time.Second)
 	defer cancel()
 
 	// Set key and TTL atomically so a verification/recovery secret can never
@@ -200,26 +200,26 @@ func SendEmail(email string, emailType int, opts ...string) (bool, error) {
 		// failed-attempt counter share one key and one TTL) and set the TTL
 		// atomically via a Lua script
 		expireSet := 0
-		if err := client.Do(ctx, passRecoverStoreScript.Cmd(&expireSet,
+		if err := client.Do(redisCtx, passRecoverStoreScript.Cmd(&expireSet,
 			[]string{data.key},
 			model.PasswordRecoveryFieldEmail, data.value,
 			strconv.FormatUint(keyTTL, 10))); err != nil {
-			log.WithError(err).Error("error code: 401.1")
+			log.WithContext(ctx).WithError(err).Error("error code: 401.1")
 			return false, err
 		}
 		if expireSet != 1 {
-			log.Error("error code: 401.2")
+			log.WithContext(ctx).Error("error code: 401.2")
 			return false, errors.New("failed to save in redis")
 		}
 	} else {
 		r1 := ""
-		if err := client.Do(ctx, radix.FlatCmd(&r1, "SET", data.key, data.value,
+		if err := client.Do(redisCtx, radix.FlatCmd(&r1, "SET", data.key, data.value,
 			"EX", strconv.FormatUint(keyTTL, 10))); err != nil {
-			log.WithError(err).Error("error code: 401.3")
+			log.WithContext(ctx).WithError(err).Error("error code: 401.3")
 			return false, err
 		}
 		if r1 != "OK" {
-			log.Error("error code: 401.4")
+			log.WithContext(ctx).Error("error code: 401.4")
 			return false, errors.New("failed to save in redis")
 		}
 	}
@@ -270,7 +270,7 @@ func SendEmail(email string, emailType int, opts ...string) (bool, error) {
 		// send the email
 		res, err := Postmark(params)
 		if err != nil {
-			log.WithError(err).Error("error code: 405")
+			log.WithContext(ctx).WithError(err).Error("error code: 405")
 			return false, err
 		}
 		if res.Message != "OK" {
@@ -283,6 +283,6 @@ func SendEmail(email string, emailType int, opts ...string) (bool, error) {
 	e := errors.New(
 		"email delivery service provider: '" + appConfig.EmailConf.Provider + "' is unknown",
 	)
-	log.WithError(e).Error("error code: 406")
+	log.WithContext(ctx).WithError(e).Error("error code: 406")
 	return false, e
 }

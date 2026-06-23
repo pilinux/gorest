@@ -37,7 +37,7 @@ func Pongo2(baseDirectory string) gin.HandlerFunc {
 		// Set base directory
 		fs, err := pongo2.NewLocalFileSystemLoader("")
 		if err != nil {
-			log.WithError(err).Error("error msg: middleware -> pongo2 failed to create a new LocalFilesystemLoader")
+			log.WithContext(c.Request.Context()).WithError(err).Error("error msg: middleware -> pongo2 failed to create a new LocalFilesystemLoader")
 			http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -46,21 +46,21 @@ func Pongo2(baseDirectory string) gin.HandlerFunc {
 		s.Globals["base_directory"] = baseDirectory
 
 		if err := fs.SetBaseDir(s.Globals["base_directory"].(string)); err != nil {
-			log.WithError(err).Error("error msg: middleware -> pongo2 failed to set base directory")
+			log.WithContext(c.Request.Context()).WithError(err).Error("error msg: middleware -> pongo2 failed to set base directory")
 			http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		template, err := s.FromFile(name)
 		if err != nil {
-			log.WithError(err).Error("error msg: middleware -> pongo2 base directory not found")
+			log.WithContext(c.Request.Context()).WithError(err).Error("error msg: middleware -> pongo2 base directory not found")
 			http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		err = template.ExecuteWriter(ConvertContext(data), c.Writer)
 		if err != nil {
-			log.WithError(err).Error("error msg: middleware -> pongo2 failed to execute the template with the given context")
+			log.WithContext(c.Request.Context()).WithError(err).Error("error msg: middleware -> pongo2 failed to execute the template with the given context")
 			http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
 			return
 		}

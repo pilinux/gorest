@@ -45,7 +45,7 @@ func (s *AddressService) AddAddress(ctx context.Context, address *model.Geocodin
 			return
 		}
 
-		log.WithError(err).Error("AddAddress.s.1")
+		log.WithContext(ctx).WithError(err).Error("AddAddress.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -66,7 +66,7 @@ func (s *AddressService) GetAddresses(ctx context.Context) (httpResponse gmodel.
 			return
 		}
 
-		log.WithError(err).Error("GetAddresses.s.1")
+		log.WithContext(ctx).WithError(err).Error("GetAddresses.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -109,7 +109,7 @@ func (s *AddressService) GetAddress(ctx context.Context, id string) (httpRespons
 			return
 		}
 
-		log.WithError(err).Error("GetAddress.s.1")
+		log.WithContext(ctx).WithError(err).Error("GetAddress.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -136,7 +136,7 @@ func (s *AddressService) GetAddressesByFilter(ctx context.Context, address *mode
 			return
 		}
 
-		log.WithError(err).Error("GetAddressByFilter.s.1")
+		log.WithContext(ctx).WithError(err).Error("GetAddressByFilter.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -182,7 +182,7 @@ func (s *AddressService) UpdateAddress(ctx context.Context, address *model.Geoco
 			return
 		}
 
-		log.WithError(err).Error("UpdateAddress.s.1")
+		log.WithContext(ctx).WithError(err).Error("UpdateAddress.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -209,7 +209,7 @@ func (s *AddressService) UpdateAddress(ctx context.Context, address *model.Geoco
 			return
 		}
 
-		log.WithError(err).Error("UpdateAddress.s.1")
+		log.WithContext(ctx).WithError(err).Error("UpdateAddress.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -246,7 +246,7 @@ func (s *AddressService) DeleteAddress(ctx context.Context, id string) (httpResp
 			return
 		}
 
-		log.WithError(err).Error("DeleteAddress.s.1")
+		log.WithContext(ctx).WithError(err).Error("DeleteAddress.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return

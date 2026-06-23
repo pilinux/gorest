@@ -2,6 +2,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/hex"
 	"errors"
 	"net/http"
@@ -36,10 +37,10 @@ const genericEmailInUseMessage = "unable to complete the request"
 //
 // Depending on application settings, it may also send a verification email and
 // mark the account as email-not-verified.
-func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatusCode int) {
+func CreateUserAuth(ctx context.Context, auth model.Auth) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	db := database.GetDB()
 	if db == nil {
-		log.Error("error code: 1000.1: database connection not initialized")
+		log.WithContext(ctx).Error("error code: 1000.1: database connection not initialized")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -63,7 +64,7 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
-			log.WithError(err).Error("error code: 1002.1")
+			log.WithContext(ctx).WithError(err).Error("error code: 1002.1")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -88,7 +89,7 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 		if err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
-				log.WithError(err).Error("error code: 1002.2")
+				log.WithContext(ctx).WithError(err).Error("error code: 1002.2")
 				httpResponse.Message = "internal server error"
 				httpStatusCode = http.StatusInternalServerError
 				return
@@ -96,7 +97,7 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 		}
 		if err == nil {
 			e := errors.New("check env: ACTIVATE_CIPHER")
-			log.WithError(e).Error("error code: 1002.3")
+			log.WithContext(ctx).WithError(e).Error("error code: 1002.3")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -114,7 +115,7 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 			config.GetConfig().Security.Blake2bSec,
 		)
 		if err != nil {
-			log.WithError(err).Error("error code: 1001.1")
+			log.WithContext(ctx).WithError(err).Error("error code: 1001.1")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -126,7 +127,7 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 		if err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
-				log.WithError(err).Error("error code: 1002.4")
+				log.WithContext(ctx).WithError(err).Error("error code: 1002.4")
 				httpResponse.Message = "internal server error"
 				httpStatusCode = http.StatusInternalServerError
 				return
@@ -145,9 +146,9 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 	}
 
 	// send a verification email if required by the application
-	emailDelivered, err := service.SendEmail(authFinal.Email, model.EmailTypeVerifyEmailNewAcc)
+	emailDelivered, err := service.SendEmail(ctx, authFinal.Email, model.EmailTypeVerifyEmailNewAcc)
 	if err != nil {
-		log.WithError(err).Error("error code: 1002.5")
+		log.WithContext(ctx).WithError(err).Error("error code: 1002.5")
 		httpResponse.Message = "email delivery service failed"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -165,7 +166,7 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 			auth.Email,
 		)
 		if err != nil {
-			log.WithError(err).Error("error code: 1001.2")
+			log.WithContext(ctx).WithError(err).Error("error code: 1001.2")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -181,7 +182,7 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 	tx := db.Begin()
 	if err := tx.Create(&authFinal).Error; err != nil {
 		tx.Rollback()
-		log.WithError(err).Error("error code: 1001.3")
+		log.WithContext(ctx).WithError(err).Error("error code: 1001.3")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -208,7 +209,7 @@ func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatu
 //   - step 7: verify that this is not a repeated request for the same email
 //   - step 8: populate model with data to be processed in database
 //   - step 9: send a verification email if required by the app
-func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpResponse model.HTTPResponse, httpStatusCode int) {
+func UpdateEmail(ctx context.Context, claims middleware.MyCustomClaims, req model.TempEmail) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	// check auth validity
 	ok := service.ValidateAuthID(claims.AuthID)
 	if !ok {
@@ -230,7 +231,7 @@ func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpRes
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
-			log.WithError(err).Error("error code: 1003.21")
+			log.WithContext(ctx).WithError(err).Error("error code: 1003.21")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -251,7 +252,7 @@ func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpRes
 	// db connection
 	db := database.GetDB()
 	if db == nil {
-		log.Error("error code: 1000.2: database connection not initialized")
+		log.WithContext(ctx).Error("error code: 1000.2: database connection not initialized")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -262,7 +263,7 @@ func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpRes
 	err = db.Where("auth_id = ?", claims.AuthID).First(&auth).Error
 	if err != nil {
 		// most likely db read error
-		log.WithError(err).Error("error code: 1003.31")
+		log.WithContext(ctx).WithError(err).Error("error code: 1003.31")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -274,7 +275,7 @@ func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpRes
 	// step 4: verify user password
 	verifyPass, err := argon2.ComparePasswordAndHash(req.Password, configSecurity.HashSec, auth.Password)
 	if err != nil {
-		log.WithError(err).Error("error code: 1003.41")
+		log.WithContext(ctx).WithError(err).Error("error code: 1003.41")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -291,7 +292,7 @@ func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpRes
 		config.GetConfig().Security.Blake2bSec,
 	)
 	if err != nil {
-		log.WithError(err).Error("error code: 1003.51")
+		log.WithContext(ctx).WithError(err).Error("error code: 1003.51")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -303,7 +304,7 @@ func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpRes
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
-			log.WithError(err).Error("error code: 1003.61")
+			log.WithContext(ctx).WithError(err).Error("error code: 1003.61")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -363,7 +364,7 @@ func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpRes
 			req.Email,
 		)
 		if err != nil {
-			log.WithError(err).Error("error code: 1003.81")
+			log.WithContext(ctx).WithError(err).Error("error code: 1003.81")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -376,9 +377,9 @@ func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpRes
 	}
 
 	// step 9: send a verification email if required by the application
-	emailDelivered, err := service.SendEmail(req.Email, model.EmailTypeVerifyUpdatedEmail)
+	emailDelivered, err := service.SendEmail(ctx, req.Email, model.EmailTypeVerifyUpdatedEmail)
 	if err != nil {
-		log.WithError(err).Error("error code: 1003.91")
+		log.WithContext(ctx).WithError(err).Error("error code: 1003.91")
 		httpResponse.Message = "email delivery service failed"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -389,7 +390,7 @@ func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpRes
 		tx := db.Begin()
 		if err := tx.Save(&tEmailDB).Error; err != nil {
 			tx.Rollback()
-			log.WithError(err).Error("error code: 1003.92")
+			log.WithContext(ctx).WithError(err).Error("error code: 1003.92")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -411,7 +412,7 @@ func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpRes
 		tx := db.Begin()
 		if err := tx.Save(&auth).Error; err != nil {
 			tx.Rollback()
-			log.WithError(err).Error("error code: 1003.93")
+			log.WithContext(ctx).WithError(err).Error("error code: 1003.93")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return

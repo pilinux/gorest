@@ -76,7 +76,7 @@ func PasswordForgot(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := handler.PasswordForgot(email)
+	resp, statusCode := handler.PasswordForgot(c.Request.Context(), email)
 
 	renderer.Render(c, resp, statusCode)
 }
@@ -134,7 +134,7 @@ func PasswordRecover(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := handler.PasswordRecover(payload)
+	resp, statusCode := handler.PasswordRecover(c.Request.Context(), payload)
 
 	if _, ok := resp.Message.(string); ok {
 		renderer.Render(c, resp, statusCode)
@@ -173,7 +173,7 @@ func PasswordUpdate(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := handler.PasswordUpdate(claims, payload)
+	resp, statusCode := handler.PasswordUpdate(c.Request.Context(), claims, payload)
 
 	renderer.Render(c, resp, statusCode)
 }

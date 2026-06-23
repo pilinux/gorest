@@ -53,7 +53,7 @@ func Setup2FA(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := handler.Setup2FA(claims, password)
+	resp, statusCode := handler.Setup2FA(c.Request.Context(), claims, password)
 
 	if statusCode != http.StatusCreated {
 		renderer.Render(c, resp, statusCode)
@@ -102,7 +102,7 @@ func Activate2FA(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := handler.Activate2FA(claims, otp)
+	resp, statusCode := handler.Activate2FA(c.Request.Context(), claims, otp)
 
 	// 2FA activation failed
 	if statusCode != http.StatusOK {
@@ -143,7 +143,7 @@ func Activate2FA(c *gin.Context) {
 		}
 
 		if !ok {
-			log.Error("error code: 1041.1")
+			log.WithContext(c.Request.Context()).Error("error code: 1041.1")
 			resp.Message = "failed to prepare auth cookie"
 			statusCode = http.StatusInternalServerError
 		}
@@ -195,7 +195,7 @@ func Validate2FA(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := handler.Validate2FA(claims, otp)
+	resp, statusCode := handler.Validate2FA(c.Request.Context(), claims, otp)
 
 	// 2FA validation failed
 	if statusCode != http.StatusOK {
@@ -242,7 +242,7 @@ func Validate2FA(c *gin.Context) {
 		}
 
 		if !ok {
-			log.Error("error code: 1042.1")
+			log.WithContext(c.Request.Context()).Error("error code: 1042.1")
 			resp.Message = "failed to prepare auth cookie"
 			statusCode = http.StatusInternalServerError
 		}
@@ -292,7 +292,7 @@ func Deactivate2FA(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := handler.Deactivate2FA(claims, password)
+	resp, statusCode := handler.Deactivate2FA(c.Request.Context(), claims, password)
 
 	// 2FA deactivation failed
 	if statusCode != http.StatusOK {
@@ -339,7 +339,7 @@ func Deactivate2FA(c *gin.Context) {
 		}
 
 		if !ok {
-			log.Error("error code: 1043.1")
+			log.WithContext(c.Request.Context()).Error("error code: 1043.1")
 			resp.Message = "failed to prepare auth cookie"
 			statusCode = http.StatusInternalServerError
 		}
@@ -391,7 +391,7 @@ func CreateBackup2FA(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := handler.CreateBackup2FA(claims, password)
+	resp, statusCode := handler.CreateBackup2FA(c.Request.Context(), claims, password)
 
 	renderer.Render(c, resp, statusCode)
 }
@@ -432,7 +432,7 @@ func ValidateBackup2FA(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := handler.ValidateBackup2FA(claims, authPayload)
+	resp, statusCode := handler.ValidateBackup2FA(c.Request.Context(), claims, authPayload)
 
 	// 2FA validation with backup code failed
 	if statusCode != http.StatusOK {
@@ -479,7 +479,7 @@ func ValidateBackup2FA(c *gin.Context) {
 		}
 
 		if !ok {
-			log.Error("error code: 1044.1")
+			log.WithContext(c.Request.Context()).Error("error code: 1044.1")
 			resp.Message = "failed to prepare auth cookie"
 			statusCode = http.StatusInternalServerError
 		}

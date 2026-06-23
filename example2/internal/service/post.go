@@ -50,7 +50,7 @@ func (s *PostService) GetPosts(ctx context.Context, page, pageSize int) (httpRes
 			return
 		}
 
-		log.WithError(err).Error("GetPosts.s.1")
+		log.WithContext(ctx).WithError(err).Error("GetPosts.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -71,7 +71,7 @@ func (s *PostService) GetPosts(ctx context.Context, page, pageSize int) (httpRes
 			return
 		}
 
-		log.WithError(err).Error("GetPosts.s.2")
+		log.WithContext(ctx).WithError(err).Error("GetPosts.s.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -116,7 +116,7 @@ func (s *PostService) GetPost(ctx context.Context, postID uint64) (httpResponse 
 			return
 		}
 
-		log.WithError(err).Error("GetPost.s.1")
+		log.WithContext(ctx).WithError(err).Error("GetPost.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -143,7 +143,7 @@ func (s *PostService) GetPostsByUserID(ctx context.Context, userID uint64) (http
 			return
 		}
 
-		log.WithError(err).Error("GetPostsByUserID.s.1")
+		log.WithContext(ctx).WithError(err).Error("GetPostsByUserID.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -171,7 +171,7 @@ func (s *PostService) CreatePost(ctx context.Context, post *model.Post) (httpRes
 			return
 		}
 
-		log.WithError(err).Error("CreatePost.s.1")
+		log.WithContext(ctx).WithError(err).Error("CreatePost.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -185,7 +185,7 @@ func (s *PostService) CreatePost(ctx context.Context, post *model.Post) (httpRes
 			return
 		}
 
-		log.WithError(err).Error("CreatePost.s.2")
+		log.WithContext(ctx).WithError(err).Error("CreatePost.s.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -213,7 +213,7 @@ func (s *PostService) UpdatePost(ctx context.Context, post *model.Post) (httpRes
 			return
 		}
 
-		log.WithError(err).Error("UpdatePost.s.1")
+		log.WithContext(ctx).WithError(err).Error("UpdatePost.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -246,7 +246,7 @@ func (s *PostService) UpdatePost(ctx context.Context, post *model.Post) (httpRes
 			return
 		}
 
-		log.WithError(err).Error("UpdatePost.s.2")
+		log.WithContext(ctx).WithError(err).Error("UpdatePost.s.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -274,7 +274,7 @@ func (s *PostService) DeletePost(ctx context.Context, postID uint64, userIDAuth 
 			return
 		}
 
-		log.WithError(err).Error("DeletePost.s.1")
+		log.WithContext(ctx).WithError(err).Error("DeletePost.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -294,7 +294,7 @@ func (s *PostService) DeletePost(ctx context.Context, postID uint64, userIDAuth 
 			return
 		}
 
-		log.WithError(err).Error("DeletePost.s.2")
+		log.WithContext(ctx).WithError(err).Error("DeletePost.s.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -321,7 +321,7 @@ func (s *PostService) DeletePostsByAuthID(ctx context.Context, authID uint64) (h
 			return
 		}
 
-		log.WithError(err).Error("DeletePostsByAuthID.s.1")
+		log.WithContext(ctx).WithError(err).Error("DeletePostsByAuthID.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -334,7 +334,7 @@ func (s *PostService) DeletePostsByAuthID(ctx context.Context, authID uint64) (h
 			return
 		}
 
-		log.WithError(err).Error("DeletePostsByAuthID.s.2")
+		log.WithContext(ctx).WithError(err).Error("DeletePostsByAuthID.s.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return

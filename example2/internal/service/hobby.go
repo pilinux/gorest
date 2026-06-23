@@ -37,7 +37,7 @@ func (s *HobbyService) GetHobbies(ctx context.Context) (httpResponse gmodel.HTTP
 			return
 		}
 
-		log.WithError(err).Error("GetHobbies.s.1")
+		log.WithContext(ctx).WithError(err).Error("GetHobbies.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -70,7 +70,7 @@ func (s *HobbyService) GetHobby(ctx context.Context, hobbyID uint64) (httpRespon
 			return
 		}
 
-		log.WithError(err).Error("GetHobby.s.1")
+		log.WithContext(ctx).WithError(err).Error("GetHobby.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -98,7 +98,7 @@ func (s *HobbyService) GetHobbiesByAuthID(ctx context.Context, authID uint64) (h
 			return
 		}
 
-		log.WithError(err).Error("GetHobbiesByAuthID.s.1")
+		log.WithContext(ctx).WithError(err).Error("GetHobbiesByAuthID.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -118,7 +118,7 @@ func (s *HobbyService) GetHobbiesByAuthID(ctx context.Context, authID uint64) (h
 			return
 		}
 
-		log.WithError(err).Error("GetHobbiesByAuthID.s.2")
+		log.WithContext(ctx).WithError(err).Error("GetHobbiesByAuthID.s.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -146,7 +146,7 @@ func (s *HobbyService) AddHobbyToUser(ctx context.Context, authID uint64, hobby 
 			return
 		}
 
-		log.WithError(err).Error("AddHobbyToUser.s.1")
+		log.WithContext(ctx).WithError(err).Error("AddHobbyToUser.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -159,7 +159,7 @@ func (s *HobbyService) AddHobbyToUser(ctx context.Context, authID uint64, hobby 
 			return
 		}
 
-		log.WithError(err).Error("AddHobbyToUser.s.2")
+		log.WithContext(ctx).WithError(err).Error("AddHobbyToUser.s.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -187,7 +187,7 @@ func (s *HobbyService) DeleteHobbyFromUser(ctx context.Context, authID, hobbyID 
 			return
 		}
 
-		log.WithError(err).Error("DeleteHobbyFromUser.s.1")
+		log.WithContext(ctx).WithError(err).Error("DeleteHobbyFromUser.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -206,7 +206,7 @@ func (s *HobbyService) DeleteHobbyFromUser(ctx context.Context, authID, hobbyID 
 			return
 		}
 
-		log.WithError(err).Error("DeleteHobbyFromUser.s.2")
+		log.WithContext(ctx).WithError(err).Error("DeleteHobbyFromUser.s.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return

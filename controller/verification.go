@@ -63,7 +63,7 @@ func VerifyEmail(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := handler.VerifyEmail(payload)
+	resp, statusCode := handler.VerifyEmail(c.Request.Context(), payload)
 
 	renderer.Render(c, resp, statusCode)
 }
@@ -125,7 +125,7 @@ func CreateVerificationEmail(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := handler.CreateVerificationEmail(payload)
+	resp, statusCode := handler.CreateVerificationEmail(c.Request.Context(), payload)
 
 	renderer.Render(c, resp, statusCode)
 }
@@ -162,7 +162,7 @@ func VerifyUpdatedEmail(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := handler.VerifyUpdatedEmail(payload)
+	resp, statusCode := handler.VerifyUpdatedEmail(c.Request.Context(), payload)
 
 	renderer.Render(c, resp, statusCode)
 }
@@ -194,7 +194,7 @@ func GetUnverifiedEmail(c *gin.Context) {
 	// get claims
 	claims := service.GetClaims(c)
 
-	resp, statusCode := handler.GetUnverifiedEmail(claims)
+	resp, statusCode := handler.GetUnverifiedEmail(c.Request.Context(), claims)
 
 	renderer.Render(c, resp, statusCode)
 }
@@ -237,7 +237,7 @@ func ResendVerificationCodeToModifyActiveEmail(c *gin.Context) {
 	// get claims
 	claims := service.GetClaims(c)
 
-	resp, statusCode := handler.ResendVerificationCodeToModifyActiveEmail(claims)
+	resp, statusCode := handler.ResendVerificationCodeToModifyActiveEmail(c.Request.Context(), claims)
 
 	renderer.Render(c, resp, statusCode)
 }

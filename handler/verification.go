@@ -24,7 +24,7 @@ import (
 //
 // It reads and deletes the verification code from Redis and then marks the
 // account email as verified in the relational database.
-func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
+func VerifyEmail(ctx context.Context, payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	payload.VerificationCode = strings.TrimSpace(payload.VerificationCode)
 	if payload.VerificationCode == "" {
 		httpResponse.Message = "required a valid email verification code"
@@ -41,19 +41,19 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 	// get redis client
 	client := database.GetRedis()
 	if client == nil {
-		log.Error("error code: 1061.0: redis client not initialized")
+		log.WithContext(ctx).Error("error code: 1061.0: redis client not initialized")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	rConnTTL := config.GetConfig().Database.REDIS.Conn.ConnTTL
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
+	redisCtx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
 
 	// atomically fetch and delete the code so it can only be consumed once
 	// (GETDEL prevents a concurrent replay between read and delete)
-	if err := client.Do(ctx, radix.FlatCmd(&data.value, "GETDEL", data.key)); err != nil {
-		log.WithError(err).Error("error code: 1061.1")
+	if err := client.Do(redisCtx, radix.FlatCmd(&data.value, "GETDEL", data.key)); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error code: 1061.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -68,7 +68,7 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 	// update verification status in database
 	db := database.GetDB()
 	if db == nil {
-		log.Error("error code: 1061.4: database connection not initialized")
+		log.WithContext(ctx).Error("error code: 1061.4: database connection not initialized")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -81,14 +81,14 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 		if err := db.Where("email = ?", data.value).First(&auth).Error; err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
-				log.WithError(err).Error("error code: 1061.5")
+				log.WithContext(ctx).WithError(err).Error("error code: 1061.5")
 				httpResponse.Message = "internal server error"
 				httpStatusCode = http.StatusInternalServerError
 				return
 			}
 
 			// email was in redis but not in relational db => missing data
-			log.WithError(err).Error("error code: 1061.6")
+			log.WithContext(ctx).WithError(err).Error("error code: 1061.6")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -98,14 +98,14 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 		if err := db.Where("email_hash = ?", data.value).First(&auth).Error; err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
-				log.WithError(err).Error("error code: 1061.7")
+				log.WithContext(ctx).WithError(err).Error("error code: 1061.7")
 				httpResponse.Message = "internal server error"
 				httpStatusCode = http.StatusInternalServerError
 				return
 			}
 
 			// email hash was in redis but not in relational db => missing data
-			log.WithError(err).Error("error code: 1061.8")
+			log.WithContext(ctx).WithError(err).Error("error code: 1061.8")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -124,7 +124,7 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 	tx := db.Begin()
 	if err := tx.Save(&auth).Error; err != nil {
 		tx.Rollback()
-		log.WithError(err).Error("error code: 1061.9")
+		log.WithContext(ctx).WithError(err).Error("error code: 1061.9")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -140,7 +140,7 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 //
 // It validates the email address, verifies the user's password, and triggers a
 // verification email to be sent.
-func CreateVerificationEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
+func CreateVerificationEmail(ctx context.Context, payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	payload.Email = strings.TrimSpace(payload.Email)
 	if !lib.ValidateEmail(payload.Email) {
 		httpResponse.Message = "wrong email address"
@@ -152,7 +152,7 @@ func CreateVerificationEmail(payload model.AuthPayload) (httpResponse model.HTTP
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
-			log.WithError(err).Error("error code: 1062.1")
+			log.WithContext(ctx).WithError(err).Error("error code: 1062.1")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -181,7 +181,7 @@ func CreateVerificationEmail(payload model.AuthPayload) (httpResponse model.HTTP
 	// verify password
 	verifyPass, err := argon2.ComparePasswordAndHash(payload.Password, config.GetConfig().Security.HashSec, v.Password)
 	if err != nil {
-		log.WithError(err).Error("error code: 1062.2")
+		log.WithContext(ctx).WithError(err).Error("error code: 1062.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -193,9 +193,9 @@ func CreateVerificationEmail(payload model.AuthPayload) (httpResponse model.HTTP
 	}
 
 	// issue new verification code
-	emailDelivered, err := service.SendEmail(v.Email, model.EmailTypeVerifyEmailNewAcc)
+	emailDelivered, err := service.SendEmail(ctx, v.Email, model.EmailTypeVerifyEmailNewAcc)
 	if err != nil {
-		log.WithError(err).Error("error code: 1062.3")
+		log.WithContext(ctx).WithError(err).Error("error code: 1062.3")
 		httpResponse.Message = "email delivery service failed"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -219,7 +219,7 @@ func CreateVerificationEmail(payload model.AuthPayload) (httpResponse model.HTTP
 //   - verify newly added email address
 //   - update user email address in database after successful verification
 //   - delete temporary data from database after verification process is done
-func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
+func VerifyUpdatedEmail(ctx context.Context, payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	payload.VerificationCode = strings.TrimSpace(payload.VerificationCode)
 	if payload.VerificationCode == "" {
 		httpResponse.Message = "required a valid email verification code"
@@ -236,19 +236,19 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 	// get redis client
 	client := database.GetRedis()
 	if client == nil {
-		log.Error("error code: 1063.0: redis client not initialized")
+		log.WithContext(ctx).Error("error code: 1063.0: redis client not initialized")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	rConnTTL := config.GetConfig().Database.REDIS.Conn.ConnTTL
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
+	redisCtx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
 
 	// atomically fetch and delete the code so it can only be consumed once
 	// (GETDEL prevents a concurrent replay between read and delete)
-	if err := client.Do(ctx, radix.FlatCmd(&data.value, "GETDEL", data.key)); err != nil {
-		log.WithError(err).Error("error code: 1063.1")
+	if err := client.Do(redisCtx, radix.FlatCmd(&data.value, "GETDEL", data.key)); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error code: 1063.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -263,7 +263,7 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 	// update user email in database
 	db := database.GetDB()
 	if db == nil {
-		log.Error("error code: 1063.4: database connection not initialized")
+		log.WithContext(ctx).Error("error code: 1063.4: database connection not initialized")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -278,7 +278,7 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 		if err := db.Where("email = ?", data.value).First(&tempEmail).Error; err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
-				log.WithError(err).Error("error code: 1063.5")
+				log.WithContext(ctx).WithError(err).Error("error code: 1063.5")
 				httpResponse.Message = "internal server error"
 				httpStatusCode = http.StatusInternalServerError
 				return
@@ -297,7 +297,7 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 		if err := db.Where("email_hash = ?", data.value).First(&tempEmail).Error; err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
-				log.WithError(err).Error("error code: 1063.6")
+				log.WithContext(ctx).WithError(err).Error("error code: 1063.6")
 				httpResponse.Message = "internal server error"
 				httpStatusCode = http.StatusInternalServerError
 				return
@@ -320,7 +320,7 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 		if err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
-				log.WithError(err).Error("error code: 1063.71")
+				log.WithContext(ctx).WithError(err).Error("error code: 1063.71")
 				httpResponse.Message = "internal server error"
 				httpStatusCode = http.StatusInternalServerError
 				return
@@ -338,7 +338,7 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 		if err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
-				log.WithError(err).Error("error code: 1063.72")
+				log.WithContext(ctx).WithError(err).Error("error code: 1063.72")
 				httpResponse.Message = "internal server error"
 				httpStatusCode = http.StatusInternalServerError
 				return
@@ -355,7 +355,7 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 	if err := db.Where("auth_id = ?", tempEmail.IDAuth).First(&auth).Error; err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
-			log.WithError(err).Error("error code: 1063.73")
+			log.WithContext(ctx).WithError(err).Error("error code: 1063.73")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -380,14 +380,14 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 	tx := db.Begin()
 	if err := tx.Delete(&tempEmail).Error; err != nil {
 		tx.Rollback()
-		log.WithError(err).Error("error code: 1063.8")
+		log.WithContext(ctx).WithError(err).Error("error code: 1063.8")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	if err := tx.Save(&auth).Error; err != nil {
 		tx.Rollback()
-		log.WithError(err).Error("error code: 1063.9")
+		log.WithContext(ctx).WithError(err).Error("error code: 1063.9")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -403,7 +403,7 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 //
 // It returns the unverified email details (deciphered when stored encrypted) for
 // the authenticated user.
-func GetUnverifiedEmail(claims middleware.MyCustomClaims) (httpResponse model.HTTPResponse, httpStatusCode int) {
+func GetUnverifiedEmail(ctx context.Context, claims middleware.MyCustomClaims) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	// check auth validity
 	ok := service.ValidateAuthID(claims.AuthID)
 	if !ok {
@@ -415,7 +415,7 @@ func GetUnverifiedEmail(claims middleware.MyCustomClaims) (httpResponse model.HT
 	// read DB
 	db := database.GetDB()
 	if db == nil {
-		log.Error("error code: 1064.0: database connection not initialized")
+		log.WithContext(ctx).Error("error code: 1064.0: database connection not initialized")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -427,7 +427,7 @@ func GetUnverifiedEmail(claims middleware.MyCustomClaims) (httpResponse model.HT
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
-			log.WithError(err).Error("error code: 1064.1")
+			log.WithContext(ctx).WithError(err).Error("error code: 1064.1")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -442,7 +442,7 @@ func GetUnverifiedEmail(claims middleware.MyCustomClaims) (httpResponse model.HT
 		if tempEmail.Email == "" {
 			if !config.IsCipher() {
 				e := errors.New("check env: ACTIVATE_CIPHER")
-				log.WithError(e).Error("error code: 1064.2")
+				log.WithContext(ctx).WithError(e).Error("error code: 1064.2")
 				httpResponse.Message = "internal server error"
 				httpStatusCode = http.StatusInternalServerError
 				return
@@ -450,7 +450,7 @@ func GetUnverifiedEmail(claims middleware.MyCustomClaims) (httpResponse model.HT
 
 			tempEmail.Email, err = service.DecryptEmail(tempEmail.EmailNonce, tempEmail.EmailCipher)
 			if err != nil {
-				log.WithError(err).Error("error code: 1064.3")
+				log.WithContext(ctx).WithError(err).Error("error code: 1064.3")
 				httpResponse.Message = "internal server error"
 				httpStatusCode = http.StatusInternalServerError
 				return
@@ -473,7 +473,7 @@ func GetUnverifiedEmail(claims middleware.MyCustomClaims) (httpResponse model.HT
 //
 // It loads the pending email-change request, deciphers the email when needed,
 // and triggers a new verification email.
-func ResendVerificationCodeToModifyActiveEmail(claims middleware.MyCustomClaims) (httpResponse model.HTTPResponse, httpStatusCode int) {
+func ResendVerificationCodeToModifyActiveEmail(ctx context.Context, claims middleware.MyCustomClaims) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	// check auth validity
 	ok := service.ValidateAuthID(claims.AuthID)
 	if !ok {
@@ -485,7 +485,7 @@ func ResendVerificationCodeToModifyActiveEmail(claims middleware.MyCustomClaims)
 	// read DB
 	db := database.GetDB()
 	if db == nil {
-		log.Error("error code: 1065.0: database connection not initialized")
+		log.WithContext(ctx).Error("error code: 1065.0: database connection not initialized")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -497,7 +497,7 @@ func ResendVerificationCodeToModifyActiveEmail(claims middleware.MyCustomClaims)
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
-			log.WithError(err).Error("error code: 1065.1")
+			log.WithContext(ctx).WithError(err).Error("error code: 1065.1")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -512,7 +512,7 @@ func ResendVerificationCodeToModifyActiveEmail(claims middleware.MyCustomClaims)
 	if tempEmail.Email == "" {
 		if !config.IsCipher() {
 			e := errors.New("check env: ACTIVATE_CIPHER")
-			log.WithError(e).Error("error code: 1065.2")
+			log.WithContext(ctx).WithError(e).Error("error code: 1065.2")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -520,7 +520,7 @@ func ResendVerificationCodeToModifyActiveEmail(claims middleware.MyCustomClaims)
 
 		tempEmail.Email, err = service.DecryptEmail(tempEmail.EmailNonce, tempEmail.EmailCipher)
 		if err != nil {
-			log.WithError(err).Error("error code: 1065.3")
+			log.WithContext(ctx).WithError(err).Error("error code: 1065.3")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -528,9 +528,9 @@ func ResendVerificationCodeToModifyActiveEmail(claims middleware.MyCustomClaims)
 	}
 
 	// issue new verification code
-	emailDelivered, err := service.SendEmail(tempEmail.Email, model.EmailTypeVerifyUpdatedEmail)
+	emailDelivered, err := service.SendEmail(ctx, tempEmail.Email, model.EmailTypeVerifyUpdatedEmail)
 	if err != nil {
-		log.WithError(err).Error("error code: 1065.4")
+		log.WithContext(ctx).WithError(err).Error("error code: 1065.4")
 		httpResponse.Message = "email delivery service failed"
 		httpStatusCode = http.StatusInternalServerError
 		return

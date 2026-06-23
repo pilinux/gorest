@@ -34,7 +34,7 @@ func (s *KeyValueService) SetKeyValue(ctx context.Context, kv *model.KV) (httpRe
 			return
 		}
 
-		log.WithError(err).Error("SetKeyValue.s.1")
+		log.WithContext(ctx).WithError(err).Error("SetKeyValue.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -61,7 +61,7 @@ func (s *KeyValueService) GetKeyValue(ctx context.Context, key string) (httpResp
 			return
 		}
 
-		log.WithError(err).Error("GetKeyValue.s.1")
+		log.WithContext(ctx).WithError(err).Error("GetKeyValue.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -88,7 +88,7 @@ func (s *KeyValueService) DeleteKeyValue(ctx context.Context, key string) (httpR
 			return
 		}
 
-		log.WithError(err).Error("DeleteKeyValue.s.1")
+		log.WithContext(ctx).WithError(err).Error("DeleteKeyValue.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -115,7 +115,7 @@ func (s *KeyValueService) SetHashKeyValue(ctx context.Context, kv *model.KVHash)
 			return
 		}
 
-		log.WithError(err).Error("SetHashKeyValue.s.1")
+		log.WithContext(ctx).WithError(err).Error("SetHashKeyValue.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -136,7 +136,7 @@ func (s *KeyValueService) GetHashKeyValue(ctx context.Context, key string) (http
 			return
 		}
 
-		log.WithError(err).Error("GetHashKeyValue.s.1")
+		log.WithContext(ctx).WithError(err).Error("GetHashKeyValue.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -170,7 +170,7 @@ func (s *KeyValueService) DeleteHashKeyValue(ctx context.Context, key string) (h
 			return
 		}
 
-		log.WithError(err).Error("DeleteHashKeyValue.s.1")
+		log.WithContext(ctx).WithError(err).Error("DeleteHashKeyValue.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return

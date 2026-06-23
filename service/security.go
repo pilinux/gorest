@@ -17,7 +17,7 @@ import (
 // IsTokenAllowed returns true when the token is not in the blacklist.
 //
 // Dependency: JWT, Redis database + enable 'INVALIDATE_JWT' in .env
-func IsTokenAllowed(jti string) bool {
+func IsTokenAllowed(ctx context.Context, jti string) bool {
 	// verify that JWT service is enabled in .env
 	if !config.IsJWT() {
 		return true
@@ -38,17 +38,17 @@ func IsTokenAllowed(jti string) bool {
 	client := database.GetRedis()
 	if client == nil {
 		// Redis is enabled but its client is not initialized
-		log.Error("error code: 500: redis client not initialized")
+		log.WithContext(ctx).Error("error code: 500: redis client not initialized")
 		return false
 	}
 	rConnTTL := config.GetConfig().Database.REDIS.Conn.ConnTTL
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
+	redisCtx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
 
 	// is key available in Redis
 	result := 0
-	if err := client.Do(ctx, radix.FlatCmd(&result, "EXISTS", jti)); err != nil {
-		log.WithError(err).Error("error code: 501")
+	if err := client.Do(redisCtx, radix.FlatCmd(&result, "EXISTS", jti)); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error code: 501")
 		return false
 	}
 
@@ -78,7 +78,7 @@ func JWTBlacklistChecker() gin.HandlerFunc {
 		}
 
 	CheckBlackList:
-		if !IsTokenAllowed(jti) {
+		if !IsTokenAllowed(c.Request.Context(), jti) {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, "invalid token")
 			return
 		}

@@ -63,7 +63,7 @@ func CreateUserAuth(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := handler.CreateUserAuth(auth)
+	resp, statusCode := handler.CreateUserAuth(c.Request.Context(), auth)
 
 	if _, ok := resp.Message.(string); ok {
 		renderer.Render(c, resp, statusCode)
@@ -104,7 +104,7 @@ func UpdateEmail(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := handler.UpdateEmail(claims, req)
+	resp, statusCode := handler.UpdateEmail(c.Request.Context(), claims, req)
 
 	renderer.Render(c, resp, statusCode)
 }

@@ -55,7 +55,7 @@ func Logout(c *gin.Context) {
 		)
 	}
 
-	resp, statusCode := handler.Logout(jtiAccess, jtiRefresh, expAccess, expRefresh)
+	resp, statusCode := handler.Logout(c.Request.Context(), jtiAccess, jtiRefresh, expAccess, expRefresh)
 
 	renderer.Render(c, resp, statusCode)
 }

@@ -42,7 +42,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	resp, statusCode := handler.Login(payload)
+	resp, statusCode := handler.Login(c.Request.Context(), payload)
 
 	// auth verification failed
 	if statusCode != http.StatusOK {
@@ -87,7 +87,7 @@ func Login(c *gin.Context) {
 		}
 
 		if !ok {
-			log.Error("error code: 1011.1")
+			log.WithContext(c.Request.Context()).Error("error code: 1011.1")
 			resp.Message = "failed to prepare auth cookie"
 			statusCode = http.StatusInternalServerError
 		}
@@ -114,7 +114,7 @@ func Refresh(c *gin.Context) {
 	// get claims
 	claims := service.GetClaims(c)
 
-	resp, statusCode := handler.Refresh(claims)
+	resp, statusCode := handler.Refresh(c.Request.Context(), claims)
 
 	configSecurity := config.GetConfig().Security
 
@@ -183,7 +183,7 @@ func Refresh(c *gin.Context) {
 		}
 
 		if !ok {
-			log.Error("error code: 1012.1")
+			log.WithContext(c.Request.Context()).Error("error code: 1012.1")
 			resp.Message = "failed to prepare auth cookie"
 			statusCode = http.StatusInternalServerError
 		}

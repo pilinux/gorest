@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"net/http"
@@ -31,7 +32,7 @@ var (
 // password against it when the account does not exist makes Login spend
 // roughly the same time hashing whether or not the email is registered,
 // closing the timing side-channel that would otherwise leak account existence.
-func timingSafeDummyHash(configSecurity config.SecurityConfig) string {
+func timingSafeDummyHash(ctx context.Context, configSecurity config.SecurityConfig) string {
 	dummyHashOnce.Do(func() {
 		configHash := lib.HashPassConfig{
 			Memory:      configSecurity.HashPass.Memory,
@@ -42,7 +43,7 @@ func timingSafeDummyHash(configSecurity config.SecurityConfig) string {
 		}
 		h, err := lib.HashPass(configHash, "timing-safe-dummy-password", configSecurity.HashSec)
 		if err != nil {
-			log.WithError(err).Error("error code: 1013.0")
+			log.WithContext(ctx).WithError(err).Error("error code: 1013.0")
 			return
 		}
 		dummyHash = h
@@ -55,7 +56,7 @@ func timingSafeDummyHash(configSecurity config.SecurityConfig) string {
 // If email verification is enabled, it requires the account email to be verified.
 // If 2FA is enabled and configured for the user, it prepares in-memory state for
 // the OTP validation step.
-func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
+func Login(ctx context.Context, payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	payload.Email = strings.TrimSpace(payload.Email)
 	if !lib.ValidateEmail(payload.Email) {
 		httpResponse.Message = "wrong email address"
@@ -70,7 +71,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			// db read error
-			log.WithError(err).Error("error code: 1013.1")
+			log.WithContext(ctx).WithError(err).Error("error code: 1013.1")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -80,7 +81,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 		// depend on whether the account exists (mitigates a timing oracle that
 		// would otherwise leak account existence even with a generic message)
 		if config.IsHashPass() {
-			_, _ = argon2.ComparePasswordAndHash(payload.Password, configSecurity.HashSec, timingSafeDummyHash(configSecurity))
+			_, _ = argon2.ComparePasswordAndHash(payload.Password, configSecurity.HashSec, timingSafeDummyHash(ctx, configSecurity))
 		}
 
 		// avoid account enumeration in production: an unknown email returns the
@@ -100,7 +101,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 	// only revealed to a caller who has proven knowledge of the credentials
 	verifyPass, err := argon2.ComparePasswordAndHash(payload.Password, configSecurity.HashSec, v.Password)
 	if err != nil {
-		log.WithError(err).Error("error code: 1013.2")
+		log.WithContext(ctx).WithError(err).Error("error code: 1013.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -135,7 +136,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 	if configSecurity.Must2FA == config.Activated {
 		db := database.GetDB()
 		if db == nil {
-			log.Error("error code: 1013.10: database connection not initialized")
+			log.WithContext(ctx).Error("error code: 1013.10: database connection not initialized")
 			httpResponse.Message = "internal server error"
 			httpStatusCode = http.StatusInternalServerError
 			return
@@ -147,7 +148,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 		if err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				// db read error
-				log.WithError(err).Error("error code: 1013.3")
+				log.WithContext(ctx).WithError(err).Error("error code: 1013.3")
 				httpResponse.Message = "internal server error"
 				httpStatusCode = http.StatusInternalServerError
 				return
@@ -164,7 +165,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 				if twoFA.KeySalt != "" {
 					salt, err := base64.StdEncoding.DecodeString(twoFA.KeySalt)
 					if err != nil {
-						log.WithError(err).Error("error code: 1013.4.1")
+						log.WithContext(ctx).WithError(err).Error("error code: 1013.4.1")
 						httpResponse.Message = "internal server error"
 						httpStatusCode = http.StatusInternalServerError
 						return
@@ -177,7 +178,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 					// and there is no fallback to old 2FA mechanism.
 					// please check release notes of v1.10.5 to solve this issue for
 					// existing users before migrating to v1.11.x.
-					log.WithFields(
+					log.WithContext(ctx).WithFields(
 						log.Fields{
 							"authID": v.AuthID,
 							"reason": "missing KeySalt for 2FA",
@@ -199,14 +200,14 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 	// issue new tokens
 	accessJWT, _, err := middleware.GetJWT(claims, "access")
 	if err != nil {
-		log.WithError(err).Error("error code: 1013.5")
+		log.WithContext(ctx).WithError(err).Error("error code: 1013.5")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
 	if err != nil {
-		log.WithError(err).Error("error code: 1013.6")
+		log.WithContext(ctx).WithError(err).Error("error code: 1013.6")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -223,7 +224,7 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 }
 
 // Refresh issues a new access/refresh token pair for an authenticated session.
-func Refresh(claims middleware.MyCustomClaims) (httpResponse model.HTTPResponse, httpStatusCode int) {
+func Refresh(ctx context.Context, claims middleware.MyCustomClaims) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	// check validity
 	ok := service.ValidateAuthID(claims.AuthID)
 	if !ok {
@@ -235,14 +236,14 @@ func Refresh(claims middleware.MyCustomClaims) (httpResponse model.HTTPResponse,
 	// issue new tokens
 	accessJWT, _, err := middleware.GetJWT(claims, "access")
 	if err != nil {
-		log.WithError(err).Error("error code: 1014.1")
+		log.WithContext(ctx).WithError(err).Error("error code: 1014.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 	refreshJWT, _, err := middleware.GetJWT(claims, "refresh")
 	if err != nil {
-		log.WithError(err).Error("error code: 1014.2")
+		log.WithContext(ctx).WithError(err).Error("error code: 1014.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return

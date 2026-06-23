@@ -42,7 +42,7 @@ func (s *UserService) GetUsers(ctx context.Context) (httpResponse gmodel.HTTPRes
 			return
 		}
 
-		log.WithError(err).Error("GetUsers.s.1")
+		log.WithContext(ctx).WithError(err).Error("GetUsers.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -68,7 +68,7 @@ func (s *UserService) GetUsers(ctx context.Context) (httpResponse gmodel.HTTPRes
 			httpStatusCode = http.StatusRequestTimeout
 			return
 		}
-		log.WithError(err).Error("GetUsers.s.2")
+		log.WithContext(ctx).WithError(err).Error("GetUsers.s.2")
 	} else {
 		for j := range users {
 			users[j].Posts = postsByUser[users[j].UserID]
@@ -83,7 +83,7 @@ func (s *UserService) GetUsers(ctx context.Context) (httpResponse gmodel.HTTPRes
 			httpStatusCode = http.StatusRequestTimeout
 			return
 		}
-		log.WithError(err).Error("GetUsers.s.3")
+		log.WithContext(ctx).WithError(err).Error("GetUsers.s.3")
 	} else {
 		for j := range users {
 			users[j].Hobbies = hobbiesByUser[users[j].UserID]
@@ -111,7 +111,7 @@ func (s *UserService) GetUser(ctx context.Context, userID uint64) (httpResponse 
 			return
 		}
 
-		log.WithError(err).Error("GetUser.s.1")
+		log.WithContext(ctx).WithError(err).Error("GetUser.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -126,7 +126,7 @@ func (s *UserService) GetUser(ctx context.Context, userID uint64) (httpResponse 
 		httpStatusCode = http.StatusRequestTimeout
 		return
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		log.WithError(err).Error("GetUser.s.2")
+		log.WithContext(ctx).WithError(err).Error("GetUser.s.2")
 	}
 
 	// fetch hobbies for the user
@@ -138,7 +138,7 @@ func (s *UserService) GetUser(ctx context.Context, userID uint64) (httpResponse 
 		httpStatusCode = http.StatusRequestTimeout
 		return
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		log.WithError(err).Error("GetUser.s.3")
+		log.WithContext(ctx).WithError(err).Error("GetUser.s.3")
 	}
 
 	httpResponse.Message = user
@@ -162,7 +162,7 @@ func (s *UserService) GetUserByAuthID(ctx context.Context, authID uint64) (httpR
 			return
 		}
 
-		log.WithError(err).Error("GetUserByAuthID.s.1")
+		log.WithContext(ctx).WithError(err).Error("GetUserByAuthID.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -177,7 +177,7 @@ func (s *UserService) GetUserByAuthID(ctx context.Context, authID uint64) (httpR
 		httpStatusCode = http.StatusRequestTimeout
 		return
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		log.WithError(err).Error("GetUserByAuthID.s.2")
+		log.WithContext(ctx).WithError(err).Error("GetUserByAuthID.s.2")
 	}
 
 	// fetch hobbies for the user
@@ -189,7 +189,7 @@ func (s *UserService) GetUserByAuthID(ctx context.Context, authID uint64) (httpR
 		httpStatusCode = http.StatusRequestTimeout
 		return
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		log.WithError(err).Error("GetUserByAuthID.s.3")
+		log.WithContext(ctx).WithError(err).Error("GetUserByAuthID.s.3")
 	}
 
 	httpResponse.Message = user
@@ -212,7 +212,7 @@ func (s *UserService) CreateUser(ctx context.Context, user *model.User) (httpRes
 		return
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		log.WithError(err).Error("CreateUser.s.1")
+		log.WithContext(ctx).WithError(err).Error("CreateUser.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -227,7 +227,7 @@ func (s *UserService) CreateUser(ctx context.Context, user *model.User) (httpRes
 			return
 		}
 
-		log.WithError(err).Error("CreateUser.s.2")
+		log.WithContext(ctx).WithError(err).Error("CreateUser.s.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -255,7 +255,7 @@ func (s *UserService) UpdateUser(ctx context.Context, user *model.User) (httpRes
 			return
 		}
 
-		log.WithError(err).Error("UpdateUser.s.1")
+		log.WithContext(ctx).WithError(err).Error("UpdateUser.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -282,7 +282,7 @@ func (s *UserService) UpdateUser(ctx context.Context, user *model.User) (httpRes
 			return
 		}
 
-		log.WithError(err).Error("UpdateUser.s.2")
+		log.WithContext(ctx).WithError(err).Error("UpdateUser.s.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -311,7 +311,7 @@ func (s *UserService) DeleteUser(ctx context.Context, authID uint64) (httpRespon
 			return
 		}
 
-		log.WithError(err).Error("DeleteUser.s.1")
+		log.WithContext(ctx).WithError(err).Error("DeleteUser.s.1")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -323,7 +323,7 @@ func (s *UserService) DeleteUser(ctx context.Context, authID uint64) (httpRespon
 	// orphaned/half-deleted rows remain.
 	db := gdb.GetDB()
 	if db == nil {
-		log.Error("DeleteUser.s.0: database connection not initialized")
+		log.WithContext(ctx).Error("DeleteUser.s.0: database connection not initialized")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
@@ -381,7 +381,7 @@ func (s *UserService) DeleteUser(ctx context.Context, authID uint64) (httpRespon
 			return
 		}
 
-		log.WithError(err).Error("DeleteUser.s.2")
+		log.WithContext(ctx).WithError(err).Error("DeleteUser.s.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
