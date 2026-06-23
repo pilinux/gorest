@@ -54,6 +54,12 @@ func Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (
 
 	// is 2FA disabled/never configured before
 	db := database.GetDB()
+	if db == nil {
+		log.Error("error code: 1051.0: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	twoFA := model.TwoFA{}
 	// err == gorm.ErrRecordNotFound => never configured before
 	// err == nil => 2FA disabled
@@ -285,6 +291,12 @@ func Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 
 	// step 4: check DB
 	db := database.GetDB()
+	if db == nil {
+		log.Error("error code: 1052.0: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	twoFA := model.TwoFA{}
 	available := false
 	err = db.Where("id_auth = ?", claims.AuthID).First(&twoFA).Error
@@ -518,6 +530,12 @@ func Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload
 
 	// check DB
 	db := database.GetDB()
+	if db == nil {
+		log.Error("error code: 1053.0: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	twoFA := model.TwoFA{}
 	// no record in DB!
 	if err := db.Where("id_auth = ?", claims.AuthID).First(&twoFA).Error; err != nil {
@@ -682,6 +700,12 @@ func Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPaylo
 
 	// find user
 	db := database.GetDB()
+	if db == nil {
+		log.Error("error code: 1054.0: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	v := model.Auth{}
 	if err := db.Where("auth_id = ?", claims.AuthID).First(&v).Error; err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -836,6 +860,12 @@ func CreateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPay
 
 	// retrieve user auth
 	db := database.GetDB()
+	if db == nil {
+		log.Error("error code: 1055.0: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	v := model.Auth{}
 	if err := db.Where("auth_id = ?", claims.AuthID).First(&v).Error; err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -999,6 +1029,12 @@ func ValidateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthP
 
 	// retrieve existing 2FA backup codes
 	db := database.GetDB()
+	if db == nil {
+		log.Error("error code: 1056.0: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	twoFABackup := []model.TwoFABackup{}
 
 	if err := db.Where("id_auth = ?", claims.AuthID).Find(&twoFABackup).Error; err != nil {

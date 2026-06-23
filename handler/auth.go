@@ -38,6 +38,12 @@ const genericEmailInUseMessage = "unable to complete the request"
 // mark the account as email-not-verified.
 func CreateUserAuth(auth model.Auth) (httpResponse model.HTTPResponse, httpStatusCode int) {
 	db := database.GetDB()
+	if db == nil {
+		log.Error("error code: 1000.1: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 
 	// user must not be able to manipulate all fields
 	authFinal := new(model.Auth)
@@ -244,6 +250,12 @@ func UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (httpRes
 
 	// db connection
 	db := database.GetDB()
+	if db == nil {
+		log.Error("error code: 1000.2: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 
 	// step 3: load user credentials
 	auth := model.Auth{}

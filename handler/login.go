@@ -134,6 +134,12 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 	// when 2FA is enabled for this application (ACTIVATE_2FA=yes)
 	if configSecurity.Must2FA == config.Activated {
 		db := database.GetDB()
+		if db == nil {
+			log.Error("error code: 1013.10: database connection not initialized")
+			httpResponse.Message = "internal server error"
+			httpStatusCode = http.StatusInternalServerError
+			return
+		}
 		twoFA := model.TwoFA{}
 
 		// have the user configured 2FA

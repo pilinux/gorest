@@ -36,6 +36,11 @@ func IsTokenAllowed(jti string) bool {
 	jti = config.PrefixJtiBlacklist + jti
 
 	client := database.GetRedis()
+	if client == nil {
+		// Redis is enabled but its client is not initialized
+		log.Error("error code: 500: redis client not initialized")
+		return false
+	}
 	rConnTTL := config.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()

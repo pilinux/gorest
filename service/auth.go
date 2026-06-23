@@ -17,6 +17,9 @@ import (
 // GetUserByEmail fetches auth info by email or hash of the email.
 func GetUserByEmail(email string, decryptEmail bool) (*model.Auth, error) {
 	db := database.GetDB()
+	if db == nil {
+		return nil, database.ErrDBNotInitialized
+	}
 	var err error
 
 	var auth model.Auth
@@ -56,6 +59,9 @@ func GetUserByEmail(email string, decryptEmail bool) (*model.Auth, error) {
 // GetEmailByAuthID fetches user email by authID.
 func GetEmailByAuthID(authID uint64) (string, error) {
 	db := database.GetDB()
+	if db == nil {
+		return "", database.ErrDBNotInitialized
+	}
 	var auth model.Auth
 
 	err := db.Where("auth_id = ?", authID).First(&auth).Error
@@ -75,6 +81,9 @@ func GetEmailByAuthID(authID uint64) (string, error) {
 // IsAuthIDValid checks if the given authID is available in the database.
 func IsAuthIDValid(authID uint64) bool {
 	db := database.GetDB()
+	if db == nil {
+		return false
+	}
 	var auth model.Auth
 
 	err := db.Where("auth_id = ?", authID).First(&auth).Error

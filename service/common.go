@@ -183,6 +183,10 @@ func SendEmail(email string, emailType int, opts ...string) (bool, error) {
 
 	// save in redis with expiry time
 	client := database.GetRedis()
+	if client == nil {
+		log.Error("error code: 400.0: redis client not initialized")
+		return false, database.ErrRedisNotInitialized
+	}
 	redisConnTTL := appConfig.Database.REDIS.Conn.ConnTTL
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(redisConnTTL)*time.Second)

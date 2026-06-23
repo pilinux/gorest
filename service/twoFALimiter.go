@@ -70,6 +70,9 @@ func Backup2FACooldown(authID uint64) (remaining time.Duration, err error) {
 	}
 
 	client := database.GetRedis()
+	if client == nil {
+		return 0, database.ErrRedisNotInitialized
+	}
 	ctx, cancel := backup2FALimitCtx()
 	defer cancel()
 
@@ -95,6 +98,9 @@ func RegisterBackup2FAFailure(authID uint64) (cooldown time.Duration, err error)
 	}
 
 	client := database.GetRedis()
+	if client == nil {
+		return 0, database.ErrRedisNotInitialized
+	}
 	ctx, cancel := backup2FALimitCtx()
 	defer cancel()
 
@@ -123,6 +129,9 @@ func ClearBackup2FALimit(authID uint64) error {
 	}
 
 	client := database.GetRedis()
+	if client == nil {
+		return database.ErrRedisNotInitialized
+	}
 	ctx, cancel := backup2FALimitCtx()
 	defer cancel()
 

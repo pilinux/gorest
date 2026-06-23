@@ -14,7 +14,7 @@ import (
 func MongoCreateIndex(dbName, collectionName string, index mongo.IndexModel) error {
 	client := GetMongo()
 	if client == nil {
-		return errors.New("mongo client is not initialized")
+		return ErrMongoNotInitialized
 	}
 
 	db := client.Database(dbName)               // set database name
@@ -38,7 +38,7 @@ func MongoCreateIndex(dbName, collectionName string, index mongo.IndexModel) err
 func MongoCreateIndexes(dbName, collectionName string, indexes []mongo.IndexModel) error {
 	client := GetMongo()
 	if client == nil {
-		return errors.New("mongo client is not initialized")
+		return ErrMongoNotInitialized
 	}
 
 	db := client.Database(dbName)               // set database name
@@ -57,7 +57,7 @@ func MongoCreateIndexes(dbName, collectionName string, indexes []mongo.IndexMode
 func MongoDropIndex(dbName, collectionName string, indexes []string) error {
 	client := GetMongo()
 	if client == nil {
-		return errors.New("mongo client is not initialized")
+		return ErrMongoNotInitialized
 	}
 
 	db := client.Database(dbName)               // set database name
@@ -103,7 +103,7 @@ func MongoDropIndex(dbName, collectionName string, indexes []string) error {
 func MongoDropAllIndexes(dbName, collectionName string) error {
 	client := GetMongo()
 	if client == nil {
-		return errors.New("mongo client is not initialized")
+		return ErrMongoNotInitialized
 	}
 
 	db := client.Database(dbName)               // set database name

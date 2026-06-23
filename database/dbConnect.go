@@ -56,6 +56,19 @@ var mongoClient *mongo.Client
 // errConfigNotInitialized is returned when the configuration is not available.
 var errConfigNotInitialized = errors.New("config is not initialized")
 
+// Sentinel errors returned to callers when a database client is requested
+// before its connection has been initialized (e.g. the subsystem is disabled
+// via feature toggle). Callers can guard the getters with these instead of
+// risking a nil-pointer dereference.
+var (
+	// ErrDBNotInitialized is returned when the RDBMS connection is nil.
+	ErrDBNotInitialized = errors.New("database connection is not initialized")
+	// ErrRedisNotInitialized is returned when the Redis client is nil.
+	ErrRedisNotInitialized = errors.New("redis client is not initialized")
+	// ErrMongoNotInitialized is returned when the MongoDB client is nil.
+	ErrMongoNotInitialized = errors.New("mongo client is not initialized")
+)
+
 // sqlOpen is a package-level indirection for sql.Open to allow
 // error-path testing via export_test.go.
 var sqlOpen = sql.Open

@@ -144,7 +144,14 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 	}{}
 
 	// app security settings
-	configSecurity := config.GetConfig().Security
+	cfg := config.GetConfig()
+	if cfg == nil {
+		log.Error("error code: 1020.1: configuration not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+	configSecurity := cfg.Security
 
 	// check minimum password length
 	if len(authPayload.PassNew) < configSecurity.UserPassMinLength {
@@ -177,7 +184,13 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 
 	// get redis client
 	client := database.GetRedis()
-	rConnTTL := config.GetConfig().Database.REDIS.Conn.ConnTTL
+	if client == nil {
+		log.Error("error code: 1020.2: redis client not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
+	rConnTTL := cfg.Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
 
@@ -222,6 +235,12 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 
 	// get auth info from database
 	db := database.GetDB()
+	if db == nil {
+		log.Error("error code: 1020.3: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	auth := model.Auth{}
 
 	// is data.value an email or hash of an email
@@ -540,6 +559,12 @@ func PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayl
 
 	// read DB
 	db := database.GetDB()
+	if db == nil {
+		log.Error("error code: 1026.0: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	auth := model.Auth{}
 	twoFA := model.TwoFA{}
 	process2FA := false

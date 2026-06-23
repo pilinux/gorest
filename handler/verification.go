@@ -40,6 +40,12 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 
 	// get redis client
 	client := database.GetRedis()
+	if client == nil {
+		log.Error("error code: 1061.0: redis client not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	rConnTTL := config.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
@@ -61,6 +67,12 @@ func VerifyEmail(payload model.AuthPayload) (httpResponse model.HTTPResponse, ht
 
 	// update verification status in database
 	db := database.GetDB()
+	if db == nil {
+		log.Error("error code: 1061.4: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	auth := model.Auth{}
 
 	// is data.value an email or hash of an email
@@ -223,6 +235,12 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 
 	// get redis client
 	client := database.GetRedis()
+	if client == nil {
+		log.Error("error code: 1063.0: redis client not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	rConnTTL := config.GetConfig().Database.REDIS.Conn.ConnTTL
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rConnTTL)*time.Second)
 	defer cancel()
@@ -244,6 +262,12 @@ func VerifyUpdatedEmail(payload model.AuthPayload) (httpResponse model.HTTPRespo
 
 	// update user email in database
 	db := database.GetDB()
+	if db == nil {
+		log.Error("error code: 1063.4: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	auth := model.Auth{}
 	tempEmail := model.TempEmail{}
 
@@ -390,6 +414,12 @@ func GetUnverifiedEmail(claims middleware.MyCustomClaims) (httpResponse model.HT
 
 	// read DB
 	db := database.GetDB()
+	if db == nil {
+		log.Error("error code: 1064.0: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	tempEmail := model.TempEmail{}
 
 	// check 'temp_emails'
@@ -454,6 +484,12 @@ func ResendVerificationCodeToModifyActiveEmail(claims middleware.MyCustomClaims)
 
 	// read DB
 	db := database.GetDB()
+	if db == nil {
+		log.Error("error code: 1065.0: database connection not initialized")
+		httpResponse.Message = "internal server error"
+		httpStatusCode = http.StatusInternalServerError
+		return
+	}
 	tempEmail := model.TempEmail{}
 
 	// check 'temp_emails'
