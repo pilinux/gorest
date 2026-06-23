@@ -96,15 +96,8 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 		return
 	}
 
-	// check whether email verification is required
-	if configSecurity.VerifyEmail {
-		if v.VerifyEmail != model.EmailVerified {
-			httpResponse.Message = "email verification required"
-			httpStatusCode = http.StatusUnauthorized
-			return
-		}
-	}
-
+	// verify the password first so account state (e.g. email verification) is
+	// only revealed to a caller who has proven knowledge of the credentials
 	verifyPass, err := argon2.ComparePasswordAndHash(payload.Password, configSecurity.HashSec, v.Password)
 	if err != nil {
 		log.WithError(err).Error("error code: 1013.2")
@@ -116,6 +109,15 @@ func Login(payload model.AuthPayload) (httpResponse model.HTTPResponse, httpStat
 		httpResponse.Message = "wrong credentials"
 		httpStatusCode = http.StatusUnauthorized
 		return
+	}
+
+	// check whether email verification is required
+	if configSecurity.VerifyEmail {
+		if v.VerifyEmail != model.EmailVerified {
+			httpResponse.Message = "email verification required"
+			httpStatusCode = http.StatusUnauthorized
+			return
+		}
 	}
 
 	// custom claims
