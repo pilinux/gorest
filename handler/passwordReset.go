@@ -216,6 +216,14 @@ func PasswordRecover(authPayload model.AuthPayload) (httpResponse model.HTTPResp
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
+	// the key may have expired in the EXISTS→HGET window (TOCTOU), leaving an
+	// empty value; treat it as an expired code instead of falling through to a
+	// misleading "unknown user" after an empty email_hash lookup
+	if data.value == "" {
+		httpResponse.Message = "wrong/expired secret code"
+		httpStatusCode = http.StatusUnauthorized
+		return
+	}
 
 	// hashing
 	configHash := lib.HashPassConfig{
