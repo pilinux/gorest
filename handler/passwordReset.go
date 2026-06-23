@@ -106,6 +106,30 @@ func PasswordForgot(authPayload model.AuthPayload) (httpResponse model.HTTPRespo
 	}
 
 	// send email with secret code
+	//
+	// in production, dispatch asynchronously and return the generic response
+	// immediately so the response time does not depend on whether the account
+	// exists or is verified (closes the timing side-channel); send/delivery
+	// failures are logged but never alter the client-visible response, which
+	// stays identical to the unknown/unverified paths (closes the status-code leak)
+	if config.IsProd() {
+		go func(email string) {
+			emailDelivered, err := service.SendEmail(email, model.EmailTypePassRecovery)
+			if err != nil {
+				log.WithError(err).Error("error code: 1030.3")
+				return
+			}
+			if !emailDelivered {
+				log.Error("error code: 1030.4: password recovery email not delivered")
+			}
+		}(v.Email)
+
+		httpResponse.Message = genericRecoveryMessage
+		httpStatusCode = http.StatusOK
+		return
+	}
+
+	// non-production: send synchronously and surface descriptive errors
 	emailDelivered, err := service.SendEmail(v.Email, model.EmailTypePassRecovery)
 	if err != nil {
 		log.WithError(err).Error("error code: 1030.2")
@@ -119,13 +143,6 @@ func PasswordForgot(authPayload model.AuthPayload) (httpResponse model.HTTPRespo
 		return
 	}
 
-	// in production, return the same generic message used for unknown/unverified
-	// accounts so the outcome cannot be distinguished
-	if config.IsProd() {
-		httpResponse.Message = genericRecoveryMessage
-		httpStatusCode = http.StatusOK
-		return
-	}
 	httpResponse.Message = "sent password recovery email"
 	httpStatusCode = http.StatusOK
 	return
