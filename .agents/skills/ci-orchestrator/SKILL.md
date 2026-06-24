@@ -21,7 +21,7 @@ metadata:
 ## Pipeline Steps
 
 1. **Format:** `go fmt ./...`
-2. **Lint:** `golangci-lint run --timeout 5m --verbose ./...` (CI uses v2.8.0)
+2. **Lint:** `golangci-lint run --timeout 5m --verbose ./...` (CI uses v2.12.2)
 3. **Lint (revive):** `revive ./...`
 4. **Vet:** `go vet -v ./...`
 5. **Vet (cross-platform):** `GOOS=linux GOARCH=amd64 go vet -v ./...` and `GOOS=darwin GOARCH=arm64 go vet -v ./...` (CI runs all six OS/arch combos)

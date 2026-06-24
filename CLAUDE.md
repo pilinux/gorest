@@ -30,7 +30,7 @@ Do not open, read, or edit them:
 source setTestEnv.sh                           # required before running tests locally
 go test -v -cover ./...                        # all tests
 go test -v -run TestHashPass ./lib/...         # single test function
-golangci-lint run ./...                        # lint (CI uses v2.8.0, --timeout 5m)
+golangci-lint run ./...                        # lint (CI uses v2.12.2, --timeout 5m)
 go vet -v ./... && go build -v ./...           # vet + build
 ```
 
@@ -42,7 +42,7 @@ locally `setTestEnv.sh`).
 
 gorest is a reusable Go module (`github.com/pilinux/gorest`), not just an app. It is
 both a library of auth/crypto/middleware/db primitives **and** two example apps that
-wire them together. Requires Go 1.24.1+ (1.25.0+ for 1.12.x).
+wire them together. Requires Go 1.25.0+ (`go.mod` declares `go 1.25.0`; CI tests against Go 1.25.x and 1.26.x).
 
 Request flow follows a strict layered pipeline:
 

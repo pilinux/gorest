@@ -3,6 +3,10 @@
 gorest is a production-ready Go RESTful API starter kit built with Gin, GORM, JWT, and Redis.
 This document serves as the complete reference for using gorest in any application.
 
+Requirements: Go 1.25.0 or later (see `go.mod`). Key dependencies: Gin, GORM
+(MySQL/PostgreSQL/SQLite drivers), `golang-jwt/jwt/v5`, `mediocregopher/radix/v4`
+(Redis), `go.mongodb.org/mongo-driver/v2` (MongoDB), and `getsentry/sentry-go`.
+
 ## Table of Contents
 
 - [Quick Start](#quick-start)
@@ -614,6 +618,21 @@ gdb.CloseMongo()    // close MongoDB
 gdb.CloseAllDB()    // close all database connections (returns error)
 ```
 
+The getters (`GetDB`, `GetRedis`, `GetMongo`) return the raw client, which is
+`nil` when the subsystem is disabled or not yet initialized. The package exports
+sentinel errors so callers can guard against an uninitialized client instead of
+risking a nil-pointer dereference:
+
+```go
+var gdb.ErrDBNotInitialized    error // RDBMS connection is nil
+var gdb.ErrRedisNotInitialized error // Redis client is nil
+var gdb.ErrMongoNotInitialized error // MongoDB client is nil
+```
+
+`CloseAllDB()` is safe to call concurrently: it serializes calls, joins the
+errors from each subsystem, and only records success once every connection has
+closed (so a failed call can be retried).
+
 #### Models
 
 ```go
@@ -661,6 +680,19 @@ const (
     EmailVerificationKeyPrefix string = "gorest-email-verification-"
     EmailUpdateKeyPrefix       string = "gorest-email-update-"
     PasswordRecoveryKeyPrefix  string = "gorest-pass-recover-"
+    Backup2FALimitKeyPrefix    string = "gorest-2fa-backup-limit-"
+)
+
+// Password recovery is stored as a Redis hash; these are its field names.
+const (
+    PasswordRecoveryFieldEmail    string = "email"    // (hashed) email
+    PasswordRecoveryFieldAttempts string = "attempts" // failed-attempt count
+)
+
+// 2FA backup-code brute-force limiter is stored as a Redis hash.
+const (
+    Backup2FAFieldAttempts      string = "attempts"       // failed-attempt count
+    Backup2FAFieldCooldownUntil string = "cooldown_until" // unix time attempts are blocked until
 )
 
 // TwoFA model
@@ -1542,40 +1574,47 @@ All controllers are in `github.com/pilinux/gorest/controller`.
 ### Handler Functions (Business Logic)
 
 All handlers are in `github.com/pilinux/gorest/handler`. Controllers are thin
-wrappers that bind requests and call handlers. All handler functions return
-`(httpResponse model.HTTPResponse, httpStatusCode int)`.
+wrappers that bind requests and call handlers. Every handler takes a
+`context.Context` as its first argument — controllers pass `c.Request.Context()`,
+which lets handlers honor client cancellation and request deadlines while
+talking to the database, Redis, MongoDB, and the email service. All handler
+functions return `(httpResponse model.HTTPResponse, httpStatusCode int)`.
 
 ```go
-import ghandler "github.com/pilinux/gorest/handler"
+import (
+    "context"
+
+    ghandler "github.com/pilinux/gorest/handler"
+)
 
 // Auth
-ghandler.CreateUserAuth(auth model.Auth) (model.HTTPResponse, int)
-ghandler.Login(payload model.AuthPayload) (model.HTTPResponse, int)
-ghandler.Refresh(claims middleware.MyCustomClaims) (model.HTTPResponse, int)
-ghandler.Logout(jtiAccess, jtiRefresh string, expAccess, expRefresh int64) (model.HTTPResponse, int)
+ghandler.CreateUserAuth(ctx context.Context, auth model.Auth) (model.HTTPResponse, int)
+ghandler.Login(ctx context.Context, payload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.Refresh(ctx context.Context, claims middleware.MyCustomClaims) (model.HTTPResponse, int)
+ghandler.Logout(ctx context.Context, jtiAccess, jtiRefresh string, expAccess, expRefresh int64) (model.HTTPResponse, int)
 
 // Email update
-ghandler.UpdateEmail(claims middleware.MyCustomClaims, req model.TempEmail) (model.HTTPResponse, int)
+ghandler.UpdateEmail(ctx context.Context, claims middleware.MyCustomClaims, req model.TempEmail) (model.HTTPResponse, int)
 
 // Email verification
-ghandler.VerifyEmail(payload model.AuthPayload) (model.HTTPResponse, int)
-ghandler.CreateVerificationEmail(payload model.AuthPayload) (model.HTTPResponse, int)
-ghandler.VerifyUpdatedEmail(payload model.AuthPayload) (model.HTTPResponse, int)
-ghandler.GetUnverifiedEmail(claims middleware.MyCustomClaims) (model.HTTPResponse, int)
-ghandler.ResendVerificationCodeToModifyActiveEmail(claims middleware.MyCustomClaims) (model.HTTPResponse, int)
+ghandler.VerifyEmail(ctx context.Context, payload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.CreateVerificationEmail(ctx context.Context, payload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.VerifyUpdatedEmail(ctx context.Context, payload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.GetUnverifiedEmail(ctx context.Context, claims middleware.MyCustomClaims) (model.HTTPResponse, int)
+ghandler.ResendVerificationCodeToModifyActiveEmail(ctx context.Context, claims middleware.MyCustomClaims) (model.HTTPResponse, int)
 
 // Password
-ghandler.PasswordForgot(authPayload model.AuthPayload) (model.HTTPResponse, int)
-ghandler.PasswordRecover(authPayload model.AuthPayload) (model.HTTPResponse, int)
-ghandler.PasswordUpdate(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.PasswordForgot(ctx context.Context, authPayload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.PasswordRecover(ctx context.Context, authPayload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.PasswordUpdate(ctx context.Context, claims middleware.MyCustomClaims, authPayload model.AuthPayload) (model.HTTPResponse, int)
 
 // Two-Factor Authentication
-ghandler.Setup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (model.HTTPResponse, int)
-ghandler.Activate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (model.HTTPResponse, int)
-ghandler.Validate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (model.HTTPResponse, int)
-ghandler.Deactivate2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (model.HTTPResponse, int)
-ghandler.CreateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (model.HTTPResponse, int)
-ghandler.ValidateBackup2FA(claims middleware.MyCustomClaims, authPayload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.Setup2FA(ctx context.Context, claims middleware.MyCustomClaims, authPayload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.Activate2FA(ctx context.Context, claims middleware.MyCustomClaims, authPayload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.Validate2FA(ctx context.Context, claims middleware.MyCustomClaims, authPayload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.Deactivate2FA(ctx context.Context, claims middleware.MyCustomClaims, authPayload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.CreateBackup2FA(ctx context.Context, claims middleware.MyCustomClaims, authPayload model.AuthPayload) (model.HTTPResponse, int)
+ghandler.ValidateBackup2FA(ctx context.Context, claims middleware.MyCustomClaims, authPayload model.AuthPayload) (model.HTTPResponse, int)
 ```
 
 ### Request/Response Models
@@ -1759,6 +1798,9 @@ func MyHandler(c *gin.Context) {
 
 #### Context Values Set by JWT Middleware
 
+Set by both `JWT()` and `RefreshJWT()`, except the `*Access` keys are set only by
+`JWT()` and the `*Refresh` keys only by `RefreshJWT()`.
+
 | Key | Type | Description |
 | --- | ---- | ----------- |
 | `authID` | `uint64` | User authentication ID |
@@ -1766,9 +1808,12 @@ func MyHandler(c *gin.Context) {
 | `role` | `string` | User role |
 | `scope` | `string` | Permission scope |
 | `tfa` | `string` | 2FA status |
-| `expAccess` | `int64` | Token expiration (Unix) |
-| `jtiAccess` | `string` | Token ID |
-| `iatAccess` | `int64` | Token issued-at (Unix) |
+| `expAccess` | `int64` | Access token expiration (Unix), `JWT()` only |
+| `iatAccess` | `int64` | Access token issued-at (Unix), `JWT()` only |
+| `jtiAccess` | `string` | Access token ID, `JWT()` only |
+| `expRefresh` | `int64` | Refresh token expiration (Unix), `RefreshJWT()` only |
+| `iatRefresh` | `int64` | Refresh token issued-at (Unix), `RefreshJWT()` only |
+| `jtiRefresh` | `string` | Refresh token ID, `RefreshJWT()` only |
 | `iss` | `string` | Token issuer |
 | `sub` | `string` | Token subject |
 | `aud` | `[]string` | Token audience |
@@ -2173,10 +2218,20 @@ filename, err := glib.ByteToPNG(qrPNG, "/tmp/qrcodes")
 ### Email Validation
 
 ```go
+// Structure + length check only (no network I/O; deterministic).
+if glib.ValidateEmailFormat("user@example.com") {
+    // Well-formed address
+}
+
+// Structure check plus a live DNS MX lookup (blocking, non-deterministic).
+// The lookup is bounded by glib.EmailMXLookupTimeout (default 5s).
 if glib.ValidateEmail("user@example.com") {
-    // Valid email with working MX records
+    // Well-formed address with working MX records
 }
 ```
+
+Note: `ValidateEmail` does not fall back to A/AAAA (implicit MX) records — a
+domain that accepts mail only via an implicit MX is treated as invalid.
 
 ### Random Generation
 
@@ -2277,8 +2332,8 @@ hash, err := gservice.CalcHash([]byte("data"), nil)
 ### JWT Blacklist Service
 
 ```go
-// Check if token is allowed
-if gservice.IsTokenAllowed(jti) {
+// Check if token is allowed (ctx bounds the Redis lookup)
+if gservice.IsTokenAllowed(ctx, jti) {
     // Token not blacklisted
 }
 
@@ -2290,10 +2345,16 @@ router.Use(gservice.JWTBlacklistChecker())
 
 ```go
 // Send verification or recovery email
-// SendEmail(email string, emailType int, opts ...string) (bool, error)
+// SendEmail(ctx context.Context, email string, emailType int, opts ...string) (bool, error)
+//   - ctx: bounds the Redis write that stores the generated code
 //   - opts: optional additional info strings added to the email template
 //     as "additional_info_0", "additional_info_1", etc.
+// Return values:
+//   - {true, nil}  => email delivered
+//   - {false, nil} => delivery not required / service not configured
+//   - {false, err} => delivery failed
 delivered, err := gservice.SendEmail(
+    ctx,
     "user@example.com",
     gmodel.EmailTypeVerifyEmailNewAcc, // or EmailTypePassRecovery, EmailTypeVerifyUpdatedEmail
 )
@@ -2311,6 +2372,25 @@ gservice.DelMem2FA(authID)
 // Derive key for 2FA encryption
 salt, _ := gservice.RandomByte(16)
 key := glib.GetArgon2Key([]byte("password"), salt, 32)
+```
+
+#### Backup-code brute-force limiter
+
+Validating 2FA backup codes is rate-limited per account using a Redis-backed,
+escalating cooldown (the first few failures are free, then each further failure
+imposes a longer cooldown). The limiter is a no-op when Redis is disabled. All
+three functions return `gdb.ErrRedisNotInitialized` if Redis is enabled but the
+client is nil.
+
+```go
+// Remaining wait before the next backup-code attempt (0 = no cooldown).
+remaining, err := gservice.Backup2FACooldown(authID) // (time.Duration, error)
+
+// Record a failed attempt; returns the cooldown now imposed (0 while free).
+cooldown, err := gservice.RegisterBackup2FAFailure(authID) // (time.Duration, error)
+
+// Reset the limiter after a successful validation.
+err := gservice.ClearBackup2FALimit(authID) // error
 ```
 
 ### Postmark Email Delivery
@@ -2667,7 +2747,13 @@ func (s *PostService) CreatePost(ctx context.Context, post *model.Post) (gmodel.
 }
 ```
 
-`message` may be a string or a structured object depending on the handler.
+Wrapping rule: handlers return a `model.HTTPResponse{Message: ...}`. The auth
+controllers (registration, login, refresh, password reset, and the 2FA
+setup/activate/validate/backup-code endpoints) render a **string** message
+wrapped as `{"message": "..."}` (used for errors and simple confirmations), but
+render a **structured** message (a struct or map) directly at the top level
+without the `message` wrapper. The remaining controllers always render the
+wrapped `{"message": ...}` form.
 
 ### Authentication Endpoints
 
@@ -2684,14 +2770,12 @@ Request:
 }
 ```
 
-Response (201):
+Response (201) — structured payload rendered directly (no `message` wrapper):
 
 ```json
 {
-    "message": {
-        "authID": 1,
-        "email": "user@example.com"
-    }
+    "authID": 1,
+    "email": "user@example.com"
 }
 ```
 
@@ -2708,15 +2792,15 @@ Request:
 }
 ```
 
-Response (200):
+Response (200) — `JWTPayload` rendered directly (no `message` wrapper). When auth
+cookies are enabled and `SERVE_JWT_AS_RESPONSE_BODY=no`, the tokens are set as
+cookies and the body is `{"message": "login successful"}` instead:
 
 ```json
 {
-    "message": {
-        "accessJWT": "eyJhbGc...",
-        "refreshJWT": "eyJhbGc...",
-        "twoFA": "verified"
-    }
+    "accessJWT": "eyJhbGc...",
+    "refreshJWT": "eyJhbGc...",
+    "twoFA": "verified"
 }
 ```
 

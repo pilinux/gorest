@@ -6,7 +6,8 @@ Instructions for AI coding agents working in this repository.
 
 Go RESTful API starter kit built with Gin, GORM, JWT, Redis, MongoDB,
 2FA, email verification, and password recovery. Module path:
-`github.com/pilinux/gorest`. Requires Go 1.24.1+.
+`github.com/pilinux/gorest`. Requires Go 1.25.0+ (`go.mod` declares
+`go 1.25.0`; CI tests against Go 1.25.x and 1.26.x).
 
 ## Build and Run Commands
 
@@ -41,7 +42,7 @@ golangci-lint run ./...
 revive ./...
 ```
 
-CI uses golangci-lint v2.8.0 with `--timeout 5m --verbose`.
+CI uses golangci-lint v2.12.2 with `--timeout 5m --verbose`.
 
 ### Test - All
 
@@ -126,29 +127,31 @@ example2/
 Every controller function in `controller/` is a thin wrapper that binds
 the HTTP request and calls the corresponding function in `handler/`.
 Controllers use `renderer.Render()` to send the response. There are
-19 exported functions in each package with a 1:1 correspondence:
+19 exported functions in each package with a 1:1 correspondence. Every
+handler takes a `context.Context` as its first parameter; controllers pass
+`c.Request.Context()` so handlers honor client cancellation/deadlines:
 
 | Controller | Handler | Description |
 | ---------- | ------- | ----------- |
-| `CreateUserAuth` | `CreateUserAuth(auth model.Auth)` | User registration |
-| `Login` | `Login(payload model.AuthPayload)` | User login |
-| `Refresh` | `Refresh(claims middleware.MyCustomClaims)` | Refresh JWT |
-| `Logout` | `Logout(jtiAccess, jtiRefresh string, expAccess, expRefresh int64)` | Invalidate tokens |
-| `PasswordForgot` | `PasswordForgot(authPayload model.AuthPayload)` | Send recovery email |
-| `PasswordRecover` | `PasswordRecover(authPayload model.AuthPayload)` | Reset password |
-| `PasswordUpdate` | `PasswordUpdate(claims, authPayload)` | Change password |
-| `Setup2FA` | `Setup2FA(claims, authPayload)` | Generate 2FA secret |
-| `Activate2FA` | `Activate2FA(claims, authPayload)` | Enable 2FA |
-| `Validate2FA` | `Validate2FA(claims, authPayload)` | Verify OTP |
-| `Deactivate2FA` | `Deactivate2FA(claims, authPayload)` | Disable 2FA |
-| `CreateBackup2FA` | `CreateBackup2FA(claims, authPayload)` | Generate backup codes |
-| `ValidateBackup2FA` | `ValidateBackup2FA(claims, authPayload)` | Use backup code |
-| `VerifyEmail` | `VerifyEmail(payload model.AuthPayload)` | Verify email |
-| `CreateVerificationEmail` | `CreateVerificationEmail(payload model.AuthPayload)` | Resend verification |
-| `VerifyUpdatedEmail` | `VerifyUpdatedEmail(payload model.AuthPayload)` | Verify email change |
-| `UpdateEmail` | `UpdateEmail(claims, req model.TempEmail)` | Submit new email |
-| `GetUnverifiedEmail` | `GetUnverifiedEmail(claims)` | Get pending email |
-| `ResendVerificationCodeToModifyActiveEmail` | `ResendVerificationCodeToModifyActiveEmail(claims)` | Resend email change code |
+| `CreateUserAuth` | `CreateUserAuth(ctx, auth model.Auth)` | User registration |
+| `Login` | `Login(ctx, payload model.AuthPayload)` | User login |
+| `Refresh` | `Refresh(ctx, claims middleware.MyCustomClaims)` | Refresh JWT |
+| `Logout` | `Logout(ctx, jtiAccess, jtiRefresh string, expAccess, expRefresh int64)` | Invalidate tokens |
+| `PasswordForgot` | `PasswordForgot(ctx, authPayload model.AuthPayload)` | Send recovery email |
+| `PasswordRecover` | `PasswordRecover(ctx, authPayload model.AuthPayload)` | Reset password |
+| `PasswordUpdate` | `PasswordUpdate(ctx, claims, authPayload)` | Change password |
+| `Setup2FA` | `Setup2FA(ctx, claims, authPayload)` | Generate 2FA secret |
+| `Activate2FA` | `Activate2FA(ctx, claims, authPayload)` | Enable 2FA |
+| `Validate2FA` | `Validate2FA(ctx, claims, authPayload)` | Verify OTP |
+| `Deactivate2FA` | `Deactivate2FA(ctx, claims, authPayload)` | Disable 2FA |
+| `CreateBackup2FA` | `CreateBackup2FA(ctx, claims, authPayload)` | Generate backup codes |
+| `ValidateBackup2FA` | `ValidateBackup2FA(ctx, claims, authPayload)` | Use backup code |
+| `VerifyEmail` | `VerifyEmail(ctx, payload model.AuthPayload)` | Verify email |
+| `CreateVerificationEmail` | `CreateVerificationEmail(ctx, payload model.AuthPayload)` | Resend verification |
+| `VerifyUpdatedEmail` | `VerifyUpdatedEmail(ctx, payload model.AuthPayload)` | Verify email change |
+| `UpdateEmail` | `UpdateEmail(ctx, claims, req model.TempEmail)` | Submit new email |
+| `GetUnverifiedEmail` | `GetUnverifiedEmail(ctx, claims)` | Get pending email |
+| `ResendVerificationCodeToModifyActiveEmail` | `ResendVerificationCodeToModifyActiveEmail(ctx, claims)` | Resend email change code |
 
 All handler functions return `(httpResponse model.HTTPResponse, httpStatusCode int)`.
 
@@ -222,12 +225,13 @@ type MyCustomClaims struct {
 
 ### Function Signatures
 
-Handlers return `(model.HTTPResponse, int)` where the int is the
-HTTP status code. Use named return values with bare returns for
-early exits:
+Handlers take a `context.Context` first and return
+`(model.HTTPResponse, int)` where the int is the HTTP status code. Use
+named return values with bare returns for early exits:
 
 ```go
 func CreateUserAuth(
+    ctx context.Context,
     auth model.Auth,
 ) (httpResponse model.HTTPResponse, httpStatusCode int) {
     // ...
@@ -358,6 +362,19 @@ const EmailVerified int8 = 1
 const EmailTypeVerifyEmailNewAcc int = 1
 const EmailTypePassRecovery int = 2
 const EmailTypeVerifyUpdatedEmail int = 3
+
+// Redis key prefixes
+const EmailVerificationKeyPrefix string = "gorest-email-verification-"
+const EmailUpdateKeyPrefix string = "gorest-email-update-"
+const PasswordRecoveryKeyPrefix string = "gorest-pass-recover-"
+const Backup2FALimitKeyPrefix string = "gorest-2fa-backup-limit-"
+
+// Redis hash field names: password recovery (stored as a hash) and the
+// 2FA backup-code brute-force limiter (also stored as a hash).
+const PasswordRecoveryFieldEmail string = "email"
+const PasswordRecoveryFieldAttempts string = "attempts"
+const Backup2FAFieldAttempts string = "attempts"
+const Backup2FAFieldCooldownUntil string = "cooldown_until"
 ```
 
 ### Key Constants (config)
@@ -372,6 +389,12 @@ const PrefixJtiBlacklist string = "gorest-blacklist-jti:"
 ```go
 // Use errors.Is(err, gorm.ErrRecordNotFound) instead of string matching.
 var RedisConnTTL int // context deadline in seconds for Redis connections
+
+// Sentinel errors for guarding against an uninitialized client. The getters
+// (GetDB/GetRedis/GetMongo) return nil when the subsystem is disabled.
+var ErrDBNotInitialized error    // RDBMS connection is nil
+var ErrRedisNotInitialized error // Redis client is nil
+var ErrMongoNotInitialized error // MongoDB client is nil
 ```
 
 ## Configuration System
@@ -537,22 +560,28 @@ gservice.ValidateUserID(id, email)       // checks authID != 0 and email != ""
 
 // JWT blacklist
 gservice.JWTBlacklistChecker()           // middleware
-gservice.IsTokenAllowed(jti)             // check if token is blacklisted
+gservice.IsTokenAllowed(ctx, jti)        // check if token is blacklisted
 
 // Email
-gservice.SendEmail(email, emailType, opts...)  // send via Postmark
+gservice.SendEmail(ctx, email, emailType, opts...)  // send via Postmark
 gservice.Postmark(params)               // low-level Postmark delivery
 
 // Crypto
 gservice.DecryptEmail(nonce, ciphertext) // decrypt stored email
 gservice.CalcHash(data, secret)          // BLAKE2b hash
-gservice.GetHash(password)              // hash for 2FA key encryption
+gservice.GetHash(dataIn []byte)         // hash for 2FA key encryption
 gservice.RandomByte(n)                  // secure random bytes
 gservice.GenerateCode(n)               // random alphanumeric code
 
 // 2FA
 gservice.Validate2FA(secret, issuer, otp)
 gservice.DelMem2FA(authID)
+
+// 2FA backup-code brute-force limiter (Redis-backed, escalating cooldown;
+// no-op when Redis is disabled)
+gservice.Backup2FACooldown(authID)         // remaining cooldown (time.Duration, error)
+gservice.RegisterBackup2FAFailure(authID)  // record a failure, returns cooldown (time.Duration, error)
+gservice.ClearBackup2FALimit(authID)       // reset after success (error)
 ```
 
 ## Utility Library Quick Reference
@@ -575,7 +604,8 @@ glib.ValidateTOTP(otpBytes, issuer, otp)
 glib.ByteToPNG(qrPNG, path)
 
 // Validation
-glib.ValidateEmail(email)               // MX record check
+glib.ValidateEmailFormat(email)         // structure/length only, no DNS (deterministic)
+glib.ValidateEmail(email)               // structure + live MX lookup (bounded by glib.EmailMXLookupTimeout)
 glib.ValidatePath(path, allowedDir)     // prevent traversal
 glib.FileExist(path)
 
@@ -627,14 +657,15 @@ Per `.gitignore`, avoid these paths:
 
 ## CI Pipeline
 
-GitHub Actions runs on push/PR to `main`:
+GitHub Actions run on push and PR (path-filtered to `**/*.go`, `go.mod`,
+`go.sum`, `**/*.yml`), with a Go version matrix of `1.25.x` and `1.26.x`:
 
 - `go vet` on 6 platform combinations
 - `gosec` security scanner
 - `govulncheck` for known vulnerabilities
 - Build on 6 platforms (linux/darwin/windows x amd64/arm64)
-- Tests with coverage (push only), uploaded to Codecov
-- `golangci-lint` v2.8.0
+- Tests with `-race` and coverage (only on push to `main`), uploaded to Codecov
+- `golangci-lint` v2.12.2 (separate workflow, `--timeout 5m --verbose`)
 
 ## Contributing
 
