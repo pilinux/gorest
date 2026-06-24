@@ -11,6 +11,7 @@ import (
 	"errors"
 	"math/big"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -371,5 +372,24 @@ func TestInitTLSMySQL_RegisterTLSConfigError(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "injected register error") {
 		t.Fatalf("expected wrapped error, got: %v", err)
+	}
+}
+
+// TestInitTLSMySQL_ConfigNotInitialized tests that InitTLSMySQL returns
+// errConfigNotInitialized when config.GetConfig() is nil. This check is
+// exercised in a re-exec'd child process where no test has loaded config yet.
+func TestInitTLSMySQL_ConfigNotInitialized(t *testing.T) {
+	if os.Getenv("GOREST_TEST_NIL_CONFIG") == "1" {
+		err := gdb.InitTLSMySQL()
+		if err == nil || err.Error() != "config is not initialized" {
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
+
+	cmd := exec.Command(os.Args[0], "-test.run=^TestInitTLSMySQL_ConfigNotInitialized$")
+	cmd.Env = append(os.Environ(), "GOREST_TEST_NIL_CONFIG=1")
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("subprocess failed: %v\n%s", err, out)
 	}
 }
