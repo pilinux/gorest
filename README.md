@@ -62,6 +62,7 @@ and apply it consistently.
 
 ## Requirement
 
+- `Go 1.25.0+` (for versions `1.13.x`)
 - `Go 1.25.0+` (for versions `1.12.x`)
 - `Go 1.24.1+` (for versions `1.11.x`)
 - `Go 1.24.1+` (for versions `1.10.x`)
@@ -70,7 +71,7 @@ and apply it consistently.
 - `Go 1.21+` (for versions `1.7.x`)
 - `Go 1.20+` (for versions `1.6.x`)
 
-For all new projects, it is recommended to use version `1.12.x` or higher.
+For all new projects, it is recommended to use version `1.13.x` or higher.
 
 ## Migration guides for breaking changes
 
