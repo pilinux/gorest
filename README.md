@@ -284,14 +284,14 @@ or,
 | ---------- | ---------------- | ---------------- |
 | controller | login.go         | `1011 - 1012`    |
 | controller | twoFA.go         | `1041 - 1044`    |
-| handler    | auth.go          | `1001 - 1003`    |
+| handler    | auth.go          | `1000 - 1003`    |
 | handler    | login.go         | `1013 - 1014`    |
 | handler    | logout.go        | `1016`           |
-| handler    | passwordReset.go | `1021 - 1030`    |
+| handler    | passwordReset.go | `1020 - 1030`    |
 | handler    | twoFA.go         | `1051 - 1056`    |
 | handler    | verification.go  | `1061 - 1065`    |
-| service    | common.go        | `401 - 406`      |
-| service    | security.go      | `501`            |
+| service    | common.go        | `400 - 406`      |
+| service    | security.go      | `500 - 501`      |
 
 ## Development
 
