@@ -242,6 +242,24 @@ func TestFirewall(t *testing.T) {
 			"2001:db8::ffff",
 			http.StatusOK,
 		},
+		{
+			// exact IPv6 entry with uppercase hex is normalized to match the
+			// canonical (lowercase) client IP
+			"7.6",
+			"whitelist",
+			"2001:DB8::1",
+			"2001:db8::1",
+			http.StatusOK,
+		},
+		{
+			// exact IPv6 entry in non-compressed form is normalized to match
+			// the canonical (compressed) client IP
+			"7.7",
+			"whitelist",
+			"2001:db8:0:0:0:0:0:1",
+			"2001:db8::1",
+			http.StatusOK,
+		},
 
 		// IPv4 and IPv6
 		{

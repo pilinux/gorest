@@ -147,7 +147,7 @@ func databaseRDBMS() (databaseConfig DatabaseConfig, err error) {
 	databaseConfig.RDBMS.Access.User = strings.TrimSpace(os.Getenv("DBUSER"))
 	databaseConfig.RDBMS.Access.Pass = strings.TrimSpace(os.Getenv("DBPASS"))
 	// SSL
-	databaseConfig.RDBMS.Ssl.Sslmode = strings.TrimSpace(os.Getenv("DBSSLMODE"))
+	databaseConfig.RDBMS.Ssl.Sslmode = strings.ToLower(strings.TrimSpace(os.Getenv("DBSSLMODE")))
 	databaseConfig.RDBMS.Ssl.MinTLS = strings.TrimSpace(os.Getenv("DBSSL_TLS_MIN"))
 	databaseConfig.RDBMS.Ssl.RootCA = strings.TrimSpace(os.Getenv("DBSSL_ROOT_CA"))
 	databaseConfig.RDBMS.Ssl.ServerCert = strings.TrimSpace(os.Getenv("DBSSL_SERVER_CERT"))
@@ -156,7 +156,7 @@ func databaseRDBMS() (databaseConfig DatabaseConfig, err error) {
 	// Conn
 	dbMaxIdleConns := strings.TrimSpace(os.Getenv("DBMAXIDLECONNS"))
 	dbMaxOpenConns := strings.TrimSpace(os.Getenv("DBMAXOPENCONNS"))
-	dbConnMaxLifetime := strings.TrimSpace(os.Getenv("DBCONNMAXLIFETIME"))
+	dbConnMaxLifetime := strings.ToLower(strings.TrimSpace(os.Getenv("DBCONNMAXLIFETIME")))
 	databaseConfig.RDBMS.Conn.MaxIdleConns, err = strconv.Atoi(dbMaxIdleConns)
 	if err != nil {
 		return
@@ -220,7 +220,7 @@ func databaseMongo() (databaseConfig DatabaseConfig, err error) {
 	databaseConfig.MongoDB.Env.URI = strings.TrimSpace(os.Getenv("MONGO_URI"))
 	databaseConfig.MongoDB.Env.AppName = strings.TrimSpace(os.Getenv("MONGO_APP"))
 	databaseConfig.MongoDB.Env.PoolSize = poolSize
-	databaseConfig.MongoDB.Env.PoolMon = strings.TrimSpace(os.Getenv("MONGO_MONITOR_POOL"))
+	databaseConfig.MongoDB.Env.PoolMon = strings.ToLower(strings.TrimSpace(os.Getenv("MONGO_MONITOR_POOL")))
 	databaseConfig.MongoDB.Env.ConnTTL = connTTL
 
 	return
@@ -235,7 +235,7 @@ func email() (emailConfig EmailConfig, err error) {
 		emailConfig.AddrFrom = strings.TrimSpace(os.Getenv("EMAIL_FROM"))
 
 		emailConfig.TrackOpens = false
-		trackOpens := strings.TrimSpace(os.Getenv("EMAIL_TRACK_OPENS"))
+		trackOpens := strings.ToLower(strings.TrimSpace(os.Getenv("EMAIL_TRACK_OPENS")))
 		if trackOpens == Activated {
 			emailConfig.TrackOpens = true
 		}
@@ -465,8 +465,8 @@ func security() (securityConfig SecurityConfig, err error) {
 	// App firewall
 	securityConfig.MustFW = strings.ToLower(strings.TrimSpace(os.Getenv("ACTIVATE_FIREWALL")))
 	if securityConfig.MustFW == Activated {
-		securityConfig.Firewall.ListType = strings.TrimSpace(os.Getenv("LISTTYPE"))
-		securityConfig.Firewall.IP = strings.TrimSpace(os.Getenv("IP"))
+		securityConfig.Firewall.ListType = strings.ToLower(strings.TrimSpace(os.Getenv("LISTTYPE")))
+		securityConfig.Firewall.IP = strings.ToLower(strings.TrimSpace(os.Getenv("IP")))
 	}
 
 	// CORS
@@ -722,28 +722,58 @@ func sanitizeConfigDir(dir string) (string, error) {
 	return path, nil
 }
 
+// canonicalJWTAlg matches the JWT algorithm name case-insensitively and returns
+// the canonical name expected by the JWT library/middleware. It returns an error
+// for unsupported algorithms.
+//
+// list of accepted algorithms:
+// HS256: HMAC-SHA256
+// HS384: HMAC-SHA384
+// HS512: HMAC-SHA512
+// ES256: ECDSA Signature with SHA-256
+// ES384: ECDSA Signature with SHA-384
+// ES512: ECDSA Signature with SHA-512
+// EdDSA: EdDSA Signature
+// RS256: RSA Signature with SHA-256
+// RS384: RSA Signature with SHA-384
+// RS512: RSA Signature with SHA-512
+func canonicalJWTAlg(alg string) (string, error) {
+	switch strings.ToLower(alg) {
+	case "hs256":
+		return "HS256", nil
+	case "hs384":
+		return "HS384", nil
+	case "hs512":
+		return "HS512", nil
+	case "es256":
+		return "ES256", nil
+	case "es384":
+		return "ES384", nil
+	case "es512":
+		return "ES512", nil
+	case "eddsa":
+		return "EdDSA", nil
+	case "rs256":
+		return "RS256", nil
+	case "rs384":
+		return "RS384", nil
+	case "rs512":
+		return "RS512", nil
+	default:
+		return "", errors.New("unsupported algorithm for JWT")
+	}
+}
+
 // getParamsJWT reads JWT parameters from env.
 func getParamsJWT() (params middleware.JWTParameters, err error) {
 	alg := strings.TrimSpace(os.Getenv("JWT_ALG"))
 	if alg == "" {
 		alg = "HS256" // default algorithm
 	}
-	// list of accepted algorithms
-	// HS256: HMAC-SHA256
-	// HS384: HMAC-SHA384
-	// HS512: HMAC-SHA512
-	// ES256: ECDSA Signature with SHA-256
-	// ES384: ECDSA Signature with SHA-384
-	// ES512: ECDSA Signature with SHA-512
-	// EdDSA: EdDSA Signature
-	// RS256: RSA Signature with SHA-256
-	// RS384: RSA Signature with SHA-384
-	// RS512: RSA Signature with SHA-512
-	if alg != "HS256" && alg != "HS384" && alg != "HS512" &&
-		alg != "ES256" && alg != "ES384" && alg != "ES512" &&
-		alg != "EdDSA" &&
-		alg != "RS256" && alg != "RS384" && alg != "RS512" {
-		err = errors.New("unsupported algorithm for JWT")
+	// normalize to the canonical name; this also validates the algorithm and
+	// accepts it case-insensitively.
+	alg, err = canonicalJWTAlg(alg)
+	if err != nil {
 		return
 	}
 	params.Algorithm = alg

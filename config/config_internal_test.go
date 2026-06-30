@@ -113,3 +113,56 @@ func TestEnsureConfigDir(t *testing.T) {
 		t.Fatalf("expected errInvalidConfigDir for traversal path, got %v", err)
 	}
 }
+
+func TestCanonicalJWTAlg(t *testing.T) {
+	tests := []struct {
+		name    string
+		alg     string
+		want    string
+		wantErr bool
+	}{
+		// every supported value in the switch is covered
+		{name: "hs256", alg: "hs256", want: "HS256"},
+		{name: "hs384", alg: "hs384", want: "HS384"},
+		{name: "hs512", alg: "hs512", want: "HS512"},
+		{name: "es256", alg: "es256", want: "ES256"},
+		{name: "es384", alg: "es384", want: "ES384"},
+		{name: "es512", alg: "es512", want: "ES512"},
+		{name: "eddsa", alg: "eddsa", want: "EdDSA"},
+		{name: "rs256", alg: "rs256", want: "RS256"},
+		{name: "rs384", alg: "rs384", want: "RS384"},
+		{name: "rs512", alg: "rs512", want: "RS512"},
+		// matched case-insensitively: upper and mixed case map to canonical
+		{name: "uppercase HS256", alg: "HS256", want: "HS256"},
+		{name: "canonical EdDSA", alg: "EdDSA", want: "EdDSA"},
+		{name: "uppercase EDDSA", alg: "EDDSA", want: "EdDSA"},
+		{name: "mixed case Rs512", alg: "Rs512", want: "RS512"},
+		// default branch: unsupported and empty input
+		{name: "unsupported value", alg: "any", wantErr: true},
+		{name: "empty value", alg: "", wantErr: true},
+	}
+
+	for i := range tests {
+		tc := tests[i]
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := canonicalJWTAlg(tc.alg)
+
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("canonicalJWTAlg(%q): expected error, got nil", tc.alg)
+				}
+				if got != "" {
+					t.Fatalf("canonicalJWTAlg(%q): expected empty result on error, got %q", tc.alg, got)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("canonicalJWTAlg(%q): unexpected error: %v", tc.alg, err)
+			}
+			if got != tc.want {
+				t.Fatalf("canonicalJWTAlg(%q) = %q, want %q", tc.alg, got, tc.want)
+			}
+		})
+	}
+}

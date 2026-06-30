@@ -106,7 +106,13 @@ func parseIPList(listType, ipList string) (ipNets []*net.IPNet, ipListMap map[st
 				ipNets = append(ipNets, ipNet)
 			}
 		} else {
-			ipListMap[ip] = true
+			// normalize the exact IP to its canonical form so the map key
+			// matches the client IP lookup key (net.IP.String()); this makes
+			// matching independent of the case/form used in the config (e.g.
+			// IPv6 "2400:CB00::1" vs "2400:cb00::1"). Invalid entries are skipped.
+			if normalized := net.ParseIP(ip); normalized != nil {
+				ipListMap[normalized.String()] = true
+			}
 		}
 	}
 
