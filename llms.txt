@@ -2089,9 +2089,6 @@ router.Use(gmiddleware.Firewall("blacklist", "192.168.100.0/24"))
 
 // Allow all
 router.Use(gmiddleware.Firewall("whitelist", "*"))
-
-// Reset firewall state (useful for testing)
-gmiddleware.ResetFirewallState()
 ```
 
 ### 2FA Middleware
