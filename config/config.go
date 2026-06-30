@@ -776,92 +776,96 @@ func getParamsJWT() (params middleware.JWTParameters, err error) {
 	isRSA := alg == "RS256" || alg == "RS384" || alg == "RS512"
 
 	if isECDSA || isEdDSA || isRSA {
-		// load the private key
 		privateKeyFile := strings.TrimSpace(os.Getenv("PRIV_KEY_FILE_PATH"))
-		if privateKeyFile == "" {
-			err = errors.New("PRIV_KEY_FILE_PATH is required for asymmetric JWT algorithms")
-			return
-		}
-		privateKeyBytes, errThis := os.ReadFile(privateKeyFile) // #nosec G703 G304 -- file path is from env variable, not user input
-		if errThis != nil {
-			err = errThis
-			return
-		}
-
-		switch {
-		case isECDSA:
-			privateKey, errThis := jwt.ParseECPrivateKeyFromPEM(privateKeyBytes)
-			if errThis != nil {
-				err = errThis
-				return
-			}
-			params.PrivKeyECDSA = privateKey
-
-		case isEdDSA:
-			privateKey, errThis := jwt.ParseEdPrivateKeyFromPEM(privateKeyBytes)
-			if errThis != nil {
-				err = errThis
-				return
-			}
-			// convert to ed25519.PrivateKey
-			privateKeyEdDSA, ok := privateKey.(ed25519.PrivateKey)
-			if !ok {
-				err = errors.New("invalid EdDSA private key")
-				return
-			}
-			params.PrivKeyEdDSA = privateKeyEdDSA
-
-		case isRSA:
-			privateKey, errThis := jwt.ParseRSAPrivateKeyFromPEM(privateKeyBytes)
-			if errThis != nil {
-				err = errThis
-				return
-			}
-			params.PrivKeyRSA = privateKey
-		}
-
-		// load the public key
 		publicKeyFile := strings.TrimSpace(os.Getenv("PUB_KEY_FILE_PATH"))
-		if publicKeyFile == "" {
-			err = errors.New("PUB_KEY_FILE_PATH is required for asymmetric JWT algorithms")
+
+		// A signer needs the private key; a verifier needs the public key. Only one
+		// of them may be provided, so load whichever is set. At least one is required.
+		if privateKeyFile == "" && publicKeyFile == "" {
+			err = errors.New("PRIV_KEY_FILE_PATH or PUB_KEY_FILE_PATH is required for asymmetric JWT algorithms")
 			return
 		}
-		publicKeyBytes, errThis := os.ReadFile(publicKeyFile) // #nosec G703 G304 -- file path is from env variable, not user input
-		if errThis != nil {
-			err = errThis
-			return
+
+		// load the private key (if provided)
+		if privateKeyFile != "" {
+			privateKeyBytes, errThis := os.ReadFile(privateKeyFile) // #nosec G703 G304 -- file path is from env variable, not user input
+			if errThis != nil {
+				err = errThis
+				return
+			}
+
+			switch {
+			case isECDSA:
+				privateKey, errThis := jwt.ParseECPrivateKeyFromPEM(privateKeyBytes)
+				if errThis != nil {
+					err = errThis
+					return
+				}
+				params.PrivKeyECDSA = privateKey
+
+			case isEdDSA:
+				privateKey, errThis := jwt.ParseEdPrivateKeyFromPEM(privateKeyBytes)
+				if errThis != nil {
+					err = errThis
+					return
+				}
+				// convert to ed25519.PrivateKey
+				privateKeyEdDSA, ok := privateKey.(ed25519.PrivateKey)
+				if !ok {
+					err = errors.New("invalid EdDSA private key")
+					return
+				}
+				params.PrivKeyEdDSA = privateKeyEdDSA
+
+			case isRSA:
+				privateKey, errThis := jwt.ParseRSAPrivateKeyFromPEM(privateKeyBytes)
+				if errThis != nil {
+					err = errThis
+					return
+				}
+				params.PrivKeyRSA = privateKey
+			}
 		}
 
-		switch {
-		case isECDSA:
-			publicKey, errThis := jwt.ParseECPublicKeyFromPEM(publicKeyBytes)
+		// load the public key (if provided)
+		if publicKeyFile != "" {
+			publicKeyBytes, errThis := os.ReadFile(publicKeyFile) // #nosec G703 G304 -- file path is from env variable, not user input
 			if errThis != nil {
 				err = errThis
 				return
 			}
-			params.PubKeyECDSA = publicKey
 
-		case isEdDSA:
-			publicKey, errThis := jwt.ParseEdPublicKeyFromPEM(publicKeyBytes)
-			if errThis != nil {
-				err = errThis
-				return
-			}
-			// convert to ed25519.PublicKey
-			publicKeyEdDSA, ok := publicKey.(ed25519.PublicKey)
-			if !ok {
-				err = errors.New("invalid EdDSA public key")
-				return
-			}
-			params.PubKeyEdDSA = publicKeyEdDSA
+			switch {
+			case isECDSA:
+				publicKey, errThis := jwt.ParseECPublicKeyFromPEM(publicKeyBytes)
+				if errThis != nil {
+					err = errThis
+					return
+				}
+				params.PubKeyECDSA = publicKey
 
-		case isRSA:
-			publicKey, errThis := jwt.ParseRSAPublicKeyFromPEM(publicKeyBytes)
-			if errThis != nil {
-				err = errThis
-				return
+			case isEdDSA:
+				publicKey, errThis := jwt.ParseEdPublicKeyFromPEM(publicKeyBytes)
+				if errThis != nil {
+					err = errThis
+					return
+				}
+				// convert to ed25519.PublicKey
+				publicKeyEdDSA, ok := publicKey.(ed25519.PublicKey)
+				if !ok {
+					err = errors.New("invalid EdDSA public key")
+					return
+				}
+				params.PubKeyEdDSA = publicKeyEdDSA
+
+			case isRSA:
+				publicKey, errThis := jwt.ParseRSAPublicKeyFromPEM(publicKeyBytes)
+				if errThis != nil {
+					err = errThis
+					return
+				}
+				params.PubKeyRSA = publicKey
 			}
-			params.PubKeyRSA = publicKey
 		}
 	}
 

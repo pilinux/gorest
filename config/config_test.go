@@ -737,14 +737,22 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 			ExpKeyErr: true,
 		},
 		{
-			// fail test - asymmetric alg, valid private key but empty public key path
-			// (PUB_KEY_FILE_PATH is required for asymmetric JWT algorithms)
-			TestNo:    31,
-			Alg:       "ES256",
-			PrivFile:  "private-keyES256.pem",
-			PrivPath:  "./private-keyES256.pem",
-			PubPath:   "",
-			ExpKeyErr: true,
+			// test valid ES256 private key only (signer-only setup):
+			// only the private key path is provided, the public key path is empty
+			TestNo:   31,
+			Alg:      "ES256",
+			PrivFile: "private-keyES256.pem",
+			PrivPath: "./private-keyES256.pem",
+			PubPath:  "",
+		},
+		{
+			// test valid ES256 public key only (verifier-only setup):
+			// only the public key path is provided, the private key path is empty
+			TestNo:   32,
+			Alg:      "ES256",
+			PubFile:  "public-keyES256.pem",
+			PrivPath: "",
+			PubPath:  "./public-keyES256.pem",
 		},
 		{
 			Key:       "EMAIL_VERIFY_USE_UUIDv4",
@@ -877,7 +885,7 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 	// themselves, so the generic env setter/reset is skipped for them.
 	isKeyTest := func(no int) bool {
 		switch no {
-		case 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 29, 30, 31:
+		case 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 29, 30, 31, 32:
 			return true
 		}
 		return false
@@ -1040,9 +1048,10 @@ func TestConfigWithDifferentExpectedValueTypes(t *testing.T) {
 				}
 			}
 
-			// JWT key-file tests (asymmetric algorithms): asymmetric algorithms
-			// require both a private and a public key. ExpKeyErr marks the cases
-			// that must fail (missing/non-existent/mismatched keys).
+			// JWT key-file tests (asymmetric algorithms): at least one of the
+			// private or public key must be provided, and whichever is set is
+			// loaded. ExpKeyErr marks the cases that must fail (both missing,
+			// non-existent, or mismatched keys).
 			if isKeyTest(tc.TestNo) {
 				if tc.ExpKeyErr {
 					if err == nil {
