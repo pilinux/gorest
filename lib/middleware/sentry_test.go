@@ -204,15 +204,19 @@ func testLogLevel(sentryDsn string, v []string, expectedLevel log.Level, t *test
 // TestSentryCombinedHookFire exercises the Fire/captureIssue paths that are not
 // reached by the higher-level middleware test.
 func TestSentryCombinedHookFire(t *testing.T) {
-	// Entries at or below FatalLevel trigger the in-Fire flush branch before
-	// the entry is delegated to the underlying log hook. A FatalLevel entry would
-	// os.Exit(1) inside that hook, so PanicLevel (which is also <= FatalLevel and
-	// likewise exercises the flush) is used: it panics instead of exiting, and the
-	// panic is recovered so the test process survives.
+	// Entries at or below FatalLevel exercise the in-Fire flush branch before
+	// the entry is delegated to the underlying log hook.
 	//
 	//	if entry.Level <= log.FatalLevel {
 	//		h.Flush(2 * time.Second)
 	//	}
+	//
+	// As of sentry-go/logrus v0.48.0 the underlying log hook records Fatal- and
+	// Panic-level entries at Sentry's fatal severity (via logger.LFatal) without
+	// calling os.Exit or panicking, so Fire returns normally. In real usage the
+	// process is still torn down afterwards by logrus core itself (which exits on
+	// Fatal and panics on Panic after firing hooks), not by the hook, which is why
+	// capture and flush both happen up front.
 	t.Run("panic level flushes before delegating", func(t *testing.T) {
 		hook := newGoroutineHook(t)
 		entry := &log.Entry{
@@ -220,13 +224,9 @@ func TestSentryCombinedHookFire(t *testing.T) {
 			Message: "testing sentry hook panic-level flush",
 			Data:    log.Fields{},
 		}
-		defer func() {
-			if r := recover(); r == nil {
-				t.Errorf("expected the underlying log hook to panic on a panic-level entry")
-			}
-		}()
-		_ = hook.Fire(entry)
-		t.Errorf("Fire should not return for a panic-level entry")
+		if err := hook.Fire(entry); err != nil {
+			t.Errorf("Fire returned an unexpected error: %v", err)
+		}
 	})
 
 	// An entry whose context carries a sentry hub makes scopeFromEntry clone

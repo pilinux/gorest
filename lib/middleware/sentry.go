@@ -56,13 +56,14 @@ func (h *sentryCombinedHook) Levels() []log.Level {
 }
 
 func (h *sentryCombinedHook) Fire(entry *log.Entry) error {
-	// Capture the issue before delegating to the log hook. For Fatal and Panic
-	// entries the log hook calls os.Exit / panics and never returns normally, so
-	// the issue must be captured first to avoid losing it.
+	// Capture the issue before delegating to the log hook. When this hook is
+	// attached to the global logger, logrus core exits on Fatal and panics on
+	// Panic right after all hooks fire, so the entry must be captured up front to
+	// avoid losing it.
 	h.captureIssue(entry)
 
-	// Panic (0) and Fatal (1) terminate the process; flush so the captured issue
-	// is delivered before the log hook tears everything down.
+	// Panic (0) and Fatal (1) lead to the process being torn down (by logrus
+	// core, not the log hook); flush so the captured issue is delivered first.
 	if entry.Level <= log.FatalLevel {
 		h.Flush(2 * time.Second)
 	}
