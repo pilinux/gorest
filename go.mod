@@ -20,7 +20,7 @@ require (
 	github.com/pilinux/twofactor v1.1.14
 	github.com/rs/cors v1.11.1
 	github.com/rs/cors/wrapper/gin v0.0.0-20240830163046-1084d89a1692
-	github.com/sirupsen/logrus v1.9.4
+	github.com/sirupsen/logrus v1.10.0
 	github.com/ulule/limiter/v3 v3.11.2
 	go.mongodb.org/mongo-driver/v2 v2.8.0
 	golang.org/x/crypto v0.54.0
