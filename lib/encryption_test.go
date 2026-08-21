@@ -67,4 +67,11 @@ func TestEncryptDecrypt(t *testing.T) {
 	if err == nil {
 		t.Error("expected error when creating cipher with nil key, but got nil")
 	}
+
+	// test decryption with ciphertext shorter than nonce size (12 bytes for AES-GCM)
+	shortCiphertext := []byte("short")
+	_, err = lib.Decrypt(shortCiphertext, key)
+	if err == nil {
+		t.Error("expected error when decrypting ciphertext shorter than nonce, but got nil")
+	}
 }
