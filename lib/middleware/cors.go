@@ -19,7 +19,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	rs "github.com/rs/cors"
-	cors "github.com/rs/cors/wrapper/gin"
 )
 
 // CORSPolicy holds a key-value pair for a CORS policy.
@@ -190,7 +189,15 @@ func CORS(cp []CORSPolicy) gin.HandlerFunc {
 		AllowCredentials: corsConfig.AllowCredentials,
 	}
 
-	corsHandler := cors.New(options)
+	// wrap the rs/cors handler as a gin middleware
+	rsHandler := rs.New(options)
+	corsHandler := func(c *gin.Context) {
+		rsHandler.HandlerFunc(c.Writer, c.Request)
+		// abort processing the next gin middlewares for preflight requests
+		if c.Request.Method == http.MethodOptions && c.GetHeader("Access-Control-Request-Method") != "" {
+			c.AbortWithStatus(http.StatusNoContent)
+		}
+	}
 
 	return func(c *gin.Context) {
 		for _, _cp := range cp {
