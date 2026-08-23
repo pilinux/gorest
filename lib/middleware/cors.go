@@ -193,10 +193,6 @@ func CORS(cp []CORSPolicy) gin.HandlerFunc {
 	rsHandler := rs.New(options)
 	corsHandler := func(c *gin.Context) {
 		rsHandler.HandlerFunc(c.Writer, c.Request)
-		// abort processing the next gin middlewares for preflight requests
-		if c.Request.Method == http.MethodOptions && c.GetHeader("Access-Control-Request-Method") != "" {
-			c.AbortWithStatus(http.StatusNoContent)
-		}
 	}
 
 	return func(c *gin.Context) {
