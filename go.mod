@@ -19,7 +19,7 @@ require (
 	github.com/pilinux/structs v1.1.1
 	github.com/pilinux/twofactor v1.1.14
 	github.com/rs/cors v1.11.1
-	github.com/sirupsen/logrus v1.10.1
+	github.com/sirupsen/logrus v1.10.2
 	github.com/ulule/limiter/v3 v3.11.2
 	go.mongodb.org/mongo-driver/v2 v2.8.2
 	golang.org/x/crypto v0.55.0
