@@ -1,6 +1,6 @@
 module github.com/pilinux/gorest
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/flosch/pongo2/v6 v6.1.0
@@ -22,7 +22,7 @@ require (
 	github.com/sirupsen/logrus v1.10.2
 	github.com/ulule/limiter/v3 v3.11.2
 	go.mongodb.org/mongo-driver/v2 v2.8.2
-	golang.org/x/crypto v0.55.0
+	golang.org/x/crypto v0.56.0
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.2
 	gorm.io/driver/sqlite v1.6.0
