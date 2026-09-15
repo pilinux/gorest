@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 )
 
 const (
@@ -72,7 +73,12 @@ func sanitizeName(name string) string {
 
 	const maxNameLen = 128
 	if len(cleaned) > maxNameLen {
-		cleaned = cleaned[len(cleaned)-maxNameLen:]
+		// cut on a rune boundary, so a multi-byte character is never split
+		start := len(cleaned) - maxNameLen
+		for !utf8.RuneStart(cleaned[start]) {
+			start++
+		}
+		cleaned = cleaned[start:]
 	}
 	if cleaned == "" {
 		return "file"

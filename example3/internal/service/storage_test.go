@@ -168,6 +168,15 @@ func TestSanitizeName(t *testing.T) {
 			t.Errorf("length = %d, want 128", len(got))
 		}
 	})
+
+	t.Run("truncatesOnRuneBoundary", func(t *testing.T) {
+		// 50 three-byte runes = 150 bytes; a plain byte cut at 128 lands mid-rune,
+		// so the whole split rune is dropped and 42 runes (126 bytes) remain
+		got := sanitizeName(strings.Repeat("日", 50))
+		if want := strings.Repeat("日", 42); got != want {
+			t.Errorf("sanitizeName = %q (%d bytes), want %q (%d bytes)", got, len(got), want, len(want))
+		}
+	})
 }
 
 // testMasterKey is a fixed 32-byte key. The storage tests seal and re-open with
