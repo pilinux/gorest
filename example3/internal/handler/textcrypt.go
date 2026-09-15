@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -9,6 +10,11 @@ import (
 	"github.com/pilinux/gorest/example3/internal/database/model"
 	"github.com/pilinux/gorest/example3/internal/service"
 )
+
+// maxJSONBodySize limits a text or number request body before it is decoded.
+// The service accepts up to 1 MiB of text, and JSON escaping can turn one byte
+// into six (\u00XX), so 8 MiB fits that with a little room to spare.
+const maxJSONBodySize = 8 << 20 // 8 MiB
 
 // TextCryptAPI exposes the text and number crypto endpoints.
 type TextCryptAPI struct {
@@ -20,6 +26,22 @@ func NewTextCryptAPI(svc *service.TextCryptService) *TextCryptAPI {
 	return &TextCryptAPI{svc: svc}
 }
 
+// bindJSON decodes a size-capped JSON body into req. On failure it renders the
+// error response and returns false.
+func bindJSON(c *gin.Context, req any) bool {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxJSONBodySize)
+	if err := c.ShouldBindJSON(req); err != nil {
+		var maxBytesErr *http.MaxBytesError
+		if errors.As(err, &maxBytesErr) {
+			grenderer.Render(c, gin.H{"message": "request body is too large"}, http.StatusRequestEntityTooLarge)
+			return false
+		}
+		grenderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
+		return false
+	}
+	return true
+}
+
 // EncryptText encrypts a plaintext string.
 //
 // Endpoint: POST /api/v1/crypto/text/encrypt
@@ -27,8 +49,7 @@ func NewTextCryptAPI(svc *service.TextCryptService) *TextCryptAPI {
 // Body: {"plaintext": "..."}
 func (api *TextCryptAPI) EncryptText(c *gin.Context) {
 	var req model.TextEncryptRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		grenderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
+	if !bindJSON(c, &req) {
 		return
 	}
 
@@ -43,8 +64,7 @@ func (api *TextCryptAPI) EncryptText(c *gin.Context) {
 // Body: {"ciphertext": "..."}
 func (api *TextCryptAPI) DecryptText(c *gin.Context) {
 	var req model.DecryptRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		grenderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
+	if !bindJSON(c, &req) {
 		return
 	}
 
@@ -59,8 +79,7 @@ func (api *TextCryptAPI) DecryptText(c *gin.Context) {
 // Body: {"number": 123}
 func (api *TextCryptAPI) EncryptNumber(c *gin.Context) {
 	var req model.NumberEncryptRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		grenderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
+	if !bindJSON(c, &req) {
 		return
 	}
 
@@ -75,8 +94,7 @@ func (api *TextCryptAPI) EncryptNumber(c *gin.Context) {
 // Body: {"ciphertext": "..."}
 func (api *TextCryptAPI) DecryptNumber(c *gin.Context) {
 	var req model.DecryptRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		grenderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
+	if !bindJSON(c, &req) {
 		return
 	}
 

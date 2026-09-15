@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -83,6 +84,31 @@ func TestHandler_TextEncrypt_BadRequest(t *testing.T) {
 	// empty plaintext
 	if w := doJSON(t, r, "/text/encrypt", `{"plaintext":""}`); w.Code != http.StatusBadRequest {
 		t.Errorf("empty plaintext status = %d, want 400", w.Code)
+	}
+}
+
+func TestHandler_TextNumber_BodyTooLarge(t *testing.T) {
+	r := newTextEngine(t)
+
+	// one byte over the 8 MiB body cap, as the only field value
+	filler := strings.Repeat("a", 8<<20)
+	tests := []struct {
+		name string
+		path string
+		body string
+	}{
+		{name: "text encrypt", path: "/text/encrypt", body: `{"plaintext":"` + filler + `"}`},
+		{name: "text decrypt", path: "/text/decrypt", body: `{"ciphertext":"` + filler + `"}`},
+		{name: "number encrypt", path: "/number/encrypt", body: `{"number":1,"pad":"` + filler + `"}`},
+		{name: "number decrypt", path: "/number/decrypt", body: `{"ciphertext":"` + filler + `"}`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if w := doJSON(t, r, tt.path, tt.body); w.Code != http.StatusRequestEntityTooLarge {
+				t.Errorf("status = %d, want 413 (body: %s)", w.Code, w.Body.String())
+			}
+		})
 	}
 }
 
