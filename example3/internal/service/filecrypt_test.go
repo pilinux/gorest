@@ -457,6 +457,44 @@ func TestFileCrypt_Delete(t *testing.T) {
 	}
 }
 
+func TestFileCrypt_DeleteRetryAfterFileRemoveFails(t *testing.T) {
+	svc, store, baseDir := newFileCryptService(t)
+	ctx := context.Background()
+
+	rec := encrypt(t, svc, "stuck.txt", []byte("bye"))
+	path, _ := encryptedFilePath(baseDir, rec.FileID)
+
+	// a non-empty directory in the file's place makes os.Remove fail
+	if err := os.Remove(path); err != nil {
+		t.Fatalf("Remove error: %v", err)
+	}
+	if err := os.Mkdir(path, 0o750); err != nil {
+		t.Fatalf("Mkdir error: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(path, "x"), []byte("x"), 0o600); err != nil {
+		t.Fatalf("WriteFile error: %v", err)
+	}
+
+	if _, code := svc.DeleteStored(ctx, rec.FileID); code != http.StatusInternalServerError {
+		t.Fatalf("first delete status = %d, want 500", code)
+	}
+	// the record must survive, or a retry could never reach the file again
+	if _, ok := store.records[rec.FileID]; !ok {
+		t.Fatal("record deleted although the file was not")
+	}
+
+	// once the file can be removed, a retry finishes the job
+	if err := os.RemoveAll(path); err != nil {
+		t.Fatalf("RemoveAll error: %v", err)
+	}
+	if _, code := svc.DeleteStored(ctx, rec.FileID); code != http.StatusOK {
+		t.Errorf("retry delete status = %d, want 200", code)
+	}
+	if _, ok := store.records[rec.FileID]; ok {
+		t.Error("record still present after retry")
+	}
+}
+
 func TestFileCrypt_CreateErrorRollsBackFile(t *testing.T) {
 	store := newFakeFileStore()
 	store.createErr = errors.New("db down")

@@ -388,20 +388,22 @@ func (s *FileCryptService) DeleteStored(ctx context.Context, fileID string) (htt
 		return
 	}
 
-	if err := s.store.DeleteByFileID(ctx, fileID); err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			httpResponse.Message = "file not found"
-			httpStatusCode = http.StatusNotFound
-			return
-		}
+	// delete the file before the record, so a failure at either step leaves the
+	// record in place and a retry can finish the job; if the file is already
+	// gone, that is fine
+	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.WithContext(ctx).WithError(err).Error("DeleteStored.s.2")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
 		return
 	}
 
-	// delete the file; if it is already gone, that is fine
-	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+	if err := s.store.DeleteByFileID(ctx, fileID); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			httpResponse.Message = "file not found"
+			httpStatusCode = http.StatusNotFound
+			return
+		}
 		log.WithContext(ctx).WithError(err).Error("DeleteStored.s.3")
 		httpResponse.Message = "internal server error"
 		httpStatusCode = http.StatusInternalServerError
