@@ -94,16 +94,24 @@ github.com/pilinux/gorest/
 │   ├── middleware/  # Gin middleware (JWT, CORS, etc.)
 │   ├── renderer/    # HTTP response renderer
 │   └── server/      # Graceful shutdown
-└── example2/        # Recommended application structure
+├── example2/        # Recommended application structure
+│   ├── cmd/app/     # Application entry point
+│   └── internal/
+│       ├── database/
+│       │   ├── migrate/  # Auto-migration utilities
+│       │   └── model/    # GORM models
+│       ├── handler/ # API handlers
+│       ├── repo/    # Repository pattern (data access)
+│       ├── router/  # Route definitions
+│       └── service/ # Business logic
+└── example3/        # Envelope-encryption app (MongoDB-only)
     ├── cmd/app/     # Application entry point
     └── internal/
-        ├── database/
-        │   ├── migrate/  # Auto-migration utilities
-        │   └── model/    # GORM models
+        ├── database/model/  # Mongo documents + request/response DTOs
         ├── handler/ # API handlers
-        ├── repo/    # Repository pattern (data access)
+        ├── repo/    # Mongo persistence + index bootstrap
         ├── router/  # Route definitions
-        └── service/ # Business logic
+        └── service/ # KeyManager, text/number crypto, file crypto
 ```
 
 ### Layer Responsibilities
@@ -113,8 +121,25 @@ github.com/pilinux/gorest/
 | Controller | `/controller` | Request binding, response rendering |
 | Handler | `/handler` | Business logic, validation |
 | Service | `/service` | Shared utilities, security |
-| Repository | `example2/internal/repo` | Data access abstraction |
+| Repository | `example2/internal/repo`, `example3/internal/repo` | Data access abstraction |
 | Database | `/database` | Connection management |
+
+### Example Applications
+
+The repo ships three runnable examples. They are not alternative versions of
+one app — each demonstrates a different slice of gorest.
+
+| App | Structure | Demonstrates |
+| --- | --------- | ------------ |
+| `example/` | Flat, legacy | Simplicity and rapid prototyping; the full auth/2FA feature set |
+| `example2/` | Interface-driven, DI (**recommended**) | Repository layer over RDBMS + MongoDB; the structure to copy for new projects |
+| `example3/` | Interface-driven, MongoDB-only | Envelope encryption: rotatable env secret, wrapped master key, per-item HKDF sub-keys, streamed file crypto with or without padding |
+
+`example3/` is the only one with a full unit-test suite: it fakes both Mongo
+interfaces, so `go test ./example3/...` runs with no database and no env vars.
+Its crypto comes from `github.com/pilinux/crypt/envelope`; the HKDF labels
+pinned in `example3/internal/service/scheme.go` must never change, because
+doing so re-derives different keys and orphans stored data.
 
 ## Configuration
 
