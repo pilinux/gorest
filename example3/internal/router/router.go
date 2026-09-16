@@ -39,6 +39,25 @@ func SetupRouter(
 		r.Use(gmiddleware.CORS(configure.Security.CORS))
 	}
 
+	// Sentry.io
+	if gconfig.IsSentry() {
+		// attaches the logrus hook globally, so an error logged anywhere in
+		// the app is reported
+		if _, err := gmiddleware.InitSentry(
+			configure.Logger.SentryDsn,
+			configure.Server.ServerEnv,
+			configure.Version,
+			configure.Logger.PerformanceTracing,
+			configure.Logger.TracesSampleRate,
+		); err != nil {
+			return r, err
+		}
+		// binds a request-scoped hub to the request context, so every
+		// log.WithContext(c.Request.Context()) in the handler and service
+		// layers is reported with its request attached
+		r.Use(gmiddleware.SentryCapture())
+	}
+
 	// Rate Limiter
 	if gconfig.IsRateLimit() {
 		limiterInstance, err := glib.InitRateLimiter(

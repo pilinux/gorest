@@ -177,6 +177,7 @@ example3/
 1. Copy the sample env, then set a strong `ENCRYPTION_SECRET` (32+ characters)
    and point `MONGO_URI` at your MongoDB. `ENCRYPTED_FILES_DIR`,
    `MAX_UPLOAD_SIZE_MB` and `APP_PORT` (8999) are already set in the sample.
+   To report server-side errors, set `ACTIVATE_SENTRY=yes` and your `SentryDSN`.
 
    ```bash
    cp example3/cmd/app/.env.sample example3/cmd/app/.env
