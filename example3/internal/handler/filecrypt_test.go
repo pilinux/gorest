@@ -259,8 +259,8 @@ func TestHandler_FileEncrypt_NotMultipart(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/files/encrypt", bytes.NewReader([]byte(`{"plaintext":"x"}`)))
 	req.Header.Set("Content-Type", "application/json")
 	r.ServeHTTP(w, req)
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("status = %d, want 400", w.Code)
+	if w.Code != http.StatusUnsupportedMediaType {
+		t.Errorf("status = %d, want 415", w.Code)
 	}
 }
 
@@ -567,7 +567,7 @@ func TestHandler_UnpaddedEncrypt_NotAnUpload(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/files/encrypt/unpadded", bytes.NewReader([]byte(`{"plaintext":"x"}`)))
 	req.Header.Set("Content-Type", "application/json")
 	r.ServeHTTP(w, req)
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("status = %d, want 400", w.Code)
+	if w.Code != http.StatusUnsupportedMediaType {
+		t.Errorf("status = %d, want 415", w.Code)
 	}
 }

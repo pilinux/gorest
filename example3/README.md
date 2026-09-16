@@ -124,7 +124,8 @@ reader simply fails.
 - `MAX_UPLOAD_SIZE_MB` is enforced while the file streams in. Going over it
   returns `413`, and the partial file is removed.
 - A raw upload whose `Content-Length` is over the limit is refused before
-  anything is read. One whose body doesn't match its `Content-Length` gets `400`.
+  anything is read. One whose body doesn't match its `Content-Length` gets `400`,
+  and so does any upload cut off mid-stream.
 - A form post's whole body is capped at the limit plus 1 MiB for headers and
   other form fields.
 
@@ -150,9 +151,8 @@ Both file upload routes accept:
   a `?name=` query parameter or a `Content-Disposition` header; otherwise it is
   stored as `file`.
 
-Anything else gets `400`. One decrypt route and one delete route serve both
-formats. A download returns the raw bytes as an attachment, with the original
-size as `Content-Length`.
+One decrypt route and one delete route serve both formats. A download returns
+the raw bytes as an attachment, with the original size as `Content-Length`.
 
 ## Layout
 

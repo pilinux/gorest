@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/pilinux/crypt/envelope"
@@ -52,6 +53,13 @@ func TestTextCrypt_EncryptText_Empty(t *testing.T) {
 	svc := NewTextCryptService(loadedKeys(t))
 	if _, code := svc.EncryptText(""); code != http.StatusBadRequest {
 		t.Errorf("status = %d, want 400", code)
+	}
+}
+
+func TestTextCrypt_EncryptText_TooLarge(t *testing.T) {
+	svc := NewTextCryptService(loadedKeys(t))
+	if _, code := svc.EncryptText(strings.Repeat("a", maxTextLen+1)); code != http.StatusRequestEntityTooLarge {
+		t.Errorf("status = %d, want 413", code)
 	}
 }
 

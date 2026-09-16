@@ -121,7 +121,7 @@ func (api *FileCryptAPI) encrypt(c *gin.Context, padded bool) {
 	case rawContentType:
 		api.encryptRaw(c, padded)
 	default:
-		grenderer.Render(c, gin.H{"message": "expected a multipart/form-data or application/octet-stream upload"}, http.StatusBadRequest)
+		grenderer.Render(c, gin.H{"message": "expected a multipart/form-data or application/octet-stream upload"}, http.StatusUnsupportedMediaType)
 	}
 }
 

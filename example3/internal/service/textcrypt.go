@@ -38,7 +38,7 @@ func (s *TextCryptService) EncryptText(plaintext string) (httpResponse gmodel.HT
 	}
 	if len(plaintext) > maxTextLen {
 		httpResponse.Message = "plaintext is too large"
-		httpStatusCode = http.StatusBadRequest
+		httpStatusCode = http.StatusRequestEntityTooLarge
 		return
 	}
 

@@ -288,7 +288,7 @@ func TestFileCrypt_EncryptTooLarge(t *testing.T) {
 	}
 
 	// one byte more is refused, and nothing is left behind
-	if _, code := svc.EncryptAndStore(ctx, "toobig.bin", bytes.NewReader(randomContent(t, limit+1)), SizeUnknown); code != http.StatusRequestEntityTooLarge {
+	if _, code := svc.EncryptAndStore(ctx, "too_big.bin", bytes.NewReader(randomContent(t, limit+1)), SizeUnknown); code != http.StatusRequestEntityTooLarge {
 		t.Errorf("status past the limit = %d, want 413", code)
 	}
 	if n := storedFiles(t, baseDir); n != 1 {
@@ -343,6 +343,43 @@ func TestFileCrypt_BodyLimitIsClientError(t *testing.T) {
 	}
 	if len(store.records) != 0 {
 		t.Errorf("stored %d records, want 0", len(store.records))
+	}
+}
+
+// TestFileCrypt_TruncatedUploadIsClientError covers a body cut off mid-stream,
+// which net/http and mime/multipart report as io.ErrUnexpectedEOF. It is the
+// client's error, not a 500.
+func TestFileCrypt_TruncatedUploadIsClientError(t *testing.T) {
+	tests := []struct {
+		name string
+		size int64
+	}{
+		{name: "declaredSize", size: 1024},
+		{name: "sizeUnknown", size: SizeUnknown},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc, store, baseDir := newFileCryptService(t)
+			cut := io.MultiReader(
+				bytes.NewReader([]byte("the part that arrived")),
+				errReader{err: io.ErrUnexpectedEOF},
+			)
+
+			resp, code := svc.EncryptAndStore(context.Background(), "cut.bin", cut, tt.size)
+			if code != http.StatusBadRequest {
+				t.Errorf("status = %d, want 400", code)
+			}
+			if msg, ok := resp.Message.(string); !ok || msg != "upload ended unexpectedly" {
+				t.Errorf("message = %v, want \"upload ended unexpectedly\"", resp.Message)
+			}
+			if n := storedFiles(t, baseDir); n != 0 {
+				t.Errorf("stored %d files, want 0", n)
+			}
+			if len(store.records) != 0 {
+				t.Errorf("stored %d records, want 0", len(store.records))
+			}
+		})
 	}
 }
 
@@ -883,7 +920,7 @@ func TestFileCrypt_SizedUploadTooLarge(t *testing.T) {
 	svc := NewFileCryptService(loadedKeys(t), newFakeFileStore(), baseDir, limit)
 
 	unread := errReader{err: errors.New("the body must not be read")}
-	resp, code := svc.EncryptAndStore(context.Background(), "toobig.bin", unread, limit+1)
+	resp, code := svc.EncryptAndStore(context.Background(), "too_big.bin", unread, limit+1)
 	if code != http.StatusRequestEntityTooLarge {
 		t.Errorf("status = %d, want 413 (resp: %v)", code, resp.Message)
 	}
@@ -1137,7 +1174,7 @@ func TestFileCrypt_UnpaddedTooLarge(t *testing.T) {
 		t.Errorf("status at the limit = %d, want 201", code)
 	}
 	// one byte more is refused, and the partial file is removed
-	if _, code := svc.EncryptAndStoreUnpadded(ctx, "toobig.bin", bytes.NewReader(randomContent(t, limit+1))); code != http.StatusRequestEntityTooLarge {
+	if _, code := svc.EncryptAndStoreUnpadded(ctx, "too_big.bin", bytes.NewReader(randomContent(t, limit+1))); code != http.StatusRequestEntityTooLarge {
 		t.Errorf("status past the limit = %d, want 413", code)
 	}
 	if n := storedFiles(t, baseDir); n != 1 {

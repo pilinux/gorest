@@ -187,6 +187,11 @@ func classifyUploadError(err error) (message any, httpStatusCode int) {
 	case errors.Is(err, envelope.ErrSourceSize):
 		return "upload does not match its declared length", http.StatusBadRequest
 
+	// the body was cut off mid-stream: a dropped connection, or a chunked or
+	// multipart body that ended early. The client's fault, not the server's.
+	case errors.Is(err, io.ErrUnexpectedEOF):
+		return "upload ended unexpectedly", http.StatusBadRequest
+
 	default:
 		return "internal server error", http.StatusInternalServerError
 	}
