@@ -2,6 +2,7 @@ package handler_test
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"os"
 	"testing"
@@ -18,20 +19,39 @@ import (
 func TestMain(m *testing.M) {
 	gin.SetMode(gin.TestMode)
 
-	// create a minimal .env so config.Config() succeeds
-	envContent := "# minimal test env\n"
-	if err := os.WriteFile(".env", []byte(envContent), 0600); err != nil {
-		panic("failed to create .env: " + err.Error())
-	}
-	defer func() {
-		_ = os.Remove(".env")
-	}()
+	restoreEnv := writeTestEnv()
 
 	if err := config.Config(); err != nil {
+		restoreEnv()
 		panic("config.Config() failed: " + err.Error())
 	}
 
-	os.Exit(m.Run())
+	code := m.Run()
+	restoreEnv()
+
+	os.Exit(code)
+}
+
+// writeTestEnv creates a minimal .env so config.Config() succeeds and returns
+// a restore function. os.Exit skips defers, so the caller must invoke it.
+func writeTestEnv() func() {
+	orig, err := os.ReadFile(".env")
+	existed := err == nil
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		panic("failed to read .env: " + err.Error())
+	}
+
+	if err := os.WriteFile(".env", []byte("# minimal test env\n"), 0600); err != nil {
+		panic("failed to create .env: " + err.Error())
+	}
+
+	return func() {
+		if !existed {
+			_ = os.Remove(".env")
+			return
+		}
+		_ = os.WriteFile(".env", orig, 0600)
+	}
 }
 
 // TestLogin_InvalidEmail - a malformed email is rejected before any lookup.
