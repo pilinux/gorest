@@ -15,6 +15,7 @@ import (
 // testSecret is a 40-character env secret used across the handler tests.
 const testSecret = "0123456789abcdef0123456789abcdef01234567"
 
+// init puts gin in test mode so the handlers stay quiet while testing.
 func init() {
 	gin.SetMode(gin.TestMode)
 }
@@ -24,6 +25,7 @@ type fakeKeyStore struct {
 	stored *model.SecretKey
 }
 
+// EnsureMasterKey keeps the first key it is given and returns it every time.
 func (f *fakeKeyStore) EnsureMasterKey(_ context.Context, candidate *model.SecretKey) (*model.SecretKey, error) {
 	if f.stored == nil {
 		f.stored = candidate
@@ -31,6 +33,7 @@ func (f *fakeKeyStore) EnsureMasterKey(_ context.Context, candidate *model.Secre
 	return f.stored, nil
 }
 
+// UpdateWrappedKey rewraps the stored key, as a key rotation would.
 func (f *fakeKeyStore) UpdateWrappedKey(_ context.Context, _ bson.ObjectID, wrappedKey []byte) error {
 	if f.stored != nil {
 		f.stored.WrappedKey = wrappedKey
@@ -43,10 +46,12 @@ type fakeFileStore struct {
 	records map[string]*model.FileRecord
 }
 
+// newFakeFileStore returns an empty file store ready to use.
 func newFakeFileStore() *fakeFileStore {
 	return &fakeFileStore{records: make(map[string]*model.FileRecord)}
 }
 
+// Create stores the record under its file ID, giving it an ID if it has none.
 func (f *fakeFileStore) Create(_ context.Context, rec *model.FileRecord) error {
 	if rec.ID.IsZero() {
 		rec.ID = bson.NewObjectID()
@@ -55,6 +60,7 @@ func (f *fakeFileStore) Create(_ context.Context, rec *model.FileRecord) error {
 	return nil
 }
 
+// GetByFileID looks up one record, or reports that no document matched.
 func (f *fakeFileStore) GetByFileID(_ context.Context, fileID string) (*model.FileRecord, error) {
 	rec, ok := f.records[fileID]
 	if !ok {
@@ -63,6 +69,7 @@ func (f *fakeFileStore) GetByFileID(_ context.Context, fileID string) (*model.Fi
 	return rec, nil
 }
 
+// DeleteByFileID drops one record, or reports that no document matched.
 func (f *fakeFileStore) DeleteByFileID(_ context.Context, fileID string) error {
 	if _, ok := f.records[fileID]; !ok {
 		return mongo.ErrNoDocuments
@@ -71,8 +78,8 @@ func (f *fakeFileStore) DeleteByFileID(_ context.Context, fileID string) error {
 	return nil
 }
 
-// newLoadedKeyManager returns a KeyManager whose master key has been
-// bootstrapped through the in-memory key store (no MongoDB required).
+// newLoadedKeyManager returns a KeyManager whose master key is already
+// bootstrapped in memory, so no MongoDB is needed.
 func newLoadedKeyManager(t *testing.T) *service.KeyManager {
 	t.Helper()
 	km := service.NewKeyManager()

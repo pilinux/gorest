@@ -3,7 +3,7 @@
 gorest is a production-ready Go RESTful API starter kit built with Gin, GORM, JWT, and Redis.
 This document serves as the complete reference for using gorest in any application.
 
-Requirements: Go 1.25.0 or later (see `go.mod`). Key dependencies: Gin, GORM
+Requirements: Go 1.26.0 or later (see `go.mod`). Key dependencies: Gin, GORM
 (MySQL/PostgreSQL/SQLite drivers), `golang-jwt/jwt/v5`, `mediocregopher/radix/v4`
 (Redis), `go.mongodb.org/mongo-driver/v2` (MongoDB), and `getsentry/sentry-go`.
 
@@ -1600,7 +1600,7 @@ All controllers are in `github.com/pilinux/gorest/controller`.
 
 All handlers are in `github.com/pilinux/gorest/handler`. Controllers are thin
 wrappers that bind requests and call handlers. Every handler takes a
-`context.Context` as its first argument — controllers pass `c.Request.Context()`,
+`context.Context` as its first argument; controllers pass `c.Request.Context()`,
 which lets handlers honor client cancellation and request deadlines while
 talking to the database, Redis, MongoDB, and the email service. All handler
 functions return `(httpResponse model.HTTPResponse, httpStatusCode int)`.
@@ -2252,7 +2252,7 @@ if glib.ValidateEmail("user@example.com") {
 }
 ```
 
-Note: `ValidateEmail` does not fall back to A/AAAA (implicit MX) records — a
+Note: `ValidateEmail` does not fall back to A/AAAA (implicit MX) records; a
 domain that accepts mail only via an implicit MX is treated as invalid.
 
 ### Random Generation
@@ -2792,7 +2792,7 @@ Request:
 }
 ```
 
-Response (201) — structured payload rendered directly (no `message` wrapper):
+Response (201): structured payload rendered directly (no `message` wrapper)
 
 ```json
 {
@@ -2814,7 +2814,7 @@ Request:
 }
 ```
 
-Response (200) — `JWTPayload` rendered directly (no `message` wrapper). When auth
+Response (200): `JWTPayload` rendered directly (no `message` wrapper). When auth
 cookies are enabled and `SERVE_JWT_AS_RESPONSE_BODY=no`, the tokens are set as
 cookies and the body is `{"message": "login successful"}` instead:
 
