@@ -21,7 +21,7 @@ metadata:
 
 ## Commands
 
-- **Primary:** `golangci-lint run --timeout 5m --verbose ./...` (CI uses golangci-lint v2.12.2)
+- **Primary:** `golangci-lint run --timeout 5m --verbose ./...` (CI uses golangci-lint v2.13.2)
 - **Secondary:** `revive ./...`
 
 ## Output

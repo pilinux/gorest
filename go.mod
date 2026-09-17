@@ -1,6 +1,6 @@
 module github.com/pilinux/gorest
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/flosch/pongo2/v6 v6.1.0
@@ -14,7 +14,7 @@ require (
 	github.com/mediocregopher/radix/v4 v4.1.5
 	github.com/mrz1836/postmark v1.9.2
 	github.com/pilinux/argon2 v0.25.0
-	github.com/pilinux/crypt v0.0.24
+	github.com/pilinux/crypt v0.0.29
 	github.com/pilinux/libgo v0.0.5
 	github.com/pilinux/structs v1.1.1
 	github.com/pilinux/twofactor v1.1.14

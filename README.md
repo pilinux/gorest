@@ -241,6 +241,7 @@ _Tutorials:_
 Please check example projects:
 
 - **recommended** - [example2](example2) [interface-driven design, with a focus on modularity and testability]
+- [example3](example3) [envelope encryption on MongoDB: a rotatable env secret, a wrapped master key, per-item sub-keys, and streamed + padded file crypto]
 - [example](example) [simplicity and ease of use, with a focus on rapid development and prototyping]
 
 convention over configuration
