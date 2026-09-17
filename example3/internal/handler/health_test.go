@@ -11,6 +11,7 @@ import (
 	"github.com/pilinux/gorest/example3/internal/handler"
 )
 
+// TestAPIStatus - the health endpoint replies 200 with a "live" body.
 func TestAPIStatus(t *testing.T) {
 	r := gin.New()
 	r.GET("/health", handler.APIStatus)
@@ -20,7 +21,7 @@ func TestAPIStatus(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	if w.Code != http.StatusOK {
-		t.Fatalf("status = %d, want 200", w.Code)
+		t.Errorf("status = %d, want 200", w.Code)
 	}
 	if !strings.Contains(w.Body.String(), "live") {
 		t.Errorf("body = %q, want it to contain \"live\"", w.Body.String())
