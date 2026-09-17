@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Authoritative references
 
-This repo already ships detailed agent docs. Read these before making changes — they
+This repo already ships detailed agent docs. Read these before making changes; they
 are the source of truth and far more complete than this file:
 
-- `AGENTS.md` — build/lint/test commands, code style, import aliases, layer
+- `AGENTS.md`: build/lint/test commands, code style, import aliases, layer
   responsibilities, controller↔handler 1:1 map, config/db/middleware/service APIs.
-- `llms.txt` — machine-readable interface describing repo purpose, capabilities, and constraints.
-- `.agents/skills/<name>/SKILL.md` — task-specific workflow guides (test-runner,
+- `llms.txt`: machine-readable interface describing repo purpose, capabilities, and constraints.
+- `.agents/skills/<name>/SKILL.md`: task-specific workflow guides (test-runner,
   ci-orchestrator, migration-helper, config-loader-helper, etc.).
 
 ## Files to NEVER read or modify
@@ -30,19 +30,20 @@ Do not open, read, or edit them:
 source setTestEnv.sh                           # required before running tests locally
 go test -v -cover ./...                        # all tests
 go test -v -run TestHashPass ./lib/...         # single test function
-golangci-lint run ./...                        # lint (CI uses v2.12.2, --timeout 5m)
+golangci-lint run ./...                        # lint (CI uses v2.13.2, --timeout 5m)
 go vet -v ./... && go build -v ./...           # vet + build
 ```
 
 CI additionally runs `gosec`, `govulncheck`, and cross-platform `go vet`/build across
 linux/darwin/windows × amd64/arm64. Tests need env vars (CI uses secrets;
-locally `setTestEnv.sh`).
+locally `setTestEnv.sh`), except `go test ./example3/...`, which fakes its Mongo
+interfaces and needs neither env vars nor a live database.
 
 ## Architecture (the big picture)
 
 gorest is a reusable Go module (`github.com/pilinux/gorest`), not just an app. It is
-both a library of auth/crypto/middleware/db primitives **and** two example apps that
-wire them together. Requires Go 1.25.0+ (`go.mod` declares `go 1.25.0`; CI tests against Go 1.25.x and 1.26.x).
+both a library of auth/crypto/middleware/db primitives **and** three example apps that
+wire them together. Requires Go 1.26.0+ (`go.mod` declares `go 1.26.0`; CI tests against Go 1.26.x and 1.27.x).
 
 Request flow follows a strict layered pipeline:
 
@@ -68,7 +69,13 @@ Two things make this codebase navigable:
    its code paths are skipped, so reproducing behavior requires matching env config.
 
 `example/` is the legacy app; `example2/` is the recommended interface-driven app
-(adds a `repo/` repository layer with DI on top of the same library).
+(adds a `repo/` repository layer with DI on top of the same library); `example3/`
+is a MongoDB-only envelope-encryption demo built on the same interface-driven
+shape: a rotatable env secret wraps a stored master key, each item gets its own
+HKDF sub-key, and files are sealed as padded streams. It is the only example with
+a full unit-test suite (Mongo interfaces are faked, so it needs no live database).
+Its pinned HKDF labels in `example3/internal/service/scheme.go` must never change:
+doing so orphans every already-stored item.
 
 ### Conventions that matter
 
@@ -76,11 +83,16 @@ Two things make this codebase navigable:
   `gmiddleware`, `glib`, `gservice`, ...); logrus as `log`. Full list in `AGENTS.md`.
 - Handlers use named returns with bare `return` for early exits.
 - Errors: `log.WithError(err).Error("error code: XXXX.X")` with numbered codes; never
-  expose internal errors to API consumers — return user-facing text via `httpResponse.Message`.
+  expose internal errors to API consumers; return user-facing text via `httpResponse.Message`.
 - Tests: external test packages (`package lib_test`), table-driven with named structs,
-  `t.Run` subtests, stdlib `t.Errorf` (no assertion library).
+  `t.Run` subtests, stdlib `t.Errorf` (no assertion library). Where a test needs
+  unexported identifiers, add an `export_test.go` (see `lib/export_test.go`);
+  `example3/internal/service` is the one package that tests from the inside.
 - Sensitive model fields are hidden with `json:"-"`; non-DB fields with `gorm:"-"`.
   Email is stored encrypted (cipher/nonce/hash columns), not plaintext.
+- Punctuation is plain ASCII in comments, docs, and commit messages: never an em
+  dash (U+2014). Pick the mark that fits the clause relationship (comma,
+  semicolon, colon, parentheses) or start a new sentence.
 
 ## Contributing
 

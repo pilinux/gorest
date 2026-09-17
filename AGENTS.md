@@ -6,8 +6,8 @@ Instructions for AI coding agents working in this repository.
 
 Go RESTful API starter kit built with Gin, GORM, JWT, Redis, MongoDB,
 2FA, email verification, and password recovery. Module path:
-`github.com/pilinux/gorest`. Requires Go 1.25.0+ (`go.mod` declares
-`go 1.25.0`; CI tests against Go 1.25.x and 1.26.x).
+`github.com/pilinux/gorest`. Requires Go 1.26.0+ (`go.mod` declares
+`go 1.26.0`; CI tests against Go 1.26.x and 1.27.x).
 
 ## Build and Run Commands
 
@@ -42,7 +42,7 @@ golangci-lint run ./...
 revive ./...
 ```
 
-CI uses golangci-lint v2.12.2 with `--timeout 5m --verbose`.
+CI uses golangci-lint v2.13.2 with `--timeout 5m --verbose`.
 
 ### Test - All
 
@@ -73,6 +73,10 @@ Locally, source `setTestEnv.sh` before running tests:
 source setTestEnv.sh
 ```
 
+`example3/` is the exception: its tests use in-memory fakes for both Mongo
+interfaces, so `go test ./example3/...` needs neither env vars nor a live
+database.
+
 ### Cross-Platform Vet (CI runs all six)
 
 ```bash
@@ -95,6 +99,7 @@ GOOS=darwin GOARCH=arm64 go vet -v ./...
 - `lib/server/` - Graceful server shutdown
 - `example/` - Legacy example app
 - `example2/` - Recommended example app (interface-driven, DI)
+- `example3/` - Envelope-encryption example app (MongoDB-only, interface-driven)
 
 ### example2/ Structure (Recommended)
 
@@ -111,6 +116,65 @@ example2/
     └── service/                # Business logic
 ```
 
+### example3/ Structure (Envelope Encryption)
+
+Same layered shape as `example2/`, MongoDB-only, and the one example with a
+full unit-test suite (fakes for both Mongo interfaces, so it runs with no
+live database).
+
+```text
+example3/
+├── cmd/app/main.go          # Entry point: config → mongo → indexes → key load → serve
+└── internal/
+    ├── database/model/         # Mongo documents + request/response DTOs
+    ├── handler/                # Thin Gin handlers (+ tests)
+    ├── repo/                   # Mongo persistence; index.go bootstraps indexes
+    ├── router/router.go        # Route definitions + middleware setup
+    └── service/                # KeyManager, text/number crypto, file crypto
+        ├── scheme.go           # Pinned HKDF labels, chunk size, envelope.Scheme
+        └── storage.go          # File-id validation, size limit, the sized and sizeless seals
+```
+
+Key points when working in `example3/`:
+
+- Crypto primitives come from `github.com/pilinux/crypt/envelope`; example3 only
+  pins its own HKDF labels in `service/scheme.go`. **Changing those labels
+  orphans every already-stored item.**
+- A master key is generated once and stored wrapped by a KEK derived from
+  `ENCRYPTION_SECRET`; `ENCRYPTION_SECRET_OLD` triggers a re-wrap at boot.
+- `repo.EnsureIndexes` must run before the master key is loaded: the unique
+  index on `keyName` is what keeps concurrent boots from storing two master keys.
+- Files use the streaming + padded API (`SealPaddedStreamAAD` /
+  `SealPaddedAtAAD` / `OpenPaddedReaderAAD`), with the file id as AAD. The
+  padded format hashes its own domain tag in beside that AAD, so the two openers
+  can never be swapped: reading a padded file back with `OpenReaderAAD` fails
+  with `ErrStreamAuth`, and the caller passes the bare file id either way.
+- Padding needs the payload length before chunk 0 carries it, but **every upload
+  is one pass**. A raw `application/octet-stream` body declares its length in
+  `Content-Length`, so `sealSized` → `SealPaddedStreamAAD` seals it in order. A
+  `multipart/form-data` part declares nothing (browsers send no per-part
+  `Content-Length`), so `sealSizeless` → `SealPaddedAtAAD` (new in `crypt`
+  v0.0.29) counts it while it streams: chunks 1 onward are sealed at the offsets
+  the format fixes for them and chunk 0, which holds the frame, is sealed last
+  and written at offset 37. That needs a seekable destination, which is why
+  `sealTo` hands the open `*os.File` to the sealer rather than an `io.Writer`.
+  Nothing is ever staged: **no plaintext is written to disk**, and the cost of a
+  sizeless seal is one extra chunk of memory, not a second pass over the bytes.
+- `POST files/encrypt/unpadded` seals the same stream format without padding
+  (`SealStreamAAD`), which needs no length at all and writes strictly in order;
+  the file size then reveals the plaintext length. Both routes store into the
+  same collection and directory, and one decrypt/delete pair serves both:
+  `model.FileRecord.Unpadded` (omitempty, so zero = padded) is what tells
+  `OpenForDownload` which opener and framing to use. Flipping that flag cannot
+  reinterpret a file; the padded format tag makes it fail to authenticate.
+- `internal/handler/` is the thin Gin layer (the controller role in the table
+  below, despite the name): it binds the request, calls the service and
+  renders. The `(model.HTTPResponse, int)` contract lives one layer down, in
+  `internal/service/`, whose methods take a `context.Context` first and use
+  named returns.
+- Handler tests are external (`package handler_test`); service tests are
+  internal (`package service`) because they reach unexported helpers.
+
 ### Layer Responsibilities
 
 | Layer | Package | Responsibility |
@@ -118,7 +182,7 @@ example2/
 | Controller | `controller/` | Bind request, call handler, render response |
 | Handler | `handler/` | Business logic, validation, returns `(HTTPResponse, int)` |
 | Service | `service/` | Shared utilities (auth, email, crypto, JWT blacklist) |
-| Repository | `example2/internal/repo/` | Data access abstraction (interface-driven) |
+| Repository | `example2/internal/repo/`, `example3/internal/repo/` | Data access abstraction (interface-driven) |
 | Database | `database/` | Connection management (RDBMS, Redis, MongoDB) |
 | Config | `config/` | Load `.env`, expose `GetConfig()`, feature checks |
 
@@ -278,10 +342,16 @@ renderer.Render(c, data, http.StatusBadRequest)
   `// The MIT License (MIT)`
   `// Copyright (c) 20XX pilinux`
 - Use numbered step comments for complex logic
+- Punctuation is plain ASCII: never an em dash (U+2014). Pick the mark that fits
+  the clause relationship (comma, semicolon, colon, parentheses) or start a new
+  sentence. Applies to comments, docs, and commit messages alike.
 
 ### Testing
 
-- Use external test packages (`package lib_test`, not `package lib`)
+- Use external test packages (`package lib_test`, not `package lib`); where a
+  test genuinely needs unexported identifiers, add an `export_test.go` in the
+  internal package (see `lib/export_test.go`). `example3/internal/service` is
+  the one place that tests from inside the package instead.
 - Table-driven tests with named struct types
 - Use `t.Run()` for subtests with descriptive names
 - Use `t.Errorf` for assertions (no external assertion library)
@@ -658,14 +728,14 @@ Per `.gitignore`, avoid these paths:
 ## CI Pipeline
 
 GitHub Actions run on push and PR (path-filtered to `**/*.go`, `go.mod`,
-`go.sum`, `**/*.yml`), with a Go version matrix of `1.25.x` and `1.26.x`:
+`go.sum`, `**/*.yml`), with a Go version matrix of `1.26.x` and `1.27.x`:
 
 - `go vet` on 6 platform combinations
 - `gosec` security scanner
 - `govulncheck` for known vulnerabilities
 - Build on 6 platforms (linux/darwin/windows x amd64/arm64)
 - Tests with `-race` and coverage (only on push to `main`), uploaded to Codecov
-- `golangci-lint` v2.12.2 (separate workflow, `--timeout 5m --verbose`)
+- `golangci-lint` v2.13.2 (separate workflow, `--timeout 5m --verbose`)
 
 ## Contributing
 

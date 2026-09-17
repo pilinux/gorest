@@ -53,8 +53,10 @@ token:
 version (0x01) | saltLen | salt | 24-byte nonce | ciphertext + tag
 ```
 
-A text token gives away the length of the text: it is always 58 bytes longer.
-Numbers are always encoded as 8 bytes, so every number token is the same length.
+A text token shows roughly how long the text is. It is the text plus 58 bytes
+(header, salt, nonce and tag) in base64, so it grows by 4 characters for every
+3 bytes of text. Numbers are always stored as 8 bytes, so every number token is
+88 characters long.
 
 ## Files
 
