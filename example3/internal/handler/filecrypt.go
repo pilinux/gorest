@@ -114,6 +114,8 @@ func (api *FileCryptAPI) EncryptFileUnpadded(c *gin.Context) {
 // encrypt reads the file out of whichever body shape the client used and hands
 // it to the service.
 func (api *FileCryptAPI) encrypt(c *gin.Context, padded bool) {
+	setUploadDeadline(c)
+
 	// gin's ContentType() has already dropped the boundary parameter
 	switch c.ContentType() {
 	case multipartContentType:
@@ -122,6 +124,14 @@ func (api *FileCryptAPI) encrypt(c *gin.Context, padded bool) {
 		api.encryptRaw(c, padded)
 	default:
 		grenderer.Render(c, gin.H{"message": "expected a multipart/form-data or application/octet-stream upload"}, http.StatusUnsupportedMediaType)
+	}
+}
+
+// setUploadDeadline keeps a stalled upload from outliving fileCryptTimeout.
+func setUploadDeadline(c *gin.Context) {
+	err := http.NewResponseController(c.Writer).SetReadDeadline(time.Now().Add(fileCryptTimeout))
+	if err != nil && !errors.Is(err, http.ErrNotSupported) {
+		log.WithContext(c.Request.Context()).WithError(err).Error("encrypt.h.1")
 	}
 }
 
@@ -235,6 +245,14 @@ func filePart(mr *multipart.Reader, field string) (*multipart.Part, error) {
 	return nil, errNoFilePart
 }
 
+// setDownloadDeadline keeps a stalled download from outliving fileCryptTimeout.
+func setDownloadDeadline(c *gin.Context) {
+	err := http.NewResponseController(c.Writer).SetWriteDeadline(time.Now().Add(fileCryptTimeout))
+	if err != nil && !errors.Is(err, http.ErrNotSupported) {
+		log.WithContext(c.Request.Context()).WithError(err).Error("DecryptFile.h.2")
+	}
+}
+
 // DecryptFile decrypts a stored file and streams the original bytes back.
 //
 // Endpoint: GET /api/v1/crypto/files/:id/decrypt
@@ -246,6 +264,8 @@ func (api *FileCryptAPI) DecryptFile(c *gin.Context) {
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), fileCryptTimeout)
 	defer cancel()
+
+	setDownloadDeadline(c)
 
 	dl, resp, statusCode := api.svc.OpenForDownload(ctx, id)
 	if statusCode != http.StatusOK {
