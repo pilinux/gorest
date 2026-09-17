@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"sync"
 	"testing"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -222,6 +223,48 @@ func TestEnsureAndLoad_SecretNotSet(t *testing.T) {
 	err := km.EnsureAndLoad(context.Background(), &fakeKeyStore{})
 	if !errors.Is(err, ErrSecretNotSet) {
 		t.Errorf("err = %v, want ErrSecretNotSet", err)
+	}
+}
+
+// TestKeyManagerConcurrentInit: the key lifecycle is serialized, so overlapping
+// calls never wipe a KEK another call is still using. Meant to run with -race.
+func TestKeyManagerConcurrentInit(t *testing.T) {
+	masterKey, _ := envelope.GenerateMasterKey()
+	store := &fakeKeyStore{stored: storedWith(t, currentSecret, masterKey)}
+
+	km := NewKeyManager()
+	var wg sync.WaitGroup
+	for range 8 {
+		wg.Go(func() {
+			if err := km.SetSecrets(currentSecret, oldSecret); err != nil {
+				t.Errorf("SetSecrets error: %v", err)
+				return
+			}
+			km.IsRotationConfigured()
+			if err := km.EnsureAndLoad(context.Background(), store); err != nil {
+				t.Errorf("EnsureAndLoad error: %v", err)
+				return
+			}
+			if _, err := km.MasterKey(); err != nil {
+				t.Errorf("MasterKey error: %v", err)
+			}
+		})
+	}
+	wg.Wait()
+
+	mk, err := km.MasterKey()
+	if err != nil {
+		t.Fatalf("MasterKey error: %v", err)
+	}
+	if !bytes.Equal(mk, masterKey) {
+		t.Error("concurrent init did not load the stored master key")
+	}
+	// every goroutine ends on EnsureAndLoad, so the last one wiped the KEKs
+	if km.kek != nil || km.kekOld != nil {
+		t.Error("KEKs were kept after the master key was loaded")
+	}
+	if store.updateCalls != 0 {
+		t.Errorf("update calls = %d, want 0 (the stored key already fits)", store.updateCalls)
 	}
 }
 

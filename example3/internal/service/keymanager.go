@@ -36,6 +36,10 @@ var (
 //
 // KEKs only wrap the master key, so they are wiped once it is loaded.
 type KeyManager struct {
+	// init serializes the whole key lifecycle. SetSecrets and EnsureAndLoad
+	// hold it end to end, so no KEK is wiped while another call still uses it.
+	init sync.Mutex
+
 	mu        sync.RWMutex
 	kek       []byte // current KEK, from ENCRYPTION_SECRET; nil once loaded
 	kekOld    []byte // previous KEK, only when rotating; nil otherwise
@@ -53,6 +57,9 @@ func NewKeyManager() *KeyManager {
 // old only counts when it is set and differs from current. Otherwise there is
 // nothing to rotate, and no old KEK is kept.
 func (km *KeyManager) SetSecrets(current, old string) error {
+	km.init.Lock()
+	defer km.init.Unlock()
+
 	kek, err := scheme.DeriveKEK(current)
 	if err != nil {
 		return err
@@ -68,6 +75,8 @@ func (km *KeyManager) SetSecrets(current, old string) error {
 	}
 
 	km.mu.Lock()
+	envelope.Zero(km.kek) // a repeat call must not leave the old KEKs behind
+	envelope.Zero(km.kekOld)
 	km.kek = kek
 	km.kekOld = kekOld
 	km.mu.Unlock()
@@ -90,12 +99,19 @@ func (km *KeyManager) IsRotationConfigured() bool {
 //
 // Call SetSecrets first. The KEKs are wiped once the key is loaded.
 func (km *KeyManager) EnsureAndLoad(ctx context.Context, store repo.KeyStore) error {
+	km.init.Lock()
+	defer km.init.Unlock()
+
 	km.mu.RLock()
 	kek := km.kek
 	kekOld := km.kekOld
+	loaded := len(km.masterKey) > 0
 	km.mu.RUnlock()
 
 	if len(kek) == 0 {
+		if loaded {
+			return nil // already loaded, and the KEKs are wiped: nothing to do
+		}
 		return ErrSecretNotSet
 	}
 
