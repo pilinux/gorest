@@ -305,15 +305,58 @@ func (s *FileCryptService) openSealed(rec *model.FileRecord) (*Download, error) 
 	return dl, nil
 }
 
-// WriteTo streams the plaintext to dst and returns how many bytes it wrote.
+// integrityHoldback is how many trailing plaintext bytes WriteTo keeps back
+// until the digest has been checked. Any value above zero is enough to leave a
+// failed download short of its declared length; an upload cannot be empty, so
+// there is always a tail to hold.
+const integrityHoldback = 64
+
+// tailWriter forwards all but the last hold bytes to dst and keeps those until
+// flush is called.
+type tailWriter struct {
+	dst  io.Writer
+	hold int
+	buf  []byte
+}
+
+// Write buffers p and passes on whatever is no longer part of the tail.
+func (t *tailWriter) Write(p []byte) (int, error) {
+	t.buf = append(t.buf, p...)
+	if len(t.buf) > t.hold {
+		cut := len(t.buf) - t.hold
+		if _, err := t.dst.Write(t.buf[:cut]); err != nil {
+			return 0, err
+		}
+		t.buf = t.buf[:copy(t.buf, t.buf[cut:])]
+	}
+	return len(p), nil
+}
+
+// flush writes the held tail, releasing the download to the client.
+func (t *tailWriter) flush() error {
+	if len(t.buf) == 0 {
+		return nil
+	}
+	_, err := t.dst.Write(t.buf)
+	t.buf = t.buf[:0]
+	return err
+}
+
+// WriteTo streams the plaintext to dst and returns how many bytes it produced.
 //
 // It writes no second file on disk. Each chunk is authenticated before it
 // goes out, but a damaged file can still fail midway, so treat dst as bad
 // unless the error is nil. A nil error means the whole stream checked out,
 // padding included, and the size and digest match the record.
+//
+// The last integrityHoldback bytes are kept back until the digest matches, so a
+// file that fails only at that last check leaves dst short of the declared
+// length rather than looking complete. On an error some counted bytes may
+// therefore never have reached dst.
 func (d *Download) WriteTo(dst io.Writer) (int64, error) {
 	digest := sha256.New()
-	out := io.MultiWriter(dst, digest)
+	held := &tailWriter{dst: dst, hold: integrityHoldback}
+	out := io.MultiWriter(held, digest)
 
 	var n int64
 	var err error
@@ -331,7 +374,7 @@ func (d *Download) WriteTo(dst io.Writer) (int64, error) {
 	if hex.EncodeToString(digest.Sum(nil)) != d.recordedSum {
 		return n, ErrIntegrityCheckFailed
 	}
-	return n, nil
+	return n, held.flush()
 }
 
 // writePlain copies an unpadded file's plaintext to dst. A plain stream has no

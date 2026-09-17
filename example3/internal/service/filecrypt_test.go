@@ -469,8 +469,13 @@ func TestFileCrypt_DigestMismatchDetected(t *testing.T) {
 	// the ciphertext still authenticates; only the recorded digest disagrees
 	store.records[rec.FileID].Sha256 = strings.Repeat("0", 64)
 
-	if _, _, err := download(t, svc, rec.FileID); !errors.Is(err, ErrIntegrityCheckFailed) {
+	_, got, err := download(t, svc, rec.FileID)
+	if !errors.Is(err, ErrIntegrityCheckFailed) {
 		t.Errorf("err = %v, want ErrIntegrityCheckFailed", err)
+	}
+	// the tail is held back, so a client cannot mistake this for a whole file
+	if int64(len(got)) >= rec.Size {
+		t.Errorf("wrote %d bytes, want fewer than the declared %d", len(got), rec.Size)
 	}
 }
 
