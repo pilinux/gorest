@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"math"
 	"net/http"
 	"os"
 	"strconv"
@@ -134,7 +135,8 @@ func maxUploadSize() int64 {
 		return defaultMaxUploadSize
 	}
 	mb, err := strconv.ParseInt(raw, 10, 64)
-	if err != nil || mb <= 0 {
+	// too large a value would overflow the shift into a negative limit
+	if err != nil || mb <= 0 || mb > math.MaxInt64>>20 {
 		return defaultMaxUploadSize
 	}
 	return mb << 20
