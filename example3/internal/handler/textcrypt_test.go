@@ -87,6 +87,43 @@ func TestHandler_TextEncrypt_BadRequest(t *testing.T) {
 	}
 }
 
+// TestHandler_BindError_NoInternalDetail - a type-mismatched value gets a stable
+// message; the binder's field and type names stay in the log.
+func TestHandler_BindError_NoInternalDetail(t *testing.T) {
+	r := newTextEngine(t)
+
+	tests := []struct {
+		name string
+		path string
+		body string
+	}{
+		{name: "string field given a number", path: "/text/encrypt", body: `{"plaintext":123}`},
+		{name: "number field given a string", path: "/number/encrypt", body: `{"number":"twelve"}`},
+		{name: "object where a string belongs", path: "/text/decrypt", body: `{"ciphertext":{"a":1}}`},
+	}
+
+	// what a leaked binder error reads like
+	leaks := []string{"cannot unmarshal", "json:", "Go struct field", "of type", "model."}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			w := doJSON(t, r, tc.path, tc.body)
+			if w.Code != http.StatusBadRequest {
+				t.Fatalf("status = %d, want 400 (body: %s)", w.Code, w.Body.String())
+			}
+			body := w.Body.String()
+			if !strings.Contains(body, "invalid request body") {
+				t.Errorf("body = %s, want the stable message", body)
+			}
+			for _, leak := range leaks {
+				if strings.Contains(body, leak) {
+					t.Errorf("body leaks binder detail %q: %s", leak, body)
+				}
+			}
+		})
+	}
+}
+
 func TestHandler_TextNumber_BodyTooLarge(t *testing.T) {
 	r := newTextEngine(t)
 

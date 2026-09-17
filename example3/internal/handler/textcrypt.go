@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	grenderer "github.com/pilinux/gorest/lib/renderer"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/pilinux/gorest/example3/internal/database/model"
 	"github.com/pilinux/gorest/example3/internal/service"
@@ -31,12 +32,13 @@ func NewTextCryptAPI(svc *service.TextCryptService) *TextCryptAPI {
 func bindJSON(c *gin.Context, req any) bool {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxJSONBodySize)
 	if err := c.ShouldBindJSON(req); err != nil {
-		var maxBytesErr *http.MaxBytesError
-		if errors.As(err, &maxBytesErr) {
+		if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
 			grenderer.Render(c, gin.H{"message": "request body is too large"}, http.StatusRequestEntityTooLarge)
 			return false
 		}
-		grenderer.Render(c, gin.H{"message": err.Error()}, http.StatusBadRequest)
+		// the binder names fields and Go types, so it is logged, not sent
+		log.WithContext(c.Request.Context()).WithError(err).Error("bindJSON.h.1")
+		grenderer.Render(c, gin.H{"message": "invalid request body"}, http.StatusBadRequest)
 		return false
 	}
 	return true
