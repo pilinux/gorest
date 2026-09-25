@@ -139,6 +139,7 @@ reader simply fails.
   and so does any upload cut off mid-stream.
 - A form post's whole body is capped at the limit plus 1 MiB for headers and
   other form fields.
+- An upload still arriving after 5 minutes gets `408`.
 
 ## Endpoints
 

@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 	"testing"
 
 	"github.com/pilinux/crypt/envelope"
+	gmodel "github.com/pilinux/gorest/database/model"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
 	"github.com/pilinux/gorest/example3/internal/database/model"
@@ -373,6 +375,50 @@ func TestFileCrypt_TruncatedUploadIsClientError(t *testing.T) {
 			}
 			if msg, ok := resp.Message.(string); !ok || msg != "upload ended unexpectedly" {
 				t.Errorf("message = %v, want \"upload ended unexpectedly\"", resp.Message)
+			}
+			if n := storedFiles(t, baseDir); n != 0 {
+				t.Errorf("stored %d files, want 0", n)
+			}
+			if len(store.records) != 0 {
+				t.Errorf("stored %d records, want 0", len(store.records))
+			}
+		})
+	}
+}
+
+// TestFileCrypt_StalledUploadIsClientError covers a client that sends too
+// slowly: the read deadline fails the body read. It is a 408, not a 500.
+func TestFileCrypt_StalledUploadIsClientError(t *testing.T) {
+	tests := []struct {
+		name     string
+		unpadded bool
+		size     int64
+	}{
+		{name: "declaredSize", size: 1024},
+		{name: "sizeUnknown", size: SizeUnknown},
+		{name: "unpadded", unpadded: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc, store, baseDir := newFileCryptService(t)
+			stalled := io.MultiReader(
+				bytes.NewReader([]byte("the part that arrived")),
+				errReader{err: fmt.Errorf("read tcp: %w", os.ErrDeadlineExceeded)},
+			)
+
+			var resp gmodel.HTTPResponse
+			var code int
+			if tt.unpadded {
+				resp, code = svc.EncryptAndStoreUnpadded(context.Background(), "slow.bin", stalled)
+			} else {
+				resp, code = svc.EncryptAndStore(context.Background(), "slow.bin", stalled, tt.size)
+			}
+			if code != http.StatusRequestTimeout {
+				t.Errorf("status = %d, want 408", code)
+			}
+			if msg, ok := resp.Message.(string); !ok || msg != "upload timed out" {
+				t.Errorf("message = %v, want \"upload timed out\"", resp.Message)
 			}
 			if n := storedFiles(t, baseDir); n != 0 {
 				t.Errorf("stored %d files, want 0", n)

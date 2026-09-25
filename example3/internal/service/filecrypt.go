@@ -213,6 +213,10 @@ func classifyUploadError(err error) (message any, httpStatusCode int) {
 	case errors.Is(err, io.ErrUnexpectedEOF):
 		return "upload ended unexpectedly", http.StatusBadRequest
 
+	// the client sent too slowly and hit the read deadline
+	case errors.Is(err, os.ErrDeadlineExceeded):
+		return "upload timed out", http.StatusRequestTimeout
+
 	default:
 		return "internal server error", http.StatusInternalServerError
 	}

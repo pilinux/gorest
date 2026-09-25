@@ -284,14 +284,34 @@ func (api *FileCryptAPI) DecryptFile(c *gin.Context) {
 	c.Header("Content-Length", strconv.FormatInt(dl.Size, 10))
 	c.Status(http.StatusOK)
 
-	if _, err := dl.WriteTo(c.Writer); err != nil {
+	out := &clientWriter{w: c.Writer}
+	if _, err := dl.WriteTo(out); err != nil && out.err == nil {
 		// something went wrong after the headers were already sent: a chunk
 		// failed to authenticate, or the client disconnected. It is too late to
 		// change the status code, so just stop writing. The body then ends up
 		// shorter than the Content-Length promised, and that tells the client
 		// the download is incomplete and should not be kept.
+		//
+		// Only our side is logged. A client that went away is not a server
+		// problem.
 		log.WithContext(ctx).WithError(err).Error("DecryptFile.h.1")
 	}
+}
+
+// clientWriter remembers if writing to the client failed, so a download that
+// broke on the client's side can be told apart from a damaged file.
+type clientWriter struct {
+	w   io.Writer
+	err error
+}
+
+// Write passes p on to the client and keeps the first error.
+func (cw *clientWriter) Write(p []byte) (int, error) {
+	n, err := cw.w.Write(p)
+	if err != nil && cw.err == nil {
+		cw.err = err
+	}
+	return n, err
 }
 
 // DeleteFile removes a stored encrypted file and its metadata.
