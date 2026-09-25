@@ -16,6 +16,13 @@ const (
 	sizeAADLabel = "gorest/example3:file-size:v1:"
 )
 
+// AAD labels for text and number tokens. Never change them either. Each type
+// gets its own, so a number token can't be opened as text, or the other way.
+const (
+	textAADLabel  = "gorest/example3:text:v1"
+	int64AADLabel = "gorest/example3:int64:v1"
+)
+
 // fileChunkSize is how much plaintext is sealed at a time. A request holds a
 // chunk or two in memory, and each chunk adds a 16-byte tag. Unlike the labels,
 // it can change: every stored file records its own chunk size, so old files

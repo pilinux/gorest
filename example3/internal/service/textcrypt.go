@@ -50,7 +50,7 @@ func (s *TextCryptService) EncryptText(plaintext string) (httpResponse gmodel.HT
 		return
 	}
 
-	token, err := scheme.SealString(masterKey, plaintext)
+	token, err := scheme.SealStringAAD(masterKey, plaintext, []byte(textAADLabel))
 	if err != nil {
 		log.WithError(err).Error("EncryptText.s.2")
 		httpResponse.Message = "internal server error"
@@ -79,7 +79,7 @@ func (s *TextCryptService) DecryptText(token string) (httpResponse gmodel.HTTPRe
 		return
 	}
 
-	plaintext, err := scheme.OpenString(masterKey, token)
+	plaintext, err := scheme.OpenStringAAD(masterKey, token, []byte(textAADLabel))
 	if err != nil {
 		// a bad or tampered token is the client's error, not the server's
 		httpResponse.Message = "unable to decrypt: invalid or corrupted ciphertext"
@@ -109,7 +109,7 @@ func (s *TextCryptService) EncryptNumber(number *int64) (httpResponse gmodel.HTT
 		return
 	}
 
-	token, err := scheme.SealInt64(masterKey, *number)
+	token, err := scheme.SealInt64AAD(masterKey, *number, []byte(int64AADLabel))
 	if err != nil {
 		log.WithError(err).Error("EncryptNumber.s.2")
 		httpResponse.Message = "internal server error"
@@ -138,7 +138,7 @@ func (s *TextCryptService) DecryptNumber(token string) (httpResponse gmodel.HTTP
 		return
 	}
 
-	number, err := scheme.OpenInt64(masterKey, token)
+	number, err := scheme.OpenInt64AAD(masterKey, token, []byte(int64AADLabel))
 	if err != nil {
 		httpResponse.Message = "unable to decrypt: invalid or corrupted ciphertext"
 		httpStatusCode = http.StatusBadRequest

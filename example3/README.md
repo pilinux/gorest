@@ -35,8 +35,9 @@ flowchart LR
 - **Sub-key.** Every text, number and file gets its own key, derived from the
   master key and a fresh 16-byte salt. The salt is stored next to the
   ciphertext so the same key can be derived again. No two items share a key.
-- **Pinned labels.** The HKDF labels in `internal/service/scheme.go` must never
-  change. Changing them makes every stored item impossible to decrypt.
+- **Pinned labels.** The HKDF and AAD labels in `internal/service/scheme.go`
+  must never change. Changing them makes every stored item impossible to
+  decrypt.
 - **Exactly one master key.** A unique index on `keyName` is created at boot,
   before the key is loaded. If two instances start at the same moment, the
   second insert fails and that instance loads the key the first one wrote.

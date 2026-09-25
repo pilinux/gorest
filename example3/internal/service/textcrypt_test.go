@@ -119,3 +119,53 @@ func TestTextCrypt_MasterKeyError(t *testing.T) {
 		t.Errorf("EncryptNumber status = %d, want 500", code)
 	}
 }
+
+// TestTextCrypt_TokenTypesDontMix - a number token doesn't open as text, and an
+// 8-byte text token doesn't open as a number.
+func TestTextCrypt_TokenTypesDontMix(t *testing.T) {
+	svc := NewTextCryptService(loadedKeys(t))
+
+	number := int64(0x4142434445464748) // "ABCDEFGH" as bytes
+	resp, code := svc.EncryptNumber(&number)
+	if code != http.StatusOK {
+		t.Fatalf("EncryptNumber status = %d, want 200", code)
+	}
+	numberToken := resp.Message.(model.CiphertextResponse).Ciphertext
+
+	resp, code = svc.EncryptText("ABCDEFGH")
+	if code != http.StatusOK {
+		t.Fatalf("EncryptText status = %d, want 200", code)
+	}
+	textToken := resp.Message.(model.CiphertextResponse).Ciphertext
+
+	tests := []struct {
+		name    string
+		decrypt func(string) (int, any)
+		token   string
+	}{
+		{
+			name: "number token as text",
+			decrypt: func(tok string) (int, any) {
+				resp, code := svc.DecryptText(tok)
+				return code, resp.Message
+			},
+			token: numberToken,
+		},
+		{
+			name: "text token as number",
+			decrypt: func(tok string) (int, any) {
+				resp, code := svc.DecryptNumber(tok)
+				return code, resp.Message
+			},
+			token: textToken,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if code, msg := tc.decrypt(tc.token); code != http.StatusBadRequest {
+				t.Errorf("status = %d (%v), want 400", code, msg)
+			}
+		})
+	}
+}
