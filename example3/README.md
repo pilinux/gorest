@@ -124,11 +124,11 @@ reader simply fails.
 - A forged file header can't make a download allocate a huge buffer: chunk
   sizes over 1 MiB are refused before any memory is allocated.
 - The file's size is compared with the record.
-- A padded file has its first chunk checked before the response starts, so a
+- Every file has its first chunk checked before the response starts, so a
   wrong key or a bad file is a clean `500`.
-- Damage further in, or any problem with an unpadded file, is only found after
-  `200 OK` is sent. The download then stops short of its `Content-Length`, so
-  the client knows the file is incomplete.
+- Damage further in is only found after `200 OK` is sent. The download then
+  stops short of its `Content-Length`, so the client knows the file is
+  incomplete.
 
 ### Upload limits
 

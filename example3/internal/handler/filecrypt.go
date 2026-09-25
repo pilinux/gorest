@@ -23,6 +23,10 @@ const (
 	// It has to cover the whole transfer including encryption.
 	fileCryptTimeout = 5 * time.Minute
 
+	// recordSaveTime is extra time, past the upload's read deadline, to save the
+	// file's record once the upload is in.
+	recordSaveTime = 10 * time.Second
+
 	// fileFormField is the multipart form field carrying the upload.
 	fileFormField = "file"
 
@@ -213,8 +217,8 @@ func (api *FileCryptAPI) encryptMultipart(c *gin.Context, padded bool) {
 func (api *FileCryptAPI) store(c *gin.Context, name string, src io.Reader, size int64, padded bool) {
 	// the timeout has to cover the whole transfer: the upload is sealed while
 	// it arrives, so a slow client holds the request open for as long as it
-	// takes to stream the file in
-	ctx, cancel := context.WithTimeout(c.Request.Context(), fileCryptTimeout)
+	// takes to stream the file in, and then the record still has to be saved
+	ctx, cancel := context.WithTimeout(c.Request.Context(), fileCryptTimeout+recordSaveTime)
 	defer cancel()
 
 	if padded {
@@ -276,8 +280,8 @@ func (api *FileCryptAPI) DecryptFile(c *gin.Context) {
 		_ = dl.Close()
 	}()
 
-	// by now the file is open. For a padded file, its first chunk has also been
-	// authenticated and its stored length checked against the record. So the
+	// by now the file is open and its first chunk authenticated; for a padded
+	// file, its stored length is checked against the record too. So the
 	// status and the length can be sent now, before any of the body is written.
 	// quotes the name as needed, and encodes a non-ASCII one (RFC 2231)
 	c.Header("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": dl.Name}))

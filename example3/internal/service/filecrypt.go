@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -232,15 +233,15 @@ type Download struct {
 	file   *os.File               // the encrypted file on disk
 	padded *envelope.PaddedReader // payload of a padded file; nil for an unpadded one
 	plain  *envelope.StreamReader // plaintext of an unpadded file; nil for a padded one
+	first  []byte                 // an unpadded file's first byte, read early to check its first chunk
 }
 
 // OpenForDownload finds fileID, opens its encrypted file, and returns a
 // Download ready to stream.
 //
-// For a padded file, the first chunk is authenticated here, so a wrong key, a
-// bad file or a size mismatch fails now with a 500 instead of cutting off a
-// 200. An unpadded file only has its header read here; its first chunk is
-// checked while the body is being written.
+// The first chunk is authenticated here, so a wrong key, a bad file or (for a
+// padded file) a size mismatch fails now with a 500 instead of cutting off a
+// 200. Damage further in is only found while the body is being written.
 func (s *FileCryptService) OpenForDownload(ctx context.Context, fileID string) (dl *Download, httpResponse gmodel.HTTPResponse, httpStatusCode int) {
 	if !validFileID(fileID) {
 		httpResponse.Message = "invalid file id"
@@ -312,8 +313,15 @@ func (s *FileCryptService) openSealed(rec *model.FileRecord) (*Download, error) 
 	}
 	aad := []byte(rec.FileID)
 	if rec.Unpadded {
-		// reads only the header; nothing is authenticated until the first chunk
+		// reading one byte authenticates the first chunk, so a bad file fails
+		// here, before anything is sent
 		dl.plain, err = scheme.OpenReaderAAD(masterKey, f, aad)
+		if err == nil {
+			dl.first = make([]byte, 1)
+			if _, err = io.ReadFull(dl.plain, dl.first); errors.Is(err, io.EOF) {
+				err = ErrIntegrityCheckFailed // an empty stream; uploads cannot be empty
+			}
+		}
 	} else {
 		// authenticates the first chunk to read the sealed length. A record
 		// claiming a different length is refused before anything is sent.
@@ -350,7 +358,7 @@ func (d *Download) WriteTo(dst io.Writer) (int64, error) {
 // sealed length, so it must match the recorded size exactly: no shorter, no
 // longer.
 func (d *Download) writePlain(dst io.Writer) (int64, error) {
-	n, err := io.CopyN(dst, d.plain, d.Size)
+	n, err := io.CopyN(dst, io.MultiReader(bytes.NewReader(d.first), d.plain), d.Size)
 	if err != nil {
 		if errors.Is(err, io.EOF) {
 			// the stream ended properly, but shorter than the record says

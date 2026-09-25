@@ -755,6 +755,32 @@ func TestFileCrypt_RecordSizeTamperingRejected(t *testing.T) {
 	}
 }
 
+// TestFileCrypt_UnpaddedFirstChunkCheckedBeforeStatus: an unpadded file's first
+// chunk is checked at open too, so a damaged one is a 500, not a cut-off 200.
+func TestFileCrypt_UnpaddedFirstChunkCheckedBeforeStatus(t *testing.T) {
+	svc, _, baseDir := newFileCryptService(t)
+	rec := encryptUnpadded(t, svc, "tampered.bin", []byte("authentic content"))
+
+	path, _ := encryptedFilePath(baseDir, rec.FileID)
+	blob, err := os.ReadFile(path) // #nosec G304 -- test-owned temp path
+	if err != nil {
+		t.Fatalf("read error: %v", err)
+	}
+	blob[streamHeaderSize+1] ^= 0x01
+	if err := os.WriteFile(path, blob, 0o600); err != nil {
+		t.Fatalf("write error: %v", err)
+	}
+
+	dl, resp, code := svc.OpenForDownload(context.Background(), rec.FileID)
+	if code != http.StatusInternalServerError {
+		t.Errorf("status = %d, want 500 (resp: %v)", code, resp.Message)
+	}
+	if dl != nil {
+		_ = dl.Close()
+		t.Error("a download was handed out for a file that failed to open")
+	}
+}
+
 // TestFileCrypt_PaddedFailuresRefusedBeforeStatus is what opening through the
 // frame buys: for a padded file, a damaged first chunk, a foreign id, the wrong
 // format or a record whose size disagrees are all caught while a status can

@@ -1,6 +1,7 @@
 package handler_test
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"net/http"
@@ -51,16 +52,17 @@ func captureLogs(t *testing.T) *logtest.Hook {
 // logged; a damaged file is still an error.
 func TestHandler_Download_ClientGoneIsNotAnError(t *testing.T) {
 	baseDir := t.TempDir()
-	svc := service.NewFileCryptService(newLoadedKeyManager(t), newFakeFileStore(), baseDir, testUploadLimit)
+	svc := service.NewFileCryptService(newLoadedKeyManager(t), newFakeFileStore(), baseDir, 4<<20)
 	api := handler.NewFileCryptAPI(svc)
 	r := gin.New()
 	r.POST("/files/encrypt/unpadded", api.EncryptFileUnpadded)
 	r.GET("/files/:id/decrypt", api.DecryptFile)
 
-	// unpadded, so nothing is checked before the body starts
+	// two chunks, so damage in the second is only found after the body starts
+	content := bytes.Repeat([]byte("x"), 1<<20+100)
 	upload := func(t *testing.T) string {
 		t.Helper()
-		w := uploadMultipartTo(t, r, "/files/encrypt/unpadded", "log.txt", []byte("some content to download"))
+		w := uploadMultipartTo(t, r, "/files/encrypt/unpadded", "log.txt", content)
 		if w.Code != http.StatusCreated {
 			t.Fatalf("encrypt status = %d, want 201 (body: %s)", w.Code, w.Body.String())
 		}

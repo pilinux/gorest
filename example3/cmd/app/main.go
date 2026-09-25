@@ -99,13 +99,14 @@ func main() {
 		return
 	}
 
-	// attach the router to a http.Server with timeouts. Files are streamed in
-	// and out of the crypto endpoints, so the read/write budgets have to cover
-	// a whole transfer; only the header deadline stays short.
+	// attach the router to a http.Server with timeouts. The read budget is
+	// short; file uploads set their own, longer one. Files are streamed out
+	// too, and an upload answers only after its transfer, so the write budget
+	// has to cover a whole transfer.
 	srv := &http.Server{
 		Addr:              configure.Server.ServerHost + ":" + configure.Server.ServerPort,
 		Handler:           r,
-		ReadTimeout:       10 * time.Minute,
+		ReadTimeout:       1 * time.Minute,
 		ReadHeaderTimeout: 10 * time.Second,
 		WriteTimeout:      10 * time.Minute,
 		IdleTimeout:       60 * time.Second,
