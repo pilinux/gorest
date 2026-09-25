@@ -1,5 +1,12 @@
 # example3: envelope encryption on MongoDB
 
+> [!WARNING]
+> **Demo only. Do not expose example3 as-is.** No endpoint checks who is
+> calling. Anyone who can reach the server can decrypt any text or number
+> token, and anyone who has a file id can download or delete that file. A real
+> app puts these routes behind authentication and access control, for example
+> gorest's JWT middleware (as in [`example2`](../example2)) plus role checks.
+
 `example3` is a small gorest app that encrypts text, numbers and files, with
 MongoDB as its only database. It shows **envelope encryption**: one master key
 protects all the data, and that master key is itself encrypted with a secret
