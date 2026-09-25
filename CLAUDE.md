@@ -72,10 +72,14 @@ Two things make this codebase navigable:
 (adds a `repo/` repository layer with DI on top of the same library); `example3/`
 is a MongoDB-only envelope-encryption demo built on the same interface-driven
 shape: a rotatable env secret wraps a stored master key, each item gets its own
-HKDF sub-key, and files are sealed as padded streams. It is the only example with
-a full unit-test suite (Mongo interfaces are faked, so it needs no live database).
-Its pinned HKDF labels in `example3/internal/service/scheme.go` must never change:
-doing so orphans every already-stored item.
+HKDF sub-key, and files are sealed as padded (or plain) streams. It is the only
+example with a full unit-test suite (Mongo interfaces are faked, so it needs no
+live database). It needs `pilinux/crypt` v0.0.30+.
+Its pinned labels in `example3/internal/service/scheme.go` must never change: the
+HKDF labels and the AAD labels (text and number tokens, file record name and
+size). Changing any of them orphans every already-stored item.
+It is a demo with no auth: a file id alone unlocks its file. Don't add auth or
+log redaction there; a real app guards these routes with JWT and RBAC.
 
 ### Conventions that matter
 

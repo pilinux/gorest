@@ -29,7 +29,7 @@ const (
 
 // backup2FALimitScript increments the failed-attempt counter, derives the
 // resulting cooldown from the escalating schedule, stores the cooldown deadline,
-// and refreshes the key TTL — all atomically. It returns the cooldown length in
+// and refreshes the key TTL, all atomically. It returns the cooldown length in
 // seconds (0 while still within the free attempts).
 //
 // KEYS[1]=limiter key.

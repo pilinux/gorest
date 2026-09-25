@@ -127,19 +127,35 @@ github.com/pilinux/gorest/
 ### Example Applications
 
 The repo ships three runnable examples. They are not alternative versions of
-one app — each demonstrates a different slice of gorest.
+one app; each demonstrates a different slice of gorest.
 
 | App | Structure | Demonstrates |
 | --- | --------- | ------------ |
 | `example/` | Flat, legacy | Simplicity and rapid prototyping; the full auth/2FA feature set |
 | `example2/` | Interface-driven, DI (**recommended**) | Repository layer over RDBMS + MongoDB; the structure to copy for new projects |
-| `example3/` | Interface-driven, MongoDB-only | Envelope encryption: rotatable env secret, wrapped master key, per-item HKDF sub-keys, streamed file crypto with or without padding |
+| `example3/` | Interface-driven, MongoDB-only, demo (no auth) | Envelope encryption: rotatable env secret, wrapped master key, per-item HKDF sub-keys, streamed file crypto with or without padding |
 
 `example3/` is the only one with a full unit-test suite: it fakes both Mongo
 interfaces, so `go test ./example3/...` runs with no database and no env vars.
-Its crypto comes from `github.com/pilinux/crypt/envelope`; the HKDF labels
-pinned in `example3/internal/service/scheme.go` must never change, because
-doing so re-derives different keys and orphans stored data.
+Its crypto comes from `github.com/pilinux/crypt/envelope` (v0.0.30 or later).
+
+Before changing or copying `example3/`:
+
+- It is a demo and must not be exposed as-is. No endpoint checks the caller:
+  anyone who can reach it can decrypt any text or number token, and a file id
+  alone is enough to download or delete that file. A real app puts these
+  routes behind JWT and role checks (see `example2/` and the RBAC middleware
+  section below).
+- The labels in `example3/internal/service/scheme.go` must never change: the
+  HKDF labels (KEK, per-item sub-key) and the AAD labels (text token, number
+  token, file record name, file record size). Changing any of them makes data
+  already stored impossible to decrypt. `fileChunkSize` may change, as long as
+  `maxAcceptedChunkSize` stays at or above every chunk size ever used.
+- Text and number tokens are sealed under different AADs, so a token of one
+  type never opens as the other.
+- A file record in MongoDB holds the file's name and size only in sealed form,
+  bound to the file id, and no plaintext hash. Every chunk of the file on disk
+  is bound to the file id too, so a file moved to another id does not open.
 
 ## Configuration
 

@@ -131,15 +131,27 @@ example3/
     ├── repo/                   # Mongo persistence; index.go bootstraps indexes
     ├── router/router.go        # Route definitions + middleware setup
     └── service/                # KeyManager, text/number crypto, file crypto
-        ├── scheme.go           # Pinned HKDF labels, chunk size, envelope.Scheme
+        ├── scheme.go           # Pinned HKDF and AAD labels, chunk size, envelope.Scheme
         └── storage.go          # File-id validation, size limit, the sized and sizeless seals
 ```
 
 Key points when working in `example3/`:
 
-- Crypto primitives come from `github.com/pilinux/crypt/envelope`; example3 only
-  pins its own HKDF labels in `service/scheme.go`. **Changing those labels
-  orphans every already-stored item.**
+- It is a demo with no auth: any text/number token can be decrypted by anyone,
+  and a file id alone downloads or deletes its file. A real app guards these
+  routes with JWT and RBAC (see `example2/`); don't add auth or log redaction
+  to example3 itself.
+- Crypto primitives come from `github.com/pilinux/crypt/envelope` (v0.0.30+);
+  example3 only pins its own labels in `service/scheme.go`: the HKDF labels
+  and the AAD labels (text token, number token, file record name, file record
+  size). **Changing any of them orphans every already-stored item.**
+- Text and number tokens are sealed with `SealStringAAD` / `SealInt64AAD`
+  under different AADs, so a token of one type never opens as the other.
+- `model.FileRecord.Name` and `Size` are `bson:"-"`: MongoDB only gets
+  `SealedName` / `SealedSize`, sealed to the file id by `sealRecord` and opened
+  by `openRecord`. There is no plaintext hash; the AEAD stream already
+  authenticates every chunk. Test fakes drop `Name`/`Size` on insert, like
+  MongoDB does.
 - A master key is generated once and stored wrapped by a KEK derived from
   `ENCRYPTION_SECRET`; `ENCRYPTION_SECRET_OLD` triggers a re-wrap at boot.
 - `repo.EnsureIndexes` must run before the master key is loaded: the unique
@@ -167,6 +179,17 @@ Key points when working in `example3/`:
   `model.FileRecord.Unpadded` (omitempty, so zero = padded) is what tells
   `OpenForDownload` which opener and framing to use. Flipping that flag cannot
   reinterpret a file; the padded format tag makes it fail to authenticate.
+- A download authenticates the file's first chunk before the `200` goes out, for
+  both formats (an unpadded file has one byte read early for this), so a bad
+  file or wrong key is a clean `500`. Damage further in cuts the body short of
+  its `Content-Length`.
+- Timeouts: the server's `ReadTimeout` is 1 minute; uploads set their own
+  5-minute read deadline and downloads a 5-minute write deadline, which override
+  the server's. `WriteTimeout` stays 10 minutes because an upload answers only
+  after its transfer. A stalled upload gets `408`.
+- Client-side failures are not logged: a cut-off, too large or stalled upload
+  gets a 4xx, and a download the client dropped is ignored. Only server-side
+  failures log at `Error`.
 - `internal/handler/` is the thin Gin layer (the controller role in the table
   below, despite the name): it binds the request, calls the service and
   renders. The `(model.HTTPResponse, int)` contract lives one layer down, in

@@ -381,7 +381,7 @@ func TestInitDB_Sqlite3_LazyPath(t *testing.T) {
 		t.Fatalf("prerequisite InitDB failed: %v", db.Error)
 	}
 
-	// sqlite3 is lazy — gorm.Open succeeds even with a bad path
+	// sqlite3 is lazy: gorm.Open succeeds even with a bad path
 	cfg.Database.RDBMS.Access.DbName = "/nonexistent/dir/db.sqlite3"
 	cfg.Database.RDBMS.Log.LogLevel = 1
 

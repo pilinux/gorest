@@ -104,7 +104,7 @@ func TestEnsureConfigDir(t *testing.T) {
 		t.Fatalf("expected %q to be a directory", createdPath)
 	}
 
-	// call again on existing directory — should return nil immediately (stat succeeds)
+	// call again on existing directory: should return nil immediately (stat succeeds)
 	if err = ensureConfigDir(filepath.Join("tmp", "nested")); err != nil {
 		t.Fatalf("ensureConfigDir() on existing dir error = %v", err)
 	}
