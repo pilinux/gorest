@@ -81,7 +81,8 @@ differences, not big ones: a 90 KB file still looks different from a 970 KB one.
 
 **Tied to its record.** The file id is bound into every chunk, so a `.enc` file
 copied under another id no longer opens. The MongoDB record keeps the file's
-name, real size and SHA-256; the size and SHA-256 are checked again on download.
+name and real size, both sealed to the file id, so the database alone does not
+show them. The size is checked again on download.
 
 ### Two ways to upload
 
@@ -114,7 +115,7 @@ reader simply fails.
   mistaken for a complete one.
 - A forged file header can't make a download allocate a huge buffer: chunk
   sizes over 1 MiB are refused before any memory is allocated.
-- After the last chunk, the size and SHA-256 are compared with the record.
+- The file's size is compared with the record.
 - A padded file has its first chunk checked before the response starts, so a
   wrong key or a bad file is a clean `500`.
 - Damage further in, or any problem with an unpadded file, is only found after

@@ -1,8 +1,6 @@
 package service
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"io"
 	"os"
@@ -129,11 +127,9 @@ func (l *limitedReader) Read(p []byte) (int, error) {
 	return n, err
 }
 
-// sealedFile is what the record needs about a stored file, counted as the bytes
-// went by.
+// sealedFile is what the record needs about a stored file.
 type sealedFile struct {
-	size int64  // exact payload length
-	sum  string // sha-256 of the payload, hex encoded
+	size int64 // exact payload length
 }
 
 // sealSized seals src into path, padded, in one pass. The client declared size
@@ -148,11 +144,10 @@ func sealSized(masterKey []byte, path, fileID string, src io.Reader, size, maxSi
 		return sealedFile{}, ErrEmptyUpload
 	}
 
-	digest := sha256.New()
-	if err := sealPaddedTo(masterKey, path, fileID, io.TeeReader(src, digest), size); err != nil {
+	if err := sealPaddedTo(masterKey, path, fileID, src, size); err != nil {
 		return sealedFile{}, err
 	}
-	return sealedFile{size: size, sum: hex.EncodeToString(digest.Sum(nil))}, nil
+	return sealedFile{size: size}, nil
 }
 
 // sealSizeless seals src into path, padded, with no declared length (a
@@ -174,12 +169,11 @@ func sealPlain(masterKey []byte, path, fileID string, src io.Reader, maxSize int
 	})
 }
 
-// sealCounted creates path and runs a seal that takes no length, hashing the
-// bytes on the way in. Neither sizeless seal knows the length until src ends,
-// so an empty upload is only caught afterwards.
+// sealCounted creates path and runs a seal that takes no length. Neither
+// sizeless seal knows the length until src ends, so an empty upload is only
+// caught afterwards.
 func sealCounted(path string, src io.Reader, maxSize int64, seal func(dst *os.File, src io.Reader) (int64, error)) (sealedFile, error) {
-	digest := sha256.New()
-	limited := newLimitedReader(io.TeeReader(src, digest), maxSize)
+	limited := newLimitedReader(src, maxSize)
 
 	var n int64
 	err := sealTo(path, func(dst *os.File) error {
@@ -196,7 +190,7 @@ func sealCounted(path string, src io.Reader, maxSize int64, seal func(dst *os.Fi
 		_ = os.Remove(path)
 		return sealedFile{}, ErrEmptyUpload
 	}
-	return sealedFile{size: n, sum: hex.EncodeToString(digest.Sum(nil))}, nil
+	return sealedFile{size: n}, nil
 }
 
 // sealPaddedTo creates path and seals exactly size bytes of src into it, padded

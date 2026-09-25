@@ -9,6 +9,13 @@ const (
 	subKeyLabel = "gorest/example3:data-subkey:v1"
 )
 
+// AAD labels for a file record's sealed name and size. Never change them
+// either. Each field gets its own, so the two can't be swapped.
+const (
+	nameAADLabel = "gorest/example3:file-name:v1:"
+	sizeAADLabel = "gorest/example3:file-size:v1:"
+)
+
 // fileChunkSize is how much plaintext is sealed at a time. A request holds a
 // chunk or two in memory, and each chunk adds a 16-byte tag. Unlike the labels,
 // it can change: every stored file records its own chunk size, so old files

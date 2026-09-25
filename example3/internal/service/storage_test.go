@@ -209,9 +209,6 @@ func TestSealSizeless(t *testing.T) {
 	if up.size != int64(len(payload)) {
 		t.Errorf("size = %d, want %d", up.size, len(payload))
 	}
-	if want := envelope.Sha256Hex(payload); up.sum != want {
-		t.Errorf("sum = %q, want %q", up.sum, want)
-	}
 
 	sealed, err := os.ReadFile(path) // #nosec G304 -- test-owned temp path
 	if err != nil {

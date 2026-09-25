@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/pilinux/crypt/envelope"
+	"go.mongodb.org/mongo-driver/v2/bson"
 
 	"github.com/pilinux/gorest/example3/internal/database/model"
 )
@@ -454,6 +455,7 @@ func TestFileCrypt_CiphertextBoundToFileID(t *testing.T) {
 	}
 	moved := *rec
 	moved.FileID = otherID
+	sealTestRecord(t, svc, &moved)
 	store.records[otherID] = &moved
 
 	// the file id is the AAD of every chunk, so the copy no longer opens
@@ -462,20 +464,58 @@ func TestFileCrypt_CiphertextBoundToFileID(t *testing.T) {
 	}
 }
 
-func TestFileCrypt_DigestMismatchDetected(t *testing.T) {
-	svc, store, _ := newFileCryptService(t)
-	rec := encrypt(t, svc, "swapped.txt", []byte("content the record no longer describes"))
-
-	// the ciphertext still authenticates; only the recorded digest disagrees
-	store.records[rec.FileID].Sha256 = strings.Repeat("0", 64)
-
-	_, got, err := download(t, svc, rec.FileID)
-	if !errors.Is(err, ErrIntegrityCheckFailed) {
-		t.Errorf("err = %v, want ErrIntegrityCheckFailed", err)
+// sealTestRecord seals rec's name and size with the service's key.
+func sealTestRecord(t *testing.T, svc *FileCryptService, rec *model.FileRecord) {
+	t.Helper()
+	masterKey, err := svc.keys.MasterKey()
+	if err != nil {
+		t.Fatalf("MasterKey error: %v", err)
 	}
-	// the tail is held back, so a client cannot mistake this for a whole file
-	if int64(len(got)) >= rec.Size {
-		t.Errorf("wrote %d bytes, want fewer than the declared %d", len(got), rec.Size)
+	if err := sealRecord(masterKey, rec); err != nil {
+		t.Fatalf("sealRecord error: %v", err)
+	}
+}
+
+// resealSize gives a stored record another size, sealed with the real key.
+func resealSize(t *testing.T, svc *FileCryptService, rec *model.FileRecord, size int64) {
+	t.Helper()
+	masterKey, err := svc.keys.MasterKey()
+	if err != nil {
+		t.Fatalf("MasterKey error: %v", err)
+	}
+	rec.SealedSize, err = scheme.SealInt64AAD(masterKey, size, []byte(sizeAADLabel+rec.FileID))
+	if err != nil {
+		t.Fatalf("SealInt64AAD error: %v", err)
+	}
+}
+
+func TestFileCrypt_RecordFieldsSealed(t *testing.T) {
+	svc, store, _ := newFileCryptService(t)
+	rec := encrypt(t, svc, "private-name.txt", []byte("content with a private name"))
+
+	// what MongoDB gets holds neither the name nor the size in the clear
+	raw, err := bson.Marshal(rec)
+	if err != nil {
+		t.Fatalf("bson.Marshal error: %v", err)
+	}
+	if bytes.Contains(raw, []byte("private-name")) {
+		t.Error("name stored in the clear")
+	}
+	if got := bson.Raw(raw).Lookup("size").Type; got != bson.TypeString {
+		t.Errorf("size stored as %v, want a sealed string", got)
+	}
+
+	// a sealed field from another file does not open here
+	other := encrypt(t, svc, "other.txt", []byte("other content"))
+	store.records[rec.FileID].SealedSize = store.records[other.FileID].SealedSize
+	if _, _, err := download(t, svc, rec.FileID); !errors.Is(err, envelope.ErrEnvelopeAuth) {
+		t.Errorf("err = %v, want envelope.ErrEnvelopeAuth", err)
+	}
+
+	// nor does the name sealed in the size's place
+	store.records[other.FileID].SealedSize = store.records[other.FileID].SealedName
+	if _, _, err := download(t, svc, other.FileID); !errors.Is(err, envelope.ErrEnvelopeAuth) {
+		t.Errorf("err = %v, want envelope.ErrEnvelopeAuth", err)
 	}
 }
 
@@ -636,12 +676,13 @@ func TestFileCrypt_UnpaddedStreamRejected(t *testing.T) {
 	if err := f.Close(); err != nil {
 		t.Fatalf("close error: %v", err)
 	}
-	store.records[fileID] = &model.FileRecord{
+	rec := &model.FileRecord{
 		FileID: fileID,
 		Name:   "unpadded.bin",
 		Size:   int64(len(content)),
-		Sha256: envelope.Sha256Hex(content),
 	}
+	sealTestRecord(t, svc, rec)
+	store.records[fileID] = rec
 
 	// padded and plain streams are domain-separated by their AAD, so the
 	// reader never even gets as far as looking for a frame
@@ -659,7 +700,7 @@ func TestFileCrypt_RecordSizeTamperingRejected(t *testing.T) {
 			// the length inside the sealed plaintext is authenticated, so a
 			// record that claims another one is refused at open, before any
 			// byte goes out
-			store.records[rec.FileID].Size = rec.Size + delta
+			resealSize(t, svc, store.records[rec.FileID], rec.Size+delta)
 
 			if _, _, err := download(t, svc, rec.FileID); !errors.Is(err, ErrIntegrityCheckFailed) {
 				t.Errorf("err = %v, want ErrIntegrityCheckFailed", err)
@@ -697,7 +738,7 @@ func TestFileCrypt_PaddedFailuresRefusedBeforeStatus(t *testing.T) {
 			name: "recordSize",
 			setup: func(t *testing.T, svc *FileCryptService, store *fakeFileStore, _ string) string {
 				rec := encrypt(t, svc, "resized.bin", []byte("a payload of one particular length"))
-				store.records[rec.FileID].Size++
+				resealSize(t, svc, store.records[rec.FileID], rec.Size+1)
 				return rec.FileID
 			},
 		},
@@ -772,12 +813,13 @@ func TestFileCrypt_WideChunksRefused(t *testing.T) {
 	if err := f.Close(); err != nil {
 		t.Fatalf("close error: %v", err)
 	}
-	store.records[fileID] = &model.FileRecord{
+	rec := &model.FileRecord{
 		FileID: fileID,
 		Name:   "wide.bin",
 		Size:   int64(len(content)),
-		Sha256: envelope.Sha256Hex(content),
 	}
+	sealTestRecord(t, svc, rec)
+	store.records[fileID] = rec
 
 	if _, _, err := download(t, svc, fileID); !errors.Is(err, envelope.ErrInvalidChunkSize) {
 		t.Errorf("err = %v, want envelope.ErrInvalidChunkSize", err)
@@ -1028,9 +1070,6 @@ func TestFileCrypt_UnpaddedRoundTrip(t *testing.T) {
 	if rec.Size != int64(len(content)) {
 		t.Errorf("size = %d, want %d", rec.Size, len(content))
 	}
-	if want := envelope.Sha256Hex(content); rec.Sha256 != want {
-		t.Errorf("sha256 = %q, want %q", rec.Sha256, want)
-	}
 	if _, saved := store.records[rec.FileID]; !saved {
 		t.Error("metadata was not stored")
 	}
@@ -1144,7 +1183,7 @@ func TestFileCrypt_UnpaddedRecordSizeTamperingRejected(t *testing.T) {
 			svc, store, _ := newFileCryptService(t)
 			rec := encryptUnpadded(t, svc, "resized.bin", []byte("a payload of one particular length"))
 
-			store.records[rec.FileID].Size = rec.Size + delta
+			resealSize(t, svc, store.records[rec.FileID], rec.Size+delta)
 
 			if _, _, err := download(t, svc, rec.FileID); !errors.Is(err, ErrIntegrityCheckFailed) {
 				t.Errorf("err = %v, want ErrIntegrityCheckFailed", err)
@@ -1240,6 +1279,7 @@ func TestFileCrypt_UnpaddedCiphertextBoundToFileID(t *testing.T) {
 	}
 	moved := *rec
 	moved.FileID = otherID
+	sealTestRecord(t, svc, &moved)
 	store.records[otherID] = &moved
 
 	if _, _, err := download(t, svc, otherID); err == nil {

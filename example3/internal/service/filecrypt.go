@@ -2,8 +2,6 @@ package service
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"io"
 	"net/http"
@@ -34,8 +32,8 @@ const (
 	unpadded = true
 )
 
-// ErrIntegrityCheckFailed means a decrypted file does not match the size or
-// digest recorded when it was encrypted.
+// ErrIntegrityCheckFailed means a decrypted file does not match the size
+// recorded when it was encrypted.
 var ErrIntegrityCheckFailed = errors.New("service: decrypted file failed its integrity check")
 
 // FileCryptService encrypts uploaded files, stores them on disk, and keeps
@@ -146,11 +144,14 @@ func (s *FileCryptService) storeSealed(
 		FileID:    fileID,
 		Name:      sanitizeName(name),
 		Size:      up.size,
-		Sha256:    up.sum,
 		Unpadded:  unpadded,
 		CreatedAt: time.Now().Unix(),
 	}
-	if err := s.store.Create(ctx, rec); err != nil {
+	err = sealRecord(masterKey, rec)
+	if err == nil {
+		err = s.store.Create(ctx, rec)
+	}
+	if err != nil {
 		// delete the file so no ciphertext is left without a record
 		_ = os.Remove(path)
 		log.WithContext(ctx).WithError(err).Error("storeSealed.s.6")
@@ -162,6 +163,26 @@ func (s *FileCryptService) storeSealed(
 	httpResponse.Message = rec
 	httpStatusCode = http.StatusCreated
 	return
+}
+
+// sealRecord seals the record's name and size into the fields that get stored.
+func sealRecord(masterKey []byte, rec *model.FileRecord) (err error) {
+	rec.SealedName, err = scheme.SealStringAAD(masterKey, rec.Name, []byte(nameAADLabel+rec.FileID))
+	if err != nil {
+		return err
+	}
+	rec.SealedSize, err = scheme.SealInt64AAD(masterKey, rec.Size, []byte(sizeAADLabel+rec.FileID))
+	return err
+}
+
+// openRecord fills in the record's name and size from their sealed copies.
+func openRecord(masterKey []byte, rec *model.FileRecord) (err error) {
+	rec.Name, err = scheme.OpenStringAAD(masterKey, rec.SealedName, []byte(nameAADLabel+rec.FileID))
+	if err != nil {
+		return err
+	}
+	rec.Size, err = scheme.OpenInt64AAD(masterKey, rec.SealedSize, []byte(sizeAADLabel+rec.FileID))
+	return err
 }
 
 // classifyUploadError maps a failed seal to a response. Client mistakes get a
@@ -204,10 +225,9 @@ type Download struct {
 	Name string // sanitized display name, for the download header
 	Size int64  // plaintext size, as recorded at encrypt time
 
-	recordedSum string                 // sha-256 of the plaintext, as recorded at encrypt time
-	file        *os.File               // the encrypted file on disk
-	padded      *envelope.PaddedReader // payload of a padded file; nil for an unpadded one
-	plain       *envelope.StreamReader // plaintext of an unpadded file; nil for a padded one
+	file   *os.File               // the encrypted file on disk
+	padded *envelope.PaddedReader // payload of a padded file; nil for an unpadded one
+	plain  *envelope.StreamReader // plaintext of an unpadded file; nil for a padded one
 }
 
 // OpenForDownload finds fileID, opens its encrypted file, and returns a
@@ -266,6 +286,9 @@ func (s *FileCryptService) openSealed(rec *model.FileRecord) (*Download, error) 
 	if err != nil {
 		return nil, err
 	}
+	if err := openRecord(masterKey, rec); err != nil {
+		return nil, err
+	}
 
 	path, err := encryptedFilePath(s.baseDir, rec.FileID)
 	if err != nil {
@@ -279,10 +302,9 @@ func (s *FileCryptService) openSealed(rec *model.FileRecord) (*Download, error) 
 	}
 
 	dl := &Download{
-		Name:        rec.Name,
-		Size:        rec.Size,
-		recordedSum: rec.Sha256,
-		file:        f,
+		Name: rec.Name,
+		Size: rec.Size,
+		file: f,
 	}
 	aad := []byte(rec.FileID)
 	if rec.Unpadded {
@@ -305,76 +327,19 @@ func (s *FileCryptService) openSealed(rec *model.FileRecord) (*Download, error) 
 	return dl, nil
 }
 
-// integrityHoldback is how many trailing plaintext bytes WriteTo keeps back
-// until the digest has been checked. Any value above zero is enough to leave a
-// failed download short of its declared length; an upload cannot be empty, so
-// there is always a tail to hold.
-const integrityHoldback = 64
-
-// tailWriter forwards all but the last hold bytes to dst and keeps those until
-// flush is called.
-type tailWriter struct {
-	dst  io.Writer
-	hold int
-	buf  []byte
-}
-
-// Write buffers p and passes on whatever is no longer part of the tail.
-func (t *tailWriter) Write(p []byte) (int, error) {
-	t.buf = append(t.buf, p...)
-	if len(t.buf) > t.hold {
-		cut := len(t.buf) - t.hold
-		if _, err := t.dst.Write(t.buf[:cut]); err != nil {
-			return 0, err
-		}
-		t.buf = t.buf[:copy(t.buf, t.buf[cut:])]
-	}
-	return len(p), nil
-}
-
-// flush writes the held tail, releasing the download to the client.
-func (t *tailWriter) flush() error {
-	if len(t.buf) == 0 {
-		return nil
-	}
-	_, err := t.dst.Write(t.buf)
-	t.buf = t.buf[:0]
-	return err
-}
-
 // WriteTo streams the plaintext to dst and returns how many bytes it produced.
 //
 // It writes no second file on disk. Each chunk is authenticated before it
 // goes out, but a damaged file can still fail midway, so treat dst as bad
 // unless the error is nil. A nil error means the whole stream checked out,
-// padding included, and the size and digest match the record.
-//
-// The last integrityHoldback bytes are kept back until the digest matches, so a
-// file that fails only at that last check leaves dst short of the declared
-// length rather than looking complete. On an error some counted bytes may
-// therefore never have reached dst.
+// padding included, and the size matches the record.
 func (d *Download) WriteTo(dst io.Writer) (int64, error) {
-	digest := sha256.New()
-	held := &tailWriter{dst: dst, hold: integrityHoldback}
-	out := io.MultiWriter(held, digest)
-
-	var n int64
-	var err error
 	if d.padded != nil {
 		// writes only the payload, but still reads and checks the padding after
 		// it, so a stream cut off inside its padding does not pass
-		n, err = d.padded.WriteTo(out)
-	} else {
-		n, err = d.writePlain(out)
+		return d.padded.WriteTo(dst)
 	}
-	if err != nil {
-		return n, err
-	}
-
-	if hex.EncodeToString(digest.Sum(nil)) != d.recordedSum {
-		return n, ErrIntegrityCheckFailed
-	}
-	return n, held.flush()
+	return d.writePlain(dst)
 }
 
 // writePlain copies an unpadded file's plaintext to dst. A plain stream has no

@@ -56,7 +56,10 @@ func (f *fakeFileStore) Create(_ context.Context, rec *model.FileRecord) error {
 	if rec.ID.IsZero() {
 		rec.ID = bson.NewObjectID()
 	}
-	f.records[rec.FileID] = rec
+	// keep only the sealed name and size
+	stored := *rec
+	stored.Name, stored.Size = "", 0
+	f.records[rec.FileID] = &stored
 	return nil
 }
 
