@@ -279,7 +279,8 @@ func (api *FileCryptAPI) DecryptFile(c *gin.Context) {
 	// by now the file is open. For a padded file, its first chunk has also been
 	// authenticated and its stored length checked against the record. So the
 	// status and the length can be sent now, before any of the body is written.
-	c.Header("Content-Disposition", `attachment; filename="`+dl.Name+`"`)
+	// quotes the name as needed, and encodes a non-ASCII one (RFC 2231)
+	c.Header("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": dl.Name}))
 	c.Header("Content-Type", "application/octet-stream")
 	c.Header("Content-Length", strconv.FormatInt(dl.Size, 10))
 	c.Status(http.StatusOK)

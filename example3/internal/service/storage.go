@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -46,7 +47,7 @@ func ensureDir(dir string) error {
 }
 
 // sanitizeName turns an uploaded filename into a safe display name: base name
-// only, no control characters or quotes, trimmed and length-capped. It returns
+// only, no hidden characters or quotes, trimmed and length-capped. It returns
 // "file" if nothing usable is left.
 func sanitizeName(name string) string {
 	name = strings.TrimSpace(name)
@@ -58,7 +59,7 @@ func sanitizeName(name string) string {
 	var b strings.Builder
 	for _, r := range name {
 		switch {
-		case r < 0x20 || r == 0x7f: // control characters
+		case !unicode.IsGraphic(r): // controls, bidi overrides, zero-width characters
 			continue
 		case r == '"' || r == '\\' || r == '/': // quotes and path separators
 			continue

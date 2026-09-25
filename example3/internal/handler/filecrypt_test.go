@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/json"
+	"mime"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strconv"
 	"strings"
 	"testing"
@@ -109,7 +111,7 @@ func TestHandler_FileRoundTrip(t *testing.T) {
 	if !bytes.Equal(w.Body.Bytes(), content) {
 		t.Error("downloaded content does not match original")
 	}
-	if cd := w.Header().Get("Content-Disposition"); cd != `attachment; filename="report.txt"` {
+	if cd := w.Header().Get("Content-Disposition"); cd != `attachment; filename=report.txt` {
 		t.Errorf("Content-Disposition = %q", cd)
 	}
 	if cl := w.Header().Get("Content-Length"); cl != strconv.Itoa(len(content)) {
@@ -342,7 +344,7 @@ func TestHandler_RawUpload_RoundTrip(t *testing.T) {
 	if !bytes.Equal(w.Body.Bytes(), content) {
 		t.Error("downloaded content does not match original")
 	}
-	if cd := w.Header().Get("Content-Disposition"); cd != `attachment; filename="raw.txt"` {
+	if cd := w.Header().Get("Content-Disposition"); cd != `attachment; filename=raw.txt` {
 		t.Errorf("Content-Disposition = %q", cd)
 	}
 }
@@ -362,8 +364,47 @@ func TestHandler_RawUpload_NameFromContentDisposition(t *testing.T) {
 	}
 
 	w = downloadFile(t, r, fileIDFromResponse(t, w.Body.Bytes()))
-	if cd := w.Header().Get("Content-Disposition"); cd != `attachment; filename="report.pdf"` {
+	if cd := w.Header().Get("Content-Disposition"); cd != `attachment; filename=report.pdf` {
 		t.Errorf("Content-Disposition = %q", cd)
+	}
+}
+
+// TestHandler_Download_NameHeader: the download name comes back clean. A bidi
+// override is dropped, and a non-ASCII name is encoded, not sent raw.
+func TestHandler_Download_NameHeader(t *testing.T) {
+	r := newFileEngine(t, testUploadLimit)
+
+	tests := []struct {
+		name   string
+		upload string
+		want   string
+	}{
+		{name: "bidiOverride", upload: "invoice\u202Efdp.exe", want: "invoicefdp.exe"},
+		{name: "nonASCII", upload: "日本 naïve.pdf", want: "日本 naïve.pdf"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			w := uploadRaw(t, r, "/files/encrypt?name="+url.QueryEscape(tc.upload), []byte("named content"))
+			if w.Code != http.StatusCreated {
+				t.Fatalf("encrypt status = %d, want 201 (body: %s)", w.Code, w.Body.String())
+			}
+
+			w = downloadFile(t, r, fileIDFromResponse(t, w.Body.Bytes()))
+			cd := w.Header().Get("Content-Disposition")
+			for _, b := range []byte(cd) {
+				if b >= 0x80 {
+					t.Fatalf("Content-Disposition %q is not plain ASCII", cd)
+				}
+			}
+			_, params, err := mime.ParseMediaType(cd)
+			if err != nil {
+				t.Fatalf("ParseMediaType(%q) error: %v", cd, err)
+			}
+			if got := params["filename"]; got != tc.want {
+				t.Errorf("filename = %q, want %q", got, tc.want)
+			}
+		})
 	}
 }
 

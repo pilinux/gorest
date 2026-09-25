@@ -15,7 +15,7 @@ from the environment.
 It follows the same layered, interface-driven shape as
 [`example2`](../example2) (handler → service → repo). The crypto comes from
 [`github.com/pilinux/crypt/envelope`](https://github.com/pilinux/crypt)
-(v0.0.29+); example3 adds the key lifecycle, file storage and the HTTP API.
+(v0.0.30+); example3 adds the key lifecycle, file storage and the HTTP API.
 
 ## How the keys fit together
 

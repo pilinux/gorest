@@ -148,6 +148,10 @@ func TestSanitizeName(t *testing.T) {
 		{name: "dotsOnly", in: "..", want: "file"},
 		{name: "removesQuotesAndControls", in: "a\"b\nc.txt", want: "abc.txt"},
 		{name: "trimsSpace", in: "  spaced.txt  ", want: "spaced.txt"},
+		{name: "removesBidiOverride", in: "invoice\u202Efdp.exe", want: "invoicefdp.exe"},
+		{name: "removesC1Controls", in: "a\u0085b\u009bc.txt", want: "abc.txt"},
+		{name: "removesZeroWidth", in: "a\u200Bb\uFEFF.txt", want: "ab.txt"},
+		{name: "keepsUnicode", in: "日本 naïve.pdf", want: "日本 naïve.pdf"},
 	}
 
 	for _, tt := range tests {
