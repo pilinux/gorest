@@ -311,7 +311,8 @@ func TestInitTLSMySQL_ClientCertKeyPair_Invalid(t *testing.T) {
 	}
 }
 
-// TestInitTLSMySQL_MinTLS exercises all minTLS switch branches.
+// TestInitTLSMySQL_MinTLS checks the registered MinVersion; anything
+// below 1.2 or unknown must fall back to TLS 1.2.
 func TestInitTLSMySQL_MinTLS(t *testing.T) {
 	dir := t.TempDir()
 	caPath, _ := generateTestCA(t, dir)
@@ -319,12 +320,14 @@ func TestInitTLSMySQL_MinTLS(t *testing.T) {
 	tests := []struct {
 		name   string
 		minTLS string
+		want   uint16
 	}{
-		{name: "TLS 1.1", minTLS: "1.1"},
-		{name: "TLS 1.2", minTLS: "1.2"},
-		{name: "TLS 1.3", minTLS: "1.3"},
-		{name: "default (empty)", minTLS: ""},
-		{name: "unknown value", minTLS: "1.0"},
+		{name: "TLS 1.0 rejected", minTLS: "1.0", want: tls.VersionTLS12},
+		{name: "TLS 1.1 rejected", minTLS: "1.1", want: tls.VersionTLS12},
+		{name: "TLS 1.2", minTLS: "1.2", want: tls.VersionTLS12},
+		{name: "TLS 1.3", minTLS: "1.3", want: tls.VersionTLS13},
+		{name: "default (empty)", minTLS: "", want: tls.VersionTLS12},
+		{name: "unknown value", minTLS: "abc", want: tls.VersionTLS12},
 	}
 
 	for i := range tests {
@@ -337,8 +340,18 @@ func TestInitTLSMySQL_MinTLS(t *testing.T) {
 			cfg.Database.RDBMS.Ssl.ClientKey = ""
 			cfg.Database.RDBMS.Ssl.MinTLS = tc.minTLS
 
+			var got uint16
+			gdb.SetRegisterTLSConfig(func(_ string, c *tls.Config) error {
+				got = c.MinVersion
+				return nil
+			})
+			defer gdb.ResetRegisterTLSConfig()
+
 			if err := gdb.InitTLSMySQL(); err != nil {
 				t.Fatalf("InitTLSMySQL with minTLS=%q: %v", tc.minTLS, err)
+			}
+			if got != tc.want {
+				t.Errorf("minTLS=%q: MinVersion = %#x, want %#x", tc.minTLS, got, tc.want)
 			}
 		})
 	}

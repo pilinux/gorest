@@ -507,7 +507,7 @@ gconfig.IsPasswordRecoverCodeUUIDv4()   // EMAIL_PASS_RECOVER_USE_UUIDv4 (bool c
 
 | Variable | Description | Example |
 | -------- | ----------- | ------- |
-| `DBSSL_TLS_MIN` | Minimum TLS version | `1.2` |
+| `DBSSL_TLS_MIN` | Minimum TLS version: `1.2` (default) or `1.3`; lower values fall back to `1.2` | `1.2` |
 | `DBSSL_ROOT_CA` | Root CA file path | `./ca.pem` |
 | `DBSSL_SERVER_CERT` | Server cert path | `./server-cert.pem` |
 | `DBSSL_CLIENT_CERT` | Client cert path | `./client-cert.pem` |

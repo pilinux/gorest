@@ -127,13 +127,7 @@ func InitTLSMySQL() error {
 	tlsConfig := tls.Config{}
 	tlsConfig.RootCAs = rootCertPool
 	tlsConfig.MinVersion = tls.VersionTLS12 // default: TLS 1.2
-
-	switch minTLS {
-	case "1.1":
-		tlsConfig.MinVersion = tls.VersionTLS11
-	case "1.2":
-		tlsConfig.MinVersion = tls.VersionTLS12
-	case "1.3":
+	if minTLS == "1.3" {
 		tlsConfig.MinVersion = tls.VersionTLS13
 	}
 
