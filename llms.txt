@@ -3,7 +3,7 @@
 gorest is a production-ready Go RESTful API starter kit built with Gin, GORM, JWT, and Redis.
 This document serves as the complete reference for using gorest in any application.
 
-Requirements: Go 1.26.0 or later (see `go.mod`). Key dependencies: Gin, GORM
+Requirements: Go 1.26.10 or later (see `go.mod`). Key dependencies: Gin, GORM
 (MySQL/PostgreSQL/SQLite drivers), `golang-jwt/jwt/v5`, `mediocregopher/radix/v4`
 (Redis), `go.mongodb.org/mongo-driver/v2` (MongoDB), and `getsentry/sentry-go`.
 

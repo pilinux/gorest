@@ -62,7 +62,8 @@ and apply it consistently.
 
 ## Requirement
 
-- `Go 1.26.0+` (for versions `1.14.x`)
+- `Go 1.26.10+` (for versions `1.14.1` and higher)
+- `Go 1.26.0+` (for version `1.14.0`)
 - `Go 1.25.0+` (for versions `1.13.x`)
 - `Go 1.25.0+` (for versions `1.12.x`)
 - `Go 1.24.1+` (for versions `1.11.x`)

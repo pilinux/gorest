@@ -43,7 +43,7 @@ interfaces and needs neither env vars nor a live database.
 
 gorest is a reusable Go module (`github.com/pilinux/gorest`), not just an app. It is
 both a library of auth/crypto/middleware/db primitives **and** three example apps that
-wire them together. Requires Go 1.26.0+ (`go.mod` declares `go 1.26.0`; CI tests against Go 1.26.x and 1.27.x).
+wire them together. Requires Go 1.26.10+ (`go.mod` declares `go 1.26.10`; CI tests against Go 1.26.x and 1.27.x).
 
 Request flow follows a strict layered pipeline:
 

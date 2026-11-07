@@ -6,8 +6,8 @@ Instructions for AI coding agents working in this repository.
 
 Go RESTful API starter kit built with Gin, GORM, JWT, Redis, MongoDB,
 2FA, email verification, and password recovery. Module path:
-`github.com/pilinux/gorest`. Requires Go 1.26.0+ (`go.mod` declares
-`go 1.26.0`; CI tests against Go 1.26.x and 1.27.x).
+`github.com/pilinux/gorest`. Requires Go 1.26.10+ (`go.mod` declares
+`go 1.26.10`; CI tests against Go 1.26.x and 1.27.x).
 
 ## Build and Run Commands
 
