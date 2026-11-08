@@ -148,8 +148,8 @@ const (
 )
 
 type argon2CompareCase struct {
-	pass, secret string
-	want         bool
+	name, pass, secret string
+	want               bool
 }
 
 // TestArgon2Hashing covers golang.org/x/sys/cpu as used by pilinux/argon2
@@ -165,13 +165,15 @@ func TestArgon2Hashing(t *testing.T) {
 		t.Errorf("hash = %q, want argon2id encoding", hash)
 	}
 	for _, tc := range []argon2CompareCase{
-		{"correct horse", "pepper", true}, // ggignore
-		{"wrong horse", "pepper", false},  // ggignore
-		{"correct horse", "salt", false},  // ggignore
+		{"right password and secret", "correct horse", "pepper", true}, // ggignore
+		{"wrong password", "wrong horse", "pepper", false},             // ggignore
+		{"wrong secret", "correct horse", "salt", false},               // ggignore
 	} {
-		if ok, err := argon2.ComparePasswordAndHash(tc.pass, tc.secret, hash); ok != tc.want || err != nil {
-			t.Errorf("Compare(%q,%q) = %v, %v; want %v", tc.pass, tc.secret, ok, err, tc.want)
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			if ok, err := argon2.ComparePasswordAndHash(tc.pass, tc.secret, hash); ok != tc.want || err != nil {
+				t.Errorf("Compare(%q,%q) = %v, %v; want %v", tc.pass, tc.secret, ok, err, tc.want)
+			}
+		})
 	}
 
 	key := glib.GetArgon2Key([]byte("password"), []byte("somesalt-16bytes"), 32) // ggignore
@@ -183,20 +185,22 @@ func TestArgon2Hashing(t *testing.T) {
 	}
 }
 
-type rateParseCase struct{ rate, wantErr string }
+type rateParseCase struct{ name, rate, wantErr string }
 
 // TestRateLimiter covers pkg/errors (ulule/limiter's rate parsing errors)
 // along with the limiter wiring from lib.InitRateLimiter and the middleware.
 func TestRateLimiter(t *testing.T) {
 	logIndirect(t)
 	for _, tc := range []rateParseCase{
-		{"abc", "incorrect format"},
-		{"10-X", "incorrect period"},
-		{"x-M", "incorrect limit"},
+		{"malformed rate", "abc", "incorrect format"},
+		{"unknown period", "10-X", "incorrect period"},
+		{"non-numeric limit", "x-M", "incorrect limit"},
 	} {
-		if _, err := glib.InitRateLimiter(tc.rate, ""); err == nil || !strings.Contains(err.Error(), tc.wantErr) {
-			t.Errorf("InitRateLimiter(%q) error = %v, want %q", tc.rate, err, tc.wantErr)
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := glib.InitRateLimiter(tc.rate, ""); err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+				t.Errorf("InitRateLimiter(%q) error = %v, want %q", tc.rate, err, tc.wantErr)
+			}
+		})
 	}
 
 	hit := func(r http.Handler, remote, realIP string) *httptest.ResponseRecorder {
