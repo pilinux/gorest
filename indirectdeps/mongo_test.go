@@ -25,7 +25,7 @@ package indirectdeps_test
 //	TestMongoWireCompression  compressors=snappy, then zstd: InitMongo succeeds, the fake
 //	                          receives messages compressed with that algorithm, and ping
 //	                          arrives
-//	TestMongoSCRAM            SCRAM-SHA-256: server stores "passIX", client gets "pa\u00adss\u2168";
+//	TestMongoSCRAM            SCRAM-SHA-256: server stores "passIX", client gets "pa\u00adss\u2168"; // ggignore
 //	                          InitMongo succeeds only if SASLprep drops the soft hyphen and NFKC
 //	                          maps U+2168, and fails with a wrong password. SCRAM-SHA-1: server
 //	                          stores hex(md5(user:mongo:pass)), the driver's SHA-1 digest.
@@ -303,8 +303,8 @@ func TestMongoSCRAM(t *testing.T) {
 	logIndirect(t)
 	const user = "go,rest=user"
 	// SASLprep drops the soft hyphen and NFKC-maps U+2168 to "IX"
-	const rawPass = "pa\u00adss\u2168"
-	const preppedPass = "passIX"
+	const rawPass = "pa\u00adss\u2168"                        // ggignore
+	const preppedPass = "passIX"                              // ggignore
 	sha1Digest := md5.Sum([]byte(user + ":mongo:" + rawPass)) // #nosec G401 -- protocol requirement
 
 	for _, tc := range []struct {
@@ -314,7 +314,7 @@ func TestMongoSCRAM(t *testing.T) {
 		wantError bool
 	}{
 		{"SCRAM-SHA-256", newScramServer(sha256.New, preppedPass), rawPass, false},
-		{"SCRAM-SHA-256", newScramServer(sha256.New, preppedPass), "wrong", true},
+		{"SCRAM-SHA-256", newScramServer(sha256.New, preppedPass), "wrong", true}, // ggignore
 		{"SCRAM-SHA-1", newScramServer(sha1.New, hex.EncodeToString(sha1Digest[:])), rawPass, false},
 	} {
 		t.Run(fmt.Sprintf("%s/wantError=%v", tc.mech, tc.wantError), func(t *testing.T) {

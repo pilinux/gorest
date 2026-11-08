@@ -71,7 +71,7 @@ func TestSQLiteMigrateAndCRUD(t *testing.T) {
 		}
 	}
 
-	auth := gmodel.Auth{EmailHash: "hash-1", Password: "argon2-hash", VerifyEmail: 1}
+	auth := gmodel.Auth{EmailHash: "hash-1", Password: "argon2-hash", VerifyEmail: 1} // ggignore
 	if err := db.Create(&auth).Error; err != nil {
 		t.Fatalf("create: %v", err)
 	}

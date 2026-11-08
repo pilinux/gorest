@@ -97,7 +97,7 @@ func TestSentryReleaseAndRateLimit(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	dsn := strings.Replace(srv.URL, "http://", "http://public@", 1) + "/1"
+	dsn := strings.Replace(srv.URL, "http://", "http://public@", 1) + "/1" // ggignore
 	hook, err := gmiddleware.NewSentryHook(dsn, "production")
 	if err != nil {
 		t.Fatalf("NewSentryHook: %v", err)

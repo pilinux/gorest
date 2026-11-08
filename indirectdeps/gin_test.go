@@ -71,7 +71,7 @@ func TestGinJSONCodec(t *testing.T) {
 		t.Fatalf("gin JSON codec = %s, want %s", got, wantGinCodec)
 	}
 
-	in := gmodel.AuthPayload{Email: "a@b.c", OTP: "123456", PassNew: "\u00fc\"<>&"}
+	in := gmodel.AuthPayload{Email: "a@b.c", OTP: "123456", PassNew: "\u00fc\"<>&"} // ggignore
 	b, err := ginjson.API.Marshal(in)
 	if err != nil {
 		t.Fatal(err)
@@ -93,7 +93,7 @@ func TestGinJSONBindingAndRender(t *testing.T) {
 	cfg := setupConfig(t)
 	cfg.Security.UserPassMinLength = 6
 	cfg.Security.HashPass = glib.HashPassConfig{Memory: 64, Iterations: 1, Parallelism: 1, SaltLength: 16, KeyLength: 32}
-	cfg.Security.HashSec = "pepper"
+	cfg.Security.HashSec = "pepper" // ggignore
 
 	var bound gmodel.Auth
 	r := gin.New()
@@ -115,7 +115,7 @@ func TestGinJSONBindingAndRender(t *testing.T) {
 		grenderer.Render(c, []gmodel.AuthPayload{payload}, http.StatusOK)
 	})
 
-	w := doRequest(r, http.MethodPost, "/auth", `{"authID":7,"email":"a@b.c","password":"secret"}`)
+	w := doRequest(r, http.MethodPost, "/auth", `{"authID":7,"email":"a@b.c","password":"secret"}`) // ggignore
 	if w.Code != http.StatusCreated {
 		t.Fatalf("POST /auth = %d: %s", w.Code, w.Body)
 	}
@@ -129,22 +129,22 @@ func TestGinJSONBindingAndRender(t *testing.T) {
 	if _, leaked := got["password"]; leaked {
 		t.Error("password leaked in response")
 	}
-	if ok, err := argon2.ComparePasswordAndHash("secret", "pepper", bound.Password); !ok || err != nil {
+	if ok, err := argon2.ComparePasswordAndHash("secret", "pepper", bound.Password); !ok || err != nil { // ggignore
 		t.Errorf("bound password is not an argon2id hash of the input: %v", err)
 	}
 
 	// SecureJSON prefixes top-level arrays to defeat JSON hijacking
-	w = doRequest(r, http.MethodPost, "/payload", `{"email":"x@y.z","otp":"654321"}`)
+	w = doRequest(r, http.MethodPost, "/payload", `{"email":"x@y.z","otp":"654321"}`) // ggignore
 	body, ok := strings.CutPrefix(w.Body.String(), "while(1);")
 	if w.Code != http.StatusOK || !ok {
 		t.Fatalf("POST /payload = %d %q", w.Code, w.Body)
 	}
 	var list []gmodel.AuthPayload
-	if err := json.Unmarshal([]byte(body), &list); err != nil || len(list) != 1 || list[0].OTP != "654321" {
+	if err := json.Unmarshal([]byte(body), &list); err != nil || len(list) != 1 || list[0].OTP != "654321" { // ggignore
 		t.Errorf("payload list = %+v, %v", list, err)
 	}
 
-	for _, bad := range []string{`{"email":`, `[1,2]`, `{"authID":"seven"}`, `{"email":"a@b.c","password":"short"}`} {
+	for _, bad := range []string{`{"email":`, `[1,2]`, `{"authID":"seven"}`, `{"email":"a@b.c","password":"short"}`} { // ggignore
 		if w := doRequest(r, http.MethodPost, "/auth", bad); w.Code != http.StatusBadRequest {
 			t.Errorf("POST /auth %q = %d, want 400", bad, w.Code)
 		}
@@ -160,7 +160,7 @@ func TestGinValidator(t *testing.T) {
 	}
 	for _, obj := range []any{
 		&gmodel.Auth{Email: "a@b.c"},
-		&gmodel.AuthPayload{OTP: "1"},
+		&gmodel.AuthPayload{OTP: "1"}, // ggignore
 		&gmodel.TempEmail{Email: "a@b.c"},
 		&gmodel.TwoFA{},
 		[]gmodel.AuthPayload{{}, {}},

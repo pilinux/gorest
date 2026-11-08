@@ -20,8 +20,8 @@ package indirectdeps_test
 //	testCert, issueCert, certPEM     ECDSA P-256 CA, server (with OCSPServer URL) and client certs,
 //	                                 valid from 1h ago to 1h ahead; PEM encoding
 //	TestMongoTLSEncryptedKeyAndOCSP  fake mongod behind TLS that requires a client cert; the OCSP
-//	                                 responder returns 503 (driver soft-fails). Wrong key
-//	                                 password: InitMongo fails. Right password: InitMongo
+//	                                 responder returns 503 (driver soft-fails). With a wrong
+//	                                 key password InitMongo fails; with the right one it
 //	                                 succeeds, the server sees client CN gorest-client, and the
 //	                                 responder from the server cert is contacted
 
@@ -186,7 +186,7 @@ func TestMongoTLSEncryptedKeyAndOCSP(t *testing.T) {
 		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}, KeyUsage: x509.KeyUsageDigitalSignature,
 	}, ca)
 
-	const keyPass = "k3y p@ss/word"
+	const keyPass = "k3y p@ss/word" // ggignore
 	dir := t.TempDir()
 	caFile := filepath.Join(dir, "ca.pem")
 	clientFile := filepath.Join(dir, "client.pem")
@@ -228,7 +228,7 @@ func TestMongoTLSEncryptedKeyAndOCSP(t *testing.T) {
 	}
 
 	t.Run("wrong key password", func(t *testing.T) {
-		configureMongo(t, uri("wrong"))
+		configureMongo(t, uri("wrong")) // ggignore
 		if _, err := gdatabase.InitMongo(); err == nil {
 			t.Fatal("InitMongo succeeded with a wrong key password")
 		}

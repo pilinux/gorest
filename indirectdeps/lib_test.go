@@ -128,8 +128,8 @@ func TestTwoFactorTOTP(t *testing.T) {
 // Pinned on one machine and verified on every other: amd64 takes the SIMD
 // path selected through golang.org/x/sys/cpu, other arches the generic one.
 const (
-	pinnedArgon2Key  = "e1a17a9e71b9090999706952a086623fa8a5b5d5bad3558906bc6455c4988988"
-	pinnedArgon2Hash = "$argon2id$v=19$m=65536,t=2,p=2$7YrCO6Wj8ploAnMo0WVuAQ$WzCWKWNqxzahgnx/LhsQMHEhJ0Ca12CiLptlttiPLGw"
+	pinnedArgon2Key  = "e1a17a9e71b9090999706952a086623fa8a5b5d5bad3558906bc6455c4988988"                                  // ggignore
+	pinnedArgon2Hash = "$argon2id$v=19$m=65536,t=2,p=2$7YrCO6Wj8ploAnMo0WVuAQ$WzCWKWNqxzahgnx/LhsQMHEhJ0Ca12CiLptlttiPLGw" // ggignore
 )
 
 // TestArgon2Hashing covers golang.org/x/sys/cpu as used by pilinux/argon2
@@ -137,7 +137,7 @@ const (
 func TestArgon2Hashing(t *testing.T) {
 	logIndirect(t)
 	cfg := glib.HashPassConfig{Memory: 64, Iterations: 2, Parallelism: 2, SaltLength: 16, KeyLength: 32}
-	hash, err := glib.HashPass(cfg, "correct horse", "pepper")
+	hash, err := glib.HashPass(cfg, "correct horse", "pepper") // ggignore
 	if err != nil {
 		t.Fatalf("HashPass: %v", err)
 	}
@@ -148,20 +148,20 @@ func TestArgon2Hashing(t *testing.T) {
 		pass, secret string
 		want         bool
 	}{
-		{"correct horse", "pepper", true},
-		{"wrong horse", "pepper", false},
-		{"correct horse", "salt", false},
+		{"correct horse", "pepper", true}, // ggignore
+		{"wrong horse", "pepper", false},  // ggignore
+		{"correct horse", "salt", false},  // ggignore
 	} {
 		if ok, err := argon2.ComparePasswordAndHash(tc.pass, tc.secret, hash); ok != tc.want || err != nil {
 			t.Errorf("Compare(%q,%q) = %v, %v; want %v", tc.pass, tc.secret, ok, err, tc.want)
 		}
 	}
 
-	key := glib.GetArgon2Key([]byte("password"), []byte("somesalt-16bytes"), 32)
+	key := glib.GetArgon2Key([]byte("password"), []byte("somesalt-16bytes"), 32) // ggignore
 	if got := hex.EncodeToString(key); got != pinnedArgon2Key {
 		t.Errorf("GetArgon2Key = %s, want %s", got, pinnedArgon2Key)
 	}
-	if ok, err := argon2.ComparePasswordAndHash("password", "pepper", pinnedArgon2Hash); !ok || err != nil {
+	if ok, err := argon2.ComparePasswordAndHash("password", "pepper", pinnedArgon2Hash); !ok || err != nil { // ggignore
 		t.Errorf("pinned argon2id hash no longer verifies: %v", err)
 	}
 }

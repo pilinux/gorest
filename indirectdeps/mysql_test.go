@@ -264,9 +264,9 @@ func configureMySQL(t *testing.T, host, port, user, pass, dbName string) {
 func TestMySQLEd25519Auth(t *testing.T) {
 	logIndirect(t)
 	// 32 bytes so stdlib ed25519 derives the same key MariaDB does
-	const password = "p@ss:w/rd?&=#%;'\" with spaces!!!"
+	const password = "p@ss:w/rd?&=#%;'\" with spaces!!!" // ggignore
 	srv, host, port := startFakeMySQL(t, password)
-	configureMySQL(t, host, port, "gorest_user", password, "gorest_db")
+	configureMySQL(t, host, port, "gorest_user", password, "gorest_db") // ggignore
 
 	db := gdatabase.InitDB()
 	if db.Error != nil {
@@ -289,8 +289,8 @@ func TestMySQLEd25519Auth(t *testing.T) {
 // TestMySQLEd25519AuthWrongPassword ensures a bad ed25519 signature fails InitDB.
 func TestMySQLEd25519AuthWrongPassword(t *testing.T) {
 	logIndirect(t)
-	srv, host, port := startFakeMySQL(t, strings.Repeat("a", ed25519.SeedSize))
-	configureMySQL(t, host, port, "gorest_user", strings.Repeat("b", ed25519.SeedSize), "gorest_db")
+	srv, host, port := startFakeMySQL(t, strings.Repeat("a", ed25519.SeedSize))                      // ggignore
+	configureMySQL(t, host, port, "gorest_user", strings.Repeat("b", ed25519.SeedSize), "gorest_db") // ggignore
 
 	if db := gdatabase.InitDB(); db.Error == nil {
 		t.Fatal("InitDB succeeded with a wrong password")

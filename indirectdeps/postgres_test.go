@@ -22,13 +22,13 @@ package indirectdeps_test
 //	configurePostgres               RDBMS config InitDB builds its DSN from; points PGPASSFILE and
 //	                                PGSERVICEFILE at missing files and empties PGSERVICE so the
 //	                                developer's own files cannot change the result
-//	TestPostgresSCRAMPrecis         server stores "p'a\\s \u00e9", client gets "p'a\\s\u00a0e\u0301":
+//	TestPostgresSCRAMPrecis         server stores "p'a\\s \u00e9", client gets "p'a\\s\u00a0e\u0301": // ggignore
 //	                                InitDB succeeds only if pgx applies precis OpaqueString before
 //	                                SCRAM. User and database (space, quote) and TimeZone arrive
 //	                                intact in the startup message
 //	TestPostgresSCRAMWrongPassword  a wrong password fails the proof check and InitDB
 //	TestPostgresPassfile            DBPASS empty: pgx reads the password from PGPASSFILE (comment
-//	                                line, escaped colon) and sends "from:passfile"
+//	                                line, escaped colon) and sends "from:passfile" // ggignore
 //	TestPostgresServiceFile         PGSERVICE=gorest: application_name from the service file reaches
 //	                                the server, and our DSN host overrides the file's 192.0.2.1
 
@@ -253,8 +253,8 @@ func configurePostgres(t *testing.T, host, port, user, pass, dbName string) {
 func TestPostgresSCRAMPrecis(t *testing.T) {
 	logIndirect(t)
 	// NBSP maps to a space and "e"+U+0301 composes to U+00E9 under OpaqueString
-	const raw = "p'a\\s\u00a0e\u0301"
-	const normalized = "p'a\\s \u00e9"
+	const raw = "p'a\\s\u00a0e\u0301"  // ggignore
+	const normalized = "p'a\\s \u00e9" // ggignore
 	srv, host, port := startFakePostgres(t, newScramServer(sha256.New, normalized))
 	configurePostgres(t, host, port, "go rest's user", raw, "gorest db")
 
@@ -278,8 +278,8 @@ func TestPostgresSCRAMPrecis(t *testing.T) {
 // TestPostgresSCRAMWrongPassword ensures a SCRAM proof mismatch fails InitDB.
 func TestPostgresSCRAMWrongPassword(t *testing.T) {
 	logIndirect(t)
-	srv, host, port := startFakePostgres(t, newScramServer(sha256.New, "right"))
-	configurePostgres(t, host, port, "gorest", "wrong", "gorest")
+	srv, host, port := startFakePostgres(t, newScramServer(sha256.New, "right")) // ggignore
+	configurePostgres(t, host, port, "gorest", "wrong", "gorest")                // ggignore
 
 	if db := gdatabase.InitDB(); db.Error == nil {
 		t.Fatal("InitDB succeeded with a wrong password")
@@ -299,7 +299,7 @@ func TestPostgresPassfile(t *testing.T) {
 	configurePostgres(t, host, port, "gorest", "", "gorest_db")
 
 	passfile := filepath.Join(t.TempDir(), "pgpass")
-	line := fmt.Sprintf("# comment\n%s:%s:gorest_db:gorest:from\\:passfile\n", host, port)
+	line := fmt.Sprintf("# comment\n%s:%s:gorest_db:gorest:from\\:passfile\n", host, port) // ggignore
 	if err := os.WriteFile(passfile, []byte(line), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -310,8 +310,8 @@ func TestPostgresPassfile(t *testing.T) {
 	}
 	srv.mu.Lock()
 	defer srv.mu.Unlock()
-	if len(srv.passwords) == 0 || srv.passwords[0] != "from:passfile" {
-		t.Errorf("password sent = %q, want %q", srv.passwords, "from:passfile")
+	if len(srv.passwords) == 0 || srv.passwords[0] != "from:passfile" { // ggignore
+		t.Errorf("password sent = %q, want %q", srv.passwords, "from:passfile") // ggignore
 	}
 }
 
@@ -320,7 +320,7 @@ func TestPostgresPassfile(t *testing.T) {
 func TestPostgresServiceFile(t *testing.T) {
 	logIndirect(t)
 	srv, host, port := startFakePostgres(t, nil)
-	configurePostgres(t, host, port, "gorest", "secret", "gorest_db")
+	configurePostgres(t, host, port, "gorest", "secret", "gorest_db") // ggignore
 
 	svc := filepath.Join(t.TempDir(), "pg_service.conf")
 	conf := "# comment\n[gorest]\nhost=192.0.2.1\nconnect_timeout=2\napplication_name=gorest-indirectdeps\n"

@@ -51,7 +51,7 @@ func initAuthModelConfig(t *testing.T) {
 func TestAuthUnmarshalJSON(t *testing.T) {
 	initAuthModelConfig(t)
 
-	input := []byte(`{"authID":42,"email":"  user@example.com  ","password":"s3cr3t!"}`)
+	input := []byte(`{"authID":42,"email":"  user@example.com  ","password":"s3cr3t!"}`) // ggignore
 
 	var got model.Auth
 	if err := json.Unmarshal(input, &got); err != nil {
@@ -67,7 +67,7 @@ func TestAuthUnmarshalJSON(t *testing.T) {
 	if got.Password == "" {
 		t.Fatal("Password is empty, want hashed password")
 	}
-	if got.Password == "s3cr3t!" {
+	if got.Password == "s3cr3t!" { // ggignore
 		t.Fatal("Password was not hashed")
 	}
 
@@ -115,7 +115,7 @@ func TestAuthMarshalJSON(t *testing.T) {
 	auth := model.Auth{
 		AuthID:      42,
 		Email:       "  user@example.com  ",
-		Password:    "s3cr3t!",
+		Password:    "s3cr3t!", // ggignore
 		VerifyEmail: model.EmailVerified,
 	}
 
