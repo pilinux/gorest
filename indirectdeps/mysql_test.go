@@ -11,8 +11,13 @@ package indirectdeps_test
 //	---------------------------------  -------
 //	startFakeMySQL                     starts fakeMySQL; the 32-byte password is the ed25519 seed, so
 //	                                   stdlib crypto/ed25519 derives the key MariaDB derives
-//	(*fakeMySQL).handle                handshake, auth switch to client_ed25519 with a 32-byte scramble,
-//	                                   then COM_QUERY/COM_PING; records user, db, queries, auth result
+//	(*fakeMySQL).handle                handshake, authenticate, then reply to each command until COM_QUIT
+//	myGreeting                         protocol 10 handshake packet advertising mysql_native_password
+//	(*fakeMySQL).handshake             sends the greeting; records user and db from the response
+//	(*fakeMySQL).authenticate          auth switch to client_ed25519 with a 32-byte scramble; counts
+//	                                   accepted and rejected signatures
+//	(*fakeMySQL).reply                 records COM_QUERY text; SELECT VERSION() gets a result set,
+//	                                   anything else (COM_PING included) an OK packet
 //	(*fakeMySQL).writeVersion          result set for SELECT VERSION(), which gorm's mysql dialector
 //	                                   runs in Initialize
 //	myReadPacket, myWritePacket        packet framing (3-byte length, sequence id)
@@ -54,6 +59,8 @@ const (
 	myServerVersion  = "10.11.6-MariaDB"
 	myEd25519Plugin  = "client_ed25519"
 	myNativePassword = "mysql_native_password"
+	myComQuit        = 0x01
+	myComQuery       = 0x03
 )
 
 // fakeMySQL speaks enough of the MySQL protocol for database.InitDB:
@@ -129,10 +136,25 @@ func myErr(code uint16, state, msg string) []byte {
 
 func (s *fakeMySQL) handle(c net.Conn) {
 	r := bufio.NewReader(c)
+	seq, ok := s.handshake(c, r)
+	if !ok || !s.authenticate(c, r, seq) {
+		return
+	}
+	for {
+		_, cmd, err := myReadPacket(r)
+		if err != nil || len(cmd) == 0 || cmd[0] == myComQuit {
+			return
+		}
+		if s.reply(c, cmd) != nil {
+			return
+		}
+	}
+}
+
+// myGreeting builds the protocol 10 handshake packet with a 20-byte scramble.
+func myGreeting(scramble []byte) []byte {
 	caps := uint32(myLongPassword | myLongFlag | myConnectWithDB | myProtocol41 |
 		myTransactions | mySecureConn | myMultiResults | myPluginAuth)
-	scramble := nonZeroRandom(20)
-
 	hs := []byte{10}
 	hs = append(hs, myServerVersion+"\x00"...)
 	hs = append(hs, 1, 0, 0, 0)
@@ -146,21 +168,24 @@ func (s *fakeMySQL) handle(c net.Conn) {
 	hs = append(hs, make([]byte, 10)...)
 	hs = append(hs, scramble[8:]...)
 	hs = append(hs, 0)
-	hs = append(hs, myNativePassword+"\x00"...)
-	if myWritePacket(c, 0, hs) != nil {
-		return
-	}
+	return append(hs, myNativePassword+"\x00"...)
+}
 
+// handshake sends the greeting and records user and db from the client's
+// response; it returns the response's sequence id.
+func (s *fakeMySQL) handshake(c net.Conn, r *bufio.Reader) (byte, bool) {
+	if myWritePacket(c, 0, myGreeting(nonZeroRandom(20))) != nil {
+		return 0, false
+	}
 	// handshake response: caps(4) maxPacket(4) charset(1) filler(23) user\0 auth db\0 plugin\0
 	seq, resp, err := myReadPacket(r)
 	if err != nil || len(resp) < 33 {
-		return
+		return 0, false
 	}
 	clientCaps := binary.LittleEndian.Uint32(resp)
-	rest := resp[32:]
-	user, rest, _ := bytes.Cut(rest, []byte{0})
+	user, rest, _ := bytes.Cut(resp[32:], []byte{0})
 	if len(rest) == 0 {
-		return
+		return 0, false
 	}
 	rest = rest[1+int(rest[0]):]
 	var db []byte
@@ -171,61 +196,52 @@ func (s *fakeMySQL) handle(c net.Conn) {
 	s.users = append(s.users, string(user))
 	s.dbs = append(s.dbs, string(db))
 	s.mu.Unlock()
+	return seq, true
+}
 
-	// switch to MariaDB ed25519 auth with a 32-byte scramble
+// authenticate switches to MariaDB client_ed25519 with a 32-byte scramble and
+// accepts only ed25519.Sign(priv, scramble).
+func (s *fakeMySQL) authenticate(c net.Conn, r *bufio.Reader, seq byte) bool {
 	edScramble := nonZeroRandom(32)
 	sw := append([]byte{0xfe}, myEd25519Plugin+"\x00"...)
 	sw = append(sw, edScramble...)
 	sw = append(sw, 0)
 	if myWritePacket(c, seq+1, sw) != nil {
-		return
+		return false
 	}
 	seq, sig, err := myReadPacket(r)
 	if err != nil {
-		return
+		return false
 	}
-	if !bytes.Equal(sig, ed25519.Sign(s.priv, edScramble)) {
-		s.mu.Lock()
-		s.authBad++
-		s.mu.Unlock()
-		_ = myWritePacket(c, seq+1, myErr(1045, "28000", "Access denied"))
-		return
-	}
+	ok := bytes.Equal(sig, ed25519.Sign(s.priv, edScramble))
 	s.mu.Lock()
-	s.authOK++
+	if ok {
+		s.authOK++
+	} else {
+		s.authBad++
+	}
 	s.mu.Unlock()
-	if myWritePacket(c, seq+1, myOK) != nil {
-		return
+	if !ok {
+		_ = myWritePacket(c, seq+1, myErr(1045, "28000", "Access denied"))
+		return false
 	}
+	return myWritePacket(c, seq+1, myOK) == nil
+}
 
-	for {
-		_, cmd, err := myReadPacket(r)
-		if err != nil || len(cmd) == 0 {
-			return
-		}
-		switch cmd[0] {
-		case 0x01: // COM_QUIT
-			return
-		case 0x03: // COM_QUERY
-			q := string(cmd[1:])
-			s.mu.Lock()
-			s.queries = append(s.queries, q)
-			s.mu.Unlock()
-			if strings.EqualFold(strings.TrimSpace(q), "SELECT VERSION()") {
-				if s.writeVersion(c) != nil {
-					return
-				}
-				continue
-			}
-			if myWritePacket(c, 1, myOK) != nil {
-				return
-			}
-		default: // COM_PING and anything else
-			if myWritePacket(c, 1, myOK) != nil {
-				return
-			}
-		}
+// reply records COM_QUERY text and answers SELECT VERSION() with a result
+// set; everything else, COM_PING included, gets an OK packet.
+func (s *fakeMySQL) reply(w io.Writer, cmd []byte) error {
+	if cmd[0] != myComQuery {
+		return myWritePacket(w, 1, myOK)
 	}
+	q := string(cmd[1:])
+	s.mu.Lock()
+	s.queries = append(s.queries, q)
+	s.mu.Unlock()
+	if strings.EqualFold(strings.TrimSpace(q), "SELECT VERSION()") {
+		return s.writeVersion(w)
+	}
+	return myWritePacket(w, 1, myOK)
 }
 
 func (s *fakeMySQL) writeVersion(w io.Writer) error {

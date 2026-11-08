@@ -12,15 +12,20 @@ package indirectdeps_test
 //	respReadCommand             reads one RESP2 command (array of bulk strings or inline)
 //	respBulk, respInt, respNil  RESP2 bulk string, integer and nil replies
 //	(*fakeRedis).handle         runs exec for each command until the client disconnects
-//	(*fakeRedis).exec           PING (counted), SET, GET, GETDEL, EXISTS, DEL, HSET, HGET,
-//	                            HINCRBY, HGETALL, HDEL; anything else is recorded as unknown
+//	(*fakeRedis).exec           runs the redisCmds handler; unknown commands and wrong argument
+//	                            counts are recorded as unknown
+//	redisCmds                   PING (counted), SET, GET, GETDEL, EXISTS, DEL, HSET, HGET,
+//	                            HINCRBY, HGETALL, HDEL: one fakeRedis method each
+//	(*fakeRedis).count          EXISTS/DEL key count across kv and hashes
 //	(*fakeRedis).hash           creates a hash on first write
-//	TestRedisPoolAndCommands    InitRedis with PoolSize 10, then the commands gorest sends:
-//	                            SET EXAT (handler/logout.go), EXISTS (service.IsTokenAllowed),
-//	                            HINCRBY, HGET, DEL (handler/passwordReset.go,
-//	                            service/twoFALimiter.go), GETDEL (handler/verification.go),
-//	                            HSET, HGETALL (example apps). Within 3s the pool sends a
-//	                            PING (default interval 5s / PoolSize) and no unknown command
+//	TestRedisPoolAndCommands    InitRedis with PoolSize 10, then in order the subtests below
+//	checkRedisBlacklist         SET EXAT (handler/logout.go), EXISTS (service.IsTokenAllowed)
+//	checkRedisCounter           HINCRBY (handler/passwordReset.go, service/twoFALimiter.go)
+//	checkRedisHash              HSET, HGETALL (example apps), HGET, DEL (passwordReset.go,
+//	                            twoFALimiter.go)
+//	checkRedisOneShot           SET, GETDEL twice (handler/verification.go); second is nil
+//	waitForRedisPing            within 3s the pool sends a PING (default interval 5s /
+//	                            PoolSize), and no unknown command was seen
 
 import (
 	"bufio"
@@ -110,78 +115,150 @@ func (s *fakeRedis) handle(c net.Conn) {
 func (s *fakeRedis) exec(args []string) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	cmd := strings.ToUpper(args[0])
-	switch {
-	case cmd == "PING":
-		s.pings++
-		return "+PONG\r\n"
-	case cmd == "SET" && len(args) >= 3:
-		s.kv[args[1]] = args[2]
-		return "+OK\r\n"
-	case (cmd == "GET" || cmd == "GETDEL") && len(args) == 2:
-		v, ok := s.kv[args[1]]
-		if !ok {
-			return respNil
+	if fn, ok := redisCmds[strings.ToUpper(args[0])]; ok {
+		if reply, ok := fn(s, args); ok {
+			return reply
 		}
-		if cmd == "GETDEL" {
-			delete(s.kv, args[1])
-		}
-		return respBulk(v)
-	case cmd == "EXISTS" || cmd == "DEL":
-		n := 0
-		for _, k := range args[1:] {
-			_, inKV := s.kv[k]
-			_, inHash := s.hashes[k]
-			if inKV || inHash {
-				n++
-				if cmd == "DEL" {
-					delete(s.kv, k)
-					delete(s.hashes, k)
-				}
-			}
-		}
-		return respInt(n)
-	case cmd == "HSET" && len(args) >= 4 && len(args)%2 == 0:
-		h := s.hash(args[1])
-		added := 0
-		for i := 2; i < len(args); i += 2 {
-			if _, ok := h[args[i]]; !ok {
-				added++
-			}
-			h[args[i]] = args[i+1]
-		}
-		return respInt(added)
-	case cmd == "HGET" && len(args) == 3:
-		v, ok := s.hashes[args[1]][args[2]]
-		if !ok {
-			return respNil
-		}
-		return respBulk(v)
-	case cmd == "HINCRBY" && len(args) == 4:
-		h := s.hash(args[1])
-		cur, _ := strconv.Atoi(h[args[2]])
-		inc, _ := strconv.Atoi(args[3])
-		h[args[2]] = strconv.Itoa(cur + inc)
-		return respInt(cur + inc)
-	case cmd == "HGETALL" && len(args) == 2:
-		h := s.hashes[args[1]]
-		out := fmt.Sprintf("*%d\r\n", 2*len(h))
-		for k, v := range h {
-			out += respBulk(k) + respBulk(v)
-		}
-		return out
-	case cmd == "HDEL" && len(args) >= 3:
-		n := 0
-		for _, f := range args[2:] {
-			if _, ok := s.hashes[args[1]][f]; ok {
-				delete(s.hashes[args[1]], f)
-				n++
-			}
-		}
-		return respInt(n)
 	}
 	s.unknown = append(s.unknown, strings.Join(args, " "))
 	return "-ERR unknown command\r\n"
+}
+
+// redisCmds maps each supported command to its handler; a handler returns
+// false on a wrong argument count, which exec records as unknown.
+var redisCmds = map[string]func(*fakeRedis, []string) (string, bool){
+	"PING":    (*fakeRedis).ping,
+	"SET":     (*fakeRedis).set,
+	"GET":     (*fakeRedis).get,
+	"GETDEL":  (*fakeRedis).getdel,
+	"EXISTS":  (*fakeRedis).exists,
+	"DEL":     (*fakeRedis).del,
+	"HSET":    (*fakeRedis).hset,
+	"HGET":    (*fakeRedis).hget,
+	"HINCRBY": (*fakeRedis).hincrby,
+	"HGETALL": (*fakeRedis).hgetall,
+	"HDEL":    (*fakeRedis).hdel,
+}
+
+func (s *fakeRedis) ping([]string) (string, bool) {
+	s.pings++
+	return "+PONG\r\n", true
+}
+
+func (s *fakeRedis) set(args []string) (string, bool) {
+	if len(args) < 3 {
+		return "", false
+	}
+	s.kv[args[1]] = args[2]
+	return "+OK\r\n", true
+}
+
+func (s *fakeRedis) get(args []string) (string, bool) {
+	if len(args) != 2 {
+		return "", false
+	}
+	v, ok := s.kv[args[1]]
+	if !ok {
+		return respNil, true
+	}
+	return respBulk(v), true
+}
+
+func (s *fakeRedis) getdel(args []string) (string, bool) {
+	reply, ok := s.get(args)
+	if ok {
+		delete(s.kv, args[1])
+	}
+	return reply, ok
+}
+
+// count returns how many keys exist in kv or hashes, deleting them if del.
+func (s *fakeRedis) count(keys []string, del bool) int {
+	n := 0
+	for _, k := range keys {
+		_, inKV := s.kv[k]
+		_, inHash := s.hashes[k]
+		if !inKV && !inHash {
+			continue
+		}
+		n++
+		if del {
+			delete(s.kv, k)
+			delete(s.hashes, k)
+		}
+	}
+	return n
+}
+
+func (s *fakeRedis) exists(args []string) (string, bool) {
+	return respInt(s.count(args[1:], false)), true
+}
+
+func (s *fakeRedis) del(args []string) (string, bool) {
+	return respInt(s.count(args[1:], true)), true
+}
+
+func (s *fakeRedis) hset(args []string) (string, bool) {
+	if len(args) < 4 || len(args)%2 != 0 {
+		return "", false
+	}
+	h := s.hash(args[1])
+	added := 0
+	for i := 2; i < len(args); i += 2 {
+		if _, ok := h[args[i]]; !ok {
+			added++
+		}
+		h[args[i]] = args[i+1]
+	}
+	return respInt(added), true
+}
+
+func (s *fakeRedis) hget(args []string) (string, bool) {
+	if len(args) != 3 {
+		return "", false
+	}
+	v, ok := s.hashes[args[1]][args[2]]
+	if !ok {
+		return respNil, true
+	}
+	return respBulk(v), true
+}
+
+func (s *fakeRedis) hincrby(args []string) (string, bool) {
+	if len(args) != 4 {
+		return "", false
+	}
+	h := s.hash(args[1])
+	cur, _ := strconv.Atoi(h[args[2]])
+	inc, _ := strconv.Atoi(args[3])
+	h[args[2]] = strconv.Itoa(cur + inc)
+	return respInt(cur + inc), true
+}
+
+func (s *fakeRedis) hgetall(args []string) (string, bool) {
+	if len(args) != 2 {
+		return "", false
+	}
+	h := s.hashes[args[1]]
+	out := fmt.Sprintf("*%d\r\n", 2*len(h))
+	for k, v := range h {
+		out += respBulk(k) + respBulk(v)
+	}
+	return out, true
+}
+
+func (s *fakeRedis) hdel(args []string) (string, bool) {
+	if len(args) < 3 {
+		return "", false
+	}
+	n := 0
+	for _, f := range args[2:] {
+		if _, ok := s.hashes[args[1]][f]; ok {
+			delete(s.hashes[args[1]], f)
+			n++
+		}
+	}
+	return respInt(n), true
 }
 
 func (s *fakeRedis) hash(key string) map[string]string {
@@ -215,7 +292,17 @@ func TestRedisPoolAndCommands(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// logout.go: blacklist a JTI until its expiry
+	// subtests run in order and share the fake's state
+	t.Run("JWT blacklist", func(t *testing.T) { checkRedisBlacklist(ctx, t, client) })
+	t.Run("recovery counter", func(t *testing.T) { checkRedisCounter(ctx, t, client) })
+	t.Run("recovery hash", func(t *testing.T) { checkRedisHash(ctx, t, client) })
+	t.Run("one-shot code", func(t *testing.T) { checkRedisOneShot(ctx, t, client) })
+	t.Run("periodic PING", func(t *testing.T) { waitForRedisPing(t, srv) })
+}
+
+// checkRedisBlacklist replays handler/logout.go (SET EXAT) and
+// service.IsTokenAllowed (EXISTS).
+func checkRedisBlacklist(ctx context.Context, t *testing.T, client radix.Client) {
 	jti := gconfig.PrefixJtiBlacklist + "jti-1"
 	exp := time.Now().Add(time.Hour).Unix()
 	if err := client.Do(ctx, radix.FlatCmd(nil, "SET", jti, exp, "EXAT", exp)); err != nil {
@@ -227,8 +314,11 @@ func TestRedisPoolAndCommands(t *testing.T) {
 	if !gservice.IsTokenAllowed(ctx, "jti-2") {
 		t.Error("non-blacklisted token is not allowed")
 	}
+}
 
-	// passwordReset.go / twoFALimiter.go: hash counters
+// checkRedisCounter replays the HINCRBY attempt counters of
+// handler/passwordReset.go and service/twoFALimiter.go.
+func checkRedisCounter(ctx context.Context, t *testing.T, client radix.Client) {
 	var attempts int
 	for want := 1; want <= 2; want++ {
 		if err := client.Do(ctx, radix.FlatCmd(&attempts, "HINCRBY", "recover:1", "attempts", 1)); err != nil {
@@ -238,6 +328,11 @@ func TestRedisPoolAndCommands(t *testing.T) {
 			t.Errorf("HINCRBY = %d, want %d", attempts, want)
 		}
 	}
+}
+
+// checkRedisHash replays HSET/HGETALL (example apps) and HGET/DEL
+// (passwordReset.go, twoFALimiter.go) on the hash checkRedisCounter filled.
+func checkRedisHash(ctx context.Context, t *testing.T, client radix.Client) {
 	if err := client.Do(ctx, radix.FlatCmd(nil, "HSET", "recover:1", "email", "hash")); err != nil {
 		t.Fatalf("HSET: %v", err)
 	}
@@ -249,8 +344,15 @@ func TestRedisPoolAndCommands(t *testing.T) {
 	if err := client.Do(ctx, radix.FlatCmd(&all, "HGETALL", "recover:1")); err != nil || all["attempts"] != "2" {
 		t.Errorf("HGETALL = %v, %v", all, err)
 	}
+	var deleted int
+	if err := client.Do(ctx, radix.FlatCmd(&deleted, "DEL", "recover:1")); err != nil || deleted != 1 {
+		t.Errorf("DEL = %d, %v", deleted, err)
+	}
+}
 
-	// verification.go: one-shot codes
+// checkRedisOneShot replays the one-shot codes of handler/verification.go
+// (SET, then GETDEL twice: the second must be nil).
+func checkRedisOneShot(ctx context.Context, t *testing.T, client radix.Client) {
 	if err := client.Do(ctx, radix.FlatCmd(nil, "SET", "verify:1", "user@example.com")); err != nil {
 		t.Fatalf("SET: %v", err)
 	}
@@ -262,12 +364,11 @@ func TestRedisPoolAndCommands(t *testing.T) {
 	if err := client.Do(ctx, radix.FlatCmd(&mb, "GETDEL", "verify:1")); err != nil || !mb.Null {
 		t.Errorf("second GETDEL should be nil: %+v, %v", mb, err)
 	}
-	var deleted int
-	if err := client.Do(ctx, radix.FlatCmd(&deleted, "DEL", "recover:1")); err != nil || deleted != 1 {
-		t.Errorf("DEL = %d, %v", deleted, err)
-	}
+}
 
-	// the pool's clock-driven ticker must fire PINGs on idle connections
+// waitForRedisPing waits up to 3s for the pool's clock-driven PING, then
+// checks that the fake saw no unknown command.
+func waitForRedisPing(t *testing.T, srv *fakeRedis) {
 	deadline := time.Now().Add(3 * time.Second)
 	for {
 		srv.mu.Lock()

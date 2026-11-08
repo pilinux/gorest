@@ -13,12 +13,14 @@ package indirectdeps_test
 //	Function              Purpose
 //	--------------------  -------
 //	TestTwoFactorTOTP     for SHA1/256/512 x 6/8 digits: lib.NewTOTP seals the state
-//	                      (pilinux/cryptoengine), lib.NewQR returns a square PNG
-//	                      (rsc.io/qr), lib.ByteToPNG writes it, the code has the right
-//	                      length, ValidateTOTP accepts it, rejects a wrong code but
-//	                      returns the state, and rejects tampered sealed bytes. twofactor
-//	                      uses sec51/convert for time-step rounding and big-endian
-//	                      encoding of the counter and the sealed fields
+//	                      (pilinux/cryptoengine), then checkTOTPQR and checkTOTPCodes.
+//	                      twofactor uses sec51/convert for time-step rounding and
+//	                      big-endian encoding of the counter and the sealed fields
+//	checkTOTPQR           lib.NewQR returns a square PNG (rsc.io/qr); lib.ByteToPNG
+//	                      writes it
+//	checkTOTPCodes        the code has the right length; ValidateTOTP accepts it,
+//	                      rejects a wrong code but returns the state, and rejects
+//	                      tampered sealed bytes
 //	pinnedArgon2Key/Hash  outputs recorded once; any change in argon2 output fails
 //	TestArgon2Hashing     lib.HashPass yields $argon2id$ that verifies only with the right
 //	                      password and secret; lib.GetArgon2Key and an existing hash match
@@ -70,58 +72,71 @@ func TestTwoFactorTOTP(t *testing.T) {
 				if err != nil || len(sealed) == 0 {
 					t.Fatalf("NewTOTP: %v", err)
 				}
-
-				qr, err := glib.NewQR(sealed, issuer)
-				if err != nil {
-					t.Fatalf("NewQR: %v", err)
-				}
-				img, err := png.Decode(bytes.NewReader(qr))
-				if err != nil {
-					t.Fatalf("QR is not a PNG: %v", err)
-				}
-				if b := img.Bounds(); b.Dx() == 0 || b.Dx() != b.Dy() {
-					t.Errorf("QR bounds = %v", b)
-				}
-				dir := t.TempDir()
-				name, err := glib.ByteToPNG(qr, dir+"/")
-				if err != nil {
-					t.Fatalf("ByteToPNG: %v", err)
-				}
-				if _, err := os.Stat(filepath.Join(dir, name)); err != nil {
-					t.Errorf("QR file not written: %v", err)
-				}
-
-				otp, err := twofactor.TOTPFromBytes(sealed, issuer)
-				if err != nil {
-					t.Fatalf("TOTPFromBytes: %v", err)
-				}
-				code, err := otp.OTP()
-				if err != nil || len(code) != digits {
-					t.Fatalf("OTP = %q, %v", code, err)
-				}
-
-				updated, err := glib.ValidateTOTP(sealed, issuer, code)
-				if err != nil || len(updated) == 0 {
-					t.Fatalf("ValidateTOTP(valid code): %v", err)
-				}
-
-				wrong := []byte(code)
-				wrong[0] = '0' + (wrong[0]-'0'+1)%10
-				state, err := glib.ValidateTOTP(sealed, issuer, string(wrong))
-				if err == nil {
-					t.Error("ValidateTOTP accepted a wrong code")
-				}
-				if len(state) == 0 {
-					t.Error("ValidateTOTP must still return the sealed state on a wrong code")
-				}
-
-				tampered := bytes.Clone(sealed)
-				tampered[len(tampered)/2] ^= 0xff
-				if _, err := glib.ValidateTOTP(tampered, issuer, code); err == nil {
-					t.Error("tampered TOTP state was accepted")
-				}
+				checkTOTPQR(t, sealed, issuer)
+				checkTOTPCodes(t, sealed, issuer, digits)
 			})
 		}
+	}
+}
+
+// checkTOTPQR checks lib.NewQR returns a square PNG (rsc.io/qr) and
+// lib.ByteToPNG writes it to disk.
+func checkTOTPQR(t *testing.T, sealed []byte, issuer string) {
+	t.Helper()
+	qr, err := glib.NewQR(sealed, issuer)
+	if err != nil {
+		t.Fatalf("NewQR: %v", err)
+	}
+	img, err := png.Decode(bytes.NewReader(qr))
+	if err != nil {
+		t.Fatalf("QR is not a PNG: %v", err)
+	}
+	if b := img.Bounds(); b.Dx() == 0 || b.Dx() != b.Dy() {
+		t.Errorf("QR bounds = %v", b)
+	}
+	dir := t.TempDir()
+	name, err := glib.ByteToPNG(qr, dir+"/")
+	if err != nil {
+		t.Fatalf("ByteToPNG: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, name)); err != nil {
+		t.Errorf("QR file not written: %v", err)
+	}
+}
+
+// checkTOTPCodes checks the generated code has the right length, then that
+// lib.ValidateTOTP accepts it, rejects a wrong code while still returning the
+// state, and rejects tampered sealed bytes (cryptoengine).
+func checkTOTPCodes(t *testing.T, sealed []byte, issuer string, digits int) {
+	t.Helper()
+	otp, err := twofactor.TOTPFromBytes(sealed, issuer)
+	if err != nil {
+		t.Fatalf("TOTPFromBytes: %v", err)
+	}
+	code, err := otp.OTP()
+	if err != nil || len(code) != digits {
+		t.Fatalf("OTP = %q, %v", code, err)
+	}
+
+	updated, err := glib.ValidateTOTP(sealed, issuer, code)
+	if err != nil || len(updated) == 0 {
+		t.Fatalf("ValidateTOTP(valid code): %v", err)
+	}
+
+	wrong := []byte(code)
+	wrong[0] = '0' + (wrong[0]-'0'+1)%10
+	state, err := glib.ValidateTOTP(sealed, issuer, string(wrong))
+	if err == nil {
+		t.Error("ValidateTOTP accepted a wrong code")
+	}
+	if len(state) == 0 {
+		t.Error("ValidateTOTP must still return the sealed state on a wrong code")
+	}
+
+	tampered := bytes.Clone(sealed)
+	tampered[len(tampered)/2] ^= 0xff
+	if _, err := glib.ValidateTOTP(tampered, issuer, code); err == nil {
+		t.Error("tampered TOTP state was accepted")
 	}
 }
 
