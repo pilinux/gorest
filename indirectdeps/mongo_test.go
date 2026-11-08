@@ -27,7 +27,7 @@ package indirectdeps_test
 //	                          arrives
 //	TestMongoSCRAM            SCRAM-SHA-256: server stores "passIX", client gets "pa\u00adss\u2168"; // ggignore
 //	                          InitMongo succeeds only if SASLprep drops the soft hyphen and NFKC
-//	                          maps U+2168, and fails with a wrong password. SCRAM-SHA-1: server
+//	                          maps U+2168; a wrong password fails at the proof check. SCRAM-SHA-1: server
 //	                          stores hex(md5(user:mongo:pass)), the driver's SHA-1 digest.
 //	                          Each success sends the user as "go=2Crest=3Duser" (RFC 5802
 //	                          escaping by xdg-go/scram)
@@ -58,7 +58,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/x/mongo/driver"
 	"go.mongodb.org/mongo-driver/v2/x/mongo/driver/wiremessage"
 
-	gdatabase "github.com/pilinux/gorest/database"
+	gdb "github.com/pilinux/gorest/database"
 )
 
 const (
@@ -255,7 +255,7 @@ func configureMongo(t *testing.T, uri string) {
 	cfg.Database.MongoDB.Env.AppName = "gorest-indirectdeps"
 	cfg.Database.MongoDB.Env.PoolSize = 5
 	cfg.Database.MongoDB.Env.ConnTTL = 5
-	t.Cleanup(func() { _ = gdatabase.CloseMongo() })
+	t.Cleanup(func() { _ = gdb.CloseMongo() })
 }
 
 func startFakeMongo(t *testing.T, s *fakeMongo) string {
@@ -265,14 +265,16 @@ func startFakeMongo(t *testing.T, s *fakeMongo) string {
 	return ln.Addr().String()
 }
 
+type mongoCompressionCase struct {
+	name string
+	id   wiremessage.CompressorID
+}
+
 // TestMongoWireCompression covers klauspost/compress (snappy, zstd): with
 // compressors in MONGO_URI the driver compresses commands after hello.
 func TestMongoWireCompression(t *testing.T) {
 	logIndirect(t)
-	for _, tc := range []struct {
-		name string
-		id   wiremessage.CompressorID
-	}{
+	for _, tc := range []mongoCompressionCase{
 		{"snappy", wiremessage.CompressorSnappy},
 		{"zstd", wiremessage.CompressorZstd},
 	} {
@@ -281,7 +283,7 @@ func TestMongoWireCompression(t *testing.T) {
 			addr := startFakeMongo(t, srv)
 			configureMongo(t, "mongodb://"+addr+"/?directConnection=true&compressors="+tc.name)
 
-			if _, err := gdatabase.InitMongo(); err != nil {
+			if _, err := gdb.InitMongo(); err != nil {
 				t.Fatalf("InitMongo: %v", err)
 			}
 			srv.mu.Lock()
@@ -296,6 +298,13 @@ func TestMongoWireCompression(t *testing.T) {
 	}
 }
 
+type mongoSCRAMCase struct {
+	mech      string
+	server    *scramServer
+	pass      string
+	wantError bool
+}
+
 // TestMongoSCRAM covers xdg-go/scram and xdg-go/stringprep (with
 // golang.org/x/text/unicode/norm): credentials in MONGO_URI are
 // authenticated with SCRAM, SASLprepping the password for SHA-256.
@@ -307,12 +316,7 @@ func TestMongoSCRAM(t *testing.T) {
 	const preppedPass = "passIX"                              // ggignore
 	sha1Digest := md5.Sum([]byte(user + ":mongo:" + rawPass)) // #nosec G401 -- protocol requirement
 
-	for _, tc := range []struct {
-		mech      string
-		server    *scramServer
-		pass      string
-		wantError bool
-	}{
+	for _, tc := range []mongoSCRAMCase{
 		{"SCRAM-SHA-256", newScramServer(sha256.New, preppedPass), rawPass, false},
 		{"SCRAM-SHA-256", newScramServer(sha256.New, preppedPass), "wrong", true}, // ggignore
 		{"SCRAM-SHA-1", newScramServer(sha1.New, hex.EncodeToString(sha1Digest[:])), rawPass, false},
@@ -324,10 +328,14 @@ func TestMongoSCRAM(t *testing.T) {
 				url.QueryEscape(user), url.QueryEscape(tc.pass), addr, tc.mech)
 			configureMongo(t, uri)
 
-			_, err := gdatabase.InitMongo()
+			_, err := gdb.InitMongo()
 			if tc.wantError {
 				if err == nil {
 					t.Fatal("InitMongo succeeded with a wrong password")
+				}
+				// fails for the proof, not for an earlier error
+				if tc.server.proofBad.Load() == 0 {
+					t.Errorf("server never rejected a SCRAM proof: %v", err)
 				}
 				return
 			}

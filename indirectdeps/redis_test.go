@@ -42,7 +42,7 @@ import (
 	"github.com/mediocregopher/radix/v4"
 
 	gconfig "github.com/pilinux/gorest/config"
-	gdatabase "github.com/pilinux/gorest/database"
+	gdb "github.com/pilinux/gorest/database"
 	gservice "github.com/pilinux/gorest/service"
 )
 
@@ -283,9 +283,9 @@ func TestRedisPoolAndCommands(t *testing.T) {
 	cfg.Database.REDIS.Conn.ConnTTL = 5
 	cfg.Security.MustJWT = gconfig.Activated
 	cfg.Security.InvalidateJWT = gconfig.Activated
-	t.Cleanup(func() { _ = gdatabase.CloseRedis() })
+	t.Cleanup(func() { _ = gdb.CloseRedis() })
 
-	client, err := gdatabase.InitRedis()
+	client, err := gdb.InitRedis()
 	if err != nil {
 		t.Fatalf("InitRedis: %v", err)
 	}

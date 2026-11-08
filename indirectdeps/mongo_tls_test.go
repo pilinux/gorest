@@ -50,7 +50,7 @@ import (
 	"testing"
 	"time"
 
-	gdatabase "github.com/pilinux/gorest/database"
+	gdb "github.com/pilinux/gorest/database"
 )
 
 var (
@@ -229,14 +229,14 @@ func TestMongoTLSEncryptedKeyAndOCSP(t *testing.T) {
 
 	t.Run("wrong key password", func(t *testing.T) {
 		configureMongo(t, uri("wrong")) // ggignore
-		if _, err := gdatabase.InitMongo(); err == nil {
+		if _, err := gdb.InitMongo(); err == nil {
 			t.Fatal("InitMongo succeeded with a wrong key password")
 		}
 	})
 
 	t.Run("mutual TLS", func(t *testing.T) {
 		configureMongo(t, uri(keyPass))
-		if _, err := gdatabase.InitMongo(); err != nil {
+		if _, err := gdb.InitMongo(); err != nil {
 			t.Fatalf("InitMongo: %v", err)
 		}
 		if cn, _ := clientCN.Load().(string); cn != "gorest-client" {

@@ -10,7 +10,8 @@ package indirectdeps_test
 //	--------------------  -------
 //	repoRoot              repo root, resolved before any t.Chdir; indirect_test.go reads
 //	                      go.mod and indirectdeps/*_test.go from it
-//	setupConfig           chdir to a temp dir, write a .env, run gconfig.Config() and return
+//	setupConfig           chdir to a temp dir, clear DB_URI and REDIS_URI (they override
+//	                      host/port), write a .env, run gconfig.Config() and return
 //	                      GetConfig(): InitDB, InitRedis and InitMongo read the fields each
 //	                      test sets, and files written to cwd stay out of the repo
 //	listen                127.0.0.1:0 listener for a fake server, closed at test cleanup
@@ -22,7 +23,8 @@ package indirectdeps_test
 //	(*scramServer).first  parses client-first (GS2 header n,,, user, nonce); returns
 //	                      server-first with the combined nonce, salt and iterations
 //	(*scramServer).final  checks the nonce, recomputes ClientKey from the stored password,
-//	                      rejects a non-matching proof, returns the server signature
+//	                      rejects a non-matching proof (counted in proofBad), returns
+//	                      the server signature
 //	(*scramServer).hmac   HMAC with the mechanism's hash (SHA-1 or SHA-256)
 //	linkedModules         modules and versions compiled into this test binary
 //	                      (debug.ReadBuildInfo), so tag, GOARCH and Go version count
@@ -49,6 +51,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 
 	gconfig "github.com/pilinux/gorest/config"
@@ -68,6 +71,9 @@ var repoRoot = func() string {
 func setupConfig(t *testing.T) *gconfig.Configuration {
 	t.Helper()
 	t.Chdir(t.TempDir())
+	// a URI in the developer's env would win over the fake's host/port
+	t.Setenv("DB_URI", "")
+	t.Setenv("REDIS_URI", "")
 	if err := os.WriteFile(".env", []byte("# indirectdeps test\n"), 0o600); err != nil {
 		t.Fatalf("write .env: %v", err)
 	}
@@ -121,6 +127,8 @@ type scramServer struct {
 	serverFirst     string
 	nonce           string
 	user            string
+
+	proofBad atomic.Int32 // client proofs rejected by final
 }
 
 func newScramServer(newHash func() hash.Hash, password string) *scramServer {
@@ -179,11 +187,13 @@ func (s *scramServer) final(clientFinal string) (string, error) {
 	authMsg := s.clientFirstBare + "," + s.serverFirst + "," + withoutProof
 	clientSig := s.hmac(storedKey, authMsg)
 	if len(proof) != len(clientSig) {
+		s.proofBad.Add(1)
 		return "", errors.New("proof length mismatch")
 	}
 	recovered := make([]byte, len(proof))
 	subtle.XORBytes(recovered, proof, clientSig)
 	if !hmac.Equal(recovered, clientKey) {
+		s.proofBad.Add(1)
 		return "", errors.New("authentication failed")
 	}
 	serverSig := s.hmac(s.hmac(salted, "Server Key"), authMsg)

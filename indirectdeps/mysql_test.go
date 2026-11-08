@@ -43,7 +43,7 @@ import (
 	"testing"
 	"time"
 
-	gdatabase "github.com/pilinux/gorest/database"
+	gdb "github.com/pilinux/gorest/database"
 )
 
 // MySQL capability flags used by the fake server.
@@ -271,7 +271,7 @@ func configureMySQL(t *testing.T, host, port, user, pass, dbName string) {
 	rdbms.Conn.MaxOpenConns = 2
 	rdbms.Conn.ConnMaxLifetime = time.Minute
 	rdbms.Log.LogLevel = 1
-	t.Cleanup(func() { _ = gdatabase.CloseSQL() })
+	t.Cleanup(func() { _ = gdb.CloseSQL() })
 }
 
 // TestMySQLEd25519Auth covers filippo.io/edwards25519: go-sql-driver/mysql
@@ -284,7 +284,7 @@ func TestMySQLEd25519Auth(t *testing.T) {
 	srv, host, port := startFakeMySQL(t, password)
 	configureMySQL(t, host, port, "gorest_user", password, "gorest_db") // ggignore
 
-	db := gdatabase.InitDB()
+	db := gdb.InitDB()
 	if db.Error != nil {
 		t.Fatalf("InitDB: %v", db.Error)
 	}
@@ -308,7 +308,7 @@ func TestMySQLEd25519AuthWrongPassword(t *testing.T) {
 	srv, host, port := startFakeMySQL(t, strings.Repeat("a", ed25519.SeedSize))                      // ggignore
 	configureMySQL(t, host, port, "gorest_user", strings.Repeat("b", ed25519.SeedSize), "gorest_db") // ggignore
 
-	if db := gdatabase.InitDB(); db.Error == nil {
+	if db := gdb.InitDB(); db.Error == nil {
 		t.Fatal("InitDB succeeded with a wrong password")
 	}
 	srv.mu.Lock()

@@ -27,7 +27,7 @@ import (
 	"testing"
 
 	gconfig "github.com/pilinux/gorest/config"
-	gdatabase "github.com/pilinux/gorest/database"
+	gdb "github.com/pilinux/gorest/database"
 	gmigrate "github.com/pilinux/gorest/database/migrate"
 	gmodel "github.com/pilinux/gorest/database/model"
 	exmodel "github.com/pilinux/gorest/example/database/model"
@@ -41,9 +41,9 @@ func initSQLite(t *testing.T) *gorm.DB {
 	cfg.Database.RDBMS.Env.Driver = "sqlite3"
 	cfg.Database.RDBMS.Access.DbName = filepath.Join(t.TempDir(), "gorest.db")
 	cfg.Database.RDBMS.Log.LogLevel = 1
-	t.Cleanup(func() { _ = gdatabase.CloseSQL() })
+	t.Cleanup(func() { _ = gdb.CloseSQL() })
 
-	db := gdatabase.InitDB()
+	db := gdb.InitDB()
 	if db.Error != nil {
 		t.Fatalf("InitDB sqlite3: %v", db.Error)
 	}

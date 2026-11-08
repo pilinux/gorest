@@ -147,6 +147,11 @@ const (
 	pinnedArgon2Hash = "$argon2id$v=19$m=65536,t=2,p=2$7YrCO6Wj8ploAnMo0WVuAQ$WzCWKWNqxzahgnx/LhsQMHEhJ0Ca12CiLptlttiPLGw" // ggignore
 )
 
+type argon2CompareCase struct {
+	pass, secret string
+	want         bool
+}
+
 // TestArgon2Hashing covers golang.org/x/sys/cpu as used by pilinux/argon2
 // and x/crypto/argon2 for lib.HashPass and lib.GetArgon2Key.
 func TestArgon2Hashing(t *testing.T) {
@@ -159,10 +164,7 @@ func TestArgon2Hashing(t *testing.T) {
 	if !strings.HasPrefix(hash, "$argon2id$") {
 		t.Errorf("hash = %q, want argon2id encoding", hash)
 	}
-	for _, tc := range []struct {
-		pass, secret string
-		want         bool
-	}{
+	for _, tc := range []argon2CompareCase{
 		{"correct horse", "pepper", true}, // ggignore
 		{"wrong horse", "pepper", false},  // ggignore
 		{"correct horse", "salt", false},  // ggignore
@@ -181,11 +183,13 @@ func TestArgon2Hashing(t *testing.T) {
 	}
 }
 
+type rateParseCase struct{ rate, wantErr string }
+
 // TestRateLimiter covers pkg/errors (ulule/limiter's rate parsing errors)
 // along with the limiter wiring from lib.InitRateLimiter and the middleware.
 func TestRateLimiter(t *testing.T) {
 	logIndirect(t)
-	for _, tc := range []struct{ rate, wantErr string }{
+	for _, tc := range []rateParseCase{
 		{"abc", "incorrect format"},
 		{"10-X", "incorrect period"},
 		{"x-M", "incorrect limit"},

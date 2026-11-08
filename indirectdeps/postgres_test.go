@@ -46,7 +46,7 @@ import (
 	"testing"
 	"time"
 
-	gdatabase "github.com/pilinux/gorest/database"
+	gdb "github.com/pilinux/gorest/database"
 )
 
 const (
@@ -244,7 +244,7 @@ func configurePostgres(t *testing.T, host, port, user, pass, dbName string) {
 	t.Setenv("PGPASSFILE", filepath.Join(t.TempDir(), "none"))
 	t.Setenv("PGSERVICEFILE", filepath.Join(t.TempDir(), "none"))
 	t.Setenv("PGSERVICE", "")
-	t.Cleanup(func() { _ = gdatabase.CloseSQL() })
+	t.Cleanup(func() { _ = gdb.CloseSQL() })
 }
 
 // TestPostgresSCRAMPrecis covers jackc/pgx/v5 (stdlib driver, DSN parsing)
@@ -258,7 +258,7 @@ func TestPostgresSCRAMPrecis(t *testing.T) {
 	srv, host, port := startFakePostgres(t, newScramServer(sha256.New, normalized))
 	configurePostgres(t, host, port, "go rest's user", raw, "gorest db")
 
-	if db := gdatabase.InitDB(); db.Error != nil {
+	if db := gdb.InitDB(); db.Error != nil {
 		t.Fatalf("InitDB: %v", db.Error)
 	}
 
@@ -281,12 +281,12 @@ func TestPostgresSCRAMWrongPassword(t *testing.T) {
 	srv, host, port := startFakePostgres(t, newScramServer(sha256.New, "right")) // ggignore
 	configurePostgres(t, host, port, "gorest", "wrong", "gorest")                // ggignore
 
-	if db := gdatabase.InitDB(); db.Error == nil {
+	if db := gdb.InitDB(); db.Error == nil {
 		t.Fatal("InitDB succeeded with a wrong password")
 	}
 	srv.mu.Lock()
 	defer srv.mu.Unlock()
-	if srv.authBad == 0 {
+	if srv.scram.proofBad.Load() == 0 {
 		t.Error("server never rejected a proof")
 	}
 }
@@ -305,7 +305,7 @@ func TestPostgresPassfile(t *testing.T) {
 	}
 	t.Setenv("PGPASSFILE", passfile)
 
-	if db := gdatabase.InitDB(); db.Error != nil {
+	if db := gdb.InitDB(); db.Error != nil {
 		t.Fatalf("InitDB: %v", db.Error)
 	}
 	srv.mu.Lock()
@@ -330,7 +330,7 @@ func TestPostgresServiceFile(t *testing.T) {
 	t.Setenv("PGSERVICEFILE", svc)
 	t.Setenv("PGSERVICE", "gorest")
 
-	if db := gdatabase.InitDB(); db.Error != nil {
+	if db := gdb.InitDB(); db.Error != nil {
 		t.Fatalf("InitDB: %v", db.Error)
 	}
 	srv.mu.Lock()
