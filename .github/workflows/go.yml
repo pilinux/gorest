@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       max-parallel: 1
       matrix:
@@ -115,7 +115,7 @@ jobs:
       fail-fast: false
       matrix:
         # amd64 covers sonic's JIT modules; arm64 its non-JIT build
-        os: [ubuntu-latest, ubuntu-24.04-arm]
+        os: [ubuntu-24.04, ubuntu-24.04-arm]
         go-version: [1.26.x, 1.27.x]
         tags: ["", sonic, go_json, jsoniter]
     permissions:
