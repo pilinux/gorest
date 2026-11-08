@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       max-parallel: 1
       matrix:
@@ -105,3 +105,37 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: pilinux/gorest
+
+  # indirect dependency regression tests: in-process fakes, no secrets needed,
+  # so they run on every push and pull request
+  indirectdeps:
+    name: indirectdeps (${{ matrix.os }}, ${{ matrix.go-version }}, ${{ matrix.tags || 'no tag' }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # amd64 covers sonic's JIT modules; arm64 its non-JIT build
+        os: [ubuntu-24.04, ubuntu-24.04-arm]
+        go-version: [1.26.x, 1.27.x]
+        tags: ["", sonic, go_json, jsoniter]
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+      - run: go version
+
+      # fails if a test imports an indirect module directly (it would turn direct)
+      - name: Check go.mod and go.sum are tidy
+        if: matrix.tags == ''
+        run: go mod tidy -diff
+
+      - name: Test indirect dependencies
+        run: go test -race -count=1 -v -tags=${{ matrix.tags }} ./indirectdeps/...
