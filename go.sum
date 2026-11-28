@@ -84,8 +84,8 @@ github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd h1:TRLaZ9cD/w
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
 github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9Gz0M=
 github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
-github.com/mrz1836/postmark v1.9.4 h1:Yoc3X+ycxgkVPJke7dvqwS2KlUOIFUhbpPwh81WHCPI=
-github.com/mrz1836/postmark v1.9.4/go.mod h1:4wIgW1gbB0tuw0DexUyEs/b9BRA1cZ9J/uSdXV0q+fc=
+github.com/mrz1836/postmark v1.9.5 h1:pyJTjjYllaxFlUk0hvVHHMfokhhbqsTD+blh0j2j1lk=
+github.com/mrz1836/postmark v1.9.5/go.mod h1:4wIgW1gbB0tuw0DexUyEs/b9BRA1cZ9J/uSdXV0q+fc=
 github.com/pelletier/go-toml/v2 v2.4.3 h1:GTRvJQutkOSftxIFD5xw9aepkYNuPWmVJpffdDPYVpY=
 github.com/pelletier/go-toml/v2 v2.4.3/go.mod h1:2gIqNv+qfxSVS7cM2xJQKtLSTLUE9V8t9Stt+h56mCY=
 github.com/pilinux/argon2 v0.26.0 h1:YzUPINzzz68aAQm0ROuIGRaGNzpcSLprOkehGjA6M8U=
